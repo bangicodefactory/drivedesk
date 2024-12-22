@@ -48,7 +48,7 @@ class VehicleController extends Controller
                     'engine_no' => 'required',
                     'license_plate' => 'required',
                     'registration_expiry_date' => 'required',
-                    'document' => 'required',
+                    // 'document' => 'required',
                     'daily_rate' => 'required',
                     'year_of_ﬁrst_immatriculation' => 'required',
                     'gearbox' => 'required',
