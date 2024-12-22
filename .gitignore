@@ -1,7 +1,7 @@
 /vendor/srmklive
 /.idea
 /.vscode
-/.env
 storage/installed
 public/images/  # Replace with the path to your images folder
 *.log           # Example for log files
+.env
