@@ -99,12 +99,14 @@
                                 <li class="menu-item"><a href="#pricing">{{__('Pricing')}}</a></li>
                                 <li class="menu-item"><a href="#features">{{__('Features')}}</a></li>
                                 <li class="menu-item"><a href="#faq">{{__('FAQs')}}</a></li>
+                                <li class="menu-item"><a href="#contact">{{__('Contact')}}</a></li>
 
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="{{route('login')}}">{{__('Login')}} </a>
-                                    @if($settings['register_page']=='on')
+    {{-- Delete Register option for client --}}
+                                    {{-- @if($settings['register_page']=='on')
                                         <a class="btn btn-primary" href="{{route('register')}}">{{__('Register')}} </a>
-                                    @endif
+                                    @endif --}}
 
                                 </li>
 
