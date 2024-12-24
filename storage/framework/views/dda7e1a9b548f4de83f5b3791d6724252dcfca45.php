@@ -104,7 +104,9 @@
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="<?php echo e(route('login')); ?>"><?php echo e(__('Login')); ?> </a>
     
-                                    
+                                    <?php if($settings['register_page']=='on'): ?>
+                                        <a class="btn btn-primary" href="<?php echo e(route('register')); ?>"><?php echo e(__('Register')); ?> </a>
+                                    <?php endif; ?>
 
                                 </li>
 
@@ -254,7 +256,7 @@
                     <div class="codex-pricingtbl">
                         <div class="price-header">
                             <h2><?php echo e($subscription->title); ?></h2>
-                            <div class="price-value"><?php echo e($subscription->package_amount.subscriptionPaymentSettings() ['CURRENCY_SYMBOL']); ?> <span>/ <?php echo e($subscription->interval); ?></span></div>
+                            <div class="price-value"><?php echo e($subscription->package_amount.subscriptionPaymentSettings()['CURRENCY_SYMBOL']); ?> <span>/ <?php echo e($subscription->interval); ?></span></div>
                             
                         </div>
                         <ul class="cdxprice-list">
