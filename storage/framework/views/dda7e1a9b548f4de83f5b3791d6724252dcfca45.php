@@ -99,12 +99,12 @@
                                 <li class="menu-item"><a href="#pricing"><?php echo e(__('Pricing')); ?></a></li>
                                 <li class="menu-item"><a href="#features"><?php echo e(__('Features')); ?></a></li>
                                 <li class="menu-item"><a href="#faq"><?php echo e(__('FAQs')); ?></a></li>
+                                <li class="menu-item"><a href="#contact"><?php echo e(__('Contact')); ?></a></li>
 
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="<?php echo e(route('login')); ?>"><?php echo e(__('Login')); ?> </a>
-                                    <?php if($settings['register_page']=='on'): ?>
-                                        <a class="btn btn-primary" href="<?php echo e(route('register')); ?>"><?php echo e(__('Register')); ?> </a>
-                                    <?php endif; ?>
+    
+                                    
 
                                 </li>
 
