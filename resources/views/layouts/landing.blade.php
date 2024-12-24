@@ -104,9 +104,9 @@
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="{{route('login')}}">{{__('Login')}} </a>
     {{-- Delete Register option for client --}}
-                                    {{-- @if($settings['register_page']=='on')
+                                    @if($settings['register_page']=='on')
                                         <a class="btn btn-primary" href="{{route('register')}}">{{__('Register')}} </a>
-                                    @endif --}}
+                                    @endif
 
                                 </li>
 
@@ -256,7 +256,8 @@
                     <div class="codex-pricingtbl">
                         <div class="price-header">
                             <h2>{{$subscription->title}}</h2>
-                            <div class="price-value">{{subscriptionPaymentSettings()['CURRENCY_SYMBOL'].$subscription->package_amount}}<span>/ {{$subscription->interval}}</span></div>
+                            <div class="price-value">{{ $subscription->package_amount.subscriptionPaymentSettings()['CURRENCY_SYMBOL'] }} <span>/ {{$subscription->interval}}</span></div>
+                            {{-- <div class="price-value">{{subscriptionPaymentSettings()['CURRENCY_SYMBOL'].$subscription->package_amount}}<span>/ {{$subscription->interval}}</span></div> --}}
                         </div>
                         <ul class="cdxprice-list">
                             <li><span> <i class="text-success mr-4" data-feather="check-circle"></i>{{$subscription->user_limit}}</span>{{__('User Limit')}}</li>
@@ -490,7 +491,8 @@
             <div class="col text-center">
                 <div class="support-contain">
                     <div class="codex-brand">
-                        <p class="mt-20 mb-20">{{__('Copyright')}} {{date('Y')}} {{env('APP_NAME')}}</p>
+                        <p class="mt-20 mb-20">{{__('Copyright')}} {{date('Y')}} <a href="https://bangicode.ma">Bangicode.ma</a></p>
+                        {{-- <p class="mt-20 mb-20">{{__('Copyright')}} {{date('Y')}} {{env('APP_NAME')}}</p> --}}
                     </div>
                 </div>
             </div>

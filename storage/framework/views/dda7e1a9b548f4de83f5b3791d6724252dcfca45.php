@@ -254,7 +254,8 @@
                     <div class="codex-pricingtbl">
                         <div class="price-header">
                             <h2><?php echo e($subscription->title); ?></h2>
-                            <div class="price-value"><?php echo e(subscriptionPaymentSettings()['CURRENCY_SYMBOL'].$subscription->package_amount); ?><span>/ <?php echo e($subscription->interval); ?></span></div>
+                            <div class="price-value"><?php echo e($subscription->package_amount.subscriptionPaymentSettings() ['CURRENCY_SYMBOL']); ?> <span>/ <?php echo e($subscription->interval); ?></span></div>
+                            
                         </div>
                         <ul class="cdxprice-list">
                             <li><span> <i class="text-success mr-4" data-feather="check-circle"></i><?php echo e($subscription->user_limit); ?></span><?php echo e(__('User Limit')); ?></li>
@@ -490,7 +491,8 @@
             <div class="col text-center">
                 <div class="support-contain">
                     <div class="codex-brand">
-                        <p class="mt-20 mb-20"><?php echo e(__('Copyright')); ?> <?php echo e(date('Y')); ?> <?php echo e(env('APP_NAME')); ?></p>
+                        <p class="mt-20 mb-20"><?php echo e(__('Copyright')); ?> <?php echo e(date('Y')); ?> <a href="https://bangicode.ma">Bangicode.ma</a></p>
+                        
                     </div>
                 </div>
             </div>

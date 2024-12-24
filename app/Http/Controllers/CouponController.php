@@ -156,7 +156,7 @@ class CouponController extends Controller
         $settings=subscriptionPaymentSettings();
         $package = Subscription::find(\Illuminate\Support\Facades\Crypt::decrypt($request->package));
         if ($package && $request->coupon != '') {
-            $currency = isset($settings['CURRENCY_SYMBOL'])?$settings['CURRENCY_SYMBOL']:'$';
+            $currency = isset($settings['CURRENCY_SYMBOL'])?$settings['CURRENCY_SYMBOL']:'Dh';
             $originalPrice=$currency.$package->package_amount;
             $couponData = Coupon::where('code', $request->coupon)->where('status', '1')->first();
             if (!empty($couponData)) {
