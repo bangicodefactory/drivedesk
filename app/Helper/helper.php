@@ -65,8 +65,8 @@ if (!function_exists('settingsKeys')) {
             "vehicle_number_prefix" => "#VHC-000",
             "booking_number_prefix" => "#BOK-000",
             "rental_agreement_number_prefix" => "#RAG-000",
-            'CURRENCY' => "USD",
-            'CURRENCY_SYMBOL' => "$",
+            'CURRENCY' => "MAD",
+            'CURRENCY_SYMBOL' => "Dh",
             'STRIPE_PAYMENT' => "off",
             'STRIPE_KEY' => "",
             'STRIPE_SECRET' => "",
@@ -125,8 +125,8 @@ if (!function_exists('subscriptionPaymentSettings')) {
     {
         $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', '=', 1)->get();
         $result = [
-            'CURRENCY' => "USD",
-            'CURRENCY_SYMBOL' => "$",
+            'CURRENCY' => "MAD",
+            'CURRENCY_SYMBOL' => "Dh",
             'STRIPE_PAYMENT' => "off",
             'STRIPE_KEY' => "",
             'STRIPE_SECRET' => "",
@@ -158,8 +158,8 @@ if (!function_exists('invoicePaymentSettings')) {
     {
         $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', $id)->get();
         $result = [
-            'CURRENCY' => "USD",
-            'CURRENCY_SYMBOL' => "$",
+            'CURRENCY' => "MAD",
+            'CURRENCY_SYMBOL' => "Dh",
             'STRIPE_PAYMENT' => "off",
             'STRIPE_KEY' => "",
             'STRIPE_SECRET' => "",
