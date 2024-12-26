@@ -204,7 +204,11 @@
                                     <tbody>
                                     <tr>
                                         <td>{{__('Total Amount')}}</td>
-                                        <td>{{priceFormat($booking->getTotalAmount())}}</td>
+                                        <td>{{priceFormat($booking->getTotalAmount() * 0.8)}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>TVA:</td>
+                                        <td>{{priceFormat($booking->getTotalDueAmount() * 0.2)}}</td>
                                     </tr>
                                     <tr>
                                         <td>{{__('Due Amount')}}</td>

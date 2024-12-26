@@ -1,30 +1,33 @@
-@extends('layouts.app')
-@section('page-title')
-    {{ __('Inspection') }}
-@endsection
-@section('breadcrumb')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Inspection')); ?>
+
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('breadcrumb'); ?>
     <ul class="breadcrumb mb-0">
         <li class="breadcrumb-item">
-            <a href="{{ route('dashboard') }}">
-                <h1>{{ __('Dashboard') }}</h1>
+            <a href="<?php echo e(route('dashboard')); ?>">
+                <h1><?php echo e(__('Dashboard')); ?></h1>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ route('booking.index') }}">
-                {{ __('Booking') }}
+            <a href="<?php echo e(route('booking.index')); ?>">
+                <?php echo e(__('Booking')); ?>
+
             </a>
         </li>
         <li class="breadcrumb-item active">
             <a href="#">
-                {{ __('Create') }}
+                <?php echo e(__('Create')); ?>
+
             </a>
         </li>
     </ul>
-@endsection
-@section('card-action-btn')
-@endsection
-@section('content')
-    {{ Form::open(['url' => 'booking', 'method' => 'post', 'id' => 'myForm']) }}
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('card-action-btn'); ?>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('content'); ?>
+    <?php echo e(Form::open(['url' => 'booking', 'method' => 'post', 'id' => 'myForm'])); ?>
+
     <div class="row">
         <div class="col-md-12 col-lg-12">
             <div class="card">
@@ -32,72 +35,88 @@
                     <div class="row">
                         <input type="hidden" name="details" id="details">
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('start_date_time', __('Start Date Time'), ['class' => 'form-label']) }}
-                            {{ Form::text('start_date_time', null, ['class' => 'form-control start_date_time', 'placeholder' => __('Select Start Date & Time'), 'required' => 'required']) }}
+                            <?php echo e(Form::label('start_date_time', __('Start Date Time'), ['class' => 'form-label'])); ?>
+
+                            <?php echo e(Form::text('start_date_time', null, ['class' => 'form-control start_date_time', 'placeholder' => __('Select Start Date & Time'), 'required' => 'required'])); ?>
+
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('end_date_time', __('End Date Time'), ['class' => 'form-label']) }}
-                            {{ Form::text('end_date_time', null, ['class' => 'form-control end_date_time', 'placeholder' => __('Select End Date & Time'), 'required' => 'required']) }}
+                            <?php echo e(Form::label('end_date_time', __('End Date Time'), ['class' => 'form-label'])); ?>
+
+                            <?php echo e(Form::text('end_date_time', null, ['class' => 'form-control end_date_time', 'placeholder' => __('Select End Date & Time'), 'required' => 'required'])); ?>
+
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('vehicle', __('Vehicle'), ['class' => 'form-label']) }}
+                            <?php echo e(Form::label('vehicle', __('Vehicle'), ['class' => 'form-label'])); ?>
+
                             <select name="vehicle" id="vehicle" class="form-control basic-select" required>
-                                <option value="">{{ __('Select Vehicle') }}</option>
-                                @foreach ($vehicles as $vehicle)
-                                    <option value="{{ $vehicle->id }}">
-                                        {{ $vehicle->name . ' - ' . $vehicle->license_plate }}
+                                <option value=""><?php echo e(__('Select Vehicle')); ?></option>
+                                <?php $__currentLoopData = $vehicles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vehicle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($vehicle->id); ?>">
+                                        <?php echo e($vehicle->name . ' - ' . $vehicle->license_plate); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!}
+                            <?php echo e(Form::label('driver', __('Driver'), ['class' => 'form-label'])); ?>
+
+                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']); ?>
+
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
-                                    data-url="{{ route('driver.new.create') }}"
-                                    data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>
+                                    data-url="<?php echo e(route('driver.new.create')); ?>"
+                                    data-title="<?php echo e(__('Create Driver')); ?>"><?php echo e(__('Create New Driver')); ?></a></span>
                         </div>
 
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('pickup_address', __('Pickup Address'), ['class' => 'form-label']) }}
+                            <?php echo e(Form::label('pickup_address', __('Pickup Address'), ['class' => 'form-label'])); ?>
+
                             <select name="pickup_address" id="pickup_address" class="form-control basic-select" required>
-                                <option value="">{{ __('Select Pickup Address') }}</option>
-                                @foreach ($places as $place)
-                                    <option value="{{ $place->id }}">{{ $place->name }}</option>
-                                @endforeach
+                                <option value=""><?php echo e(__('Select Pickup Address')); ?></option>
+                                <?php $__currentLoopData = $places; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $place): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($place->id); ?>"><?php echo e($place->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('drop_off_address', __('Drop Off Address'), ['class' => 'form-label']) }}
+                            <?php echo e(Form::label('drop_off_address', __('Drop Off Address'), ['class' => 'form-label'])); ?>
+
                             <select name="drop_off_address" id="drop_off_address" class="form-control basic-select"
                                 required>
-                                <option value="">{{ __('Select Drop Off Address') }}</option>
-                                @foreach ($places as $place)
-                                    <option value="{{ $place->id }}">{{ $place->name }}</option>
-                                @endforeach
+                                <option value=""><?php echo e(__('Select Drop Off Address')); ?></option>
+                                <?php $__currentLoopData = $places; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $place): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($place->id); ?>"><?php echo e($place->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('addon', __('Addon'), ['class' => 'form-label']) }}
-                            {!! Form::select('addon[]', $addon, null, ['class' => 'form-control hidesearch addon', 'multiple']) !!}
+                            <?php echo e(Form::label('addon', __('Addon'), ['class' => 'form-label'])); ?>
+
+                            <?php echo Form::select('addon[]', $addon, null, ['class' => 'form-control hidesearch addon', 'multiple']); ?>
+
                         </div>
 
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('status', __('Status'), ['class' => 'form-label']) }}
-                            {!! Form::select('status', $status, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!}
+                            <?php echo e(Form::label('status', __('Status'), ['class' => 'form-label'])); ?>
+
+                            <?php echo Form::select('status', $status, null, ['class' => 'form-control hidesearch ', 'required' => 'required']); ?>
+
                         </div>
                         <input type="hidden" name="amount" id="amount">
                         <input type="hidden" id="originalAmount" name="originalAmount">
                         <div class="form-group col-md-4 col-lg-4">
-                            {{ Form::label('notes', __('Notes'), ['class' => 'form-label']) }}
-                            {{ Form::textarea('notes', null, ['class' => 'form-control', 'placeholder' => __('Enter notes'), 'rows' => 2]) }}
+                            <?php echo e(Form::label('notes', __('Notes'), ['class' => 'form-label'])); ?>
+
+                            <?php echo e(Form::textarea('notes', null, ['class' => 'form-control', 'placeholder' => __('Enter notes'), 'rows' => 2])); ?>
+
                         </div>
 
                         <div class="col-md-6 col-lg-6 detail_div d-none">
                             <table class="display dataTable cell-border">
                                 <tbody class="text-center" id="detail_table">
                                     <tr>
-                                        <td> {{ __('Duration') }}</td>
+                                        <td> <?php echo e(__('Duration')); ?></td>
                                         <td class="duration"></td>
                                     </tr>
                                 </tbody>
@@ -112,7 +131,7 @@
                                                     id="reduction"></b></td>
                                     </tr>
                                     <tr>
-                                        <td><b class="h6">{{ __('Total Amount') }}</b></td>
+                                        <td><b class="h6"><?php echo e(__('Total Amount')); ?></b></td>
                                         <td><b class="h6"> <span id="totalAmount"></span></b></td>
                                     </tr>
                                 </tbody>
@@ -126,12 +145,14 @@
     </div>
     <div class="row text-end">
         <div class="col-md-12 col-lg-12">
-            {{ Form::submit(__('Create'), ['class' => 'btn btn-primary ml-10']) }}
+            <?php echo e(Form::submit(__('Create'), ['class' => 'btn btn-primary ml-10'])); ?>
+
         </div>
     </div>
-    {{ Form::close() }}
-@endsection
-@push('script-page')
+    <?php echo e(Form::close()); ?>
+
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('script-page'); ?>
     <script>
         $(document).ready(function() {
             var today = new Date();
@@ -168,7 +189,7 @@
         $(document).on('click', '.create_btn', function(e) {
             var formData = $("form").serialize();
             $.ajax({
-                url: "{{ route('driver.store') }}",
+                url: "<?php echo e(route('driver.store')); ?>",
                 type: "POST",
                 data: formData,
                 success: function(result) {
@@ -206,7 +227,7 @@
             start_datetime = start_date_time;
             if (start_date_time != '' && end_date_time != '') {
                 $.ajax({
-                    url: "{{ route('available.vehicle') }}",
+                    url: "<?php echo e(route('available.vehicle')); ?>",
                     type: "GET",
                     data: {
                         start_date_time: start_date_time,
@@ -244,7 +265,7 @@
             var drop_off_place = $("#drop_off_address").val();
             if (vehicle_id != '' && start_date_time != '' && end_date_time != '') {
                 $.ajax({
-                    url: "{{ route('vehicle.rate.calculation') }}",
+                    url: "<?php echo e(route('vehicle.rate.calculation')); ?>",
                     type: "GET",
                     data: {
                         vahicle_id: vehicle_id,
@@ -296,7 +317,7 @@
 
             if (pickup_place != '' || drop_off_place != '') {
                 $.ajax({
-                    url: "{{ route('place.rate.calculation') }}",
+                    url: "<?php echo e(route('place.rate.calculation')); ?>",
                     type: "GET",
                     data: {
                         vahicle_id: vehicle_id,
@@ -349,7 +370,7 @@
             var drop_off_place = $("#drop_off_address").val();
 
             $.ajax({
-                url: "{{ route('addon.rate.calculation') }}",
+                url: "<?php echo e(route('addon.rate.calculation')); ?>",
                 type: "GET",
                 data: {
                     addons: addons,
@@ -390,7 +411,7 @@
         });
     </script>
 
-    {{-- Achraf script  --}}
+    
     <script>
         $(document).on('input', '#reduction', function() {
             var reduction = parseFloat($(this).val()) || 0;
@@ -420,4 +441,6 @@
             $('#amount').val(finalAmount.toFixed(2));
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/carrent/resources/views/booking/create.blade.php ENDPATH**/ ?>
