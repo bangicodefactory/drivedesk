@@ -207,7 +207,10 @@ if (!function_exists('settingDateFormat')) {
 if (!function_exists('settingPriceFormat')) {
     function settingPriceFormat($settings, $price)
     {
-        return $settings['CURRENCY_SYMBOL'] . $price;
+        // Achraf changes
+        // return $settings['CURRENCY_SYMBOL'] . $price;
+        
+        return $price . ' ' . $settings['CURRENCY_SYMBOL'];
     }
 }
 if (!function_exists('settingTimeFormat')) {
@@ -236,8 +239,9 @@ if (!function_exists('priceFormat')) {
     function priceFormat($price)
     {
         $settings = settings();
-
-        return $settings['CURRENCY_SYMBOL'] . $price;
+// Achraf changes 
+        // return $settings['CURRENCY_SYMBOL'] . $price;
+        return $price . ' ' . $settings['CURRENCY_SYMBOL'];
     }
 }
 if (!function_exists('parentId')) {
