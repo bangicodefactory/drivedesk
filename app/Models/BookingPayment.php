@@ -19,7 +19,9 @@ class BookingPayment extends Model
     ];
 
     public static $paymentMethod = [
-        'Wire Transfer' => 'Wire Transfer',
-        'Card' => 'Card',
+        'Espece' => 'Espece',
+        'Virement bancaire' => 'Virement bancaire',
+        'Carte' => 'Carte',
+        
     ];
 }

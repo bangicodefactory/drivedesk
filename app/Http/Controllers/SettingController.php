@@ -24,7 +24,8 @@ class SettingController extends Controller
         $loginUser = \Auth::user();
         $user = User::find($loginUser->id);
         $validator = \Validator::make(
-            $request->all(), [
+            $request->all(),
+            [
                 'name' => 'required',
                 'email' => 'required|email|unique:users,email,' . $user->id,
             ]
@@ -53,8 +54,7 @@ class SettingController extends Controller
                 mkdir($directory, 0777, true);
             }
 
-             $request->file('profile')->storeAs('upload/profile/', $profileToStore);
-
+            $request->file('profile')->storeAs('upload/profile/', $profileToStore);
         }
 
         if (!empty($request->profile)) {
@@ -89,7 +89,8 @@ class SettingController extends Controller
     {
         if (\Auth::Check()) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'current_password' => 'required',
                     'new_password' => 'required|min:6',
                     'confirm_password' => 'required|same:new_password',
@@ -134,14 +135,16 @@ class SettingController extends Controller
         if (\Auth::user()->type == 'super admin') {
 
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'application_name' => 'required',
                 ]
             );
 
             if ($request->logo) {
                 $validator = \Validator::make(
-                    $request->all(), [
+                    $request->all(),
+                    [
                         'logo' => 'required|mimes:png',
                     ]
                 );
@@ -149,7 +152,8 @@ class SettingController extends Controller
 
             if ($request->landing_logo) {
                 $validator = \Validator::make(
-                    $request->all(), [
+                    $request->all(),
+                    [
                         'landing_logo' => 'required|mimes:png',
                     ]
                 );
@@ -157,7 +161,8 @@ class SettingController extends Controller
 
             if ($request->favicon) {
                 $validator = \Validator::make(
-                    $request->all(), [
+                    $request->all(),
+                    [
                         'favicon' => 'required|mimes:png',
                     ]
                 );
@@ -181,32 +186,29 @@ class SettingController extends Controller
             if ($request->logo) {
                 $superadminLogoName = 'logo.png';
                 $request->file('logo')->storeAs('upload/logo/', $superadminLogoName);
-
             }
 
             if ($request->landing_logo) {
                 $superadminLandLogoName = 'landing_logo.png';
                 $request->file('landing_logo')->storeAs('upload/logo/', $superadminLandLogoName);
-
             }
 
             if ($request->favicon) {
                 $superadminFavicon = 'favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
-
             }
-
-
         } elseif (\Auth::user()->type == 'owner') {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'application_name' => 'required',
                 ]
             );
 
             if ($request->logo) {
                 $validator = \Validator::make(
-                    $request->all(), [
+                    $request->all(),
+                    [
                         'logo' => 'required|mimes:png',
                     ]
                 );
@@ -214,7 +216,8 @@ class SettingController extends Controller
 
             if ($request->favicon) {
                 $validator = \Validator::make(
-                    $request->all(), [
+                    $request->all(),
+                    [
                         'favicon' => 'required|mimes:png',
                     ]
                 );
@@ -229,7 +232,8 @@ class SettingController extends Controller
 
             if (!empty($request->application_name)) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $request->application_name,
                         'app_name',
                         parentId(),
@@ -243,14 +247,13 @@ class SettingController extends Controller
                 $request->file('logo')->storeAs('upload/logo/', $ownerLogoName);
 
                 \DB::insert(
-                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $ownerLogoName,
                         'company_logo',
                         parentId(),
                     ]
                 );
-
-
             }
 
             if ($request->favicon) {
@@ -258,14 +261,14 @@ class SettingController extends Controller
                 $request->file('favicon')->storeAs('upload/logo/', $ownerFaviconName);
 
                 \DB::insert(
-                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $ownerFaviconName,
                         'company_favicon',
                         parentId(),
                     ]
                 );
             }
-
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -287,7 +290,8 @@ class SettingController extends Controller
     {
         if (\Auth::Check()) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'sender_name' => 'required',
                     'sender_email' => 'required',
                     'server_driver' => 'required',
@@ -316,7 +320,8 @@ class SettingController extends Controller
             ];
             foreach ($smtpArray as $key => $val) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $val,
                         $key,
                         'smtp',
@@ -326,7 +331,6 @@ class SettingController extends Controller
             }
 
             return redirect()->back()->with('success', __('SMTP settings successfully saved.'));
-
         } else {
             return redirect()->back()->with('error', __('Invalid user.'));
         }
@@ -344,7 +348,7 @@ class SettingController extends Controller
     {
         if (\Auth::check()) {
             $to = $request->email;
-            $errorMessage='';
+            $errorMessage = '';
             // Data for email
             $data = [
                 'module' => 'test_mail',
@@ -379,7 +383,8 @@ class SettingController extends Controller
     {
 
         $validator = \Validator::make(
-            $request->all(), [
+            $request->all(),
+            [
                 'CURRENCY' => 'required',
                 'CURRENCY_SYMBOL' => 'required',
             ]
@@ -398,7 +403,8 @@ class SettingController extends Controller
         ];
         foreach ($currencyArray as $key => $val) {
             \DB::insert(
-                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                [
                     $val,
                     $key,
                     'payment',
@@ -410,7 +416,8 @@ class SettingController extends Controller
         //        For Bank Transfer Settings
         if (isset($request->bank_transfer_payment)) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'bank_name' => 'required',
                     'bank_holder_name' => 'required',
                     'bank_account_number' => 'required',
@@ -433,7 +440,8 @@ class SettingController extends Controller
 
             foreach ($bankArray as $key => $val) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $val,
                         $key,
                         'payment',
@@ -443,10 +451,11 @@ class SettingController extends Controller
             }
         }
 
-//        For Strip Settings
+        //        For Strip Settings
         if (isset($request->stripe_payment)) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'stripe_key' => 'required',
                     'stripe_secret' => 'required',
                 ]
@@ -464,7 +473,8 @@ class SettingController extends Controller
 
             foreach ($stripeArray as $key => $val) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $val,
                         $key,
                         'payment',
@@ -479,7 +489,8 @@ class SettingController extends Controller
 
         if (isset($request->paypal_payment)) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'paypal_mode' => 'required',
                     'paypal_client_id' => 'required',
                     'paypal_secret_key' => 'required',
@@ -499,7 +510,8 @@ class SettingController extends Controller
 
             foreach ($paypalArray as $key => $val) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $val,
                         $key,
                         'payment',
@@ -513,7 +525,8 @@ class SettingController extends Controller
 
         if (isset($request->flutterwave_payment)) {
             $validator = \Validator::make(
-                $request->all(), [
+                $request->all(),
+                [
                     'flutterwave_public_key' => 'required',
                     'flutterwave_secret_key' => 'required',
                 ]
@@ -531,7 +544,8 @@ class SettingController extends Controller
 
             foreach ($flutterwaveArray as $key => $val) {
                 \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                    [
                         $val,
                         $key,
                         'payment',
@@ -558,11 +572,16 @@ class SettingController extends Controller
     public function companyData(Request $request)
     {
         $validator = \Validator::make(
-            $request->all(), [
+            $request->all(),
+            [
                 'company_name' => 'required',
                 'company_email' => 'required',
                 'company_phone' => 'required',
                 'company_address' => 'required',
+                'patente' => 'nullable',  // Add new validation rules
+                'rc' => 'nullable',
+                'if' => 'nullable',
+                'ice' => 'nullable',
             ]
         );
         if ($validator->fails()) {
@@ -575,9 +594,11 @@ class SettingController extends Controller
         unset($settings['_token']);
 
         foreach ($settings as $key => $val) {
+            $value = $val ?? '';
             \DB::insert(
-                'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
-                    $val,
+                'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                [
+                    $value,
                     $key,
                     parentId(),
                 ]
@@ -624,7 +645,7 @@ class SettingController extends Controller
             }
         }
         foreach ($themeSettings as $key => $val) {
-            if(!empty($val)){
+            if (!empty($val)) {
                 \DB::insert(
                     'insert into settings (`value`, `name`,`type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
                     [
@@ -635,7 +656,6 @@ class SettingController extends Controller
                     ]
                 );
             }
-
         }
 
         return redirect()->back()->with('success', __('Theme settings save successfully.'));
@@ -653,7 +673,8 @@ class SettingController extends Controller
     {
 
         $validator = \Validator::make(
-            $request->all(), [
+            $request->all(),
+            [
                 'meta_seo_title' => 'required',
                 'meta_seo_keyword' => 'required',
                 'meta_seo_description' => 'required',
@@ -677,20 +698,20 @@ class SettingController extends Controller
 
 
             \DB::insert(
-                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                [
                     $seoFileName,
                     'meta_seo_image',
                     'SEO',
                     parentId(),
                 ]
             );
-
-
         }
         unset($settings['meta_seo_image']);
         foreach ($settings as $key => $val) {
             \DB::insert(
-                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                [
                     $val,
                     $key,
                     'SEO',
@@ -714,7 +735,8 @@ class SettingController extends Controller
     {
 
         $validator = \Validator::make(
-            $request->all(), [
+            $request->all(),
+            [
                 'recaptcha_key' => 'required',
                 'recaptcha_secret' => 'required',
             ]
@@ -735,7 +757,8 @@ class SettingController extends Controller
 
         foreach ($recaptchaArray as $key => $val) {
             \DB::insert(
-                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
+                [
                     $val,
                     $key,
                     'recaptcha',
