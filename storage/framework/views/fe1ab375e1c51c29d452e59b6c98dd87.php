@@ -238,14 +238,19 @@
                                             <td><?php echo e(__('Total Amount')); ?></td>
                                             <td><?php echo e(priceFormat($booking->getTotalAmount() * 0.8)); ?></td>
                                         </tr>
-                                        <tr>
+                                        <tr >
                                             <td>TVA:</td>
-                                            <td><?php echo e(priceFormat($booking->getTotalDueAmount() * 0.2)); ?></td>
+                                            <td><?php echo e(priceFormat($booking->getTotalAmount() * 0.2)); ?></td>
+                                        </tr>
+                                         <tr>
+                                            <td><?php echo e(__('Rest')); ?></td>
+                                            <td><?php echo e(priceFormat($booking->getTotalDueAmount())); ?></td>
                                         </tr>
                                         <tr>
                                             <td><?php echo e(__('Due Amount')); ?></td>
-                                            <td><?php echo e(priceFormat($booking->getTotalDueAmount())); ?></td>
+                                            <td><?php echo e(priceFormat($booking->getTotalAmount())); ?></td>
                                         </tr>
+                                       
                                     </tbody>
                                 </table>
                             </div>
