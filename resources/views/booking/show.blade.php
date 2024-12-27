@@ -237,14 +237,19 @@
                                             <td>{{ __('Total Amount') }}</td>
                                             <td>{{ priceFormat($booking->getTotalAmount() * 0.8) }}</td>
                                         </tr>
-                                        <tr>
+                                        <tr >
                                             <td>TVA:</td>
-                                            <td>{{ priceFormat($booking->getTotalDueAmount() * 0.2) }}</td>
+                                            <td>{{ priceFormat($booking->getTotalAmount() * 0.2) }}</td>
+                                        </tr>
+                                         <tr>
+                                            <td>{{ __('Rest') }}</td>
+                                            <td>{{ priceFormat($booking->getTotalDueAmount()) }}</td>
                                         </tr>
                                         <tr>
                                             <td>{{ __('Due Amount') }}</td>
-                                            <td>{{ priceFormat($booking->getTotalDueAmount()) }}</td>
+                                            <td>{{ priceFormat($booking->getTotalAmount()) }}</td>
                                         </tr>
+                                       
                                     </tbody>
                                 </table>
                             </div>
