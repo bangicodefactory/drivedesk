@@ -38,9 +38,9 @@ class Booking extends Model
     ];
 
     public static $paymentStatus = [
-        'unpaid' => 'Unpaid',
-        'paid' => 'Paid',
-        'partial_paid' => 'Partial Paid',
+        'impaye' => 'impayé',
+        'paye' => 'Payé',
+        'partiellement_paye' => 'partiellement payé',
     ];
 
     public function clients()

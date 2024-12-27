@@ -6,17 +6,20 @@
     $routeName = \Request::route()->getName();
 @endphp
 <aside class="codex-sidebar sidebar-{{ $settings['sidebar_mode'] }}">
-    <div class="logo-gridwrap">
-        <a class="codexbrand-logo" href="{{ route('home') }}">
-            <img class="img-fluid"
-                src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
-                alt="theeme-logo">
-        </a>
+    <div class="logo-gridwrap" style=" justify-content: center; align-items: center;">
+        
+            <a class="codexbrand-logo" href="{{ route('home') }}">
+                <img class="img-fluid" style="max-height: 100px; "
+                    src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
+                    alt="theeme-logo">
+            </a>
+        
         <a class="codex-darklogo" href="{{ route('home') }}">
             <img class="img-fluid"
                 src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
                 alt="theeme-logo"></a>
-        <div class="sidebar-action"><i data-feather="menu"></i></div>
+            
+        <div class="sidebar-action" style="margin-left: auto;"><i data-feather="menu"></i></div>
     </div>
     <div class="icon-logo">
         <a href="{{ route('home') }}">
@@ -261,7 +264,8 @@
                     </li>
                 @endif
                 @if (Gate::check('manage coupon') || Gate::check('manage coupon history'))
-                    <li class="menu-item {{ in_array($routeName, ['coupons.index', 'coupons.history']) ? 'active' : '' }}">
+                    <li
+                        class="menu-item {{ in_array($routeName, ['coupons.index', 'coupons.history']) ? 'active' : '' }}">
                         <a href="javascript:void(0);">
                             <div class="icon-item"><i data-feather="gift"></i></div>
                             <span>{{ __('Coupons') }}</span><i class="fa fa-angle-down"></i>
@@ -331,7 +335,8 @@
                                 </li>
                             @endif
                             @if (Gate::check('manage google recaptcha settings'))
-                                <li class="{{ in_array($routeName, ['setting.google.recaptcha']) ? 'active' : '' }} ">
+                                <li
+                                    class="{{ in_array($routeName, ['setting.google.recaptcha']) ? 'active' : '' }} ">
                                     <a
                                         href="{{ route('setting.google.recaptcha') }}">{{ __('ReCaptcha Setting') }}</a>
                                 </li>

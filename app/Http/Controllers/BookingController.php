@@ -90,7 +90,7 @@ class BookingController extends Controller
             $booking->status = $request->status;
             $booking->notes = $request->notes;
             $booking->amount = $request->amount;
-            $booking->payment_status = 'unpaid';
+            $booking->payment_status = 'impaye';
             $booking->payment_notes = null;
             $booking->details = $request->details;
             $booking->vehicle_details = json_encode($vehicle_detail);
@@ -306,9 +306,9 @@ class BookingController extends Controller
             $payment->save();
             $booking = Booking::find($id);
             if ($booking->getTotalDueAmount() <= 0) {
-                $status = 'paid';
+                $status = 'paye';
             } else {
-                $status = 'partial_paid';
+                $status = 'partiellement_paye';
             }
             Booking::statusChange($booking->id, $status);
             return redirect()->back()->with('success', __('Booking payment successfully created.'));
@@ -325,11 +325,11 @@ class BookingController extends Controller
 
             $bookinmg = Booking::find($booking_id);
             if ($bookinmg->getTotalDueAmount() <= 0) {
-                $status = 'paid';
+                $status = 'paye';
             } elseif ($bookinmg->getTotalDueAmount() == $bookinmg->getTotalAmount()) {
-                $status = 'unpaid';
+                $status = 'impaye';
             } else {
-                $status = 'partial_paid';
+                $status = 'partiellement_paye';
             }
             Booking::statusChange($bookinmg->id, $status);
             return redirect()->back()->with('success', __('Booking payment successfully deleted.'));

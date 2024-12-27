@@ -87,7 +87,6 @@
                             {!! Form::select('status', $status, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!}
                         </div>
                         <input type="hidden" name="amount" id="amount">
-                        <input type="hidden" id="originalAmount" name="originalAmount">
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('notes', __('Notes'), ['class' => 'form-label']) }}
                             {{ Form::textarea('notes', null, ['class' => 'form-control', 'placeholder' => __('Enter notes'), 'rows' => 2]) }}
@@ -106,11 +105,6 @@
                                 <tbody class="text-center" id="pickupPlace"></tbody>
                                 <tbody class="text-center" id="dropPlace"></tbody>
                                 <tbody class="text-center">
-                                    <tr>
-                                        <td><b class="h6">Réduction</b></td>
-                                        <td><b class="h6"> <input type="number" class="form-control"
-                                                    id="reduction"></b></td>
-                                    </tr>
                                     <tr>
                                         <td><b class="h6">{{ __('Total Amount') }}</b></td>
                                         <td><b class="h6"> <span id="totalAmount"></span></b></td>
@@ -173,7 +167,7 @@
                 data: formData,
                 success: function(result) {
                     var response = JSON.parse(result);
-                    if (response.status == false) {
+                    if(response.status==false){
                         toastrs('error', response.data, 'error');
                         $("#customModal").modal('hide');
                         return false;
@@ -261,23 +255,12 @@
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
-                        // Achraf script 
                         $('#amount').val(sum);
-
-                        // If there's an existing reduction, apply it
-                        var reduction = parseFloat($('#reduction').val()) || 0;
-                        if (reduction > 0) {
-                            var finalAmount = sum - reduction;
-                            $('#totalAmount').html(finalAmount.toFixed(2));
-                            $('#amount').val(finalAmount.toFixed(2));
-                        } else {
-                            $('#totalAmount').html(sum.toFixed(2));
-                        }
                         $('#details').val(result);
+
                         $('.duration').html(response['duration']);
                         $('#addonData').html(response['specificAddonCalculation']);
-                        // $('#totalAmount').html(sum);
-                        $('#totalAmount').html(finalAmount.toFixed(2));
+                        $('#totalAmount').html(sum);
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -285,7 +268,6 @@
                 });
             }
         });
-
         $(document).on('change', '#pickup_address,#drop_off_address', function(e) {
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
@@ -312,24 +294,11 @@
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
-                        // Achraf script 
                         $('#amount').val(sum);
-
-                        // If there's an existing reduction, apply it
-                        var reduction = parseFloat($('#reduction').val()) || 0;
-                        if (reduction > 0) {
-                            var finalAmount = sum - reduction;
-                            $('#totalAmount').html(finalAmount.toFixed(2));
-                            $('#amount').val(finalAmount.toFixed(2));
-                        } else {
-                            $('#totalAmount').html(sum.toFixed(2));
-                        }
-
                         $('#details').val(result);
                         $('#pickupPlace').html(response['pickup_place']);
                         $('#dropPlace').html(response['drop_place']);
-                        // $('#totalAmount').html(sum);
-                        $('#totalAmount').html(finalAmount.toFixed(2));
+                        $('#totalAmount').html(sum);
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -365,59 +334,15 @@
                     var addonAmount = parseFloat(response['addonAmount']) || 0;
                     var placeAmount = parseFloat(response['placeAmount']) || 0;
                     var sum = totalRate + addonAmount + placeAmount;
-                    // Achraf script 
                     $('#amount').val(sum);
-
-                    // If there's an existing reduction, apply it
-                    var reduction = parseFloat($('#reduction').val()) || 0;
-                    if (reduction > 0) {
-                        var finalAmount = sum - reduction;
-                        $('#totalAmount').html(finalAmount.toFixed(2));
-                        $('#amount').val(finalAmount.toFixed(2));
-                    } else {
-                        $('#totalAmount').html(sum.toFixed(2));
-                    }
-
                     $('#details').val(result);
                     $('#addonData').html(response['specificAddonCalculation']);
-                    // $('#totalAmount').html(sum);
-                    $('#totalAmount').html(finalAmount.toFixed(2));
+                    $('#totalAmount').html(sum);
                 },
                 error: function(result) {
                     toastrs('error', result, 'error')
                 }
             });
-        });
-    </script>
-
-    {{-- Achraf script  --}}
-    <script>
-        $(document).on('input', '#reduction', function() {
-            var reduction = parseFloat($(this).val()) || 0;
-            var originalAmount = parseFloat($('#totalAmount').html()) || 0;
-
-            // If reduction is empty or 0, restore the original calculated amount
-            if (!$(this).val() || reduction === 0) {
-                var sum = parseFloat($('#amount').val()) || 0;
-                $('#totalAmount').html(sum.toFixed(2));
-                return;
-            }
-
-            // Don't allow negative discount
-            if (reduction < 0) {
-                reduction = 0;
-                $(this).val(0);
-            }
-
-            // Don't allow discount greater than original amount
-            if (reduction > originalAmount) {
-                reduction = originalAmount;
-                $(this).val(originalAmount);
-            }
-
-            var finalAmount = originalAmount - reduction;
-            $('#totalAmount').html(finalAmount.toFixed(2));
-            $('#amount').val(finalAmount.toFixed(2));
         });
     </script>
 @endpush

@@ -81,7 +81,7 @@ if (!function_exists('settingsKeys')) {
             "bank_ifsc_code" => "123456",
             "bank_other_details" => "",
             "timezone" => "Pacific/Tahiti",
-            "TAHITI_NUMBER" => "",
+            // "TAHITI_NUMBER" => "",
             "flutterwave_payment" => "off",
             "flutterwave_public_key" => "",
             "flutterwave_secret_key" => "",

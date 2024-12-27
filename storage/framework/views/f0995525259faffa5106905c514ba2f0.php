@@ -45,6 +45,35 @@
                             <?php echo e(Form::textarea('company_address',$settings['company_address'], array('class' => 'form-control','rows'=>'2'))); ?>
 
                         </div>
+                        
+                        <div class="form-group col-md-6">
+                            <?php echo e(Form::label('patente',__('Patente'),array('class'=>'form-label'))); ?>
+
+                            <?php echo e(Form::text('patente',!empty($settings['patente']) ? $settings['patente'] : '',array('class'=>'form-control','placeholder'=>__('Enter patente')))); ?>
+
+                        </div>
+                        
+                        <div class="form-group col-md-6">
+                            <?php echo e(Form::label('rc',__('RC'),array('class'=>'form-label'))); ?>
+
+                            <?php echo e(Form::text('rc',!empty($settings['rc']) ? $settings['rc'] : '',array('class'=>'form-control','placeholder'=>__('Enter RC')))); ?>
+
+                        </div>
+                        
+                        <div class="form-group col-md-6">
+                            <?php echo e(Form::label('if',__('IF'),array('class'=>'form-label'))); ?>
+
+                            <?php echo e(Form::text('if',!empty($settings['if']) ? $settings['if'] : '',array('class'=>'form-control','placeholder'=>__('Enter IF')))); ?>
+
+                        </div>
+                        
+                        <div class="form-group col-md-6">
+                            <?php echo e(Form::label('ice',__('ICE'),array('class'=>'form-label'))); ?>
+
+                            <?php echo e(Form::text('ice',!empty($settings['ice']) ? $settings['ice'] : '',array('class'=>'form-control','placeholder'=>__('Enter ICE')))); ?>
+
+                        </div>
+
                         <div class="form-group col-md-6">
                             <?php echo e(Form::label('client_number_prefix',__('Client Number Prefix'),array('class'=>'form-label'))); ?>
 
@@ -77,12 +106,7 @@
                             <?php echo e(Form::text('rental_agreement_number_prefix',$settings['rental_agreement_number_prefix'],array('class'=>'form-control','placeholder'=>__('Enter rental agreement number prefix')))); ?>
 
                         </div>
-                        <div class="form-group col-md-6">
-                            <?php echo e(Form::label('TAHITI_NUMBER',__('TAHITI Number'),array('class'=>'form-label'))); ?>
-
-                            <?php echo e(Form::text('TAHITI_NUMBER',$settings['TAHITI_NUMBER'],array('class'=>'form-control','placeholder'=>__('Enter TAHITI number')))); ?>
-
-                        </div>
+                        
                         <div class="row">
                             <div class="form-group col-md-6">
                                 <?php echo e(Form::label('CURRENCY_SYMBOL',__('Currency Icon'),array('class'=>'form-label'))); ?>
