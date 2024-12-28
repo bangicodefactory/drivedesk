@@ -15,6 +15,7 @@ class RentalAgreement extends Model
         'rental_end_date',
         'rental_duration',
         'driver',
+        'driver2',
         'vehicle',
         'terms_condition',
         'description',
@@ -35,6 +36,10 @@ class RentalAgreement extends Model
     {
         return $this->hasOne('App\Models\User', 'id', 'driver');
     }
+    // public function driver2()
+    // {
+    //     return $this->hasOne('App\Models\Driver', 'id', 'driver2');
+    // }
 
     public function vehicles()
     {

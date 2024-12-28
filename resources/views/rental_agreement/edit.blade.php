@@ -34,7 +34,7 @@
         </div>
         <div class="form-group col-md-12 col-lg-12">
             {{Form::label('terms_condition',__('Terms & Condition'),array('class'=>'form-label')) }}
-            {{Form::textarea('terms_condition',null,array('class'=>'form-control','placeholder'=>__('Enter terms & condition'),'rows'=>5))}}
+            {{Form::textarea('terms_condition',null,array('class'=>'form-control','placeholder'=>__('Enter terms & condition'),'rows'=>6))}}
         </div>
         <div class="form-group col-md-12 col-lg-12">
             {{Form::label('description',__('Description'),array('class'=>'form-label')) }}

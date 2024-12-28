@@ -150,14 +150,67 @@
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
-                                            <h6><?php echo e(__('Email')); ?></h6>
-                                            <p class="mb-20"><?php echo e(!empty($rentalAgreement->drivers)?$rentalAgreement->drivers->email:''); ?> </p>
+                                            <h6><?php echo e(__('License Number')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($user_1->drivers)?$user_1->drivers->license_number:''); ?> </p>
                                         </div>
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
                                             <h6><?php echo e(__('Phone Number')); ?></h6>
                                             <p class="mb-20"><?php echo e(!empty($rentalAgreement->drivers)?$rentalAgreement->drivers->phone_number:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Address')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($user_1->drivers)?$user_1->drivers->address:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Birth Date')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($user_1->drivers)?$user_1->drivers->birth_date:''); ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <h5 class="text-primary mb-10">
+                                       <?php echo e(__('Driver2')); ?> : </h5>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Name')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($user_2->name)?$user_2->name:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('License Number')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($driver_2->license_number)?$driver_2->license_number:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('License')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($driver_2->license)?$driver_2->license:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Phone Number')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($user_2->phone_number)?$user_2->phone_number:''); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Address')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($driver_2->address) ? $driver_2->address : 'Not Available'); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                        <div class="detail-group">
+                                            <h6><?php echo e(__('Birth Date')); ?></h6>
+                                            <p class="mb-20"><?php echo e(!empty($driver_2->birth_date) ? $driver_2->birth_date : 'Not Available'); ?></p>
                                         </div>
                                     </div>
                                 </div>
