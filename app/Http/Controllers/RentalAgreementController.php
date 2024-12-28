@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Driver;
 use App\Models\Notification;
 use App\Models\RentalAgreement;
 use App\Models\User;
@@ -65,6 +66,8 @@ class RentalAgreementController extends Controller
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
+            // Add driver 2 
+            $rentalAgreement->driver2 = $request->driver2;
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
@@ -103,8 +106,11 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('show rental agreement')) {
             $id = Crypt::decrypt($ids);
             $rentalAgreement = RentalAgreement::find($id);
+            $user_1 = User::find($rentalAgreement->driver);
+            $driver_2 = Driver::where('user_id', $rentalAgreement->driver2)->first();
+            $user_2 = User::where('id', $rentalAgreement->driver2)->first();
             $settings = settings();
-            return view('rental_agreement.show', compact('rentalAgreement', 'settings'));
+            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }

@@ -5,6 +5,12 @@
             {{ Form::label('driver', __('Driver'),['class'=>'form-label']) }}
             {!! Form::select('driver', $drivers,null,array('class' => 'form-control hidesearch ','required'=>'required')) !!}
         </div>
+        {{-- add driver 2  --}}
+        <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('driver2', __('Driver2'),['class'=>'form-label']) }}
+            {!! Form::select('driver2', $drivers, null, array('class' => 'form-control hidesearch')) !!}
+        </div>
+
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}
             <select name="vehicle" id="vehicle" class="form-control basic-select" required>

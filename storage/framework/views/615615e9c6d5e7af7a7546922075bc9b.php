@@ -8,6 +8,14 @@
             <?php echo Form::select('driver', $drivers,null,array('class' => 'form-control hidesearch ','required'=>'required')); ?>
 
         </div>
+        
+        <div class="form-group col-md-6 col-lg-6">
+            <?php echo e(Form::label('driver2', __('Driver2'),['class'=>'form-label'])); ?>
+
+            <?php echo Form::select('driver2', $drivers, null, array('class' => 'form-control hidesearch')); ?>
+
+        </div>
+
         <div class="form-group col-md-6 col-lg-6">
             <?php echo e(Form::label('vehicle', __('Vehicle'),['class'=>'form-label'])); ?>
 
