@@ -68,13 +68,13 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($booking->payment_status=='paid')
+                                    @if($booking->payment_status=='paye')
                                         <span
                                             class="badge badge-success">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
-                                    @elseif($booking->payment_status=='unpaid')
+                                    @elseif($booking->payment_status=='impaye')
                                         <span
                                             class="badge badge-danger">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
-                                    @elseif($booking->payment_status=='partial_paid')
+                                    @elseif($booking->payment_status=='partiellement_paye')
                                         <span
                                             class="badge badge-warning">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
                                     @endif
