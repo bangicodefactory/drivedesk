@@ -110,7 +110,13 @@ class RentalAgreementController extends Controller
             $driver_2 = Driver::where('user_id', $rentalAgreement->driver2)->first();
             $user_2 = User::where('id', $rentalAgreement->driver2)->first();
             $settings = settings();
-            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1'));
+
+            // display Terms and conditions 
+            $terms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
+            $terms = nl2br($terms);
+
+
+            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1' , 'terms'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }

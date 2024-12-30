@@ -55,8 +55,8 @@ class DriverController extends Controller
                     'license_number' => 'required',
                     'issue_date' => 'required',
                     'expiration_date' => 'required',
-                    'document' => 'required',
-                    'license' => 'required',
+                    // 'document' => 'required',
+                    // 'license' => 'required',
                 ]
             );
 
