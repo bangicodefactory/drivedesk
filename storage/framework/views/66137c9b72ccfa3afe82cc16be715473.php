@@ -71,13 +71,13 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if($booking->payment_status=='paid'): ?>
+                                    <?php if($booking->payment_status=='paye'): ?>
                                         <span
                                             class="badge badge-success"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
-                                    <?php elseif($booking->payment_status=='unpaid'): ?>
+                                    <?php elseif($booking->payment_status=='impaye'): ?>
                                         <span
                                             class="badge badge-danger"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
-                                    <?php elseif($booking->payment_status=='partial_paid'): ?>
+                                    <?php elseif($booking->payment_status=='partiellement_paye'): ?>
                                         <span
                                             class="badge badge-warning"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
                                     <?php endif; ?>

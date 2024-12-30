@@ -27,7 +27,7 @@
         }
 
         * {
-            font-size: 25px !important;
+            font-size: 26px !important;
             font-weight: bold;
         }
 
@@ -231,6 +231,7 @@
                                     </div>
                                 </div>
                                 {{-- show driver 2 information  --}}
+                                @if($driver_2 && $user_2)
                                 <div class="row">
                                     <h5 class="text-primary mb-10">
                                         {{ __('Driver2') }} : </h5>
@@ -279,6 +280,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                                 <hr>
                                 <div class="row">
                                     <h5 class="text-primary mb-10">

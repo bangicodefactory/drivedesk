@@ -67,7 +67,7 @@ class RentalAgreementController extends Controller
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
             // Add driver 2 
-            $rentalAgreement->driver2 = $request->driver2;
+            $rentalAgreement->driver2 = $request->driver2 ?? null;
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
@@ -107,8 +107,8 @@ class RentalAgreementController extends Controller
             $id = Crypt::decrypt($ids);
             $rentalAgreement = RentalAgreement::find($id);
             $user_1 = User::find($rentalAgreement->driver);
-            $driver_2 = Driver::where('user_id', $rentalAgreement->driver2)->first();
-            $user_2 = User::where('id', $rentalAgreement->driver2)->first();
+            $driver_2 = $rentalAgreement->driver2 ? Driver::where('user_id', $rentalAgreement->driver2)->first() : null;
+            $user_2 = $rentalAgreement->driver2 ? User::where('id', $rentalAgreement->driver2)->first() : null;
             $settings = settings();
 
             // display Terms and conditions 
