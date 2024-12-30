@@ -76,22 +76,22 @@
 
                                 </ul>
                                 <ul class="contact-list">
-                                    {{-- Add IF,RC,Patente,ICE  --}}
+                                    {{-- Add IF, RC, Patente, ICE --}}
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>IF:
-                                        {{ $settings['if'] }}
+                                        {{ $settings['if'] ?? ' ' }}
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>RC:
-                                        {{ $settings['rc'] }}
+                                        {{ $settings['rc'] ?? ' ' }}
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>Patente:
-                                        {{ $settings['patente'] }}
+                                        {{ $settings['patente'] ?? ' ' }}
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>ICE:
-                                        {{ $settings['ice'] }}
+                                        {{ $settings['ice'] ?? ' ' }}
                                     </li>
                                 </ul>
                             </div>
