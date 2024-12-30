@@ -72,13 +72,13 @@
         <div class="form-group col-md-6">
             <?php echo e(Form::label('document',__('Document'),array('class'=>'form-label'))); ?>
 
-            <?php echo e(Form::file('document',array('class'=>'form-control','required'=>'required'))); ?>
+            <?php echo e(Form::file('document',array('class'=>'form-control'))); ?>
 
         </div>
         <div class="form-group col-md-6">
             <?php echo e(Form::label('license',__('License'),array('class'=>'form-label'))); ?>
 
-            <?php echo e(Form::file('license',array('class'=>'form-control','required'=>'required'))); ?>
+            <?php echo e(Form::file('license',array('class'=>'form-control'))); ?>
 
         </div>
         <div class="form-group col-md-6">

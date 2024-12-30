@@ -45,4 +45,7 @@ class RentalAgreement extends Model
     {
         return $this->hasOne('App\Models\Vehicle', 'id', 'vehicle');
     }
+    protected $attributes = [
+        'terms_condition' => 'Your default text here'
+    ];
 }

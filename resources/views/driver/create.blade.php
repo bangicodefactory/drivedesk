@@ -48,11 +48,11 @@
         </div>
         <div class="form-group col-md-6">
             {{Form::label('document',__('Document'),array('class'=>'form-label')) }}
-            {{Form::file('document',array('class'=>'form-control','required'=>'required'))}}
+            {{Form::file('document',array('class'=>'form-control'))}}
         </div>
         <div class="form-group col-md-6">
             {{Form::label('license',__('License'),array('class'=>'form-label')) }}
-            {{Form::file('license',array('class'=>'form-control','required'=>'required'))}}
+            {{Form::file('license',array('class'=>'form-control'))}}
         </div>
         <div class="form-group col-md-6">
             {{Form::label('reference',__('Reference'),array('class'=>'form-label')) }}

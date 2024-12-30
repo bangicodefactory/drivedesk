@@ -55,7 +55,10 @@
         <div class="form-group col-md-12 col-lg-12">
             <?php echo e(Form::label('terms_condition',__('Terms & Condition'),array('class'=>'form-label'))); ?>
 
-            <?php echo e(Form::textarea('terms_condition',null,array('class'=>'form-control','placeholder'=>__('Enter terms & condition'),'rows'=>5))); ?>
+            
+            <?php echo e(Form::textarea('terms_condition', 
+    old('terms_condition', config('default_terms.rental_agreement')), 
+    array('class'=>'form-control','placeholder'=>__('Enter terms & condition'),'rows'=>7))); ?>
 
         </div>
         <div class="form-group col-md-12 col-lg-12">
