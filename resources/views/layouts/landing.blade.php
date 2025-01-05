@@ -104,9 +104,9 @@
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="{{route('login')}}">{{__('Login')}} </a>
     {{-- Delete Register option for client --}}
-                                    @if($settings['register_page']=='on')
+                                    {{-- @if($settings['register_page']=='on')
                                         <a class="btn btn-primary" href="{{route('register')}}">{{__('Register')}} </a>
-                                    @endif
+                                    @endif --}}
 
                                 </li>
 
