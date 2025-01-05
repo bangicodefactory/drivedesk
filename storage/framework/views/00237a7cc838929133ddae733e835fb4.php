@@ -96,6 +96,20 @@
                             <?php echo Form::select('addon[]', $addon, null, ['class' => 'form-control hidesearch addon', 'multiple']); ?>
 
                         </div>
+                        
+
+                        <div class="form-group col-md-4 col-lg-4">
+                            <?php echo e(Form::label('discount', __('Discount'), ['class' => 'form-label'])); ?>
+
+                            <?php echo e(Form::number('discount', null, [
+                                'class' => 'form-control',
+                                'id' => 'discount',
+                                'step' => 'any',
+                                'min' => '0',
+                                'placeholder' => __('Enter discount'),
+                            ])); ?>
+
+                        </div>
 
                         <div class="form-group col-md-4 col-lg-4">
                             <?php echo e(Form::label('status', __('Status'), ['class' => 'form-label'])); ?>
@@ -123,6 +137,13 @@
                                 <tbody class="text-center" id="placeData"></tbody>
                                 <tbody class="text-center" id="pickupPlace"></tbody>
                                 <tbody class="text-center" id="dropPlace"></tbody>
+                                
+                                <tbody class="text-center">
+                                    <tr>
+                                        <td><b class="h6"><?php echo e(__('Discount')); ?></b></td>
+                                        <td><b class="h6"> <span id="discountPlace"></span></b></td>
+                                    </tr>
+                                </tbody>
                                 <tbody class="text-center">
                                     <tr>
                                         <td><b class="h6"><?php echo e(__('Total Amount')); ?></b></td>
@@ -188,7 +209,7 @@
                 data: formData,
                 success: function(result) {
                     var response = JSON.parse(result);
-                    if(response.status==false){
+                    if (response.status == false) {
                         toastrs('error', response.data, 'error');
                         $("#customModal").modal('hide');
                         return false;
@@ -276,12 +297,18 @@
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
-                        $('#amount').val(sum);
+
+                        var discountAmount = parseFloat($('#discount').val()) || 0;
+                        var finalSum = sum - discountAmount;
+
+                        $('#amount').val(finalSum);
                         $('#details').val(result);
 
                         $('.duration').html(response['duration']);
                         $('#addonData').html(response['specificAddonCalculation']);
-                        $('#totalAmount').html(sum);
+                        $('#totalAmount').html(finalSum);
+
+                        $('#discountPlace').html(discountAmount);
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -315,11 +342,18 @@
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
-                        $('#amount').val(sum);
+
+                        var discountAmount = parseFloat($('#discount').val()) || 0;
+                        var finalSum = sum - discountAmount;
+
+
+                        $('#amount').val(finalSum);
                         $('#details').val(result);
                         $('#pickupPlace').html(response['pickup_place']);
                         $('#dropPlace').html(response['drop_place']);
-                        $('#totalAmount').html(sum);
+                        $('#totalAmount').html(finalSum);
+
+                        $('#discountPlace').html(discountAmount);
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -355,16 +389,66 @@
                     var addonAmount = parseFloat(response['addonAmount']) || 0;
                     var placeAmount = parseFloat(response['placeAmount']) || 0;
                     var sum = totalRate + addonAmount + placeAmount;
-                    $('#amount').val(sum);
+
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+                    var finalSum = sum - discountAmount;
+
+                    $('#amount').val(finalSum);
                     $('#details').val(result);
                     $('#addonData').html(response['specificAddonCalculation']);
-                    $('#totalAmount').html(sum);
+                    $('#totalAmount').html(finalSum);
+
+                    $('#discountPlace').html(discountAmount);
                 },
                 error: function(result) {
                     toastrs('error', result, 'error')
                 }
             });
         });
+</script>
+<script>
+        $(document).on('change', '#discount', function(e) {          
+            var addons = $(".addon").val();
+            var vahicle_id = $("#vehicle").val();
+            var start_date_time = $("#start_date_time").val();
+            var end_date_time = $("#end_date_time").val();
+
+            var pickup_place = $("#pickup_address").val();
+            var drop_off_place = $("#drop_off_address").val();
+            $.ajax({
+                url: "<?php echo e(route('addon.rate.calculation')); ?>",
+                type: "GET",
+                data: {
+                    addons: addons,
+                    vahicle_id: vahicle_id,
+                    start_date_time: start_date_time,
+                    end_date_time: end_date_time,
+                    pickup_place: pickup_place,
+                    drop_off_place: drop_off_place,
+                },
+                success: function(result) {
+                    var response = JSON.parse(result);
+                    var totalRate = parseFloat(response['totalRate']) || 0;
+                    var addonAmount = parseFloat(response['addonAmount']) || 0;
+                    var placeAmount = parseFloat(response['placeAmount']) || 0;
+                    var sum = totalRate + addonAmount + placeAmount;
+
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+                    var finalSum = sum - discountAmount;
+
+                    $('#amount').val(finalSum);
+                    $('#details').val(result);
+                    $('#addonData').html(response['specificAddonCalculation']);
+                    $('#totalAmount').html(finalSum);
+
+                    $('#discountPlace').html(discountAmount);
+                },
+                error: function(result) {
+                    toastrs('error', result, 'error')
+                }
+            });
+    });
+       
     </script>
 <?php $__env->stopPush(); ?>
 

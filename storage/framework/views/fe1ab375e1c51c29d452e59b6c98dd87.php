@@ -85,22 +85,22 @@
                                     
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>IF:
-                                        <?php echo e($settings['if']); ?>
+                                        <?php echo e($settings['if'] ?? ' '); ?>
 
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>RC:
-                                        <?php echo e($settings['rc']); ?>
+                                        <?php echo e($settings['rc'] ?? ' '); ?>
 
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>Patente:
-                                        <?php echo e($settings['patente']); ?>
+                                        <?php echo e($settings['patente'] ?? ' '); ?>
 
                                     </li>
                                     <li>
                                         <div class="icon-wrap"><i class="fa fa-info-circle"></i></div>ICE:
-                                        <?php echo e($settings['ice']); ?>
+                                        <?php echo e($settings['ice'] ?? ' '); ?>
 
                                     </li>
                                 </ul>

@@ -256,6 +256,8 @@
   "Coupon Code": "رمز القسيمة",
   "Enter coupon code": "أدخل رمز القسيمة",
   "Discount Rate": "معدل الخصم",
+  "Discount": "الخصم",
+  "Enter discount": "أدخل الخصم",
   "Enter coupon discount rate": "أدخل معدل خصم القسيمة",
   "Number Of Times This Coupon Can Be Used": "عدد المرات التي يمكن فيها استخدام هذه القسيمة",
   "Enter coupon use limit": "أدخل حد استخدام القسيمة",

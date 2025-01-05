@@ -256,6 +256,8 @@
   "Coupon Code": "Code promo",
   "Enter coupon code": "Entrez le code promo",
   "Discount Rate": "Taux de remise",
+  "Discount": "Remise",
+  "Enter discount": "Entrer la remise",
   "Enter coupon discount rate": "Entrez le taux de réduction du coupon",
   "Number Of Times This Coupon Can Be Used": "Nombre de fois où ce coupon peut être utilisé",
   "Enter coupon use limit": "Entrez la limite d'utilisation du coupon",

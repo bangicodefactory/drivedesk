@@ -296,6 +296,8 @@ Route::group(
     ], function () {
 
     Route::get('addon/rate/calculation', [AddonController::class, 'getAddonRateCalculation'])->name('addon.rate.calculation');
+    // reduction function 
+    Route::get('addon/rate/reduction', [AddonController::class, 'getReductionRateCalculation'])->name('addon.rate.reduction');
     Route::resource('addon', AddonController::class);
 });
 //-------------------------------Place-------------------------------------------

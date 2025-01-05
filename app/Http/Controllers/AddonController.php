@@ -150,4 +150,52 @@ class AddonController extends Controller
 
         return json_encode($data);
     }
+    public function getReductionRateCalculation(Request $request)
+    {
+        $addonAmount=0;
+        $totalRate=0;
+        $considerDays=1;
+        $vehicle = Vehicle::find($request->vahicle_id);
+        $start_date_time=$request->start_date_time;
+        $end_date_time=$request->end_date_time;
+
+
+        $pickup_place=$request->pickup_place;
+        $drop_off_place=$request->drop_off_place;
+        if(!empty($pickup_place)){
+            $pickupPlaceAmount=placesRateCalculation($pickup_place);
+        }else{
+            $pickupPlaceAmount=0;
+        }
+
+        if(!empty($drop_off_place)){
+            $dropPlaceAmount=placesRateCalculation($drop_off_place);
+        }else{
+            $dropPlaceAmount=0;
+        }
+        $placeAmount=$pickupPlaceAmount+$dropPlaceAmount;
+
+        if (!empty($vehicle) && !empty($start_date_time) && !empty($end_date_time)) {
+            $daily_rate = !empty($vehicle->daily_rate) && ($vehicle->daily_rate > 0) ? $vehicle->daily_rate : 0;
+            $data=vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
+            $totalRate=(int)$data['totalRate'];
+            $considerDays=$data['considerDays'];
+        }
+
+        if(!empty($request->addons)){
+            $addonAmount =addonsRateCalculation($request->addons,$considerDays);
+            $specificAddonCalculation =specificAddonCalculation($request->addons,$considerDays);
+            $specificAddonString='';
+            foreach ($specificAddonCalculation as $key => $value) {
+                $specificAddonString.="<tr><td>".$value['addon']."</td><td>".$value['final_price']."</td></tr>";
+            }
+            $data['specificAddonCalculation']=$specificAddonString;
+        }
+        $data['addonAmount']=$addonAmount;
+        $data['totalRate']=$totalRate;
+        $data['placeAmount']=$placeAmount;
+
+
+        return json_encode($data);
+    }
 }
