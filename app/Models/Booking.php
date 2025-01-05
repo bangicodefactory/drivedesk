@@ -28,6 +28,7 @@ class Booking extends Model
         'details',
         'notes',
         'vehicle_details',
+        'discount',
     ];
 
     public static $status = [
