@@ -104,9 +104,7 @@
                                 <li class="menu-item">
                                     <a class="btn btn-primary me-2" href="<?php echo e(route('login')); ?>"><?php echo e(__('Login')); ?> </a>
     
-                                    <?php if($settings['register_page']=='on'): ?>
-                                        <a class="btn btn-primary" href="<?php echo e(route('register')); ?>"><?php echo e(__('Register')); ?> </a>
-                                    <?php endif; ?>
+                                    
 
                                 </li>
 
