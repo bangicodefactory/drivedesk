@@ -38,6 +38,7 @@
                 </li>
             </ul>
         </div>
+        vv drari
         <div class="header-right d-flex align-items-center justify-content-end">
             <ul class="nav-iconlist">
                 @if (\Auth::user()->type == 'super admin' || \Auth::user()->type == 'owner')
