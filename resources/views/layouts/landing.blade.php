@@ -241,7 +241,7 @@
 </section>
 <!-- demo end-->
 <!-- header otpion start-->
-<section class="landheader-comp space-py-100 overflow-visible" id="pricing">
+{{-- <section class="landheader-comp space-py-100 overflow-visible" id="pricing">
     <div class="container">
         <div class="row">
             <div class="col-lg-8 offset-lg-2 col-md-10 offset-md-1">
@@ -250,42 +250,9 @@
                 </div>
             </div>
         </div>
-        <div class="row pricing-grid">
-            @foreach($subscriptions as $subscription)
-                <div class="col-xxl-3 cdx-xl-50 col-sm-6">
-                    <div class="codex-pricingtbl">
-                        <div class="price-header">
-                            <h2>{{$subscription->title}}</h2>
-                            <div class="price-value">{{ $subscription->package_amount.subscriptionPaymentSettings()['CURRENCY_SYMBOL'] }} <span>/ {{$subscription->interval}}</span></div>
-                            {{-- <div class="price-value">{{subscriptionPaymentSettings()['CURRENCY_SYMBOL'].$subscription->package_amount}}<span>/ {{$subscription->interval}}</span></div> --}}
-                        </div>
-                        <ul class="cdxprice-list">
-                            <li><span> <i class="text-success mr-4" data-feather="check-circle"></i>{{$subscription->user_limit}}</span>{{__('User Limit')}}</li>
-                            <li><span> <i class="text-success mr-4" data-feather="check-circle"></i>{{$subscription->driver_limit}}</span>{{__('Driver Limit')}}</li>
-                            <li>
-                                @if($subscription->couponCheck()>0)
-                                    <i class="text-success mr-4" data-feather="check-circle"></i>
-                                @else
-                                    <i class="text-danger mr-4" data-feather="x-circle"></i>
-                                @endif
-                                {{__('Coupon Applicable')}}
-                            </li>
-                            <li>
-                                @if($subscription->enabled_logged_history==1)
-                                    <i class="text-success mr-4" data-feather="check-circle"></i>
-                                @else
-                                    <i class="text-danger mr-4" data-feather="x-circle"></i>
-                                @endif
-                                {{__('User Logged History')}}
-                            </li>
-                        </ul>
-                        <a class="btn btn-primary" href="{{route('register')}}">{{__('Purchase Now')}} </a>
-                    </div>
-                </div>
-            @endforeach
-        </div>
+       
     </div>
-</section>
+</section> --}}
 <!-- header otpion End-->
 <!-- innderpages start-->
 <section class="space-py-100" id="features">
