@@ -239,53 +239,7 @@
 </section>
 <!-- demo end-->
 <!-- header otpion start-->
-<section class="landheader-comp space-py-100 overflow-visible" id="pricing">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 offset-lg-2 col-md-10 offset-md-1">
-                <div class="land-title">
-                    <h2 class="wow fadeInLeft"><?php echo e(__('Affordable Pricing Based On Your Needs')); ?></h2>
-                </div>
-            </div>
-        </div>
-        <div class="row pricing-grid">
-            <?php $__currentLoopData = $subscriptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subscription): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <div class="col-xxl-3 cdx-xl-50 col-sm-6">
-                    <div class="codex-pricingtbl">
-                        <div class="price-header">
-                            <h2><?php echo e($subscription->title); ?></h2>
-                            <div class="price-value"><?php echo e($subscription->package_amount.subscriptionPaymentSettings()['CURRENCY_SYMBOL']); ?> <span>/ <?php echo e($subscription->interval); ?></span></div>
-                            
-                        </div>
-                        <ul class="cdxprice-list">
-                            <li><span> <i class="text-success mr-4" data-feather="check-circle"></i><?php echo e($subscription->user_limit); ?></span><?php echo e(__('User Limit')); ?></li>
-                            <li><span> <i class="text-success mr-4" data-feather="check-circle"></i><?php echo e($subscription->driver_limit); ?></span><?php echo e(__('Driver Limit')); ?></li>
-                            <li>
-                                <?php if($subscription->couponCheck()>0): ?>
-                                    <i class="text-success mr-4" data-feather="check-circle"></i>
-                                <?php else: ?>
-                                    <i class="text-danger mr-4" data-feather="x-circle"></i>
-                                <?php endif; ?>
-                                <?php echo e(__('Coupon Applicable')); ?>
 
-                            </li>
-                            <li>
-                                <?php if($subscription->enabled_logged_history==1): ?>
-                                    <i class="text-success mr-4" data-feather="check-circle"></i>
-                                <?php else: ?>
-                                    <i class="text-danger mr-4" data-feather="x-circle"></i>
-                                <?php endif; ?>
-                                <?php echo e(__('User Logged History')); ?>
-
-                            </li>
-                        </ul>
-                        <a class="btn btn-primary" href="<?php echo e(route('register')); ?>"><?php echo e(__('Purchase Now')); ?> </a>
-                    </div>
-                </div>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </div>
-    </div>
-</section>
 <!-- header otpion End-->
 <!-- innderpages start-->
 <section class="space-py-100" id="features">
