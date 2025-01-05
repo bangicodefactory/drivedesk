@@ -1,6 +1,7 @@
 <!-- footer start-->
 <footer class="codex-footer">
-    <p>{{ __('Copyright') }} {{ date('Y') }} © {{ env('APP_NAME') }} {{ __('All rights reserved') }}.</p>
+    {{-- <p>{{ __('Copyright') }} {{ date('Y') }} © {{ env('APP_NAME') }} {{ __('All rights reserved') }}.</p> --}}
+    <p>{{ __('Copyright') }} {{ date('Y') }} © <a href="https://bangicode.ma">BangiCode.ma </a> {{ __('All rights reserved') }}.</p>
 </footer>
 <!-- footer end-->
 <!-- back to top start //-->

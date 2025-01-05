@@ -1,6 +1,7 @@
 <!-- footer start-->
 <footer class="codex-footer">
-    <p><?php echo e(__('Copyright')); ?> <?php echo e(date('Y')); ?> © <?php echo e(env('APP_NAME')); ?> <?php echo e(__('All rights reserved')); ?>.</p>
+    
+    <p><?php echo e(__('Copyright')); ?> <?php echo e(date('Y')); ?> © <a href="https://bangicode.ma">BangiCode.ma </a> <?php echo e(__('All rights reserved')); ?>.</p>
 </footer>
 <!-- footer end-->
 <!-- back to top start //-->
