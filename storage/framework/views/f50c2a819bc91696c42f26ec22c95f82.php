@@ -85,6 +85,7 @@
                     Gate::check('manage inspection') ||
                     Gate::check('manage booking') ||
                     Gate::check('manage expense') ||
+                    Gate::check('manage reminder') ||
                     Gate::check('manage rental agreement')): ?>
                 <li class="cdxmenu-title">
                     <h5><?php echo e(__('Business Management')); ?></h5>
@@ -149,12 +150,21 @@
                         </a>
                     </li>
                 <?php endif; ?>
+                <?php if(Gate::check('manage reminder')): ?>
+                    <li class="menu-item <?php echo e(in_array($routeName, ['reminder.index']) ? 'active' : ''); ?>">
+                        <a href="<?php echo e(route('reminder.index')); ?>">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span><?php echo e(__('Reminder')); ?></span>
+                        </a>
+                    </li>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if(Gate::check('manage vehicle type') ||
                     Gate::check('manage inspection type') ||
                     Gate::check('manage expense type') ||
                     Gate::check('manage options') ||
                     Gate::check('manage addon') ||
+                    Gate::check('manage reminder') ||
                     Gate::check('manage notification')): ?>
                 <li class="cdxmenu-title">
                     <h5><?php echo e(__('System Setup')); ?></h5>
@@ -182,6 +192,11 @@
                             <?php if(Gate::check('manage expense type')): ?>
                                 <li class="<?php echo e(in_array($routeName, ['expense-type.index']) ? 'active' : ''); ?>">
                                     <a href="<?php echo e(route('expense-type.index')); ?>"><?php echo e(__('Expense Type')); ?></a>
+                                </li>
+                            <?php endif; ?>
+                            <?php if(Gate::check('manage reminder')): ?>
+                                <li class="<?php echo e(in_array($routeName, ['reminder-type.index']) ? 'active' : ''); ?>">
+                                    <a href="<?php echo e(route('reminder-type.index')); ?>"><?php echo e(__('Reminder Type')); ?></a>
                                 </li>
                             <?php endif; ?>
 

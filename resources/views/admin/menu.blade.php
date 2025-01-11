@@ -85,6 +85,7 @@
                     Gate::check('manage inspection') ||
                     Gate::check('manage booking') ||
                     Gate::check('manage expense') ||
+                    Gate::check('manage reminder') ||
                     Gate::check('manage rental agreement'))
                 <li class="cdxmenu-title">
                     <h5>{{ __('Business Management') }}</h5>
@@ -149,12 +150,21 @@
                         </a>
                     </li>
                 @endif
+                @if (Gate::check('manage reminder'))
+                    <li class="menu-item {{ in_array($routeName, ['reminder.index']) ? 'active' : '' }}">
+                        <a href="{{ route('reminder.index') }}">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span>{{ __('Reminder') }}</span>
+                        </a>
+                    </li>
+                @endif
             @endif
             @if (Gate::check('manage vehicle type') ||
                     Gate::check('manage inspection type') ||
                     Gate::check('manage expense type') ||
                     Gate::check('manage options') ||
                     Gate::check('manage addon') ||
+                    Gate::check('manage reminder') ||
                     Gate::check('manage notification'))
                 <li class="cdxmenu-title">
                     <h5>{{ __('System Setup') }}</h5>
@@ -182,6 +192,11 @@
                             @if (Gate::check('manage expense type'))
                                 <li class="{{ in_array($routeName, ['expense-type.index']) ? 'active' : '' }}">
                                     <a href="{{ route('expense-type.index') }}">{{ __('Expense Type') }}</a>
+                                </li>
+                            @endif
+                            @if (Gate::check('manage reminder'))
+                                <li class="{{ in_array($routeName, ['reminder-type.index']) ? 'active' : '' }}">
+                                    <a href="{{ route('reminder-type.index') }}">{{ __('Reminder Type') }}</a>
                                 </li>
                             @endif
 
