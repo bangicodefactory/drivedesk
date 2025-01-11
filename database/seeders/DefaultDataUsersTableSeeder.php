@@ -411,6 +411,22 @@ class DefaultDataUsersTableSeeder extends Seeder
                     'name' => 'edit notification',
                     'guard_name' => 'web',
                 ],
+                [
+                    'name' => 'manage reminder',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'create reminder',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'edit reminder',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'delete reminder',
+                    'guard_name' => 'web',
+                ],
             ];
             Permission::insert($allPermission);
 
@@ -568,6 +584,10 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'manage notification'],
                 ['name' => 'edit notification'],
 
+                ['name' => 'manage reminder'],
+                ['name' => 'create reminder'],
+                ['name' => 'edit reminder'],
+                ['name' => 'delete reminder'],
 
             ];
             $systemOwnerRole->givePermissionTo($systemOwnerPermission);
@@ -660,6 +680,11 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit rental agreement'],
                 ['name' => 'delete rental agreement'],
                 ['name' => 'show rental agreement'],
+
+                ['name' => 'manage reminder'],
+['name' => 'create reminder'],
+['name' => 'edit reminder'],
+['name' => 'delete reminder'],
             ];
             $systemManagerRole->givePermissionTo($systemManagerPermission);
             // Default Manager Create

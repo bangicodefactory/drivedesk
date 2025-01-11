@@ -23,6 +23,8 @@ use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\ExpenseTypeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RentalAgreementController;
+use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\ReminderTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -349,3 +351,24 @@ Route::resource('notification', NotificationController::class)->middleware(
         'XSS',
     ]
 );
+//new route for reminder and reminder_type tables
+
+//--------------------------------Reminder Types--------------------------------
+Route::group([
+    'middleware' => [
+        'auth',
+        'XSS',
+    ],
+], function () {
+    Route::resource('reminder-type', ReminderTypeController::class);
+});
+
+//--------------------------------Reminders--------------------------------
+Route::group([
+    'middleware' => [
+        'auth',
+        'XSS',
+    ],
+], function () {
+    Route::resource('reminder', ReminderController::class);
+});

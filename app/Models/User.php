@@ -103,6 +103,7 @@ class User extends Authenticatable
         'rental agreement',
         'logged history',
         'settings',
+        'reminder',
     ];
 
     public function languageKeyword()
