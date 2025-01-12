@@ -38,7 +38,7 @@
                             <th><?php echo e(__('Title')); ?></th>
                             <th><?php echo e(__('Type')); ?></th>
                             <th><?php echo e(__('Vehicle')); ?></th>
-                            <th><?php echo e(__('Amount')); ?></th>
+                            <th><?php echo e(__('Status')); ?></th>
                             <th><?php echo e(__('Notes')); ?></th>
                             <?php if(Gate::check('edit reminder') || Gate::check('delete reminder')): ?>
                                 <th><?php echo e(__('Action')); ?></th>
@@ -48,13 +48,14 @@
                         <tbody>
                         <?php $__currentLoopData = $reminders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reminder): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
-                                <td> <?php echo e(dateFormat($reminder->date)); ?> </td>
-                                <td><?php echo e($reminder->title); ?> </td>
-                                <td><?php echo e(!empty($reminder->types)?$reminder->types->title:'-'); ?> </td>
+                                <td> <?php echo e(dateFormat($reminder->reminder_date)); ?> </td>
+                                <td><?php echo e($reminder->name); ?> </td>
+                                <td><?php echo e(!empty($reminder->reminderType)?$reminder->reminderType->type:'-'); ?> </td>
                                 <td><?php echo e(!empty($reminder->vehicles)?$reminder->vehicles->name:'-'); ?> </td>
-                                <td><?php echo e(priceFormat($reminder->amount)); ?> </td>
+                                
+                                <td><?php echo e($reminder->status); ?> </td>
                                 <td>
-                                    <?php echo e($reminder->notes); ?>
+                                    <?php echo e($reminder->note); ?>
 
                                 </td>
                                 <?php if(Gate::check('edit reminder') || Gate::check('delete reminder') ): ?>
@@ -62,11 +63,6 @@
                                         <div class="cart-action">
                                             <?php echo Form::open(['method' => 'DELETE', 'route' => ['reminder.destroy', $reminder->id]]); ?>
 
-                                            <?php if(!empty($reminder->receipt)): ?>
-                                                <a  class="text-primary"  href="<?php echo e(asset('/storage/upload/reminder/'.$reminder->receipt)); ?> "
-                                                   target="_blank" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="<?php echo e(__('Receipt')); ?>"> <i data-feather="file"></i> </a>
-                                            <?php endif; ?>
 
                                             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit reminder')): ?>
                                                 <a class="text-success customModal" data-bs-toggle="tooltip"
