@@ -648,5 +648,6 @@
   "Enter reminder type name": "Saisissez le nom du type de rappel",
   "Delete Reminder Type": "Supprimer le type de rappel",
   "Are you sure you want to delete this reminder type?": "Êtes-vous sûr de vouloir supprimer ce type de rappel ?",
-  "Reminder Type Deleted Successfully": "Type de rappel supprimé avec succès"
+  "Reminder Type Deleted Successfully": "Type de rappel supprimé avec succès",
+  "Entre reminder title": "Entrez le titre du rappel"
 }

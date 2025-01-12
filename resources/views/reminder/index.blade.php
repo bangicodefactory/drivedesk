@@ -36,7 +36,7 @@
                             <th>{{__('Title')}}</th>
                             <th>{{__('Type')}}</th>
                             <th>{{__('Vehicle')}}</th>
-                            <th>{{__('Amount')}}</th>
+                            <th>{{__('Status')}}</th>
                             <th>{{__('Notes')}}</th>
                             @if(Gate::check('edit reminder') || Gate::check('delete reminder'))
                                 <th>{{__('Action')}}</th>
@@ -46,23 +46,19 @@
                         <tbody>
                         @foreach ($reminders as $reminder)
                             <tr>
-                                <td> {{ dateFormat($reminder->date) }} </td>
-                                <td>{{ $reminder->title }} </td>
-                                <td>{{ !empty($reminder->types)?$reminder->types->title:'-' }} </td>
+                                <td> {{ dateFormat($reminder->reminder_date) }} </td>
+                                <td>{{ $reminder->name }} </td>
+                                <td>{{ !empty($reminder->reminderType)?$reminder->reminderType->type:'-' }} </td>
                                 <td>{{ !empty($reminder->vehicles)?$reminder->vehicles->name:'-' }} </td>
-                                <td>{{ priceFormat($reminder->amount) }} </td>
+                                {{-- <td>{{ $reminder->vehicles->name }} </td> --}}
+                                <td>{{ $reminder->status }} </td>
                                 <td>
-                                    {{$reminder->notes}}
+                                    {{$reminder->note}}
                                 </td>
                                 @if(Gate::check('edit reminder') || Gate::check('delete reminder') )
                                     <td>
                                         <div class="cart-action">
                                             {!! Form::open(['method' => 'DELETE', 'route' => ['reminder.destroy', $reminder->id]]) !!}
-                                            @if(!empty($reminder->receipt))
-                                                <a  class="text-primary"  href="{{asset('/storage/upload/reminder/'.$reminder->receipt)}} "
-                                                   target="_blank" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{__('Receipt')}}"> <i data-feather="file"></i> </a>
-                                            @endif
 
                                             @can('edit reminder')
                                                 <a class="text-success customModal" data-bs-toggle="tooltip"
