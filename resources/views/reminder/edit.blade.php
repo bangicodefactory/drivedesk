@@ -7,7 +7,7 @@
         </div>
         <div class="form-group col-md-6">
             {{ Form::label('type', __('Reminder Type'),['class'=>'form-label']) }}
-            {!! Form::select('type', $types,null,array('class' => 'form-control hidesearch ')) !!}
+            {!! Form::select('type', $type,null,array('class' => 'form-control hidesearch ')) !!}
         </div>
         <div class="form-group col-md-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}

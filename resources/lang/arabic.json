@@ -649,5 +649,10 @@
   "Delete Reminder Type": "حذف نوع التذكير",
   "Are you sure you want to delete this reminder type?": "هل أنت متأكد أنك تريد حذف نوع التذكير هذا؟",
   "Reminder Type Deleted Successfully": "تم حذف نوع التذكير بنجاح",
-  "Enter reminder titel": "أدخل عنوان التذكير"
+  "Enter reminder titel": "أدخل عنوان التذكير",
+  "Next appointment date": "تاريخ اللقاء القادم",
+  "Overdue": "متأخر",
+    "Urgent": "عاجل",
+    "Upcoming": "قادم",
+    "Days Remaining": "الأيام المتبقية"
 }
