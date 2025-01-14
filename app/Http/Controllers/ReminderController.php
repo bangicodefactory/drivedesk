@@ -6,6 +6,8 @@ use App\Models\Reminder;
 use App\Models\ReminderType;
 use Illuminate\Http\Request;
 use App\Models\Vehicle;
+use App\Models\Notification;
+use App\Models\User;
 use Carbon\Carbon;
 
 class ReminderController extends Controller
@@ -82,6 +84,31 @@ class ReminderController extends Controller
             $reminder->parent_id = parentId();
 
             $reminder->save();
+
+            //send email notification
+            // if($reminder->save()){
+            //     // $user=User::find($request->driver);
+            //     $userath = \Auth::user();
+            //     $module = 'booking_status';
+            //     $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+            //     $setting = settings();
+            //     $bokid = 20;
+            //     $errorMessage = '';
+            //     if (!empty($notification) && $notification->enabled_email == 1) {
+            //         $notification_responce = MessageReplace($notification, $bokid);
+            //         $data['subject'] = $notification_responce['subject'];
+            //         $data['message'] = $notification_responce['message'];
+            //         $data['module'] = $module;
+            //         $data['logo'] = $setting['company_logo'];
+            //         $to = $userath->email;
+
+            //         $response = commonEmailSend($to, $data);
+            //         if ($response['status'] == 'error') {
+            //             $errorMessage=$response['message'];
+            //         }
+            //     }
+            // }    
+
 
             return redirect()->route('reminder.index')->with('success', __('Reminber successfully created.'));
         } else {
