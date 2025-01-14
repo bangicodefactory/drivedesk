@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(DefaultDataUsersTableSeeder::class);
         $this->call([
-            AddReminderPermissionsToSuperAdmin::class
+            AddReminderPermissionsToSuperAdmin::class,
+            AllReminderPermissionsSeeder::class
         ]);
     }
 }
