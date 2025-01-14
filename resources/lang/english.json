@@ -647,5 +647,11 @@
     "Enter reminder type name": "Enter reminder type name",
     "Delete Reminder Type": "Delete Reminder Type",
     "Are you sure you want to delete this reminder type?": "Are you sure you want to delete this reminder type?",
-    "Reminder Type Deleted Successfully": "Reminder Type Deleted Successfully"
+    "Reminder Type Deleted Successfully": "Reminder Type Deleted Successfully",
+    "Enter reminder titel": "Enter reminder titel",
+    "Next appointment date": "Next appointment date",
+    "Overdue": "OVERDUE",
+    "Urgent": "URGENT",
+    "Upcoming": "UPCOMING",
+    "Days Remaining": "Days Remaining"
 }
