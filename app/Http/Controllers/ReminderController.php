@@ -56,13 +56,29 @@ class ReminderController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+            // Calculate the status based on reminder_date
+            $reminderDate = Carbon::parse($request->reminder_date);
+            $today = Carbon::now();
+            $daysUntilDeadline = $today->diffInDays($reminderDate, false);
+
+            // Determine status based on the days remaining
+            if ($daysUntilDeadline <= 0) {
+                $status = 'overdue';
+            } elseif ($daysUntilDeadline <= 3) {
+                $status = 'urgent';
+            } elseif ($daysUntilDeadline <= 7) {
+                $status = 'upcoming';
+            } else {
+                $status = 'pending';
+            }
+
             $reminder = new Reminder();
             $reminder->name = $request->name;
             $reminder->reminder_type_id = $request->type;
             $reminder->id_vehicle = !empty($request->vehicle) ? $request->vehicle : 0;
             $reminder->reminder_date = $request->reminder_date;
             $reminder->note = $request->note;
-            $reminder->status = 'pending';
+            $reminder->status = $status;
             $reminder->parent_id = parentId();
 
             $reminder->save();
@@ -113,21 +129,21 @@ class ReminderController extends Controller
                 $messages = $validator->getMessageBag();
                 return redirect()->back()->with('error', $messages->first());
             }
-        // Calculate the status based on reminder_date
-        $reminderDate = Carbon::parse($request->reminder_date);
-        $today = Carbon::now();
-        $daysUntilDeadline = $today->diffInDays($reminderDate, false);
-        
-        // Determine status based on the days remaining
-        if ($daysUntilDeadline <= 0) {
-            $status = 'overdue';
-        } elseif ($daysUntilDeadline <= 3) {
-            $status = 'urgent';
-        } elseif ($daysUntilDeadline <= 7) {
-            $status = 'upcoming';
-        } else {
-            $status = 'pending'; // or whatever your default status should be
-        }
+            // Calculate the status based on reminder_date
+            $reminderDate = Carbon::parse($request->reminder_date);
+            $today = Carbon::now();
+            $daysUntilDeadline = $today->diffInDays($reminderDate, false);
+
+            // Determine status based on the days remaining
+            if ($daysUntilDeadline <= 0) {
+                $status = 'overdue';
+            } elseif ($daysUntilDeadline <= 3) {
+                $status = 'urgent';
+            } elseif ($daysUntilDeadline <= 7) {
+                $status = 'upcoming';
+            } else {
+                $status = 'pending';
+            }
 
             $reminder->name = $request->name;
             $reminder->reminder_type_id = $request->type;
