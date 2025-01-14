@@ -49,5 +49,6 @@
 </div>
 
 @include('admin.footer')
+@stack('scripts')
 </body>
 </html>

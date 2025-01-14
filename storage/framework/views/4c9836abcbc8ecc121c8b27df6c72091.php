@@ -5,7 +5,7 @@
         <div class="form-group col-md-12">
             <?php echo e(Form::label('title',__('Title'),array('class'=>'form-label'))); ?>
 
-            <?php echo e(Form::text('title',null,array('class'=>'form-control','placeholder'=>__('Enter title'),'required'=>'required'))); ?>
+            <?php echo e(Form::text('type',null,array('class'=>'form-control','placeholder'=>__('Enter title'),'required'=>'required'))); ?>
 
         </div>
     </div>

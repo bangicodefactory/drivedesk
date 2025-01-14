@@ -39,7 +39,7 @@ class ReminderTypeController extends Controller
         if (\Auth::user()->can('create reminder')) {
             $validator = \Validator::make(
                 $request->all(), [
-                    'title' => 'required',
+                    'type' => 'required',
                 ]
             );
             if ($validator->fails()) {
@@ -82,7 +82,7 @@ class ReminderTypeController extends Controller
         if (\Auth::user()->can('edit reminder')) {
             $validator = \Validator::make(
                 $request->all(), [
-                    'title' => 'required',
+                    'type' => 'required',
                 ]
             );
             if ($validator->fails()) {
@@ -90,7 +90,7 @@ class ReminderTypeController extends Controller
 
                 return redirect()->back()->with('error', $messages->first());
             }
-            $reminderType->type = $request->title;
+            $reminderType->type = $request->type;
             $reminderType->save();
             return redirect()->route('reminder-type.index')->with('success', __('Reminder type successfully updated.'));
         } else {

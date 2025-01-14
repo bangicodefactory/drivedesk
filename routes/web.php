@@ -372,3 +372,4 @@ Route::group([
 ], function () {
     Route::resource('reminder', ReminderController::class);
 });
+Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');

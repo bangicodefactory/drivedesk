@@ -1,13 +1,13 @@
-{{ Form::model($expense, array('route' => array('expense.update', $expense->id), 'enctype' => "multipart/form-data", 'method' => 'PUT')) }}
+{{ Form::model($reminder, array('route' => array('reminder.update', $reminder->id), 'enctype' => "multipart/form-data", 'method' => 'PUT')) }}
 <div class="modal-body">
     <div class="row">
         <div class="form-group col-md-6">
-            {{Form::label('title',__('Title'),array('class'=>'form-label')) }}
-            {{Form::text('title',null,array('class'=>'form-control','placeholder'=>__('Enter Expense title'),'required'=>'required'))}}
+            {{Form::label('name',__('Title'),array('class'=>'form-label')) }}
+            {{Form::text('name',null,array('class'=>'form-control','placeholder'=>__('Enter reminder title'),'required'=>'required'))}}
         </div>
         <div class="form-group col-md-6">
-            {{ Form::label('type', __('Type'),['class'=>'form-label']) }}
-            {!! Form::select('type', $types,null,array('class' => 'form-control hidesearch ')) !!}
+            {{ Form::label('type', __('Reminder Type'),['class'=>'form-label']) }}
+            {!! Form::select('type', $type,null,array('class' => 'form-control hidesearch ')) !!}
         </div>
         <div class="form-group col-md-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}
@@ -15,21 +15,14 @@
         </div>
 
         <div class="form-group col-md-6">
-            {{Form::label('date',__('Date'),array('class'=>'form-label')) }}
-            {{Form::date('date',null,array('class'=>'form-control','required'=>'required'))}}
-        </div>
-        <div class="form-group col-md-6">
-            {{Form::label('amount',__('Total Amount'),array('class'=>'form-label')) }}
-            {{Form::number('amount',null,array('class'=>'form-control','placeholder'=>__('Enter expense amount'),'required'=>'required'))}}
-        </div>
-        <div class="form-group col-md-6">
-            {{Form::label('receipt',__('Receipt'),array('class'=>'form-label')) }}
-            {{Form::file('receipt',array('class'=>'form-control'))}}
+            {{Form::label('reminder_date',__('Reminder Date'),array('class'=>'form-label')) }}
+            {{Form::date('reminder_date',null,array('class'=>'form-control','required'=>'required'))}}
         </div>
         <div class="form-group col-md-12">
-            {{Form::label('notes',__('Notes'),array('class'=>'form-label')) }}
-            {{Form::textarea('notes',null,array('class'=>'form-control','placeholder'=>__('Enter notes'),'rows'=>2))}}
+            {{Form::label('note',__('Notes'),array('class'=>'form-label')) }}
+            {{Form::textarea('note',null,array('class'=>'form-control','placeholder'=>__('Reminder Description'),'rows'=>2))}}
         </div>
+         <input name="status" id="status" hidden value="{{ $reminder->status }}">
     </div>
 </div>
 <div class="modal-footer">
