@@ -121,6 +121,8 @@ class UserController extends Controller
                 $user->profile = 'avatar.png';
                 $user->lang = 'english';
                 $user->parent_id = parentId();
+                //add email verification
+                $user->email_verified_at = now();
                 $user->save();
 
                 $user->assignRole($userRole);
