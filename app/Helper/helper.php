@@ -226,6 +226,16 @@ if (!function_exists('dateFormat')) {
 
         return date($settings['company_date_format'], strtotime($date));
     }
+    // function to display also hour and minute
+    function dateFormatHourMinute($date)
+    {
+        $settings = settings();
+
+        return date(
+            $settings['company_date_format'] . ' H:i', 
+            strtotime(datetime: $date)
+        );
+    }
 }
 if (!function_exists('timeFormat')) {
     function timeFormat($time)
