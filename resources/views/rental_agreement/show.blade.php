@@ -144,13 +144,13 @@
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
                                             <h6>{{ __('Rental Start Date') }}</h6>
-                                            <p class="mb-20">{{ dateFormat($rentalAgreement->rental_start_date) }} </p>
+                                            <p class="mb-20">{{ dateFormatHourMinute($rentalAgreement->rental_start_date) }} </p>
                                         </div>
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
                                             <h6>{{ __('Rental End Date') }}</h6>
-                                            <p class="mb-20">{{ dateFormat($rentalAgreement->rental_end_date) }} </p>
+                                            <p class="mb-20">{{ dateFormatHourMinute($rentalAgreement->rental_end_date) }} </p>
                                         </div>
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
