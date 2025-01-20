@@ -52,8 +52,8 @@
                                 <td>{{!empty($agreement->drivers)?$agreement->drivers->name:'-'}}</td>
                                 <td>{{!empty($agreement->vehicles)?$agreement->vehicles->name.' - '.$agreement->vehicles->license_plate:'-'}}</td>
                                 <td>{{ dateFormat($agreement->date) }} </td>
-                                <td>{{ dateFormat($agreement->rental_start_date) }} </td>
-                                <td>{{ dateFormat($agreement->rental_end_date) }} </td>
+                                <td>{{ dateFormatHourMinute($agreement->rental_start_date) }} </td>
+                                <td>{{ dateFormatHourMinute($agreement->rental_end_date) }} </td>
                                 <td>{{ $agreement->rental_duration.' '.__('Days') }} </td>
                                 <td>
                                     @if($agreement->status=='draft')

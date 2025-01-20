@@ -50,6 +50,8 @@ class RentalAgreementController extends Controller
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required',
                     'rental_duration' => 'required',
+                    'rental_start_time' => 'required',
+                    'rental_end_time' => 'required',
                     'driver' => 'required',
                 ]
             );
@@ -58,11 +60,17 @@ class RentalAgreementController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+                    // Combine date and time
+        $start_datetime = $request->rental_start_date . ' ' . $request->rental_start_time;
+        $end_datetime = $request->rental_end_date . ' ' . $request->rental_end_time;
+
             $rentalAgreement = new RentalAgreement();
             $rentalAgreement->agreement_id = $this->agreementNumber();
             $rentalAgreement->date = date('Y-m-d');
-            $rentalAgreement->rental_start_date = $request->rental_start_date;
-            $rentalAgreement->rental_end_date = $request->rental_end_date;
+            $rentalAgreement->rental_start_date = $start_datetime;
+            $rentalAgreement->rental_end_date = $end_datetime;
+            // $rentalAgreement->rental_start_date = $request->rental_start_date;
+            // $rentalAgreement->rental_end_date = $request->rental_end_date;
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
@@ -149,6 +157,8 @@ class RentalAgreementController extends Controller
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required',
                     'rental_duration' => 'required',
+                    'rental_start_time' => 'required',
+                    'rental_end_time' => 'required',
                     'driver' => 'required',
                 ]
             );
@@ -157,10 +167,15 @@ class RentalAgreementController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+                    // Combine date and time
+        $start_datetime = $request->rental_start_date . ' ' . $request->rental_start_time;
+        $end_datetime = $request->rental_end_date . ' ' . $request->rental_end_time;
+
+
             $agreementStatus = $rentalAgreement->status != $request->status;
 
-            $rentalAgreement->rental_start_date = $request->rental_start_date;
-            $rentalAgreement->rental_end_date = $request->rental_end_date;
+            $rentalAgreement->rental_start_date = $start_datetime;
+            $rentalAgreement->rental_end_date = $end_datetime;
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;

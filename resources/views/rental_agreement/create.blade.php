@@ -20,15 +20,31 @@
                 @endforeach
             </select>
         </div>
-
-        <div class="form-group col-md-6 col-lg-6">
+{{-- edit date   --}}
+        {{-- <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('rental_start_date', __('Rental Start Date'), ['class' => 'form-label']) }}
             {{ Form::date('rental_start_date', null, ['class' => 'form-control', 'required' => 'required']) }}
         </div>
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('rental_end_date', __('Rental End Date'), ['class' => 'form-label']) }}
             {{ Form::date('rental_end_date', null, ['class' => 'form-control', 'required' => 'required']) }}
+        </div> --}}
+        <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('rental_start_date', __('Rental Start Date'), ['class' => 'form-label']) }}
+            <div class="d-flex">
+                {{ Form::date('rental_start_date', null, ['class' => 'form-control', 'required' => 'required']) }}
+                {{ Form::time('rental_start_time', null, ['class' => 'form-control ms-2', 'required' => 'required']) }}
+            </div>
         </div>
+        
+        <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('rental_end_date', __('Rental End Date'), ['class' => 'form-label']) }}
+            <div class="d-flex">
+                {{ Form::date('rental_end_date', null, ['class' => 'form-control', 'required' => 'required']) }}
+                {{ Form::time('rental_end_time', null, ['class' => 'form-control ms-2', 'required' => 'required']) }}
+            </div>
+        </div>
+        
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('rental_duration', __('Rental Duration (Days)'), ['class' => 'form-label']) }}
             {{ Form::number('rental_duration', null, ['class' => 'form-control', 'placeholder' => __('Enter rental duration'), 'required' => 'required']) }}
