@@ -47,17 +47,17 @@
                     <div class="card-body cdx-invoice">
                         <div id="cdx-invoice">
                             <div class="head-invoice">
-                                <div class="codex-brand" style="top: 0; left: 0; max-width: 150px; max-height: 150px;">
+                                <div class="codex-brand" style="top: 0; left: 0; max-width: 130px; max-height: 130px;">
                                     <a class="codexbrand-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
-                                            src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($settings['company_logo']) && !empty($settings['company_logo']) ? $settings['company_logo'] : 'logo.png') }}"
-                                            alt="invoice-logo">
+                                        src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
+                                        alt="invoice-logo">
                                     </a>
-                                    <a class="codexdark-logo" href="Javascript:void(0);">
+                                    {{-- <a class="codexdark-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
                                             src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($settings['company_logo']) && !empty($settings['company_logo']) ? $settings['company_logo'] : 'logo.png') }}"
                                             alt="invoice-logo">
-                                    </a>
+                                    </a> --}}
                                 </div>
                                 <ul class="contact-list">
                                     <li>
