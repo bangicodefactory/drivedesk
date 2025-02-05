@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tva_id')->nullable();
             $table->foreign('tva_id')
                   ->references('id')
-                  ->on('tva')
+                  ->on('tvas')
                   ->onDelete('set null');
         });
     }
