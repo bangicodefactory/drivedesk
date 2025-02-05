@@ -42,23 +42,54 @@ class DriverController extends Controller
     {
         if (\Auth::user()->can('create driver')) {
 
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'first_name' => 'required',
-                    'last_name' => 'required',
-                    'email' => 'required|email|unique:users',
-                    'phone_number' => 'required|numeric|unique:users',
-                    'gender' => 'required',
-                    'birth_date' => 'required',
-                    'address' => 'required',
-                    'license_number' => 'required',
-                    'issue_date' => 'required',
-                    'expiration_date' => 'required',
-                    // 'document' => 'required',
-                    // 'license' => 'required',
-                ]
-            );
+            if (empty($request->email)) {
+                $firstName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $request->first_name));
+                $lastName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $request->last_name));
+                $randomString = substr(md5(uniqid()), 0, 6);
+                $request->email = $firstName . $lastName . $randomString . '@gmail.com';
+
+                // Make sure the generated email is unique
+                while (\DB::table('users')->where('email', $request->email)->exists()) {
+                    $randomString = substr(md5(uniqid()), 0, 6);
+                    $request->email = $firstName . '.' . $lastName . '.' . $randomString . '@gmail.com';
+                }
+
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'first_name' => 'required',
+                        'last_name' => 'required',
+                        // 'email' => 'required|email|unique:users',
+                        'phone_number' => 'required|numeric',
+                        'gender' => 'required',
+                        'birth_date' => 'required',
+                        'address' => 'required',
+                        'license_number' => 'required',
+                        'issue_date' => 'required',
+                        'expiration_date' => 'required',
+                        // 'document' => 'required',
+                        // 'license' => 'required',
+                    ]
+                );
+            } else {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'first_name' => 'required',
+                        'last_name' => 'required',
+                        'email' => 'required|email|unique:users',
+                        'phone_number' => 'required|numeric',
+                        'gender' => 'required',
+                        'birth_date' => 'required',
+                        'address' => 'required',
+                        'license_number' => 'required',
+                        'issue_date' => 'required',
+                        'expiration_date' => 'required',
+                        // 'document' => 'required',
+                        // 'license' => 'required',
+                    ]
+                );
+            }
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
@@ -105,7 +136,7 @@ class DriverController extends Controller
             $userRole = Role::where('name', 'driver')->where('parent_id', parentId())->first();
             $user = new User();
             $user->name = $request->first_name . ' ' . $request->last_name;
-            $user->email = $request->email;
+            $user->email = !empty($request->email) ? $request->email : null;
             $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
             $user->password = \Hash::make(123456);
             $user->type = $userRole->name;

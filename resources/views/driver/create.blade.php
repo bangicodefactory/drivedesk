@@ -11,7 +11,7 @@
         </div>
         <div class="form-group col-md-6">
             {{Form::label('email',__('Email'),array('class'=>'form-label'))}}
-            {{Form::text('email',null,array('class'=>'form-control','placeholder'=>__('Enter Email'),'required'=>'required'))}}
+            {{Form::text('email',null,array('class'=>'form-control','placeholder'=>__('Enter Email')))}}
         </div>
         <div class="form-group col-md-6">
             {{Form::label('phone_number',__('Phone Number'),array('class'=>'form-label')) }}
