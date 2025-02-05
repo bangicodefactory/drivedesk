@@ -25,6 +25,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RentalAgreementController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
+use App\Http\Controllers\TvaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -373,3 +374,13 @@ Route::group([
     Route::resource('reminder', ReminderController::class);
 });
 Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');
+
+//--------------------------------TVA--------------------------------
+Route::group([
+    'middleware' => [
+        'auth',
+        'XSS',
+    ],
+], function () {
+    Route::resource('tva', TvaController::class);
+});
