@@ -11,7 +11,8 @@
         </div>
         <div class="form-group col-md-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}
-            {!! Form::select('vehicle', $vehicles,null,array('class' => 'form-control hidesearch ')) !!}
+            {{ Form::text('vehicle_display', $vehicleName, ['class' => 'form-control', 'readonly' => 'readonly']) }}
+            {{ Form::hidden('id_vehicle', $reminder->id_vehicle) }}
         </div>
 
         <div class="form-group col-md-6">
@@ -23,6 +24,7 @@
             {{Form::textarea('note',null,array('class'=>'form-control','placeholder'=>__('Reminder Description'),'rows'=>2))}}
         </div>
          <input name="status" id="status" hidden value="{{ $reminder->status }}">
+         
     </div>
 </div>
 <div class="modal-footer">

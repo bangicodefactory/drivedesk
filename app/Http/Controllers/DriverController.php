@@ -17,7 +17,11 @@ class DriverController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage driver')) {
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get();
+            $drivers = User::where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->with('drivers')  // Eager load the drivers relationship
+            ->orderBy('created_at', 'desc')
+            ->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
