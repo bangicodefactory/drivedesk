@@ -36,7 +36,7 @@
                     <table class="display dataTable cell-border datatbl-advance">
                         <thead>
                         <tr>
-                            <th>{{__('ID')}}</th>
+                            <th data-sort="desc">{{__('ID')}}</th>
                             <th>{{__('Driver')}}</th>
                             <th>{{__('Email')}}</th>
                             <th>{{__('Phone Number')}}</th>
@@ -58,7 +58,7 @@
                                         alt="" class="mr-2 avatar-sm rounded-circle user-avatar">
                                     <a href="#" class="text-body font-weight-semibold">{{ $driver->name }}</a>
                                 </td>
-                                <td>{{ $driver->email }} </td>
+                                <td>{{ !empty($driver->email)?$driver->email:'-' }}</td>
                                 <td>{{ !empty($driver->phone_number)?$driver->phone_number:'-' }} </td>
                                 <td>{{ !empty($driver->drivers) && !empty($driver->drivers->license_number)?$driver->drivers->license_number:'-' }}  </td>
                                 <td>{{ !empty($driver->drivers) && !empty($driver->drivers->issue_date)?dateFormat($driver->drivers->issue_date):'-' }}  </td>

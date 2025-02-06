@@ -132,7 +132,8 @@ function datatable() {
         dom: 'Bfrtip',
         buttons: [
             'print', 'excel', 'pdf', 'csv', 'copy',
-        ]
+        ],
+        order: [[0, 'desc']]
     });
 }
 

@@ -18,7 +18,7 @@ class ReminderController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage reminder')) {
-            $reminders = Reminder::where('parent_id', '=', parentId())->get();
+            $reminders = Reminder::where('parent_id', '=', parentId())->orderBy('reminder_date', 'desc')->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -30,8 +30,10 @@ class ReminderController extends Controller
      */
     public function create()
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        $vehicles->prepend(__('Select Vehicle'), '');
+        $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
+
+        // $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
+        // $vehicles->prepend(__('Select Vehicle'), '');
 
         $types = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
@@ -130,11 +132,12 @@ class ReminderController extends Controller
     public function edit(Reminder $reminder)
     {
         $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        // $vehicles->prepend(__('Select Vehicle'),'');
+        $vehicleName = $reminder->id_vehicle ? Vehicle::find($reminder->id_vehicle)->name : '';
+
 
         $type = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
         // $type->prepend(__('Select Type'),'');
-        return view('reminder.edit', compact('vehicles', 'reminder', 'type'));
+        return view('reminder.edit', compact('vehicles', 'reminder', 'type', 'vehicleName'));
     }
 
     /**
@@ -149,7 +152,7 @@ class ReminderController extends Controller
                     'name' => 'required',
                     'type' => 'required',
                     'reminder_date' => 'required',
-                    'vehicle' => 'required',
+                    // 'vehicle' => 'required',
                 ]
             );
             if ($validator->fails()) {
@@ -174,7 +177,7 @@ class ReminderController extends Controller
 
             $reminder->name = $request->name;
             $reminder->reminder_type_id = $request->type;
-            $reminder->id_vehicle = $request->vehicle;
+            // $reminder->id_vehicle = $request->vehicle;
             $reminder->reminder_date = $request->reminder_date;
             $reminder->status = $status;
             $reminder->note = $request->note;
