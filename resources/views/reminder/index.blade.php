@@ -32,6 +32,7 @@
                     <table class="display dataTable cell-border datatbl-advance">
                         <thead>
                             <tr>
+                                <th style="display:none;">{{ __('ID') }}</th>
                                 <th>{{ __('Next appointment date') }}</th>
                                 <th>{{ __('Title') }}</th>
                                 <th>{{ __('Type') }}</th>
@@ -46,6 +47,7 @@
                         <tbody>
                             @foreach ($reminders as $reminder)
                                 <tr>
+                                    <td style="display:none;">{{ $reminder->reminder_date }}</td>
                                     <td>
                                         <a href="#" 
                                         class="customModal" 

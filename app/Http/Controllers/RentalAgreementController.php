@@ -16,7 +16,7 @@ class RentalAgreementController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage rental agreement')) {
-            $agreements = RentalAgreement::where('parent_id', parentId())->get();
+            $agreements = RentalAgreement::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
             return view('rental_agreement.index', compact('agreements'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -27,9 +27,9 @@ class RentalAgreementController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
             $drivers->prepend(__('Select Driver'), '');
 
             $status = RentalAgreement::$status;

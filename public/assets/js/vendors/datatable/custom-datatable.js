@@ -13,7 +13,8 @@ $(document).ready(function() {
     dom: 'Bfrtip',    
     buttons: [
       'print','excel','pdf', 'csv', 'copy',
-    ] 
+    ],
+    order: [[0, 'desc']]
   });
 
   //Ajax Datatable JS
