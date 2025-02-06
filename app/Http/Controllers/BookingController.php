@@ -34,7 +34,7 @@ class BookingController extends Controller
         if (\Auth::user()->can('create booking')) {
             $vehicles = Vehicle::where('parent_id', parentId())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
             $drivers->prepend(__('Select Driver'), '');
 
             $status = Booking::$status;

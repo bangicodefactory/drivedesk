@@ -34,6 +34,7 @@
                     <table class="display dataTable cell-border datatbl-advance">
                         <thead>
                             <tr>
+                                <th style="display:none;"><?php echo e(__('ID')); ?></th>
                                 <th><?php echo e(__('Next appointment date')); ?></th>
                                 <th><?php echo e(__('Title')); ?></th>
                                 <th><?php echo e(__('Type')); ?></th>
@@ -48,6 +49,7 @@
                         <tbody>
                             <?php $__currentLoopData = $reminders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reminder): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
+                                    <td style="display:none;"><?php echo e($reminder->reminder_date); ?></td>
                                     <td>
                                         <a href="#" 
                                         class="customModal" 
