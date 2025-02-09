@@ -13,7 +13,7 @@
         </li>
         <li class="breadcrumb-item active">
             <a href="#">
-                <?php echo e(__('Driver')); ?>
+                <?php echo e(__('Signature')); ?>
 
             </a>
         </li>
@@ -36,38 +36,38 @@
                     <table class="display dataTable cell-border datatbl-advance">
                         <thead>
                         <tr>
-                            <th data-sort="desc"><?php echo e(__('ID')); ?></th>
-                            <th><?php echo e(__('Driver')); ?></th>
-                            <th><?php echo e(__('Email')); ?></th>
-                            <th><?php echo e(__('Phone Number')); ?></th>
-                            <th><?php echo e(__('License Number')); ?></th>
-                            <th><?php echo e(__('Issue Date')); ?></th>
-                            <th><?php echo e(__('Expiration Date')); ?></th>
+                            
+                            <th><?php echo e(__('Client')); ?></th>
+                            <th><?php echo e(__('Signature')); ?></th>
+                            <th><?php echo e(__('Created At')); ?></th>
+                            <th><?php echo e(__('Action')); ?></th>
+                            
                             
                         </tr>
                         </thead>
                         <tbody>
-                        <?php $__currentLoopData = $drivers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driver): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php $__empty_1 = true; $__currentLoopData = $signatures; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $signature): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
-                                <td><?php echo e(!empty($driver->drivers)?driverPrefix().$driver->drivers->driver_id:'-'); ?> </td>
-                                <td class="table-user">
-                                    <img
-                                        src="<?php echo e(!empty($driver->avatar)?asset(Storage::url('upload/profile')).'/'.$driver->avatar:asset(Storage::url('upload/profile')).'/avatar.png'); ?>"
-                                        alt="" class="mr-2 avatar-sm rounded-circle user-avatar">
-                                    
-                                    <a class="text-success customModal" data-bs-toggle="tooltip"
-                                    data-bs-original-title="<?php echo e(__('Show')); ?>" href="#" data-size="lg"
-                                    data-url="<?php echo e(route('signature.create',$driver->id)); ?>"
-                                    data-title="<?php echo e(__('Edit Driver')); ?>"><?php echo e($driver->name); ?></a>
+                                <td><?php echo e($signature->user->name); ?></td>
+                                <td>
+                                    <img src="<?php echo e(Storage::url($signature->signature_path)); ?>" 
+                                         alt="Signature" 
+                                         style="max-height: 100px;">
                                 </td>
-                                <td><?php echo e(!empty($driver->email)?$driver->email:'-'); ?></td>
-                                <td><?php echo e(!empty($driver->phone_number)?$driver->phone_number:'-'); ?> </td>
-                                <td><?php echo e(!empty($driver->drivers) && !empty($driver->drivers->license_number)?$driver->drivers->license_number:'-'); ?>  </td>
-                                <td><?php echo e(!empty($driver->drivers) && !empty($driver->drivers->issue_date)?dateFormat($driver->drivers->issue_date):'-'); ?>  </td>
-                                <td><?php echo e(!empty($driver->drivers) && !empty($driver->drivers->expiration_date)?dateFormat($driver->drivers->expiration_date):'-'); ?>  </td>
-                                
+                                <td><?php echo e($signature->created_at->format('Y-m-d H:i')); ?></td>
+                                <td>
+                                    <?php if(Storage::disk('public')->exists($signature->signature_path)): ?>
+                                        <a href="<?php echo e(asset('storage/'.$signature->signature_path)); ?>" 
+                                           class="btn btn-sm btn-info" 
+                                           target="_blank">View Full Size</a>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr>
+                                <td colspan="4" class="text-center">No signatures found</td>
+                            </tr>
+                        <?php endif; ?>
 
                         </tbody>
                     </table>
