@@ -12,9 +12,9 @@
                 @csrf
                 
                 <div class="mb-3">
-                    <label class="form-label">Select User</label>
+                    <label class="form-label">Select Client</label>
                     <select name="user_id" class="form-select" required>
-                        <option value="">Select User</option>
+                        <option value="">Select Client</option>
                         @foreach($drivers as $driver)
                             <option value="{{ $driver->id }}">{{ $driver->name }}</option>
                         @endforeach

@@ -13,7 +13,7 @@
         </li>
         <li class="breadcrumb-item active">
             <a href="#">
-                {{__('Driver')}}
+                {{__('Signature')}}
             </a>
         </li>
     </ul>
@@ -34,66 +34,41 @@
                     <table class="display dataTable cell-border datatbl-advance">
                         <thead>
                         <tr>
-                            <th data-sort="desc">{{__('ID')}}</th>
-                            <th>{{__('Driver')}}</th>
-                            <th>{{__('Email')}}</th>
-                            <th>{{__('Phone Number')}}</th>
-                            <th>{{__('License Number')}}</th>
-                            <th>{{__('Issue Date')}}</th>
-                            <th>{{__('Expiration Date')}}</th>
+                            {{-- <th data-sort="desc">{{__('ID')}}</th> --}}
+                            <th>{{__('Client')}}</th>
+                            <th>{{__('Signature')}}</th>
+                            <th>{{__('Created At')}}</th>
+                            <th>{{__('Action')}}</th>
+                            {{-- <th>{{__('Issue Date')}}</th>
+                            <th>{{__('Expiration Date')}}</th> --}}
                             {{-- @if(Gate::check('manage driver') || Gate::check('create driver') || Gate::check('show driver'))
                                 <th>{{__('Action')}}</th>
                             @endif --}}
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach ($drivers as $driver)
+                            @forelse($signatures as $signature)
                             <tr>
-                                <td>{{ !empty($driver->drivers)?driverPrefix().$driver->drivers->driver_id:'-' }} </td>
-                                <td class="table-user">
-                                    <img
-                                        src="{{!empty($driver->avatar)?asset(Storage::url('upload/profile')).'/'.$driver->avatar:asset(Storage::url('upload/profile')).'/avatar.png'}}"
-                                        alt="" class="mr-2 avatar-sm rounded-circle user-avatar">
-                                    {{-- <a href="#"  data-bs-toggle="tooltip" data-url="{{ route('signature.create', $driver->id)}}" data-size="lg" data-title="{{__('Edit Driver')}}" class="text-body customModal">{{ $driver->name }}</a> --}}
-                                    <a class="text-success customModal" data-bs-toggle="tooltip"
-                                    data-bs-original-title="{{__('Show')}}" href="#" data-size="lg"
-                                    data-url="{{ route('signature.create',$driver->id) }}"
-                                    data-title="{{__('Edit Driver')}}">{{ $driver->name }}</a>
+                                <td>{{ $signature->user->name }}</td>
+                                <td>
+                                    <img src="{{ Storage::url($signature->signature_path) }}" 
+                                         alt="Signature" 
+                                         style="max-height: 100px;">
                                 </td>
-                                <td>{{ !empty($driver->email)?$driver->email:'-' }}</td>
-                                <td>{{ !empty($driver->phone_number)?$driver->phone_number:'-' }} </td>
-                                <td>{{ !empty($driver->drivers) && !empty($driver->drivers->license_number)?$driver->drivers->license_number:'-' }}  </td>
-                                <td>{{ !empty($driver->drivers) && !empty($driver->drivers->issue_date)?dateFormat($driver->drivers->issue_date):'-' }}  </td>
-                                <td>{{ !empty($driver->drivers) && !empty($driver->drivers->expiration_date)?dateFormat($driver->drivers->expiration_date):'-' }}  </td>
-                                {{-- @if(Gate::check('edit driver') || Gate::check('delete driver') || Gate::check('show driver'))
-                                    <td>
-                                        <div class="cart-action">
-                                            {!! Form::open(['method' => 'DELETE', 'route' => ['driver.destroy', $driver->id]]) !!}
-                                            @can('show driver')
-                                                <a class="text-warning customModal" data-size="lg"
-                                                   data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Show')}}" href="#"
-                                                   data-url="{{ route('driver.show',$driver->id) }}"
-                                                   data-title="{{__('Details')}}"> <i data-feather="eye"></i></a>
-                                            @endcan
-                                            @can('edit driver')
-                                                <a class="text-success customModal" data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Edit')}}" href="#" data-size="lg"
-                                                   data-url="{{ route('driver.edit',$driver->id) }}"
-                                                   data-title="{{__('Edit Driver')}}"> <i data-feather="edit"></i></a>
-                                            @endcan
-                                            @can('delete driver')
-                                                <a class=" text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Detete')}}" href="#"> <i
-                                                        data-feather="trash-2"></i></a>
-                                            @endcan
-                                            {!! Form::close() !!}
-                                        </div>
-
-                                    </td>
-                                @endif --}}
+                                <td>{{ $signature->created_at->format('Y-m-d H:i') }}</td>
+                                <td>
+                                    @if(Storage::disk('public')->exists($signature->signature_path))
+                                        <a href="{{ asset('storage/'.$signature->signature_path) }}" 
+                                           class="btn btn-sm btn-info" 
+                                           target="_blank">View Full Size</a>
+                                    @endif
+                                </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center">No signatures found</td>
+                            </tr>
+                        @endforelse
 
                         </tbody>
                     </table>

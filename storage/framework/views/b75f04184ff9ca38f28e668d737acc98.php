@@ -10,9 +10,9 @@
                 <?php echo csrf_field(); ?>
                 
                 <div class="mb-3">
-                    <label class="form-label">Select User</label>
+                    <label class="form-label">Select Client</label>
                     <select name="user_id" class="form-select" required>
-                        <option value="">Select User</option>
+                        <option value="">Select Client</option>
                         <?php $__currentLoopData = $drivers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driver): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($driver->id); ?>"><?php echo e($driver->name); ?></option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
