@@ -25,6 +25,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RentalAgreementController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
+use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TvaController;
 
 /*
@@ -384,3 +385,7 @@ Route::group([
 ], function () {
     Route::resource('tva', TvaController::class);
 });
+
+Route::get('signature', [SignatureController::class, 'index'])->name('signature.index');
+Route::get('signature/create', [SignatureController::class, 'create'])->name('signature.create');
+Route::post('signature-pad',[SignatureController::class, 'store'])->name('signature.store');

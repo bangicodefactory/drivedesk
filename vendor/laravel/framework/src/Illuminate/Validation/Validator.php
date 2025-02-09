@@ -265,10 +265,6 @@ class Validator implements ValidatorContract
         'ProhibitedIf',
         'ProhibitedUnless',
         'Prohibits',
-        'MissingIf',
-        'MissingUnless',
-        'MissingWith',
-        'MissingWithAll',
         'Same',
         'Unique',
     ];
@@ -561,7 +557,7 @@ class Validator implements ValidatorContract
      * @param  array|null  $keys
      * @return \Illuminate\Support\ValidatedInput|array
      */
-    public function safe(?array $keys = null)
+    public function safe(array $keys = null)
     {
         return is_array($keys)
                 ? (new ValidatedInput($this->validated()))->only($keys)
@@ -584,14 +580,13 @@ class Validator implements ValidatorContract
         $missingValue = new stdClass;
 
         foreach ($this->getRules() as $key => $rules) {
-            $value = data_get($this->getData(), $key, $missingValue);
-
             if ($this->excludeUnvalidatedArrayKeys &&
                 in_array('array', $rules) &&
-                $value !== null &&
                 ! empty(preg_grep('/^'.preg_quote($key, '/').'\.+/', array_keys($this->getRules())))) {
                 continue;
             }
+
+            $value = data_get($this->getData(), $key, $missingValue);
 
             if ($value !== $missingValue) {
                 Arr::set($results, $key, $value);
@@ -1428,7 +1423,7 @@ class Validator implements ValidatorContract
      * @param  callable|null  $formatter
      * @return $this
      */
-    public function setImplicitAttributesFormatter(?callable $formatter = null)
+    public function setImplicitAttributesFormatter(callable $formatter = null)
     {
         $this->implicitAttributesFormatter = $formatter;
 

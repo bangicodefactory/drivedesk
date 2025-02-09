@@ -11,6 +11,9 @@ use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use Creagia\LaravelSignPad\Signature;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DriverController extends Controller
 {
@@ -18,10 +21,10 @@ class DriverController extends Controller
     {
         if (\Auth::user()->can('manage driver')) {
             $drivers = User::where('parent_id', parentId())
-            ->where('type', 'driver')
-            ->with('drivers')  // Eager load the drivers relationship
-            ->orderBy('created_at', 'desc')
-            ->get();
+                ->where('type', 'driver')
+                ->with('drivers')  // Eager load the drivers relationship
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -71,6 +74,7 @@ class DriverController extends Controller
                         'license_number' => 'required',
                         'issue_date' => 'required',
                         'expiration_date' => 'required',
+                        'sign' => 'required',
                         // 'document' => 'required',
                         // 'license' => 'required',
                     ]
@@ -89,6 +93,7 @@ class DriverController extends Controller
                         'license_number' => 'required',
                         'issue_date' => 'required',
                         'expiration_date' => 'required',
+                        'sign' => 'required',
                         // 'document' => 'required',
                         // 'license' => 'required',
                     ]
@@ -198,6 +203,22 @@ class DriverController extends Controller
 
                 $driver->save();
             }
+            // Signature Process
+            // $signatureData = str_replace('data:image/png;base64,', '', $validatedData['sign']);
+            // $signatureData = base64_decode($signatureData);
+            // $imageName = 'upload/signatures/' . Str::uuid() . '.png';
+            // Storage::disk('public')->put($imageName, $signatureData);
+
+            // // Create and save the signature associated with the user.
+            // $signature = new Signature();
+            // $signature->model_type = User::class;
+            // $signature->model_id = $user->id;
+            // $signature->uuid = Str::uuid();
+            // $signature->filename = $imageName;
+            // $signature->document_filename = null;
+            // $signature->certified = false;
+            // $signature->from_ips = json_encode([request()->ip()]);
+            // $signature->save();
 
             $module = 'new_driver';
             $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();

@@ -166,6 +166,14 @@
                         </a>
                     </li>
                 <?php endif; ?>
+                <?php if(Gate::check('manage reminder')): ?>
+                    <li class="menu-item <?php echo e(in_array($routeName, ['signature.index']) ? 'active' : ''); ?>">
+                        <a href="<?php echo e(route('signature.index')); ?>">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span><?php echo e(__('Signature')); ?></span>
+                        </a>
+                    </li>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if(Gate::check('manage vehicle type') ||
                     Gate::check('manage inspection type') ||
