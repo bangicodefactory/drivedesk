@@ -52,7 +52,12 @@
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!}
+                            {{-- {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!} --}}
+                            <select name="driver" id="driver" class="form-control basic-select">
+                                @foreach($driversDropdown as $driverId => $driverName)
+                                    <option value="{{ $driverId }}">{{ $driverName }}</option>
+                                @endforeach
+                            </select>
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="{{ route('driver.new.create') }}"
                                     data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>

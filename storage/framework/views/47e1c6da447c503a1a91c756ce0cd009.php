@@ -62,8 +62,12 @@
                         <div class="form-group col-md-4 col-lg-4">
                             <?php echo e(Form::label('driver', __('Driver'), ['class' => 'form-label'])); ?>
 
-                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']); ?>
-
+                            
+                            <select name="driver" id="driver" class="form-control basic-select">
+                                <?php $__currentLoopData = $driversDropdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driverId => $driverName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($driverId); ?>"><?php echo e($driverName); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="<?php echo e(route('driver.new.create')); ?>"
                                     data-title="<?php echo e(__('Create Driver')); ?>"><?php echo e(__('Create New Driver')); ?></a></span>
