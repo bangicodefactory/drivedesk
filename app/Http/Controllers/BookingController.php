@@ -34,8 +34,12 @@ class BookingController extends Controller
         if (\Auth::user()->can('create booking')) {
             $vehicles = Vehicle::where('parent_id', parentId())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
-            $drivers->prepend(__('Select Driver'), '');
+            $drivers = User::where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->orderBy('created_at', 'desc')
+            ->get();            
+            $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
@@ -43,7 +47,7 @@ class BookingController extends Controller
             $places = Place::where('parent_id', parentId())->get();
             $addon = Addon::where('parent_id', parentId())->get()->pluck('name', 'id');
 
-            return view('booking.create', compact('vehicles', 'drivers', 'status', 'paymentStatus', 'places', 'addon'));
+            return view('booking.create', compact('vehicles', 'driversDropdown', 'status', 'paymentStatus', 'places', 'addon'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }

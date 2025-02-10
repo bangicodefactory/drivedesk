@@ -11,6 +11,9 @@ use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use Creagia\LaravelSignPad\Signature;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DriverController extends Controller
 {
@@ -18,10 +21,10 @@ class DriverController extends Controller
     {
         if (\Auth::user()->can('manage driver')) {
             $drivers = User::where('parent_id', parentId())
-            ->where('type', 'driver')
-            ->with('drivers')  // Eager load the drivers relationship
-            ->orderBy('created_at', 'desc')
-            ->get();
+                ->where('type', 'driver')
+                ->with('drivers')  // Eager load the drivers relationship
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -71,6 +74,7 @@ class DriverController extends Controller
                         'license_number' => 'required',
                         'issue_date' => 'required',
                         'expiration_date' => 'required',
+                        // 'sign' => 'required',
                         // 'document' => 'required',
                         // 'license' => 'required',
                     ]
@@ -89,6 +93,7 @@ class DriverController extends Controller
                         'license_number' => 'required',
                         'issue_date' => 'required',
                         'expiration_date' => 'required',
+                        // 'sign' => 'required',
                         // 'document' => 'required',
                         // 'license' => 'required',
                     ]
@@ -164,7 +169,7 @@ class DriverController extends Controller
                 $driver->reference = !empty($request->reference) ? $request->reference : null;
                 $driver->notes = !empty($request->notes) ? $request->notes : null;
                 $driver->parent_id = parentId();
-
+// Save id document 
                 if (!empty($request->document)) {
                     $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                     $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
@@ -180,6 +185,21 @@ class DriverController extends Controller
                     $driver->document = $documentFileName;
                 }
 
+                if (!empty($request->document1)) {
+                    $documentFilenameWithExt1 = $request->file('document1')->getClientOriginalName();
+                    $documentFilename1 = pathinfo($documentFilenameWithExt1, PATHINFO_FILENAME);
+                    $documentExtension1 = $request->file('document1')->getClientOriginalExtension();
+                    $documentFileName1 = $documentFilename1 . '_' . time() . '.' . $documentExtension1;
+
+                    $directory1 = storage_path('upload/document');
+                    $filePath = $directory1 . $documentFilenameWithExt1;
+                    if (!file_exists($directory1)) {
+                        mkdir($directory1, 0777, true);
+                    }
+                    $request->file('document')->storeAs('upload/document/', $documentFileName1);
+                    $driver->document_1 = $documentFileName1;
+                }
+// Save license document 
                 if (!empty($request->license)) {
                     $licenseFilenameWithExt = $request->file('license')->getClientOriginalName();
                     $licenseFilename = pathinfo($licenseFilenameWithExt, PATHINFO_FILENAME);
@@ -195,9 +215,25 @@ class DriverController extends Controller
                     $request->file('license')->storeAs('upload/license/', $licenseFileName);
                     $driver->license = $licenseFileName;
                 }
+                if (!empty($request->license1)) {
+                    $licenseFilenameWithExt1 = $request->file('license1')->getClientOriginalName();
+                    $licenseFilename1 = pathinfo($licenseFilenameWithExt1, PATHINFO_FILENAME);
+                    $licenseExtension1 = $request->file('license1')->getClientOriginalExtension();
+                    $licenseFileName1 = $licenseFilename1 . '_' . time() . '.' . $licenseExtension1;
+
+                    $directory1 = storage_path('upload/license');
+                    $filePath = $directory1 . $licenseFilenameWithExt1;
+
+                    if (!file_exists($directory1)) {
+                        mkdir($directory1, 0777, true);
+                    }
+                    $request->file('license')->storeAs('upload/license/', $licenseFileName1);
+                    $driver->license_1 = $licenseFileName1;
+                }
 
                 $driver->save();
             }
+
 
             $module = 'new_driver';
             $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();

@@ -73,22 +73,10 @@
                     <p class="mb-20">{{!empty($driver) && !empty($driver->expiration_date)?dateFormat($driver->expiration_date):'-' }}</p>
                 </div>
             </div>
+            
             <div class="col-6">
                 <div class="detail-group">
-                    <h6>{{__('Document')}}</h6>
-                    <p class="mb-20">
-                        @if(!empty($driver) && !empty($driver->document))
-                            <a href="{{asset(Storage::url('upload/document'.'/'.$driver->document))}}"
-                               target="_blank">{{$driver->document}}</a>
-                        @else
-                            -
-                        @endif
-                    </p>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="detail-group">
-                    <h6>{{__('License')}}</h6>
+                    <h6>{{__('License 1:')}}</h6>
                     <p class="mb-20">
                         @if(!empty($driver) && !empty($driver->license))
                             <a href="{{asset(Storage::url('upload/license'.'/'.$driver->license))}}"
@@ -101,8 +89,47 @@
             </div>
             <div class="col-6">
                 <div class="detail-group">
+                    <h6>{{__('License 2:')}}</h6>
+                    <p class="mb-20">
+                        @if(!empty($driver) && !empty($driver->license_1))
+                            <a href="{{asset(Storage::url('upload/license'.'/'.$driver->license_1))}}"
+                               target="_blank"> {{!empty($driver)?$driver->license_1:'-'}}</a>
+                        @else
+                            -
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="detail-group">
                     <h6>{{__('Reference')}}</h6>
                     <p class="mb-20">{{!empty($driver) && !empty($driver->reference)?$driver->reference:'-'}}</p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="detail-group">
+                    <h6>{{__('ID file 1:')}}</h6>
+                    <p class="mb-20">
+                        @if(!empty($driver) && !empty($driver->document))
+                            <a href="{{asset(Storage::url('upload/document'.'/'.$driver->document))}}"
+                               target="_blank">{{$driver->document}}</a>
+                        @else
+                            -
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="detail-group">
+                    <h6>{{__('ID file 2:')}}</h6>
+                    <p class="mb-20">
+                        @if(!empty($driver) && !empty($driver->document_1))
+                            <a href="{{asset(Storage::url('upload/document'.'/'.$driver->document_1))}}"
+                               target="_blank">{{$driver->document_1}}</a>
+                        @else
+                            -
+                        @endif
+                    </p>
                 </div>
             </div>
             <div class="col-6">
