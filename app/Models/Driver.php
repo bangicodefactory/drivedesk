@@ -29,6 +29,8 @@ class Driver extends Authenticatable implements CanBeSigned
         'reference',
         'parent_id',
         'notes',
+        'document_1',
+        'license_1',
 
     ];
     // public function getSignatureRoute(): string

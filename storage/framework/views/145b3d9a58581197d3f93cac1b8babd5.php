@@ -73,22 +73,10 @@
                     <p class="mb-20"><?php echo e(!empty($driver) && !empty($driver->expiration_date)?dateFormat($driver->expiration_date):'-'); ?></p>
                 </div>
             </div>
+            
             <div class="col-6">
                 <div class="detail-group">
-                    <h6><?php echo e(__('Document')); ?></h6>
-                    <p class="mb-20">
-                        <?php if(!empty($driver) && !empty($driver->document)): ?>
-                            <a href="<?php echo e(asset(Storage::url('upload/document'.'/'.$driver->document))); ?>"
-                               target="_blank"><?php echo e($driver->document); ?></a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                    </p>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="detail-group">
-                    <h6><?php echo e(__('License')); ?></h6>
+                    <h6><?php echo e(__('License 1:')); ?></h6>
                     <p class="mb-20">
                         <?php if(!empty($driver) && !empty($driver->license)): ?>
                             <a href="<?php echo e(asset(Storage::url('upload/license'.'/'.$driver->license))); ?>"
@@ -101,8 +89,47 @@
             </div>
             <div class="col-6">
                 <div class="detail-group">
+                    <h6><?php echo e(__('License 2:')); ?></h6>
+                    <p class="mb-20">
+                        <?php if(!empty($driver) && !empty($driver->license_1)): ?>
+                            <a href="<?php echo e(asset(Storage::url('upload/license'.'/'.$driver->license_1))); ?>"
+                               target="_blank"> <?php echo e(!empty($driver)?$driver->license_1:'-'); ?></a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="detail-group">
                     <h6><?php echo e(__('Reference')); ?></h6>
                     <p class="mb-20"><?php echo e(!empty($driver) && !empty($driver->reference)?$driver->reference:'-'); ?></p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="detail-group">
+                    <h6><?php echo e(__('ID file 1:')); ?></h6>
+                    <p class="mb-20">
+                        <?php if(!empty($driver) && !empty($driver->document)): ?>
+                            <a href="<?php echo e(asset(Storage::url('upload/document'.'/'.$driver->document))); ?>"
+                               target="_blank"><?php echo e($driver->document); ?></a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="detail-group">
+                    <h6><?php echo e(__('ID file 2:')); ?></h6>
+                    <p class="mb-20">
+                        <?php if(!empty($driver) && !empty($driver->document_1)): ?>
+                            <a href="<?php echo e(asset(Storage::url('upload/document'.'/'.$driver->document_1))); ?>"
+                               target="_blank"><?php echo e($driver->document_1); ?></a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </p>
                 </div>
             </div>
             <div class="col-6">

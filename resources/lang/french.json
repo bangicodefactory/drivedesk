@@ -422,7 +422,7 @@
   "Age": "Âge",
   "Address": "Adresse",
   "Birth Date": "Date de naissance",
-  "License Number": "Numéro de licence",
+  "License Number": "Numéro de permis:",
   "Issue Date": "Date d'émission",
   "Expiration Date": "Date d'expiration",
   "License": "Licence",
@@ -433,7 +433,7 @@
   "Enter age": "Entrez l'âge",
   "Birth date": "Date de naissance",
   "Enter address": "Entrez l'adresse",
-  "Enter license number": "Entrez le numéro de licence",
+  "Enter license number": "Entrez le numéro de permis",
   "Enter reference": "Entrez ID",
   "Show": "Montrer",
   "Edit Driver": "Modifier le pilote",
@@ -654,5 +654,9 @@
   "Overdue": "En retard",
     "Urgent": "Urgent",
     "Upcoming": "À venir",
-    "Days Remaining": "Jours restants"
+    "Days Remaining": "Jours restants",
+    "License 1:": "Permis 1:" ,
+    "License 2:": "Permis 2:" ,
+    "ID file 1:": "ID document 1:" ,
+    "ID file 2:": "ID document 2:" 
 }
