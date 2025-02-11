@@ -1,3 +1,14 @@
+<style>
+    .card-tools {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    </style>
 @extends('layouts.app')
 @section('page-title')
     {{__('Dashboard')}}
@@ -64,7 +75,55 @@
                 </div>
             </div>
         </div>
-
+{{-- add notification bar  --}}
+<div class="col-12">
+    <div class="card shadow-sm">
+        <div class="card-header  py-3" style="background-color: #197CBC;">
+            <div class="text-center mb-2">
+                <h5 class="card-title mb-0 fw-bolder " style="color: #f8f9fa;">Notifications</h5>
+            </div>
+            <div class="text-end">
+                <span class="badge text-bg-warning">{{ count($reminders) }} New</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                @forelse($reminders as $reminder)
+                    <div class="list-group-item p-4 border-bottom">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <h6 class="mb-1  text-dark">{{ $reminder->vehicles->name ?? 'N/A' }}</h6>
+                                <p class="mb-0 text-muted">
+                                    <i class="fas fa-hashtag me-2"></i>{{ $reminder->vehicles->license_plate ?? 'N/A' }}
+                                </p>
+                            </div>
+                            <div class="col-md-5">
+                                <p class="mb-1 text-muted">{{ $reminder->note ?? 'No description' }}</p>
+                                <p class="mb-0">
+                                    <i class="far fa-calendar me-2"></i>
+                                    {{ \Carbon\Carbon::parse($reminder->reminder_date)->format('M d, Y') }}
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-end">
+                                <span class="badge bg-{{ $reminder->status === 'urgent' ? 'danger' : 'warning' }} px-3 py-2">
+                                    {{ ucfirst($reminder->status) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="list-group-item p-4 text-center">No notifications found</div>
+                @endforelse
+            </div>
+        </div>
+        @if(count($reminders) > 0)
+                <div class="card-footer text-center py-3">
+                    <a href="{{ route('reminder.index') }}" class="text-primary text-decoration-none">View All</a>
+                </div>
+            @endif
+    </div>
+</div>
+{{-- end notification bar  --}}
         <div class="col-xxl-12 cdx-xxl-50">
             <div class="card overall-revenuetbl">
                 <div class="card-header">

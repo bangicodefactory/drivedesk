@@ -1,3 +1,15 @@
+<style>
+    .card-tools {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    </style>
+
 <?php $__env->startSection('page-title'); ?>
     <?php echo e(__('Dashboard')); ?>
 
@@ -65,6 +77,57 @@
                 </div>
             </div>
         </div>
+
+<div class="col-12">
+    <div class="card shadow-sm">
+        <div class="card-header  py-3" style="background-color: #197CBC;">
+            <div class="text-center mb-2">
+                <h5 class="card-title mb-0 fw-bolder " style="color: #f8f9fa;">Notifications</h5>
+            </div>
+            <div class="text-end">
+                <span class="badge text-bg-warning"><?php echo e(count($reminders)); ?> New</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                <?php $__empty_1 = true; $__currentLoopData = $reminders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reminder): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <div class="list-group-item p-4 border-bottom">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <h6 class="mb-1  text-dark"><?php echo e($reminder->vehicles->name ?? 'N/A'); ?></h6>
+                                <p class="mb-0 text-muted">
+                                    <i class="fas fa-hashtag me-2"></i><?php echo e($reminder->vehicles->license_plate ?? 'N/A'); ?>
+
+                                </p>
+                            </div>
+                            <div class="col-md-5">
+                                <p class="mb-1 text-muted"><?php echo e($reminder->note ?? 'No description'); ?></p>
+                                <p class="mb-0">
+                                    <i class="far fa-calendar me-2"></i>
+                                    <?php echo e(\Carbon\Carbon::parse($reminder->reminder_date)->format('M d, Y')); ?>
+
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-md-end">
+                                <span class="badge bg-<?php echo e($reminder->status === 'urgent' ? 'danger' : 'warning'); ?> px-3 py-2">
+                                    <?php echo e(ucfirst($reminder->status)); ?>
+
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    <div class="list-group-item p-4 text-center">No notifications found</div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php if(count($reminders) > 0): ?>
+                <div class="card-footer text-center py-3">
+                    <a href="<?php echo e(route('reminder.index')); ?>" class="text-primary text-decoration-none">View All</a>
+                </div>
+            <?php endif; ?>
+    </div>
+</div>
 
         <div class="col-xxl-12 cdx-xxl-50">
             <div class="card overall-revenuetbl">
