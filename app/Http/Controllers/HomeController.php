@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Booking;
 use App\Models\Contact;
 use App\Models\Custom;
@@ -12,6 +13,7 @@ use App\Models\Service;
 use App\Models\Subscription;
 use App\Models\Support;
 use App\Models\User;
+use App\Models\Reminder;
 use Carbon\Carbon;
 
 class HomeController extends Controller
@@ -31,32 +33,43 @@ class HomeController extends Controller
                 return view('dashboard.super_admin', compact('result'));
             } else {
                 $result['totalUser'] = User::where('parent_id', parentId())->count();
-                $result['totalDriver'] = User::where('type','driver')->where('parent_id', parentId())->count();
+                $result['totalDriver'] = User::where('type', 'driver')->where('parent_id', parentId())->count();
                 $result['totalBooking'] = Booking::where('parent_id', parentId())->count();
                 $result['totalIncome'] = Booking::where('parent_id', parentId())->sum('amount');
-                $totalExpense=Expense::where('parent_id', parentId())->sum('amount');
+                $totalExpense = Expense::where('parent_id', parentId())->sum('amount');
                 $result['totalExpense'] = $totalExpense;
                 $result['incomeExpenseByMonth'] = $this->incomeExpenseByMonth();
-                $result['settings']=settings();
-                return view('dashboard.index', compact('result'));
+                $result['settings'] = settings();
+
+                if (\Auth::user()->can('manage reminder')) {
+                    $reminders = Reminder::with('vehicles')  // Eager load vehicles
+                        ->where('parent_id', '=', parentId())
+                        
+                        // ->where('reminder_date', '>=', now())
+                        ->orderBy('reminder_date', 'asc')
+                        ->take(5)
+                        ->get();
+                } else {
+                    $reminders = collect([]);
+                }
+
+                return view('dashboard.index', compact('result', 'reminders'));
             }
         } else {
             if (!file_exists(setup())) {
                 header('location:install');
                 die;
             } else {
-                $landingPage=getSettingsValByName('landing_page');
+                $landingPage = getSettingsValByName('landing_page');
 
-                if($landingPage=='on'){
-                    $subscriptions=Subscription::get();
-                    return view('layouts.landing',compact('subscriptions'));
-                }else{
+                if ($landingPage == 'on') {
+                    $subscriptions = Subscription::get();
+                    return view('layouts.landing', compact('subscriptions'));
+                } else {
                     return redirect()->route('login');
                 }
             }
-
         }
-
     }
 
     public function organizationByMonth()
@@ -78,7 +91,6 @@ class HomeController extends Controller
 
 
         return $organization;
-
     }
 
     public function paymentByMonth()
@@ -99,7 +111,6 @@ class HomeController extends Controller
         }
 
         return $payment;
-
     }
 
 
@@ -117,14 +128,11 @@ class HomeController extends Controller
             $year = date('Y', $currentdate);
             $payment['income'][] = Booking::where('parent_id', parentId())->whereMonth('start_date', $month)->whereYear('start_date', $year)->sum('amount');
 
-            $totalExpense=Expense::where('parent_id', parentId())->whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+            $totalExpense = Expense::where('parent_id', parentId())->whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
             $payment['expense'][] = $totalExpense;
             $currentdate = strtotime('+1 month', $currentdate);
         }
 
         return $payment;
-
     }
-
 }
-
