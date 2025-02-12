@@ -83,7 +83,7 @@
                 <h5 class="card-title mb-0 fw-bolder " style="color: #f8f9fa;">Notifications</h5>
             </div>
             <div class="text-end">
-                <span class="badge text-bg-warning">{{ count($reminders) }} New</span>
+                <span class="badge badge-light" >{{ count($reminders) }} New</span>
             </div>
         </div>
         <div class="card-body p-0">
