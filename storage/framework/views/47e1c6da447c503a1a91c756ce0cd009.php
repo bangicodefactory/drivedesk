@@ -174,7 +174,13 @@
 <?php $__env->startPush('script-page'); ?>
     <script>
         $(document).ready(function() {
+            // editing datatime to get acces a select more date 
+            // var today = new Date();
+
+
             var today = new Date();
+            today.setMonth(today.getMonth() - 1);
+            
             if ($('.start_date_time').length > 0) {
                 $('.start_date_time').datetimepicker({
                     step: 15,
