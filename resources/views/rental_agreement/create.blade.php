@@ -3,12 +3,24 @@
     <div class="row">
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-            {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!}
+            {{-- {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!} --}}
+            <select name="driver" id="driver" class="form-control basic-select" required>
+                {{-- <option value="">{{ __('Select Driver') }}</option> --}}
+                @foreach ($driversDropdown as $driverId => $driverName)
+                    <option value="{{ $driverId }}">{{ $driverName }}</option>
+                @endforeach
+            </select>
         </div>
         {{-- add driver 2  --}}
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver2', __('Driver2'), ['class' => 'form-label']) }}
-            {!! Form::select('driver2', $drivers, null, ['class' => 'form-control hidesearch']) !!}
+            {{-- {!! Form::select('driver2', $drivers, null, ['class' => 'form-control hidesearch']) !!} --}}
+            <select name="driver2" id="driver2" class="form-control basic-select">
+                {{-- <option value="">{{ __('Select Driver') }}</option> --}}
+                @foreach ($driversDropdown as $driverId => $driverName)
+                    <option value="{{ $driverId }}">{{ $driverName }}</option>
+                @endforeach
+            </select>
         </div>
 
         <div class="form-group col-md-6 col-lg-6">
