@@ -118,4 +118,13 @@ class SignatureController extends Controller
         }
     }
 
+    public function destroy(Signature $signature){
+        if (\Auth::user()->can('delete driver')) {
+            $signature->delete();
+            return redirect()->route('signature.index')->with('success', __('Signature successfully deleted.'));
+        } else {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+    }
+
 }
