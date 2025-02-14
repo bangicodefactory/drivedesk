@@ -29,11 +29,11 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('create rental agreement')) {
             $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
-            $drivers->prepend(__('Select Driver'), '');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get();
+            $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
 
             $status = RentalAgreement::$status;
-            return view('rental_agreement.create', compact('vehicles', 'drivers', 'status'));
+            return view('rental_agreement.create', compact('vehicles', 'driversDropdown', 'status'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }

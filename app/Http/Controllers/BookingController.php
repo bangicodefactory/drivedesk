@@ -21,7 +21,7 @@ class BookingController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage booking')) {
-            $bookings = Booking::where('parent_id', '=', parentId())->get();
+            $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
