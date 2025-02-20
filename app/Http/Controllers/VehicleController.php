@@ -9,6 +9,7 @@ use App\Models\VehicleType;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Psy\Readline\Hoa\Console;
 
 class VehicleController extends Controller
 {
@@ -211,19 +212,9 @@ class VehicleController extends Controller
 
         $pickup_place = $request->pickup_place;
         $drop_off_place = $request->drop_off_place;
+        $daily_price = $request->daily_price;
 
-        if (!empty($pickup_place)) {
-            $pickupPlaceAmount = placesRateCalculation($pickup_place);
-        } else {
-            $pickupPlaceAmount = 0;
-        }
-
-        if (!empty($drop_off_place)) {
-            $dropPlaceAmount = placesRateCalculation($drop_off_place);
-        } else {
-            $dropPlaceAmount = 0;
-        }
-        $placeAmount = $pickupPlaceAmount + $dropPlaceAmount;
+        
         if (!empty($vehicle) && !empty($start_date_time) && !empty($end_date_time)) {
             $daily_rate = !empty($vehicle->daily_rate) && ($vehicle->daily_rate > 0) ? $vehicle->daily_rate : 0;
             $data = vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
@@ -237,11 +228,56 @@ class VehicleController extends Controller
                     $specificAddonString .= "<tr><td>" . $value['addon'] . "</td><td>" . $value['final_price'] . "</td></tr>";
                 }
                 $data['specificAddonCalculation'] = $specificAddonString;
+            }else {
+                $data['specificAddonCalculation'] = '';
             }
 
             $data['addonAmount'] = $addonAmount;
+            
+
+
+
+            if ($request->daychange != 1) {
+                $data['duration'] = $data['considerDays'] . ' * ' . $daily_rate . ' = ' . priceFormat($data['totalRate']);
+            } else {
+                // $data = "" ;
+                $newdaily_rate = !empty($daily_price) && ($daily_price > 0) ? $daily_price : 0;
+                $data = vehicleRateCalculation($newdaily_rate, $start_date_time, $end_date_time);
+
+                $data['duration'] = $data['considerDays'] . ' * ' . $newdaily_rate . ' = ' . priceFormat($data['totalRate']);
+
+                $addonAmount = 0;
+                if (!empty($addons)) {
+                    $addonAmount = addonsRateCalculation($request->addons, $data['considerDays']);
+                    $specificAddonCalculation = specificAddonCalculation($request->addons, $data['considerDays']);
+                    $specificAddonString = '';
+                    foreach ($specificAddonCalculation as $key => $value) {
+                        $specificAddonString .= "<tr><td>" . $value['addon'] . "</td><td>" . $value['final_price'] . "</td></tr>";
+                    }
+                    $data['specificAddonCalculation'] = $specificAddonString;
+                }
+                $data['addonAmount'] = $addonAmount;
+
+            }
+
+            if (!empty($pickup_place)) {
+                $pickupPlaceAmount = placesRateCalculation($pickup_place);
+            } else {
+                $pickupPlaceAmount = 0;
+            }
+    
+            if (!empty($drop_off_place)) {
+                $dropPlaceAmount = placesRateCalculation($drop_off_place);
+            } else {
+                $dropPlaceAmount = 0;
+            }
+            $placeAmount = $pickupPlaceAmount + $dropPlaceAmount;
+
             $data['placeAmount'] = $placeAmount;
-            $data['duration'] = $data['considerDays'] . ' * ' . $daily_rate . ' = ' . priceFormat($data['totalRate']);
+
+            
+            // Add daily price to view 
+            $data['daily_price'] = $daily_rate;
 
             return json_encode($data);
         }
