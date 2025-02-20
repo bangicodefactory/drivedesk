@@ -211,6 +211,7 @@ if (!function_exists('settingPriceFormat')) {
         // return $settings['CURRENCY_SYMBOL'] . $price;
         
         return $price . ' ' . $settings['CURRENCY_SYMBOL'];
+        
     }
 }
 if (!function_exists('settingTimeFormat')) {
@@ -547,7 +548,8 @@ if (!function_exists('userLoggedHistory')) {
         {
             $place = Place::where('id', $placeId)->first();
             $placeData['place'] = $place->name;
-            $placeData['final_price'] = priceFormat($place->price);
+            // $placeData['final_price'] = priceFormat($place->price);
+            $placeData['final_price'] = $place->price;
             return $placeData;
         }
     }
