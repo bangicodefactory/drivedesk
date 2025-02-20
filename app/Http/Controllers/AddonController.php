@@ -110,7 +110,7 @@ class AddonController extends Controller
         $vehicle = Vehicle::find($request->vahicle_id);
         $start_date_time=$request->start_date_time;
         $end_date_time=$request->end_date_time;
-
+        $daily_price = $request->daily_price;
 
         $pickup_place=$request->pickup_place;
         $drop_off_place=$request->drop_off_place;
@@ -132,6 +132,17 @@ class AddonController extends Controller
             $data=vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
             $totalRate=(int)$data['totalRate'];
             $considerDays=$data['considerDays'];
+            // if price day change
+            if($request->daychange != 1){
+                $data=vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
+                $totalRate=(int)$data['totalRate'];
+            }else{ 
+                $data = "" ;
+                $totalRate = 0;
+                $newdaily_rate = !empty($daily_price) && ($daily_price > 0) ? $daily_price : 0;
+                $data = vehicleRateCalculation($newdaily_rate, $start_date_time, $end_date_time);
+                $totalRate=(int)$data['totalRate'];
+             }
         }
 
         if(!empty($request->addons)){
@@ -142,7 +153,12 @@ class AddonController extends Controller
                 $specificAddonString.="<tr><td>".$value['addon']."</td><td>".$value['final_price']."</td></tr>";
             }
             $data['specificAddonCalculation']=$specificAddonString;
+        }else{
+            $data['specificAddonCalculation']= '';
         }
+        
+
+
         $data['addonAmount']=$addonAmount;
         $data['totalRate']=$totalRate;
         $data['placeAmount']=$placeAmount;

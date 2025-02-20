@@ -108,6 +108,16 @@
                             {{ Form::label('notes', __('Notes'), ['class' => 'form-label']) }}
                             {{ Form::textarea('notes', null, ['class' => 'form-control', 'placeholder' => __('Enter notes'), 'rows' => 2]) }}
                         </div>
+{{-- Final Price  --}}
+                        <div class="form-group col-md-4 col-lg-4">
+                            {{ Form::label('daily_price', __('Price a day'), ['class' => 'form-label']) }}
+                            {{ Form::number('daily_price', null, [
+                                'class' => 'form-control',
+                                'id' => 'daily_price',
+                                'step' => 'any',
+                                'min' => '0',
+                            ]) }}
+                        </div>
 
                         <div class="col-md-6 col-lg-6 detail_div d-none">
                             <table class="display dataTable cell-border">
@@ -266,6 +276,7 @@
             var addons = $(".addon").val();
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
+            var daily_price = $("#daily_price").val();
             if (vehicle_id != '' && start_date_time != '' && end_date_time != '') {
                 $.ajax({
                     url: "{{ route('vehicle.rate.calculation') }}",
@@ -277,6 +288,7 @@
                         addons: addons,
                         pickup_place: pickup_place,
                         drop_off_place: drop_off_place,
+                        daily_price: daily_price,
                     },
                     success: function(result) {
                         $('.detail_div').removeClass('d-none');
@@ -284,11 +296,14 @@
                         var totalRate = parseFloat(response['totalRate']) || 0;
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
+                        var daily_price_data = parseFloat(response['daily_price']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
 
+                        
                         var discountAmount = parseFloat($('#discount').val()) || 0;
                         var finalSum = sum - discountAmount;
 
+                        $('#daily_price').val(daily_price_data);
                         $('#amount').val(finalSum);
                         $('#details').val(result);
 
@@ -296,7 +311,7 @@
                         $('#addonData').html(response['specificAddonCalculation']);
                         $('#totalAmount').html(finalSum);
 
-                        $('#discountPlace').html(discountAmount);
+                        $('#discountPlace').html(discountAmount + ' Dh');
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -312,6 +327,9 @@
             var end_date_time = $("#end_date_time").val();
             var addons = $(".addon").val();
 
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
+
             if (pickup_place != '' || drop_off_place != '') {
                 $.ajax({
                     url: "{{ route('place.rate.calculation') }}",
@@ -323,6 +341,8 @@
                         addons: addons,
                         pickup_place: pickup_place,
                         drop_off_place: drop_off_place,
+                        daily_price: daily_price,
+                        daychange: daychange,
                     },
                     success: function(result) {
                         var response = JSON.parse(result);
@@ -341,7 +361,11 @@
                         $('#dropPlace').html(response['drop_place']);
                         $('#totalAmount').html(finalSum);
 
-                        $('#discountPlace').html(discountAmount);
+                        $('#discountPlace').html(discountAmount + ' Dh');
+                        console.log(response);
+                    console.log(response['duration']);
+                    console.log('Daily Price new :' + daily_price);
+                    console.log('placeAmount new: ' + placeAmount);
                     },
                     error: function(result) {
                         toastrs('error', result, 'error')
@@ -360,6 +384,9 @@
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
 
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
+
             $.ajax({
                 url: "{{ route('addon.rate.calculation') }}",
                 type: "GET",
@@ -370,6 +397,8 @@
                     end_date_time: end_date_time,
                     pickup_place: pickup_place,
                     drop_off_place: drop_off_place,
+                    daily_price: daily_price,
+                    daychange: daychange,
                 },
                 success: function(result) {
                     var response = JSON.parse(result);
@@ -386,7 +415,7 @@
                     $('#addonData').html(response['specificAddonCalculation']);
                     $('#totalAmount').html(finalSum);
 
-                    $('#discountPlace').html(discountAmount);
+                    $('#discountPlace').html(discountAmount + ' Dh');
                 },
                 error: function(result) {
                     toastrs('error', result, 'error')
@@ -403,6 +432,10 @@
 
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
+
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
+
             $.ajax({
                 url: "{{ route('addon.rate.calculation') }}",
                 type: "GET",
@@ -413,6 +446,8 @@
                     end_date_time: end_date_time,
                     pickup_place: pickup_place,
                     drop_off_place: drop_off_place,
+                    daily_price: daily_price,
+                    daychange: daychange,
                 },
                 success: function(result) {
                     var response = JSON.parse(result);
@@ -429,7 +464,66 @@
                     $('#addonData').html(response['specificAddonCalculation']);
                     $('#totalAmount').html(finalSum);
 
-                    $('#discountPlace').html(discountAmount);
+                    $('#discountPlace').html(discountAmount + ' Dh');
+                },
+                error: function(result) {
+                    toastrs('error', result, 'error')
+                }
+            });
+    });
+    // price day 
+        $(document).on('change', '#daily_price', function(e) {          
+            var addons = $(".addon").val();
+            var vahicle_id = $("#vehicle").val();
+            var start_date_time = $("#start_date_time").val();
+            var end_date_time = $("#end_date_time").val();
+
+            var pickup_place = $("#pickup_address").val();
+            var drop_off_place = $("#drop_off_address").val();
+
+            console.log('pickup_place: ' + pickup_place);
+            console.log('drop_off_place: ' + drop_off_place);
+
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
+            $.ajax({
+                url: "{{ route('vehicle.rate.calculation') }}",
+                type: "GET",
+                data: {
+                    addons: addons,
+                    vahicle_id: vahicle_id,
+                    start_date_time: start_date_time,
+                    end_date_time: end_date_time,
+                    pickup_place: pickup_place,
+                    drop_off_place: drop_off_place,
+                    daily_price: daily_price,
+                    daychange: daychange,
+                },
+                success: function(result) {
+                    var response = JSON.parse(result);
+                    var totalRate = parseFloat(response['totalRate']) || 0;
+                    var addonAmount = parseFloat(response['addonAmount']) || 0;
+                    var placeAmount = parseFloat(response['placeAmount']) || 0;
+                    var sum = totalRate + addonAmount + placeAmount;
+
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+                    var finalSum = sum - discountAmount;
+
+                    
+                    $('#amount').val(finalSum);
+                    $('#details').val(result);
+                    $('#addonData').html(response['specificAddonCalculation']);
+                    $('#totalAmount').html(finalSum);
+
+                    $('#discountPlace').html(discountAmount + ' Dh');
+
+                    $('.duration').html(response['duration']);
+
+                    console.log(response);
+                    console.log(response['duration']);
+                    console.log('Daily Price new :' + daily_price);
+                    console.log('Addon Amout new: ' + addonAmount);
+                    console.log('placeAmount:'  + placeAmount);
                 },
                 error: function(result) {
                     toastrs('error', result, 'error')
