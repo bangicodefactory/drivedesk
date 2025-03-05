@@ -99,6 +99,7 @@ class BookingController extends Controller
             $booking->details = $request->details;
             $booking->vehicle_details = json_encode($vehicle_detail);
             $booking->parent_id = parentId();
+            $booking->daily_price_final = !empty($request->daily_price) ? $request->daily_price : 0;
             $booking->save();
 
 
@@ -194,6 +195,7 @@ class BookingController extends Controller
                     'drop_off_address' => 'required',
                     'status' => 'required',
                     'amount' => 'required',
+                    'daily_price' => 'required',
                     ]
                 );
 
@@ -228,6 +230,7 @@ class BookingController extends Controller
             $booking->payment_notes = null;
             $booking->details = $request->details;
             $booking->vehicle_details = json_encode($vehicle_detail);
+            $booking->daily_price_final = $request->daily_price;
             $booking->save();
 
             if($bookingStatus){
