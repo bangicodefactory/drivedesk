@@ -107,6 +107,21 @@
                             ]); ?>
 
                         </div>
+                        
+
+                        
+                        
+                        <div class="form-group col-md-4 col-lg-4">
+                            <?php echo e(Form::label('daily_price', __('Price a day'), ['class' => 'form-label'])); ?>
+
+                            <?php echo e(Form::number('daily_price', !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate, [
+                                'class' => 'form-control',
+                                'id' => 'daily_price',
+                                'step' => 'any',
+                                'min' => '0',
+                            ])); ?>
+
+                        </div>
 
                         <div class="form-group col-md-4 col-lg-4">
                             <?php echo e(Form::label('status', __('Status'), ['class' => 'form-label'])); ?>
@@ -130,7 +145,8 @@
                                     <tr>
                                         <td> <?php echo e(__('Duration')); ?></td>
                                         <td class="duration">
-                                            <?php echo e($details->considerDays . ' * ' . $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate)); ?>
+                                            
+                                            <?php echo e($details->considerDays . ' * ' . !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate)); ?>
 
                                         </td>
                                     </tr>
@@ -163,6 +179,7 @@
                                         <td><?php echo e(priceFormat($booking->dropOffAddress->price)); ?></td>
                                     </tr>
                                 </tbody>
+                                
                                 <tbody class="text-center">
                                     <tr>
                                         <td><b class="h6"><?php echo e(__('Total Amount')); ?></b></td>
@@ -294,6 +311,7 @@
             var addons = $(".addon").val();
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
+            var daily_price = $("#daily_price").val();
 
             if (vahicle_id != '' && start_date_time != '' && end_date_time != '') {
                 $.ajax({
@@ -313,7 +331,10 @@
                         var totalRate = parseFloat(response['totalRate']) || 0;
                         var addonAmount = parseFloat(response['addonAmount']) || 0;
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
+                        var daily_price_data = parseFloat(response['daily_price']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
+
+                        $('#daily_price').val(daily_price_data);
                         $('#amount').val(sum);
                         $('#details').val(result);
 
@@ -336,6 +357,7 @@
             var end_date_time = $("#end_date_time").val();
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
+            var daily_price = $("#daily_price").val();
             $.ajax({
                 url: "<?php echo e(route('addon.rate.calculation')); ?>",
                 type: "GET",
@@ -352,6 +374,8 @@
                     var totalRate = parseFloat(response['totalRate']) || 0;
                     var addonAmount = parseFloat(response['addonAmount']) || 0;
                     var placeAmount = parseFloat(response['placeAmount']) || 0;
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+
                     var sum = totalRate + addonAmount + placeAmount;
                     $('#amount').val(sum);
                     $('#details').val(result);
@@ -371,6 +395,8 @@
             var start_date_time = $("#start_date_time").val();
             var end_date_time = $("#end_date_time").val();
             var addons = $(".addon").val();
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
 
             if (pickup_place != '' || drop_off_place != '') {
                 $.ajax({
@@ -383,6 +409,8 @@
                         addons: addons,
                         pickup_place: pickup_place,
                         drop_off_place: drop_off_place,
+                        daily_price: daily_price,
+                        daychange: daychange,
                     },
                     success: function(result) {
                         var response = JSON.parse(result);
@@ -391,8 +419,11 @@
                         var placeAmount = parseFloat(response['placeAmount']) || 0;
                         var sum = totalRate + addonAmount + placeAmount;
                         let str = sum;
-                        let amo = str.replace("$", "");
-                        $('#amount').val(amo);
+                        // let amo = str.replace("$", "");
+                        // let amo = String(str).replace('$', '');
+
+                        // $('#amount').val(amo);
+                        $('#amount').val(sum);
                         $('#details').val(result);
                         $('#pickupPlace').html(response['pickup_place']);
                         $('#dropPlace').html(response['drop_place']);
@@ -404,6 +435,66 @@
                 });
             }
         });
+
+        $(document).on('change', '#daily_price', function(e) {          
+            var addons = $(".addon").val();
+            var vahicle_id = $("#vehicle").val();
+            var start_date_time = $("#start_date_time").val();
+            var end_date_time = $("#end_date_time").val();
+
+            var pickup_place = $("#pickup_address").val();
+            var drop_off_place = $("#drop_off_address").val();
+
+            console.log('pickup_place: ' + pickup_place);
+            console.log('drop_off_place: ' + drop_off_place);
+
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
+            $.ajax({
+                url: "<?php echo e(route('vehicle.rate.calculation')); ?>",
+                type: "GET",
+                data: {
+                    addons: addons,
+                    vahicle_id: vahicle_id,
+                    start_date_time: start_date_time,
+                    end_date_time: end_date_time,
+                    pickup_place: pickup_place,
+                    drop_off_place: drop_off_place,
+                    daily_price: daily_price,
+                    daychange: daychange,
+                },
+                success: function(result) {
+                    var response = JSON.parse(result);
+                    var totalRate = parseFloat(response['totalRate']) || 0;
+                    var addonAmount = parseFloat(response['addonAmount']) || 0;
+                    var placeAmount = parseFloat(response['placeAmount']) || 0;
+                    var sum = totalRate + addonAmount + placeAmount;
+
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+                    var finalSum = sum - discountAmount;
+
+                    
+                    $('#amount').val(finalSum);
+                    $('#details').val(result);
+                    $('#addonData').html(response['specificAddonCalculation']);
+                    $('#totalAmount').html(finalSum);
+
+                    $('#discountPlace').html(discountAmount + ' Dh');
+
+                    $('.duration').html(response['duration']);
+
+                    console.log(response);
+                    console.log(response['duration']);
+                    console.log('Daily Price new :' + daily_price);
+                    console.log('Addon Amout new: ' + addonAmount);
+                    console.log('placeAmount:'  + placeAmount);
+                },
+                error: function(result) {
+                    toastrs('error', result, 'error')
+                }
+            });
+    });
+
     </script>
 <?php $__env->stopPush(); ?>
 
