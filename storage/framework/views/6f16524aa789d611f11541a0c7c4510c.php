@@ -146,7 +146,7 @@
                                         <td> <?php echo e(__('Duration')); ?></td>
                                         <td class="duration">
                                             
-                                            <?php echo e($details->considerDays . ' * ' . !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate)); ?>
+                                            <?php echo e($details->considerDays . ' * ' . $booking->daily_price_final . ' = ' . priceFormat($details->totalRate)); ?>
 
                                         </td>
                                     </tr>
