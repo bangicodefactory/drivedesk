@@ -29,7 +29,13 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('create rental agreement')) {
             $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get();
+            // $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get();
+            // $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+
+            $drivers = User::where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->orderBy('created_at', 'desc')
+            ->get();            
             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
 
             $status = RentalAgreement::$status;

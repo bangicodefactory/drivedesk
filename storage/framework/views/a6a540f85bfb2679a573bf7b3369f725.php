@@ -2,29 +2,21 @@
 
 <div class="modal-body">
     <div class="row">
+        
         <div class="form-group col-md-6 col-lg-6">
             <?php echo e(Form::label('driver', __('Driver'), ['class' => 'form-label'])); ?>
 
-            
-            <select name="driver" id="driver" class="form-control basic-select" required>
-                
-                <?php $__currentLoopData = $driversDropdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driverId => $driverName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <option value="<?php echo e($driverId); ?>"><?php echo e($driverName); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </select>
+            <?php echo Form::select('driver', $driversDropdown, null, ['class' => 'form-control', 'required' => 'required']); ?>
+
         </div>
         
         <div class="form-group col-md-6 col-lg-6">
-            <?php echo e(Form::label('driver2', __('Driver2'), ['class' => 'form-label'])); ?>
+            <?php echo e(Form::label('driver2', __('Driver 2'), ['class' => 'form-label'])); ?>
 
-            
-            <select name="driver2" id="driver2" class="form-control basic-select">
-                
-                <?php $__currentLoopData = $driversDropdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driverId => $driverName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <option value="<?php echo e($driverId); ?>"><?php echo e($driverName); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </select>
+            <?php echo Form::select('driver2', $driversDropdown, null, ['class' => 'form-control']); ?>
+
         </div>
+
 
         <div class="form-group col-md-6 col-lg-6">
             <?php echo e(Form::label('vehicle', __('Vehicle'), ['class' => 'form-label'])); ?>
