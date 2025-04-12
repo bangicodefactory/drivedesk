@@ -1,6 +1,7 @@
 {{ Form::open(['url' => 'rental-agreement', 'method' => 'post']) }}
 <div class="modal-body">
     <div class="row">
+{{-- driver section   --}}
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
             {{-- {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ', 'required' => 'required']) !!} --}}
@@ -11,7 +12,7 @@
                 @endforeach
             </select>
         </div>
-        {{-- add driver 2  --}}
+        
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver2', __('Driver2'), ['class' => 'form-label']) }}
             {{-- {!! Form::select('driver2', $drivers, null, ['class' => 'form-control hidesearch']) !!} --}}
@@ -22,6 +23,7 @@
                 @endforeach
             </select>
         </div>
+{{-- driver section  --}}
 
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('vehicle', __('Vehicle'), ['class' => 'form-label']) }}
