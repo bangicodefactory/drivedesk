@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use App\Models\Signature;
+use Illuminate\Support\Facades\Storage;
 
 class RentalAgreementController extends Controller
 {
@@ -129,8 +131,12 @@ class RentalAgreementController extends Controller
             $terms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
             $terms = nl2br($terms);
 
+            //display Signature
+            $driver1Signature = $this->getUserSignature($rentalAgreement->driver);
+            $driver2Signature = $this->getUserSignature($rentalAgreement->driver2);
 
-            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1' , 'terms'));
+
+            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1' , 'terms','driver1Signature','driver2Signature'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -238,4 +244,24 @@ class RentalAgreementController extends Controller
         }
         return $latest->agreement_id + 1;
     }
+
+    /**
+ * Get the latest signature for a user
+ * 
+ * @param int $userId
+ * @return string|null Path to signature file
+ */
+private function getUserSignature($userId)
+{
+    $signature = Signature::where('user_id', $userId)
+                   ->latest()
+                   ->first();
+    
+    if ($signature && Storage::disk('public')->exists($signature->signature_path)) {
+        // return Storage::disk('public')->path($signature->signature_path);
+        return Storage::disk('public')->url( $signature->signature_path);
+    }
+    
+    return null;
+}
 }

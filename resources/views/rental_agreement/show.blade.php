@@ -33,10 +33,54 @@
 
         /* Exclude specific divs by class or ID */
 
-        .terms-content p{
+        .terms-content p {
             font-size: 12px !important;
-            
+
         }
+        .signature-image {
+    max-width: 130px;
+    max-height: 80px;
+    border: none;
+    display: block;
+}
+
+.signature-placeholder {
+    border-bottom: 1px solid #000;
+    width: 150px;
+    height: 30px;
+}
+
+@media print {
+    .signature-image {
+        max-width: 300px !important;
+            max-height: 150px !important;
+            width: auto !important;
+            height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+    }
+    .signatures {
+            margin-top: 20px !important;
+            margin-bottom: 20px !important;
+            min-height: 150px !important;
+        }
+        .signatures .col-md-4 {
+            height: 150px !important;
+            vertical-align: top !important;
+        }
+    /* Make sure signatures appear clearly in print */
+    /* .signatures img {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    } */
+    .signature-placeholder {
+        border-bottom: 1px solid #000;
+        width: 200px;
+        height: 100px;
+    }
+}
     }
 </style>
 
@@ -77,8 +121,8 @@
                                 <div class="codex-brand" style="top: 0; left: 0; max-width: 130px; max-height: 130px;">
                                     <a class="codexbrand-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
-                                        src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
-                                        alt="invoice-logo">
+                                            src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
+                                            alt="invoice-logo">
                                     </a>
                                     {{-- <a class="codexdark-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
@@ -120,7 +164,7 @@
                                         {{ $settings['ice'] ?? ' ' }}
                                     </li>
                                 </ul>
-                                
+
                             </div>
                             <div class="col-md-12">
                                 <div class="row">
@@ -144,13 +188,15 @@
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
                                             <h6>{{ __('Rental Start Date') }}</h6>
-                                            <p class="mb-20">{{ dateFormatHourMinute($rentalAgreement->rental_start_date) }} </p>
+                                            <p class="mb-20">
+                                                {{ dateFormatHourMinute($rentalAgreement->rental_start_date) }} </p>
                                         </div>
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <div class="detail-group">
                                             <h6>{{ __('Rental End Date') }}</h6>
-                                            <p class="mb-20">{{ dateFormatHourMinute($rentalAgreement->rental_end_date) }} </p>
+                                            <p class="mb-20">{{ dateFormatHourMinute($rentalAgreement->rental_end_date) }}
+                                            </p>
                                         </div>
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
@@ -232,55 +278,56 @@
                                     </div>
                                 </div>
                                 {{-- show driver 2 information  --}}
-                                @if($driver_2 && $user_2)
-                                <div class="row">
-                                    <h5 class="text-primary mb-10">
-                                        {{ __('Driver2') }} : </h5>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>{{ __('Name') }}</h6>
-                                            <p class="mb-20">{{ !empty($user_2->name) ? $user_2->name : '' }}</p>
+                                @if ($driver_2 && $user_2)
+                                    <div class="row">
+                                        <h5 class="text-primary mb-10">
+                                            {{ __('Driver2') }} : </h5>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>{{ __('Name') }}</h6>
+                                                <p class="mb-20">{{ !empty($user_2->name) ? $user_2->name : '' }}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>{{ __('License Number') }}</h6>
-                                            <p class="mb-20">
-                                                {{ !empty($driver_2->license_number) ? $driver_2->license_number : '' }}
-                                            </p>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>{{ __('License Number') }}</h6>
+                                                <p class="mb-20">
+                                                    {{ !empty($driver_2->license_number) ? $driver_2->license_number : '' }}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>{{ __('Phone Number') }}</h6>
-                                            <p class="mb-20">
-                                                {{ !empty($user_2->phone_number) ? $user_2->phone_number : '' }}
-                                            </p>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>{{ __('Phone Number') }}</h6>
+                                                <p class="mb-20">
+                                                    {{ !empty($user_2->phone_number) ? $user_2->phone_number : '' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>{{ __('Address') }}</h6>
+                                                <p class="mb-20">
+                                                    {{ !empty($driver_2->address) ? $driver_2->address : ' ' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>{{ __('Birth Date') }}</h6>
+                                                <p class="mb-20">
+                                                    {{ !empty($driver_2->birth_date) ? $driver_2->birth_date : ' ' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-lg-4 col-sm-4">
+                                            <div class="detail-group">
+                                                <h6>ID National:</h6>
+                                                <p class="mb-20">
+                                                    {{ !empty($driver_2->reference) ? $driver_2->reference : ' ' }}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>{{ __('Address') }}</h6>
-                                            <p class="mb-20">{{ !empty($driver_2->address) ? $driver_2->address : ' ' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>{{ __('Birth Date') }}</h6>
-                                            <p class="mb-20">
-                                                {{ !empty($driver_2->birth_date) ? $driver_2->birth_date : ' ' }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
-                                        <div class="detail-group">
-                                            <h6>ID National:</h6>
-                                            <p class="mb-20">
-                                                {{ !empty($driver_2->reference) ? $driver_2->reference : ' ' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
                                 @endif
                                 <hr>
                                 <div class="row">
@@ -318,9 +365,22 @@
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <h5>{{ __('Signature_client1') }}</h5>
+                                        @if (isset($driver1Signature) && $driver1Signature)
+                                            <img src="{{ $driver1Signature }}" class="signature-image" >    
+                                        @else
+                                        <div class="signature-placeholder"></div>
+                                        @endif
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <h5>{{ __('Signature_client2') }}</h5>
+                                        {{-- @if ($agreement->driver2)
+                                            @if (isset($driver2Signature) && $driver2Signature)
+                                                <img src="{{ $driver2Signature }}" class="signature-image"
+                                                    alt="Driver 2 Signature">
+                                            @else
+                                                <div class="signature-placeholder"></div>
+                                            @endif
+                                        @endif --}}
                                     </div>
 
                                 </div>
