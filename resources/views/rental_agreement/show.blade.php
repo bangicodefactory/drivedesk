@@ -37,50 +37,54 @@
             font-size: 12px !important;
 
         }
+
         .signature-image {
-    max-width: 130px;
-    max-height: 80px;
-    border: none;
-    display: block;
-}
-
-.signature-placeholder {
-    border-bottom: 1px solid #000;
-    width: 150px;
-    height: 30px;
-}
-
-@media print {
-    .signature-image {
-        max-width: 300px !important;
-            max-height: 150px !important;
-            width: auto !important;
-            height: auto !important;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-    }
-    .signatures {
-            margin-top: 20px !important;
-            margin-bottom: 20px !important;
-            min-height: 150px !important;
+            max-width: 130px;
+            max-height: 80px;
+            border: none;
+            display: block;
         }
-        .signatures .col-md-4 {
-            height: 150px !important;
-            vertical-align: top !important;
+
+        .signature-placeholder {
+            border-bottom: 1px solid #000;
+            width: 150px;
+            height: 30px;
         }
-    /* Make sure signatures appear clearly in print */
-    /* .signatures img {
+
+        @media print {
+            .signature-image {
+                max-width: 300px !important;
+                max-height: 150px !important;
+                width: auto !important;
+                height: auto !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .signatures {
+                margin-top: 20px !important;
+                margin-bottom: 20px !important;
+                min-height: 150px !important;
+            }
+
+            .signatures .col-md-4 {
+                height: 150px !important;
+                vertical-align: top !important;
+            }
+
+            /* Make sure signatures appear clearly in print */
+            /* .signatures img {
         -webkit-print-color-adjust: exact !important;
         color-adjust: exact !important;
         print-color-adjust: exact !important;
     } */
-    .signature-placeholder {
-        border-bottom: 1px solid #000;
-        width: 200px;
-        height: 100px;
-    }
-}
+            .signature-placeholder {
+                border-bottom: 1px solid #000;
+                width: 200px;
+                height: 100px;
+            }
+        }
     }
 </style>
 
@@ -366,21 +370,18 @@
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <h5>{{ __('Signature_client1') }}</h5>
                                         @if (isset($driver1Signature) && $driver1Signature)
-                                            <img src="{{ $driver1Signature }}" class="signature-image" >    
+                                            <img src="{{ $driver1Signature }}" class="signature-image">
                                         @else
-                                        <div class="signature-placeholder"></div>
+                                            <div class="signature-placeholder"></div>
                                         @endif
                                     </div>
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <h5>{{ __('Signature_client2') }}</h5>
-                                        {{-- @if ($agreement->driver2)
-                                            @if (isset($driver2Signature) && $driver2Signature)
-                                                <img src="{{ $driver2Signature }}" class="signature-image"
-                                                    alt="Driver 2 Signature">
-                                            @else
-                                                <div class="signature-placeholder"></div>
-                                            @endif
-                                        @endif --}}
+                                        @if (isset($driver2Signature) && $driver2Signature)
+                                            <img src="{{ $driver2Signature }}" class="signature-image">
+                                        @else
+                                            <div class="signature-placeholder"></div>
+                                        @endif
                                     </div>
 
                                 </div>
