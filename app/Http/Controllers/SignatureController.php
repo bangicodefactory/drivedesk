@@ -120,7 +120,17 @@ class SignatureController extends Controller
 
     public function destroy(Signature $signature){
         if (\Auth::user()->can('delete driver')) {
+            
+            \Log::info('Signature Path: ' . $signature->signature_path);
+            \Log::info('Signature ID: ' . $signature->id);
+
+            if($signature){
+                \Log::info('Signature Existes'); 
+                \Log::info('Signature Values:' . $signature); 
+            }
+            
             $signature->delete();
+            
             return redirect()->route('signature.index')->with('success', __('Signature successfully deleted.'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
