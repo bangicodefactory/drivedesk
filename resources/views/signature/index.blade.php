@@ -69,6 +69,7 @@
                                                         data-feather="trash-2"></i></a>
                                                 {!! Form::close() !!}
                                             @endif
+                                            
 
                                         </div>
                                     </td>
