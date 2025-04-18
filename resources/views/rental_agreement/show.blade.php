@@ -367,18 +367,18 @@
                                     <div class="col-md-4 col-lg-4 col-sm-4">
                                         <h5>{{ __('Signature') }}</h5>
                                     </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                    <div class="col-md-4 col-lg-4 col-sm-4" >
                                         <h5>{{ __('Signature_client1') }}</h5>
                                         @if (isset($driver1Signature) && $driver1Signature)
-                                            <img src="{{ $driver1Signature }}" class="signature-image">
+                                            <img src="{{ $driver1Signature }}" class="signature-image" style="max-width: 150px;">
                                         @else
                                             <div class="signature-placeholder"></div>
                                         @endif
                                     </div>
-                                    <div class="col-md-4 col-lg-4 col-sm-4">
+                                    <div class="col-md-4 col-lg-4 col-sm-4" >
                                         <h5>{{ __('Signature_client2') }}</h5>
                                         @if (isset($driver2Signature) && $driver2Signature)
-                                            <img src="{{ $driver2Signature }}" class="signature-image">
+                                            <img src="{{ $driver2Signature }}" class="signature-image" style="max-width: 150px;">
                                         @else
                                             <div class="signature-placeholder"></div>
                                         @endif

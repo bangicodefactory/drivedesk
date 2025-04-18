@@ -11,8 +11,8 @@
                 
                 <div class="mb-3">
                     <label class="form-label">Select Client</label>
-                    <select name="user_id" class="form-select" required>
-                        <option value="">Select Client</option>
+                    <select name="user_id" class="form-select basic-select" required>
+                        
                         <?php $__currentLoopData = $drivers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driver): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($driver->id); ?>"><?php echo e($driver->name); ?></option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
