@@ -64,7 +64,7 @@
                         <div class="form-group col-md-4 col-lg-4">
                             <?php echo e(Form::label('driver', __('Driver'), ['class' => 'form-label'])); ?>
 
-                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ']); ?>
+                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control  basic-select']); ?>
 
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="<?php echo e(route('driver.new.create')); ?>"

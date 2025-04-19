@@ -6,6 +6,17 @@
             {!! Form::select('driver', $drivers,null,array('class' => 'form-control hidesearch ','required'=>'required')) !!}
         </div>
         <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('driver2', __('Driver2'), ['class' => 'form-label']) }}
+            <select name="driver2" id="driver2" class="form-control select2-search">
+                {{-- <option value="">{{ __('Select Driver') }}</option> --}}
+                @foreach ($drivers as $driverId => $driverName)
+                    <option value="{{ $driverId }}" {{ $driver2 == $driverId ? 'selected' : '' }}>
+                        {{ $driverName }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}
             <select name="vehicle" id="vehicle" class="form-control basic-select" required>
                 <option value="">{{__('Select Vehicle')}}</option>

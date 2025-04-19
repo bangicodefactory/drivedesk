@@ -9,6 +9,19 @@
 
         </div>
         <div class="form-group col-md-6 col-lg-6">
+            <?php echo e(Form::label('driver2', __('Driver2'), ['class' => 'form-label'])); ?>
+
+            <select name="driver2" id="driver2" class="form-control select2-search">
+                
+                <?php $__currentLoopData = $drivers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $driverId => $driverName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($driverId); ?>" <?php echo e($driver2 == $driverId ? 'selected' : ''); ?>>
+                        <?php echo e($driverName); ?>
+
+                    </option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </div>
+        <div class="form-group col-md-6 col-lg-6">
             <?php echo e(Form::label('vehicle', __('Vehicle'),['class'=>'form-label'])); ?>
 
             <select name="vehicle" id="vehicle" class="form-control basic-select" required>

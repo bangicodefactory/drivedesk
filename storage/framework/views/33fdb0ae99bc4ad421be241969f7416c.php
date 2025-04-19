@@ -31,9 +31,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="rentalTable_agreement">
                         <thead>
                         <tr>
+                            <th hidden>id</th>
                             <th><?php echo e(__('ID')); ?></th>
                             <th><?php echo e(__('Driver')); ?></th>
                             <th><?php echo e(__('Vehicle')); ?></th>
@@ -50,6 +51,7 @@
                         <tbody>
                         <?php $__currentLoopData = $agreements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $agreement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
+                                <td hidden><?php echo e($agreement->id); ?></td>
                                 <td><?php echo e(rentalAgreementPrefix().$agreement->agreement_id); ?> </td>
                                 <td><?php echo e(!empty($agreement->drivers)?$agreement->drivers->name:'-'); ?></td>
                                 <td><?php echo e(!empty($agreement->vehicles)?$agreement->vehicles->name.' - '.$agreement->vehicles->license_plate:'-'); ?></td>
@@ -106,5 +108,22 @@
         </div>
     </div>
 <?php $__env->stopSection(); ?>
-
+<?php $__env->startPush('scripts'); ?>
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#rentalTable_agreement')) {
+        $('#rentalTable_agreement').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#rentalTable_agreement').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/rental_agreement/index.blade.php ENDPATH**/ ?>

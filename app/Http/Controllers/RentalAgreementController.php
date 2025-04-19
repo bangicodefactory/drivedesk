@@ -31,20 +31,19 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('create rental agreement')) {
             $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
-            // $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get();
-            // $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
-
             $drivers = User::where('parent_id', parentId())
             ->where('type', 'driver')
             ->orderBy('created_at', 'desc')
             ->get();            
-            $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+
 
             $status = RentalAgreement::$status;
             return view('rental_agreement.create', compact('vehicles', 'driversDropdown', 'status'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
     }
 
 
@@ -152,7 +151,10 @@ class RentalAgreementController extends Controller
             $drivers->prepend(__('Select Driver'), '');
 
             $status = RentalAgreement::$status;
-            return view('rental_agreement.edit', compact('vehicles', 'drivers', 'rentalAgreement', 'status'));
+
+            $driver2 = $rentalAgreement->driver2;
+
+            return view('rental_agreement.edit', compact('vehicles', 'drivers', 'rentalAgreement', 'status', 'driver2'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -191,6 +193,7 @@ class RentalAgreementController extends Controller
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
+            $rentalAgreement->driver2 = $request->driver2; // Update driver2
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
@@ -264,4 +267,7 @@ private function getUserSignature($userId)
     
     return null;
 }
+
+
+
 }
