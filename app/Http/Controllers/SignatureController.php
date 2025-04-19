@@ -25,7 +25,7 @@ class SignatureController extends Controller
             // ->with('drivers')  // Eager load the drivers relationship
             // ->orderBy('created_at', 'desc')
             // ->get();
-            $signatures = Signature::with('user')->latest()->get();
+            $signatures = Signature::with('user')->orderBy('created_at', 'desc')->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
