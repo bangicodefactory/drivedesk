@@ -52,23 +52,23 @@
         }
 
         @media print {
-            /* .signature-image {
-                max-width: 300px !important;
-                max-height: 150px !important;
+            .signature-image {
+                max-width: 400px !important;
+                max-height: 250px !important;
                 width: auto !important;
                 height: auto !important;
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
-            } */
-            .signature-image {
+            }
+            /* .signature-image {
         display: block !important;
         max-width: 150px !important;
         max-height: 80px !important;
         -webkit-print-color-adjust: exact !important;
         color-adjust: exact !important;
         print-color-adjust: exact !important;
-    }
+    } */
 
             .signatures {
                 margin-top: 20px !important;
