@@ -52,7 +52,7 @@
         }
 
         @media print {
-            .signature-image {
+            /* .signature-image {
                 max-width: 300px !important;
                 max-height: 150px !important;
                 width: auto !important;
@@ -60,7 +60,15 @@
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
-            }
+            } */
+            .signature-image {
+        display: block !important;
+        max-width: 150px !important;
+        max-height: 80px !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 
             .signatures {
                 margin-top: 20px !important;
@@ -412,16 +420,18 @@
 @push('script-page')
     <script>
         $(document).on('click', '.print', function() {
-            $('.action').addClass('d-none');
-            var printContents = document.getElementById('invoice-print').innerHTML;
-            var originalContents = document.body.innerHTML;
+    $('.action').addClass('d-none');
+    var printContents = document.getElementById('invoice-print').innerHTML;
+    var originalContents = document.body.innerHTML;
 
-            document.body.innerHTML = printContents;
-
-            window.print();
-
-            document.body.innerHTML = originalContents;
-            $('.action').removeClass('d-none');
-        });
+    document.body.innerHTML = printContents;
+    
+    // Give time for images to load before printing
+    setTimeout(function() {
+        window.print();
+        document.body.innerHTML = originalContents;
+        $('.action').removeClass('d-none');
+    }, 500); // 500ms delay
+});
     </script>
 @endpush
