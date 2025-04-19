@@ -31,10 +31,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="signatureTable">
                         <thead>
                             <tr>
-                                {{-- <th data-sort="desc">{{__('ID')}}</th> --}}
+                                <th hidden>ID</th>
                                 <th>{{ __('Client') }}</th>
                                 <th>{{ __('Signature') }}</th>
                                 <th>{{ __('Created At') }}</th>
@@ -49,6 +49,7 @@
                         <tbody>
                             @forelse($signatures as $signature)
                                 <tr>
+                                    <td hidden>{{ $signature->id }}</td>
                                     <td>{{ $signature->user->name }}</td>
                                     <td>
                                         <img src="{{ Storage::url($signature->signature_path) }}" alt="Signature"
@@ -87,3 +88,21 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#signatureTable')) {
+        $('#signatureTable').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#signatureTable').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+@endpush
