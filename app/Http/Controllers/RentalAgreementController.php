@@ -256,13 +256,27 @@ class RentalAgreementController extends Controller
  */
 private function getUserSignature($userId)
 {
+    // $signature = Signature::where('user_id', $userId)
+    //                ->latest()
+    //                ->first();
+    
+    // if ($signature && Storage::disk('public')->exists($signature->signature_path)) {
+    //     // return Storage::disk('public')->path($signature->signature_path);
+    //     return Storage::disk('public')->url( $signature->signature_path);
+    // }
+    
+    // return null;
+
     $signature = Signature::where('user_id', $userId)
-                   ->latest()
-                   ->first();
+                 ->latest()
+                 ->first();
     
     if ($signature && Storage::disk('public')->exists($signature->signature_path)) {
-        // return Storage::disk('public')->path($signature->signature_path);
-        return Storage::disk('public')->url( $signature->signature_path);
+        // Convert to base64 for reliable printing
+        $imagePath = Storage::disk('public')->path($signature->signature_path);
+        $imageData = file_get_contents($imagePath);
+        $base64 = base64_encode($imageData);
+        return 'data:image/png;base64,' . $base64;
     }
     
     return null;

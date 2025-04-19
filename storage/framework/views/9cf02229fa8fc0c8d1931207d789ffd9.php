@@ -33,10 +33,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="signatureTable">
                         <thead>
                             <tr>
-                                
+                                <th hidden>ID</th>
                                 <th><?php echo e(__('Client')); ?></th>
                                 <th><?php echo e(__('Signature')); ?></th>
                                 <th><?php echo e(__('Created At')); ?></th>
@@ -48,6 +48,7 @@
                         <tbody>
                             <?php $__empty_1 = true; $__currentLoopData = $signatures; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $signature): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <tr>
+                                    <td hidden><?php echo e($signature->id); ?></td>
                                     <td><?php echo e($signature->user->name); ?></td>
                                     <td>
                                         <img src="<?php echo e(Storage::url($signature->signature_path)); ?>" alt="Signature"
@@ -88,5 +89,22 @@
         </div>
     </div>
 <?php $__env->stopSection(); ?>
-
+<?php $__env->startPush('scripts'); ?>
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#signatureTable')) {
+        $('#signatureTable').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#signatureTable').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/signature/index.blade.php ENDPATH**/ ?>
