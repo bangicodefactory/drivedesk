@@ -29,9 +29,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="rentalTable_agreement">
                         <thead>
                         <tr>
+                            <th hidden>id</th>
                             <th>{{__('ID')}}</th>
                             <th>{{__('Driver')}}</th>
                             <th>{{__('Vehicle')}}</th>
@@ -48,6 +49,7 @@
                         <tbody>
                         @foreach ($agreements as $agreement)
                             <tr>
+                                <td hidden>{{ $agreement->id }}</td>
                                 <td>{{ rentalAgreementPrefix().$agreement->agreement_id }} </td>
                                 <td>{{!empty($agreement->drivers)?$agreement->drivers->name:'-'}}</td>
                                 <td>{{!empty($agreement->vehicles)?$agreement->vehicles->name.' - '.$agreement->vehicles->license_plate:'-'}}</td>
@@ -102,3 +104,21 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#rentalTable_agreement')) {
+        $('#rentalTable_agreement').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#rentalTable_agreement').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+@endpush
