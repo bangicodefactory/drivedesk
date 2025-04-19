@@ -55,7 +55,7 @@
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ']) !!}
+                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control  basic-select']) !!}
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="{{ route('driver.new.create') }}"
                                     data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>

@@ -64,7 +64,7 @@
                         <div class="form-group col-md-4 col-lg-4">
                             <?php echo e(Form::label('driver', __('Driver'), ['class' => 'form-label'])); ?>
 
-                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ']); ?>
+                            <?php echo Form::select('driver', $drivers, null, ['class' => 'form-control  basic-select']); ?>
 
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="<?php echo e(route('driver.new.create')); ?>"
@@ -146,7 +146,7 @@
                                         <td> <?php echo e(__('Duration')); ?></td>
                                         <td class="duration">
                                             
-                                            <?php echo e($details->considerDays . ' * ' . !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate)); ?>
+                                            <?php echo e($details->considerDays . ' * ' . $booking->daily_price_final . ' = ' . priceFormat($details->totalRate)); ?>
 
                                         </td>
                                     </tr>

@@ -13,8 +13,7 @@
                 
                 <div class="mb-3">
                     <label class="form-label">Select Client</label>
-                    <select name="user_id" class="form-select" required>
-                        <option value="">Select Client</option>
+                    <select name="user_id" class="form-select basic-select" required>
                         @foreach($drivers as $driver)
                             <option value="{{ $driver->id }}">{{ $driver->name }}</option>
                         @endforeach
@@ -24,7 +23,7 @@
                 <div class="mb-3">
                     <label class="form-label">Signature:</label>
                     <div class="border rounded p-3 bg-white">
-                        <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; height: 200px;"></canvas>
+                        <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; "></canvas>
                     </div>
                     <input type="hidden" name="signature" id="signatureData">
                     @error('signature')
