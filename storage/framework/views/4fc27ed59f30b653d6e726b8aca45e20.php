@@ -31,9 +31,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="vehicleTable">
                         <thead>
                         <tr>
+                            <th hidden>id</th>
                             <th><?php echo e(__('ID')); ?></th>
                             <th><?php echo e(__('Name')); ?></th>
                             <th><?php echo e(__('Type')); ?></th>
@@ -49,6 +50,7 @@
                         <tbody>
                         <?php $__currentLoopData = $vehicles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vehicle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
+                                <td hidden><?php echo e($vehicle->id); ?></td>
                                 <td><?php echo e(vehiclePrefix().$vehicle->vehicle_id); ?> </td>
                                 <td><?php echo e($vehicle->name); ?> </td>
                                 <td><?php echo e(!empty($vehicle->types)?$vehicle->types->type:'-'); ?> </td>
@@ -95,5 +97,22 @@
         </div>
     </div>
 <?php $__env->stopSection(); ?>
-
+<?php $__env->startPush('scripts'); ?>
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#vehicleTable')) {
+        $('#vehicleTable').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#vehicleTable').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/vehicle/index.blade.php ENDPATH**/ ?>

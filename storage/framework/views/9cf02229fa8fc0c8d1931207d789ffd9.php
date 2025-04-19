@@ -70,6 +70,7 @@
                                                 <?php echo Form::close(); ?>
 
                                             <?php endif; ?>
+                                            
 
                                         </div>
                                     </td>
