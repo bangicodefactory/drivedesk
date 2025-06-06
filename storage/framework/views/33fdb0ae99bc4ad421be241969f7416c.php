@@ -123,6 +123,17 @@ $(document).ready(function() {
         ],
         order: [[0, 'desc']]
     });
+     $('#customModal').on('shown.bs.modal', function () {
+    // Destroy and re-initialize to avoid double init
+    $('.basic-select').each(function() {
+        if ($(this).hasClass("select2-hidden-accessible")) {
+            $(this).select2('destroy');
+        }
+        $(this).select2({
+            dropdownParent: $('#customModal')
+        });
+    });
+});
 });
 </script>
 <?php $__env->stopPush(); ?>

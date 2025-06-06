@@ -4,17 +4,21 @@
         {{-- Driver section --}}
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-            <select name="driver" id="driver" class="form-control select2-search" required>
+            <select name="driver" id="driver" class="form-control basic-select" required>
                 {{-- <option value="">{{ __('Select Driver') }}</option> --}}
                 @foreach ($driversDropdown as $driverId => $driverName)
                     <option value="{{ $driverId }}">{{ $driverName }}</option>
                 @endforeach
             </select>
+            <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
+                                    data-url="{{ route('driver.new.create') }}"
+                                    data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>
+                      
         </div>
 
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('driver2', __('Driver2'), ['class' => 'form-label']) }}
-            <select name="driver2" id="driver2" class="form-control select2-search">
+            <select name="driver2" id="driver2" class="form-control basic-select">
                 {{-- <option value="">{{ __('Select Driver') }}</option> --}}
                 @foreach ($driversDropdown as $driverId => $driverName)
                     <option value="{{ $driverId }}">{{ $driverName }}</option>
