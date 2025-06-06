@@ -45,7 +45,6 @@
 </div>
 
 <script>
-    // Wait for the DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('signatureCanvas');
         const context = canvas.getContext('2d');
@@ -53,47 +52,52 @@
         let lastX = 0;
         let lastY = 0;
 
-        // Set canvas size
         function resizeCanvas() {
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            // Set white background
             context.fillStyle = '#fff';
             context.fillRect(0, 0, canvas.width, canvas.height);
-            // Set drawing style
             context.strokeStyle = '#000';
             context.lineWidth = 2;
             context.lineCap = 'round';
         }
 
-        // Call resize initially and on window resize
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Drawing functions
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            } else {
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        }
+
         function startDrawing(e) {
             isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            [lastX, lastY] = [
-                e.clientX - rect.left,
-                e.clientY - rect.top
-            ];
+            const pos = getCoords(e);
+            lastX = pos.x;
+            lastY = pos.y;
         }
 
         function draw(e) {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
+            e.preventDefault(); // Prevent scrolling on touch
+            const pos = getCoords(e);
             context.beginPath();
             context.moveTo(lastX, lastY);
-            context.lineTo(x, y);
+            context.lineTo(pos.x, pos.y);
             context.stroke();
-
-            [lastX, lastY] = [x, y];
-            // Update hidden input with signature data
+            lastX = pos.x;
+            lastY = pos.y;
             document.getElementById('signatureData').value = canvas.toDataURL();
         }
 
@@ -101,20 +105,24 @@
             isDrawing = false;
         }
 
-        // Mouse event listeners
+        // Mouse events
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseout', stopDrawing);
 
-        // Clear button functionality
-        document.getElementById('clearButton').addEventListener('click', function() {
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+
+        document.getElementById('clearButton').addEventListener('click', function () {
             context.fillStyle = '#fff';
             context.fillRect(0, 0, canvas.width, canvas.height);
             document.getElementById('signatureData').value = '';
         });
 
-        // Form submission validation
         document.getElementById('signatureForm').addEventListener('submit', function(e) {
             if (!document.getElementById('signatureData').value) {
                 e.preventDefault();
