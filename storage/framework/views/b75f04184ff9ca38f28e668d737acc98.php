@@ -21,7 +21,7 @@
                 <div class="mb-3">
                     <label class="form-label">Signature:</label>
                     <div class="border rounded p-3 bg-white">
-                        <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; "></canvas>
+                        <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; height: 200px; touch-action: none;"></canvas>
                     </div>
                     <input type="hidden" name="signature" id="signatureData">
                     <?php $__errorArgs = ['signature'];
@@ -76,34 +76,59 @@ unset($__errorArgs, $__bag); ?>
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // Get coordinates function that works for both mouse and touch
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                // Touch event
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                // Mouse event
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
         // Drawing functions
         function startDrawing(e) {
+            e.preventDefault(); // Prevent scrolling on touch
             isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            [lastX, lastY] = [
-                e.clientX - rect.left,
-                e.clientY - rect.top
-            ];
+            const coords = getCoordinates(e);
+            lastX = coords.x;
+            lastY = coords.y;
         }
 
         function draw(e) {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
+            e.preventDefault(); // Prevent scrolling on touch
+            
+            const coords = getCoordinates(e);
+            
             context.beginPath();
             context.moveTo(lastX, lastY);
-            context.lineTo(x, y);
+            context.lineTo(coords.x, coords.y);
             context.stroke();
 
-            [lastX, lastY] = [x, y];
+            lastX = coords.x;
+            lastY = coords.y;
+            
             // Update hidden input with signature data
             document.getElementById('signatureData').value = canvas.toDataURL();
         }
 
-        function stopDrawing() {
-            isDrawing = false;
+        function stopDrawing(e) {
+            if (isDrawing) {
+                e.preventDefault();
+                isDrawing = false;
+            }
         }
 
         // Mouse event listeners
@@ -111,6 +136,12 @@ unset($__errorArgs, $__bag); ?>
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch event listeners
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
 
         // Clear button functionality
         document.getElementById('clearButton').addEventListener('click', function() {
