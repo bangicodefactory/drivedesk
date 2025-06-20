@@ -50,7 +50,7 @@
                                 <td hidden><?php echo e($booking->id); ?></td>
                                 <td><?php echo e(bookingPrefix().$booking->booking_id); ?></td>
                                 <td><?php echo e(!empty($booking->drivers)?$booking->drivers->name:'-'); ?></td>
-                                <td><?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-'); ?></td>
+                                <td><?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-'); ?> - <?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->license_plate:'-'); ?></td>
                                 <td>
                                     <?php echo e(dateFormat($booking->start_date) .' / '. timeFormat($booking->start_time)); ?> <br>
                                     <?php echo e(dateFormat($booking->end_date) .' / '. timeFormat($booking->end_time)); ?>
