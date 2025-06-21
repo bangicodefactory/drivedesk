@@ -48,7 +48,7 @@
                                 <td hidden>{{ $booking->id }}</td>
                                 <td>{{ bookingPrefix().$booking->booking_id }}</td>
                                 <td>{{ !empty($booking->drivers)?$booking->drivers->name:'-' }}</td>
-                                <td>{{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-' }}</td>
+                                <td>{{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-' }} - {{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->license_plate:'-' }}</td>
                                 <td>
                                     {{ dateFormat($booking->start_date) .' / '. timeFormat($booking->start_time)}} <br>
                                     {{ dateFormat($booking->end_date) .' / '. timeFormat($booking->end_time)}}
