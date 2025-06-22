@@ -210,11 +210,11 @@
                                     <a href="{{ route('expense-type.index') }}">{{ __('Expense Type') }}</a>
                                 </li>
                             @endif
-                            @if (Gate::check('manage reminder'))
+                            {{-- @if (Gate::check('manage reminder'))
                                 <li class="{{ in_array($routeName, ['reminder-type.index']) ? 'active' : '' }}">
                                     <a href="{{ route('reminder-type.index') }}">{{ __('Reminder Type') }}</a>
                                 </li>
-                            @endif
+                            @endif --}}
 
 
                         </ul>
