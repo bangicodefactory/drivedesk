@@ -365,7 +365,7 @@ class ReminderController extends Controller
             'pending' => Reminder::where('parent_id', $parentId)->where('status', 'pending')->count(),
         ];
 
-        $upcomingReminders = Reminder::with(['vehicle', 'reminderType'])
+        $upcomingReminders = Reminder::with(['vehicles', 'reminderType'])
             ->where('parent_id', $parentId)
             ->whereIn('status', ['overdue', 'urgent', 'upcoming'])
             ->orderBy('reminder_date', 'asc')
