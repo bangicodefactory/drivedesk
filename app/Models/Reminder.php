@@ -32,4 +32,8 @@ class Reminder extends Model
     {
         return $this->hasOne('App\Models\User','id','inspector');
     }
+    public function vehicle()
+{
+    return $this->belongsTo(Vehicle::class);
+}
 }

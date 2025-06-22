@@ -356,25 +356,43 @@ Route::resource('notification', NotificationController::class)->middleware(
 //new route for reminder and reminder_type tables
 
 //--------------------------------Reminder Types--------------------------------
-Route::group([
-    'middleware' => [
-        'auth',
-        'XSS',
-    ],
-], function () {
-    Route::resource('reminder-type', ReminderTypeController::class);
-});
+// Route::group([
+//     'middleware' => [
+//         'auth',
+//         'XSS',
+//     ],
+// ], function () {
+//     Route::resource('reminder-type', ReminderTypeController::class);
+// });
 
 //--------------------------------Reminders--------------------------------
-Route::group([
-    'middleware' => [
-        'auth',
-        'XSS',
-    ],
-], function () {
+// Route::group([
+//     'middleware' => [
+//         'auth',
+//         'XSS',
+//     ],
+// ], function () {
+//     Route::resource('reminder', ReminderController::class);
+// });
+// Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');
+
+Route::middleware(['auth'])->group(function () {
+    // Existing reminder routes...
     Route::resource('reminder', ReminderController::class);
+    
+    // New automatic reminder routes
+    Route::get('/reminder/dashboard/data', [ReminderController::class, 'getDashboardData'])->name('reminder.dashboard.data');
+    Route::get('/reminder/urgent/list', [ReminderController::class, 'getUrgentReminders'])->name('reminder.urgent.list');
+    Route::get('/reminder/vehicle/{vehicle}', [ReminderController::class, 'getVehicleReminders'])->name('reminder.vehicle');
+    Route::get('/reminder/statistics/data', [ReminderController::class, 'getReminderStatistics'])->name('reminder.statistics');
+    Route::post('/reminder/{reminder}/complete', [ReminderController::class, 'markAsCompleted'])->name('reminder.complete');
+    Route::post('/reminder/{reminder}/snooze', [ReminderController::class, 'snoozeReminder'])->name('reminder.snooze');
+    
+    // Manual update routes (for testing)
+    Route::post('/reminder/update-statuses', [ReminderController::class, 'updateReminderStatuses'])->name('reminder.update.statuses');
+    Route::post('/reminder/create-recurring', [ReminderController::class, 'createRecurringReminders'])->name('reminder.create.recurring');
 });
-Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');
+
 
 //--------------------------------TVA--------------------------------
 Route::group([
