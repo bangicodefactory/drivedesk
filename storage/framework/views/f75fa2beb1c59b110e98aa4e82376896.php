@@ -1,3 +1,10 @@
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Reminder')); ?>
+
+<?php $__env->stopSection(); ?>
+
+
+<?php $__env->startSection('content'); ?>
 <?php echo e(Form::model($reminder, array('route' => array('reminder.update', $reminder->id), 'enctype' => "multipart/form-data", 'method' => 'PUT'))); ?>
 
 <div class="modal-body">
@@ -40,7 +47,7 @@
     </div>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal"><?php echo e(__('Close')); ?></button>
+    <button class="btn btn-secondary" type="button" onclick="window.history.back()"><?php echo e(__(key: 'Close')); ?></button>
     <?php echo e(Form::submit(__('Update'),array('class'=>'btn btn-primary ml-10'))); ?>
 
 </div>
@@ -48,4 +55,5 @@
 
 
 
-<?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/reminder/edit.blade.php ENDPATH**/ ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/reminder/edit.blade.php ENDPATH**/ ?>

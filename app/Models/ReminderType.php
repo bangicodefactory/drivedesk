@@ -16,6 +16,7 @@ class ReminderType extends Model
         'parent_id',
         
     ];
+        // protected $table = 'reminder_types'; 
 
     public function reminders(): HasMany
     {

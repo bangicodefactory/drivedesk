@@ -1,3 +1,11 @@
+@extends('layouts.app')
+@section('page-title')
+    {{ __('Reminder') }}
+@endsection
+
+
+@section('content')
+
 {{ Form::open(['url' => 'reminder', 'method' => 'post', 'enctype' => 'multipart/form-data']) }}
 <div class="modal-body">
     <div class="row">
@@ -38,3 +46,5 @@
     {{ Form::submit(__('Create'), ['class' => 'btn btn-primary ml-10']) }}
 </div>
 {{ Form::close() }}
+
+@endsection

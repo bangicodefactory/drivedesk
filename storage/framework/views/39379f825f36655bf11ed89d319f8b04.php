@@ -1,3 +1,11 @@
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Reminder')); ?>
+
+<?php $__env->stopSection(); ?>
+
+
+<?php $__env->startSection('content'); ?>
+
 <?php echo e(Form::open(['url' => 'reminder', 'method' => 'post', 'enctype' => 'multipart/form-data'])); ?>
 
 <div class="modal-body">
@@ -50,4 +58,6 @@
 </div>
 <?php echo e(Form::close()); ?>
 
-<?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/reminder/create.blade.php ENDPATH**/ ?>
+
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/reminder/create.blade.php ENDPATH**/ ?>

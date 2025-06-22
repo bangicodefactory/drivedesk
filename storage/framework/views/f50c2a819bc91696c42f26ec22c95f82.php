@@ -210,11 +210,7 @@
                                     <a href="<?php echo e(route('expense-type.index')); ?>"><?php echo e(__('Expense Type')); ?></a>
                                 </li>
                             <?php endif; ?>
-                            <?php if(Gate::check('manage reminder')): ?>
-                                <li class="<?php echo e(in_array($routeName, ['reminder-type.index']) ? 'active' : ''); ?>">
-                                    <a href="<?php echo e(route('reminder-type.index')); ?>"><?php echo e(__('Reminder Type')); ?></a>
-                                </li>
-                            <?php endif; ?>
+                            
 
 
                         </ul>
