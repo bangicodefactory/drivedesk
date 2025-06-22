@@ -16,14 +16,14 @@
         </li>
     </ul>
 @endsection
-@section('card-action-btn')
+{{-- @section('card-action-btn')
     @if (Gate::check('manage reminder'))
         <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg"
             data-url="{{ route('reminder.create') }}" data-title="{{ __('Create Reminder') }}"> <i class="ti-plus mr-5"></i>
             {{ __('Create Reminder') }}
         </a>
     @endif
-@endsection
+@endsection --}}
 @section('content')
     <div class="container-fluid">
     <div class="row">
@@ -158,13 +158,13 @@
                                                 <span class="badge badge-success">{{ __('Terminé') }}</span>
                                                 @break
                                             @default
-                                                <span class="badge badge-secondary">{{ __('En Attente') }}</span>
+                                                <span class="badge badge-success">{{ __('En Attente') }}</span>
                                         @endswitch
                                     </td>
                                     <td>{{ $reminder->name }}</td>
                                     <td>
-                                        @if($reminder->vehicle)
-                                            {{ $reminder->vehicle->name }}
+                                        @if($reminder->vehicles)
+                                            {{ $reminder->vehicles->model }} - {{ $reminder->vehicles->license_plate }}
                                         @else
                                             <span class="text-muted">{{ __('N/A') }}</span>
                                         @endif
@@ -321,14 +321,14 @@ function updateUrgentRemindersTable(reminders) {
     reminders.forEach(function(reminder) {
         const daysRemaining = calculateDaysRemaining(reminder.reminder_date);
         const statusBadge = getStatusBadge(reminder.status);
-        const vehicleName = reminder.vehicle ? reminder.vehicle.name : 'N/A';
+        const vehicleName = reminder.vehicles ? reminder.vehicles.model : 'N/A';
         const reminderType = reminder.reminder_type ? reminder.reminder_type.type : 'N/A';
-        
+        const vehicleLicensePlate = reminder.vehicles && reminder.vehicles.license_plate ? reminder.vehicles.license_plate : 'N/A';
         const row = `
             <tr class="reminder-row-${reminder.status}">
                 <td>${statusBadge}</td>
                 <td><strong>${reminder.name}</strong></td>
-                <td>${vehicleName}</td>
+                <td>${vehicleName} - ${vehicleLicensePlate}</td>
                 <td>${reminderType}</td>
                 <td>${formatDate(reminder.reminder_date)}</td>
                 <td>${daysRemaining}</td>
@@ -456,10 +456,13 @@ function deleteReminder(reminderId) {
                 showNotification('{{ __("Rappel supprimé avec succès") }}', 'success');
                 setTimeout(() => {
                     window.location.reload();
-                }, 1500);
+                }, 1000);
             },
             error: function(xhr, status, error) {
-                showNotification('{{ __("Erreur lors de la suppression") }}: ' + error, 'error');
+                // showNotification('{{ __("Erreur lors de la suppression") }}: ' + error, 'error');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             }
         });
     }
@@ -563,6 +566,6 @@ $('#snoozeForm').on('submit', function(e) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+} 
 </style>
 @endpush

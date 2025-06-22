@@ -1,3 +1,10 @@
+@extends('layouts.app')
+@section('page-title')
+    {{ __('Reminder') }}
+@endsection
+
+
+@section('content')
 {{ Form::model($reminder, array('route' => array('reminder.update', $reminder->id), 'enctype' => "multipart/form-data", 'method' => 'PUT')) }}
 <div class="modal-body">
     <div class="row">
@@ -28,9 +35,10 @@
     </div>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">{{__('Close')}}</button>
+    <button class="btn btn-secondary" type="button" onclick="window.history.back()">{{__(key: 'Close')}}</button>
     {{Form::submit(__('Update'),array('class'=>'btn btn-primary ml-10'))}}
 </div>
 {{Form::close()}}
 
 
+@endsection

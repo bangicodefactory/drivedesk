@@ -17,15 +17,7 @@
         </li>
     </ul>
 <?php $__env->stopSection(); ?>
-<?php $__env->startSection('card-action-btn'); ?>
-    <?php if(Gate::check('manage reminder')): ?>
-        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg"
-            data-url="<?php echo e(route('reminder.create')); ?>" data-title="<?php echo e(__('Create Reminder')); ?>"> <i class="ti-plus mr-5"></i>
-            <?php echo e(__('Create Reminder')); ?>
 
-        </a>
-    <?php endif; ?>
-<?php $__env->stopSection(); ?>
 <?php $__env->startSection('content'); ?>
     <div class="container-fluid">
     <div class="row">
@@ -164,13 +156,13 @@
                                                 <span class="badge badge-success"><?php echo e(__('Terminé')); ?></span>
                                                 <?php break; ?>
                                             <?php default: ?>
-                                                <span class="badge badge-secondary"><?php echo e(__('En Attente')); ?></span>
+                                                <span class="badge badge-success"><?php echo e(__('En Attente')); ?></span>
                                         <?php endswitch; ?>
                                     </td>
                                     <td><?php echo e($reminder->name); ?></td>
                                     <td>
-                                        <?php if($reminder->vehicle): ?>
-                                            <?php echo e($reminder->vehicle->name); ?>
+                                        <?php if($reminder->vehicles): ?>
+                                            <?php echo e($reminder->vehicles->model); ?> - <?php echo e($reminder->vehicles->license_plate); ?>
 
                                         <?php else: ?>
                                             <span class="text-muted"><?php echo e(__('N/A')); ?></span>
@@ -332,14 +324,14 @@ function updateUrgentRemindersTable(reminders) {
     reminders.forEach(function(reminder) {
         const daysRemaining = calculateDaysRemaining(reminder.reminder_date);
         const statusBadge = getStatusBadge(reminder.status);
-        const vehicleName = reminder.vehicle ? reminder.vehicle.name : 'N/A';
+        const vehicleName = reminder.vehicles ? reminder.vehicles.model : 'N/A';
         const reminderType = reminder.reminder_type ? reminder.reminder_type.type : 'N/A';
-        
+        const vehicleLicensePlate = reminder.vehicles && reminder.vehicles.license_plate ? reminder.vehicles.license_plate : 'N/A';
         const row = `
             <tr class="reminder-row-${reminder.status}">
                 <td>${statusBadge}</td>
                 <td><strong>${reminder.name}</strong></td>
-                <td>${vehicleName}</td>
+                <td>${vehicleName} - ${vehicleLicensePlate}</td>
                 <td>${reminderType}</td>
                 <td>${formatDate(reminder.reminder_date)}</td>
                 <td>${daysRemaining}</td>
@@ -467,10 +459,13 @@ function deleteReminder(reminderId) {
                 showNotification('<?php echo e(__("Rappel supprimé avec succès")); ?>', 'success');
                 setTimeout(() => {
                     window.location.reload();
-                }, 1500);
+                }, 1000);
             },
             error: function(xhr, status, error) {
-                showNotification('<?php echo e(__("Erreur lors de la suppression")); ?>: ' + error, 'error');
+                // showNotification('<?php echo e(__("Erreur lors de la suppression")); ?>: ' + error, 'error');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             }
         });
     }
@@ -574,7 +569,7 @@ $('#snoozeForm').on('submit', function(e) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+} 
 </style>
 <?php $__env->stopPush(); ?>
 
