@@ -131,6 +131,7 @@
                         <table class="table table-striped" id="all-reminders-table">
                             <thead>
                                 <tr>
+                                    <th hidden>{{ __('ID') }}</th>
                                     <th>{{ __('Statut') }}</th>
                                     <th>{{ __('Nom') }}</th>
                                     <th>{{ __('Véhicule') }}</th>
@@ -143,6 +144,7 @@
                             <tbody>
                                 @foreach($reminders as $reminder)
                                 <tr class="reminder-row" data-status="{{ $reminder->status }}">
+                                    <td hidden>{{ $reminder->id }}</td>
                                     <td>
                                         @switch($reminder->status)
                                             @case('overdue')
@@ -281,7 +283,7 @@ $(document).ready(function() {
     
     // Initialize DataTables
     $('#all-reminders-table').DataTable({
-        "order": [[ 4, "asc" ]], // Sort by date
+        "order": [[ 0, "desc" ]], // Sort by date
         "language": {
             "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/French.json"
         }
