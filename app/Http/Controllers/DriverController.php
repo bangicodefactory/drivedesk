@@ -196,7 +196,7 @@ class DriverController extends Controller
                     if (!file_exists($directory1)) {
                         mkdir($directory1, 0777, true);
                     }
-                    $request->file('document')->storeAs('upload/document/', $documentFileName1);
+                    $request->file('document1')->storeAs('upload/document/', $documentFileName1);
                     $driver->document_1 = $documentFileName1;
                 }
 // Save license document 
@@ -227,7 +227,7 @@ class DriverController extends Controller
                     if (!file_exists($directory1)) {
                         mkdir($directory1, 0777, true);
                     }
-                    $request->file('license')->storeAs('upload/license/', $licenseFileName1);
+                    $request->file('license1')->storeAs('upload/license/', $licenseFileName1);
                     $driver->license_1 = $licenseFileName1;
                 }
 
