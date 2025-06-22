@@ -129,6 +129,7 @@
                         <table class="table table-striped" id="all-reminders-table">
                             <thead>
                                 <tr>
+                                    <th hidden><?php echo e(__('ID')); ?></th>
                                     <th><?php echo e(__('Statut')); ?></th>
                                     <th><?php echo e(__('Nom')); ?></th>
                                     <th><?php echo e(__('Véhicule')); ?></th>
@@ -141,6 +142,7 @@
                             <tbody>
                                 <?php $__currentLoopData = $reminders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reminder): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr class="reminder-row" data-status="<?php echo e($reminder->status); ?>">
+                                    <td hidden><?php echo e($reminder->id); ?></td>
                                     <td>
                                         <?php switch($reminder->status):
                                             case ('overdue'): ?>
@@ -284,7 +286,7 @@ $(document).ready(function() {
     
     // Initialize DataTables
     $('#all-reminders-table').DataTable({
-        "order": [[ 4, "asc" ]], // Sort by date
+        "order": [[ 0, "desc" ]], // Sort by date
         "language": {
             "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/French.json"
         }
