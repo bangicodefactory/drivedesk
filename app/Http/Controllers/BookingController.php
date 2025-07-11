@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\Place;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\Tva;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -121,6 +122,44 @@ class BookingController extends Controller
                     $errorMessage=$response['message'];
                 }
             }
+
+            //get address from drivers table
+            $driver1 = Driver::where('user_id', $request->driver)->first();
+
+            //calcul TOTAL HT and PUHT
+            $totalht = round($booking->amount - ($booking->amount * 0.2), 2);
+            $tva = round($booking->amount * 0.2, 2);
+            //return consider Days
+            $vehicleDetails = json_decode($booking->vehicle_details, true);
+            $vehicle_name = $vehicleDetails['name'] ?? '';
+            $vehicle_license_plate = $vehicleDetails['license_plate'] ?? '';
+            // Calculate total days between start and end date
+            $startDate = Carbon::parse($booking->start_date);
+            $endDate = Carbon::parse($booking->end_date);
+            $totalDays = $startDate->diffInDays($endDate);
+            //store tva
+            $tva = new Tva();
+            $tva->facture_number = $booking->booking_id;
+            $tva->facture_date = $booking->created_at;
+            $tva->client_name = $user->name; 
+            $tva->client_address = $driver1 ? $driver1->address : '';
+            $tva->company_name = $setting['company_name'];
+             $tva->company_address = $setting['company_address'];
+             $tva->designation = $vehicle_name . '-' . $vehicle_license_plate ; 
+            $tva->quantity = $totalDays ?? 1; //days of booking
+            $tva->total_ht = round($booking->getTotalAmount() * 0.8, 2);
+            $tva->tva = round($booking->getTotalAmount() * 0.2, 2);
+            $tva->unit_price_ht = round($tva->total_ht / $tva->quantity, 2);
+            $tva->montant_ttc = $booking->amount ;
+            $tva->ice_number = $setting['ice'];
+            $tva->rc_number = $setting['rc'];
+            // // $tva->tp_number = $setting['tp_number'];
+            $tva->nif_number = $setting['if'];
+            $tva->parent_id = parentId();
+            $tva->booking_id = $booking->id;
+            $tva->save();
+
+
 
             return redirect()->route('booking.show', Crypt::encrypt($booking->id))->with('success', __('Booking successfully created.').'</br>'.$errorMessage);
         } else {

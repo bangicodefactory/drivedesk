@@ -29,60 +29,63 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                         <thead>
-                            <tr>
-                                <th>{{ __('Period') }}</th>
-                                <th>{{ __('Total amout') }}</th>
-                                <th>{{ __('TVA amout') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th>{{ __('Generate date') }}</th> 
-                                @if (Gate::check('edit reminder') || Gate::check('delete reminder'))
-                                    <th>{{ __('Action') }}</th>
-                                @endif
-                            </tr>
+                        <tr>
+                            <th hidden>id</th>
+                            <th>{{__('Facture N°')}}</th>
+                            <th>{{__('Designation')}}</th>
+                            <th>{{__('Date')}}</th>
+                            <th>{{__('TTC')}}</th>
+                            @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                <th>{{__('Action')}}</th>
+                            @endif
+                        </tr>
                         </thead>
                         <tbody>
-                            @foreach ($tvaFiles as $tvaFile)
-                                <tr>
-                                    <td>{{ Carbon\Carbon::create()->month($tvaFile->month)->format('F') }} {{ $tvaFile->year }}</td>
-                                    <td>{{ number_format($tvaFile->total_amount, 2) }} </td>
-                                    <td>{{ number_format($tvaFile->tva_amount, 2) }} </td>
-                                    <td>{{ $tvaFile->status }}</td>
+                        @foreach ($tvas as $tva)
+                            <tr>
+                                <td hidden>{{ $tva->id }}</td>
+                                <td>{{ bookingPrefix().$tva->facture_number }}</td>
+                                <td>{{ !empty($tva->designation)?$tva->designation:'-' }}</td>
+
+                                <td>
+                                    {{ dateFormat($tva->created_at) }}
+                                </td>
+                                <td>
+                                    {{ $tva->montant_ttc }} Dh
+                                </td>
+                                
+                                {{-- @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                     <td>
-                                        {{ $tvaFile->generated_date->format('d/m/Y') }}
+                                        <div class="cart-action">
+                                            {!! Form::open(['method' => 'DELETE', 'route' => ['booking.destroy', $booking->id]]) !!}
+                                            @can('show booking')
+                                                <a class="text-warning"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-original-title="{{__('Details')}}"
+                                                   href="{{ route('booking.show',\Illuminate\Support\Facades\Crypt::encrypt($booking->id)) }}"
+                                                > <i data-feather="eye"></i></a>
+                                            @endcan
+                                            @can('edit booking')
+                                                <a class="text-success" data-bs-toggle="tooltip"
+                                                   data-bs-original-title="{{__('Edit')}}"
+                                                   href="{{ route('booking.edit',\Illuminate\Support\Facades\Crypt::encrypt($booking->id)) }}">
+                                                    <i data-feather="edit"></i></a>
+                                            @endcan
+                                            
+                                            {!! Form::close() !!}
+                                        </div>
                                     </td>
-                                    @if (Gate::check('edit reminder') || Gate::check('delete reminder'))
-                                        <td>
-                                            <div class="cart-action">
-                                                {!! Form::open(['method' => 'DELETE', 'route' => ['tva.destroy', $tvaFile->id]]) !!}
-
-                                                @can('edit reminder')
-                                                    <a class="text-success customModal" data-bs-toggle="tooltip"
-                                                        data-bs-original-title="{{ __('Edit') }}" href="#"
-                                                        data-size="lg" data-url="{{ route('tva.edit', $tvaFile->id) }}"
-                                                        data-title="{{ __('Edit tva') }}"> <i data-feather="edit"></i></a>
-                                                @endcan
-                                                @can('delete reminder')
-                                                    <a class=" text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                        data-bs-original-title="{{ __('Detete') }}" href="#"> <i
-                                                            data-feather="trash-2"></i></a>
-                                                @endcan
-                                                {!! Form::close() !!}
-                                            </div>
-
-                                        </td>
-                                    @endif
-                                </tr>
-                            @endforeach
-
+                                @endif --}}
+                            </tr>
+                        @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    {{-- @include('reminder._date_modal') --}}
 @endsection
 {{-- @push('scripts')
     <script>

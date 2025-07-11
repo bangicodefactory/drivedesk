@@ -31,63 +31,43 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                         <thead>
-                            <tr>
-                                <th><?php echo e(__('Period')); ?></th>
-                                <th><?php echo e(__('Total amout')); ?></th>
-                                <th><?php echo e(__('TVA amout')); ?></th>
-                                <th><?php echo e(__('Status')); ?></th>
-                                <th><?php echo e(__('Generate date')); ?></th> 
-                                <?php if(Gate::check('edit reminder') || Gate::check('delete reminder')): ?>
-                                    <th><?php echo e(__('Action')); ?></th>
-                                <?php endif; ?>
-                            </tr>
+                        <tr>
+                            <th hidden>id</th>
+                            <th><?php echo e(__('Facture N°')); ?></th>
+                            <th><?php echo e(__('Designation')); ?></th>
+                            <th><?php echo e(__('Date')); ?></th>
+                            <th><?php echo e(__('TTC')); ?></th>
+                            <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
+                                <th><?php echo e(__('Action')); ?></th>
+                            <?php endif; ?>
+                        </tr>
                         </thead>
                         <tbody>
-                            <?php $__currentLoopData = $tvaFiles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tvaFile): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <tr>
-                                    <td><?php echo e(Carbon\Carbon::create()->month($tvaFile->month)->format('F')); ?> <?php echo e($tvaFile->year); ?></td>
-                                    <td><?php echo e(number_format($tvaFile->total_amount, 2)); ?> </td>
-                                    <td><?php echo e(number_format($tvaFile->tva_amount, 2)); ?> </td>
-                                    <td><?php echo e($tvaFile->status); ?></td>
-                                    <td>
-                                        <?php echo e($tvaFile->generated_date->format('d/m/Y')); ?>
+                        <?php $__currentLoopData = $tvas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tva): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <tr>
+                                <td hidden><?php echo e($tva->id); ?></td>
+                                <td><?php echo e(bookingPrefix().$tva->facture_number); ?></td>
+                                <td><?php echo e(!empty($tva->designation)?$tva->designation:'-'); ?></td>
 
-                                    </td>
-                                    <?php if(Gate::check('edit reminder') || Gate::check('delete reminder')): ?>
-                                        <td>
-                                            <div class="cart-action">
-                                                <?php echo Form::open(['method' => 'DELETE', 'route' => ['tva.destroy', $tvaFile->id]]); ?>
+                                <td>
+                                    <?php echo e(dateFormat($tva->created_at)); ?>
 
-
-                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit reminder')): ?>
-                                                    <a class="text-success customModal" data-bs-toggle="tooltip"
-                                                        data-bs-original-title="<?php echo e(__('Edit')); ?>" href="#"
-                                                        data-size="lg" data-url="<?php echo e(route('tva.edit', $tvaFile->id)); ?>"
-                                                        data-title="<?php echo e(__('Edit tva')); ?>"> <i data-feather="edit"></i></a>
-                                                <?php endif; ?>
-                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete reminder')): ?>
-                                                    <a class=" text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                        data-bs-original-title="<?php echo e(__('Detete')); ?>" href="#"> <i
-                                                            data-feather="trash-2"></i></a>
-                                                <?php endif; ?>
-                                                <?php echo Form::close(); ?>
-
-                                            </div>
-
-                                        </td>
-                                    <?php endif; ?>
-                                </tr>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
+                                </td>
+                                <td>
+                                    <?php echo e($tva->montant_ttc); ?> Dh
+                                </td>
+                                
+                                
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    
 <?php $__env->stopSection(); ?>
 
 
