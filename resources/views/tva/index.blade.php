@@ -18,8 +18,8 @@
 @endsection
 @section('card-action-btn')
     @if (Gate::check('manage reminder'))
-        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg"
-            data-url="{{ route('tva.create') }}" data-title="{{ __('Create TVA') }}"> <i class="ti-plus mr-5"></i>
+        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="{{ route('tva.create') }}"
+            data-title="{{ __('Create TVA') }}"> <i class="ti-plus mr-5"></i>
             {{ __('Create TVA') }}
         </a>
     @endif
@@ -29,34 +29,42 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
-                        <thead>
-                        <tr>
-                            <th hidden>id</th>
-                            <th>{{__('Facture N°')}}</th>
-                            <th>{{__('Designation')}}</th>
-                            <th>{{__('Date')}}</th>
-                            <th>{{__('TTC')}}</th>
-                            @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
-                                <th>{{__('Action')}}</th>
-                            @endif
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach ($tvas as $tva)
-                            <tr>
-                                <td hidden>{{ $tva->id }}</td>
-                                <td>{{ bookingPrefix().$tva->facture_number }}</td>
-                                <td>{{ !empty($tva->designation)?$tva->designation:'-' }}</td>
+                    <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">
+                        @csrf
 
-                                <td>
-                                    {{ dateFormat($tva->created_at) }}
-                                </td>
-                                <td>
-                                    {{ $tva->montant_ttc }} Dh
-                                </td>
-                                
-                                {{-- @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                        <button type="submit" class="btn btn-success mb-3">{{ __('Download Selected Invoices') }}</button>
+                        <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
+                            <thead>
+                                <tr>
+                                    <th hidden>id</th>
+                                    <th><input type="checkbox" id="select-all" /></th>
+                                    <th>{{ __('Facture N°') }}</th>
+                                    <th>{{ __('Designation') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th>{{ __('TTC') }}</th>
+                                    {{-- @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                <th>{{__('Action')}}</th>
+                            @endif --}}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($tvas as $tva)
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
+                                        </td>
+                                        <td hidden>{{ $tva->id }}</td>
+                                        <td>{{ bookingPrefix() . $tva->facture_number }}</td>
+                                        <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
+
+                                        <td>
+                                            {{ dateFormat($tva->created_at) }}
+                                        </td>
+                                        <td>
+                                            {{ $tva->montant_ttc }} Dh
+                                        </td>
+
+                                        {{-- @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                     <td>
                                         <div class="cart-action">
                                             {!! Form::open(['method' => 'DELETE', 'route' => ['booking.destroy', $booking->id]]) !!}
@@ -78,10 +86,11 @@
                                         </div>
                                     </td>
                                 @endif --}}
-                            </tr>
-                        @endforeach
-                        </tbody>
-                    </table>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </form>
                 </div>
             </div>
         </div>
@@ -116,3 +125,10 @@
         });
     </script>
 @endpush --}}
+@push('scripts')
+    <script>
+        $('#select-all').on('click', function() {
+            $('input[name="invoice_ids[]"]').prop('checked', this.checked);
+        });
+    </script>
+@endpush
