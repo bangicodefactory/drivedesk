@@ -149,7 +149,8 @@ class BookingController extends Controller
             $tva->quantity = $totalDays ?? 1; //days of booking
             $tva->total_ht = round($booking->getTotalAmount() * 0.8, 2);
             $tva->tva = round($booking->getTotalAmount() * 0.2, 2);
-            $tva->unit_price_ht = round($tva->total_ht / $tva->quantity, 2);
+            // $tva->unit_price_ht = round($tva->total_ht / $tva->quantity, 2);
+            $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
             $tva->montant_ttc = $booking->amount ;
             $tva->ice_number = $setting['ice'];
             $tva->rc_number = $setting['rc'];
