@@ -16,7 +16,7 @@ use App\Models\BookingPayment;
 class TvaController extends Controller
 {
     //
-    public function index()
+    public function index(Request $request)
     {
         // if (\Auth::user()->can('manage booking')) {
         //     $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
@@ -29,6 +29,22 @@ class TvaController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+        $query = Tva::where('parent_id', '=', parentId());
+        if ($request->filled('filter_day')) {
+            $query->whereDate('created_at', $request->filter_day);
+        }
+
+        // Filter by month
+        if ($request->filled('filter_month')) {
+            $query->whereMonth('created_at', $request->filter_month);
+        }
+
+        // Filter by year
+        if ($request->filled('filter_year')) {
+            $query->whereYear('created_at', $request->filter_year);
+        }
+        $tvas = $query->get();
+
         return view('tva.index', compact('tvas'));
     }
     public function create()
