@@ -38,7 +38,7 @@ class BookingController extends Controller
             $drivers = User::where('parent_id', parentId())
             ->where('type', 'driver')
             ->orderBy('created_at', 'desc')
-            ->get();            
+            ->get();
             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
 
 
@@ -141,11 +141,11 @@ class BookingController extends Controller
             $tva = new Tva();
             $tva->facture_number = $booking->booking_id;
             $tva->facture_date = $booking->created_at;
-            $tva->client_name = $user->name; 
+            $tva->client_name = $user->name;
             $tva->client_address = $driver1 ? $driver1->address : '';
             $tva->company_name = $setting['company_name'];
              $tva->company_address = $setting['company_address'];
-             $tva->designation = $vehicle_name . '-' . $vehicle_license_plate ; 
+             $tva->designation = $vehicle_name . '-' . $vehicle_license_plate ;
             $tva->quantity = $totalDays ?? 1; //days of booking
             $tva->total_ht = round($booking->getTotalAmount() * 0.8, 2);
             $tva->tva = round($booking->getTotalAmount() * 0.2, 2);
@@ -158,6 +158,7 @@ class BookingController extends Controller
             $tva->nif_number = $setting['if'];
             $tva->parent_id = parentId();
             $tva->booking_id = $booking->id;
+            $tva->generated_date = now();
             $tva->save();
 
 

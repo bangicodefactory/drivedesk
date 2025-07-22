@@ -42,9 +42,9 @@
                                     <th>{{ __('Designation') }}</th>
                                     <th>{{ __('Date') }}</th>
                                     <th>{{ __('TTC') }}</th>
-                                    {{-- @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                     @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                 <th>{{__('Action')}}</th>
-                            @endif --}}
+                            @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -64,28 +64,34 @@
                                             {{ $tva->montant_ttc }} Dh
                                         </td>
 
-                                        {{-- @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                         @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                     <td>
                                         <div class="cart-action">
-                                            {!! Form::open(['method' => 'DELETE', 'route' => ['booking.destroy', $booking->id]]) !!}
                                             @can('show booking')
-                                                <a class="text-warning"
-                                                   data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Details')}}"
-                                                   href="{{ route('booking.show',\Illuminate\Support\Facades\Crypt::encrypt($booking->id)) }}"
-                                                > <i data-feather="eye"></i></a>
+                                            <a class="text-warning customModal" data-size="lg"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-original-title="{{ __('Details') }}" href="#"
+                                            data-url="{{ route('tva.show', $tva->id) }}"
+                                            data-title="{{ __('TVA Details') }}">
+                                            <i data-feather="eye"></i>
+                                         </a>
+
                                             @endcan
                                             @can('edit booking')
                                                 <a class="text-success" data-bs-toggle="tooltip"
                                                    data-bs-original-title="{{__('Edit')}}"
-                                                   href="{{ route('booking.edit',\Illuminate\Support\Facades\Crypt::encrypt($booking->id)) }}">
+                                                   href="{{ route('tva.edit',$tva->id)}}">
                                                     <i data-feather="edit"></i></a>
                                             @endcan
-                                            
-                                            {!! Form::close() !!}
+                                            @can('delete booking')
+                                            <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
+                                               data-bs-original-title="{{__('Delete')}}" href="#">
+                                                <i data-feather="trash-2"></i>
+                                            </a>
+                                        @endcan
                                         </div>
                                     </td>
-                                @endif --}}
+                                @endif
                                     </tr>
                                 @endforeach
                             </tbody>

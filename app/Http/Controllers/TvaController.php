@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Tva;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -39,28 +40,65 @@ class TvaController extends Controller
         return view('tva.create', compact('books'));
     }
     public function bulkDownload(Request $request)
-{
-    $request->validate([
-        'invoice_ids' => 'required|array',
-    ]);
+    {
+        $request->validate([
+            'invoice_ids' => 'required|array',
+        ]);
 
-    $invoices = Tva::whereIn('id', $request->invoice_ids)->get();
+        $invoices = Tva::whereIn('id', $request->invoice_ids)->get();
 
-    // Create temporary zip file
-    $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
-    $zipPath = storage_path("app/public/{$zipFileName}");
-    $zip = new ZipArchive;
-    
-    if ($zip->open($zipPath, ZipArchive::CREATE) === TRUE) {
-        foreach ($invoices as $invoice) {
-            $pdf = Pdf::loadView('pdf.invoice', compact('invoice'));
-            $pdfContent = $pdf->output();
-            $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
-            $zip->addFromString($fileName, $pdfContent);
+        // Create temporary zip file
+        $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
+        $zipPath = storage_path("app/public/{$zipFileName}");
+        $zip = new ZipArchive;
+
+        if ($zip->open($zipPath, ZipArchive::CREATE) === TRUE) {
+            foreach ($invoices as $invoice) {
+                $pdf = Pdf::loadView('pdf.invoice', compact('invoice'));
+                $pdfContent = $pdf->output();
+                $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
+                $zip->addFromString($fileName, $pdfContent);
+            }
+            $zip->close();
         }
-        $zip->close();
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+    public function edit($id)
+    {
+        $tva = Tva::findOrFail($id);
+        $books = Booking::where('parent_id', parentId())->pluck('booking_id', 'id'); // id => booking_id
+
+        $vehicles = Vehicle::all(); // or however you're getting the vehicle list
+
+        $booking = Booking::find($tva->booking_id); // to get the selected booking
+
+        return view('tva.edit', compact('tva', 'books', 'vehicles', 'booking'));
     }
 
-    return response()->download($zipPath)->deleteFileAfterSend(true);
-}
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'facture_date' => 'required|date',
+            'montant_ttc' => 'required|numeric',
+        ]);
+
+        $tva = Tva::findOrFail($id);
+
+        // Update only facture_date and montant_ttc
+        $tva->facture_date = $validated['facture_date'];
+        $tva->montant_ttc = $validated['montant_ttc'];
+
+        $tva->save();
+
+        return redirect()->route('tva.index')->with('success', __('TVA updated successfully.'));
+    }
+
+    public function show($id)
+    {
+        $tva = Tva::findOrFail($id);
+        return view('tva.show', compact('tva'));
+    }
+
 }
