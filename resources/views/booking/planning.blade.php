@@ -22,6 +22,7 @@
     <script>
         var bookingData={!! json_encode($bookingData) !!};
         var vehicleData={!! json_encode($vehicleData) !!};
+        
         document.addEventListener('DOMContentLoaded', function () {
             var calendarEl = document.getElementById('calendar');
 
@@ -48,6 +49,10 @@
                     let customEventContent = document.createElement('div');
                     customEventContent.innerHTML = `<div class="fc-event-title">${arg.event.title}</div>`;
                     return { domNodes: [customEventContent] };
+                },
+                eventDidMount: function(info) {
+                    // Add opacity 0.5 to every event/lane
+                    info.el.style.opacity = '0.5';
                 },
 
             });

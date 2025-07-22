@@ -413,3 +413,6 @@ Route::get('/drivers/search', [App\Http\Controllers\RentalAgreementController::c
 
 
 Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name('tva.bulk.download');
+
+// Test route for calendar without authentication
+Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');

@@ -51,6 +51,7 @@
                                         {{ $vehicle->name . ' - ' . $vehicle->license_plate }}</option>
                                 @endforeach
                             </select>
+                            {{-- {{ Form::text('vehicle_name', $vehicle_name, ['class' => 'form-control', 'placeholder' => __('Vehicle Name'), 'readonly']) }} --}}
 
                         </div>
                         <div class="form-group col-md-4 col-lg-4">

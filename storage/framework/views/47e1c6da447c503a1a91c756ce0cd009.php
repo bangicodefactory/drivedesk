@@ -240,8 +240,11 @@
                     if (response.status && response.data) {
                         var selectElement = $("#driver");
                         selectElement.empty();
+                        // Add default option first
+                        selectElement.append('<option value=""><?php echo e(__("Select Driver")); ?></option>');
+                        // Sort keys in ascending order to maintain consistent driver order
                         var keys = Object.keys(response.data).sort(function(a, b) {
-                            return b - a;
+                            return a - b;
                         });
                         keys.forEach(function(key) {
                             var option = $("<option></option>").attr("value", key).text(response
@@ -275,8 +278,11 @@
 
                         var selectElement = $("#vehicle");
                         selectElement.empty();
+                        // Add default option first
+                        selectElement.append('<option value=""><?php echo e(__("Select Vehicle")); ?></option>');
+                        // Sort keys in ascending order to maintain consistent vehicle order
                         var keys = Object.keys(response).sort(function(a, b) {
-                            return b - a;
+                            return a - b;
                         });
                         keys.forEach(function(key) {
                             var option = $("<option></option>").attr("value", key).text(
