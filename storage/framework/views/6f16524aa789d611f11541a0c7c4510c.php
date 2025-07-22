@@ -59,6 +59,7 @@
                                         <?php echo e($vehicle->name . ' - ' . $vehicle->license_plate); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
+                            
 
                         </div>
                         <div class="form-group col-md-4 col-lg-4">

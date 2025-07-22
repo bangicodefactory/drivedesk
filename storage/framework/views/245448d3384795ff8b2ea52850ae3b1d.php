@@ -23,6 +23,7 @@
     <script>
         var bookingData=<?php echo json_encode($bookingData); ?>;
         var vehicleData=<?php echo json_encode($vehicleData); ?>;
+        
         document.addEventListener('DOMContentLoaded', function () {
             var calendarEl = document.getElementById('calendar');
 
@@ -49,6 +50,10 @@
                     let customEventContent = document.createElement('div');
                     customEventContent.innerHTML = `<div class="fc-event-title">${arg.event.title}</div>`;
                     return { domNodes: [customEventContent] };
+                },
+                eventDidMount: function(info) {
+                    // Add opacity 0.5 to every event/lane
+                    info.el.style.opacity = '0.5';
                 },
 
             });
@@ -84,5 +89,4 @@
     </div>
 
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/booking/planning.blade.php ENDPATH**/ ?>
