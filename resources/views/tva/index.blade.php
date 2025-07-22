@@ -24,82 +24,128 @@
         </a>
     @endif
 @endsection
+
 @section('content')
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="GET" action="{{ route('tva.index') }}" id="auto-filter-form"
+                class="d-flex flex-wrap gap-3 justify-content-end">
+                <div>
+                    <label for="filter_day" class="form-label">{{ __('Day') }}</label>
+                    <input type="date" id="filter_day" name="filter_day" class="form-control"
+                        value="{{ request()->get('filter_day') }}">
+                </div>
+                <div>
+                    <label for="filter_month" class="form-label">{{ __('Month') }}</label>
+                    <select id="filter_month" name="filter_month" class="form-control">
+                        <option value="">{{ __('Select Month') }}</option>
+                        @foreach ([
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December',
+        ] as $num => $month)
+                            <option value="{{ $num }}"
+                                {{ request()->get('filter_month') == $num ? 'selected' : '' }}>
+                                {{ $month }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="filter_year" class="form-label">{{ __('Year') }}</label>
+                    <select id="filter_year" name="filter_year" class="form-control">
+                        <option value="">{{ __('Select Year') }}</option>
+                        @for ($year = now()->year; $year >= 2020; $year--)
+                            <option value="{{ $year }}"
+                                {{ request()->get('filter_year') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endfor
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">
-                        @csrf
+            <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">
+                @csrf
 
-                        <button type="submit" class="btn btn-success mb-3">{{ __('Download Selected Invoices') }}</button>
-                        <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
-                            <thead>
-                                <tr>
-                                    <th hidden>id</th>
-                                    <th><input type="checkbox" id="select-all" /></th>
-                                    <th>{{ __('Facture N°') }}</th>
-                                    <th>{{ __('Designation') }}</th>
-                                    <th>{{ __('Date') }}</th>
-                                    <th>{{ __('TTC') }}</th>
-                                     @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
-                                <th>{{__('Action')}}</th>
+                <button type="submit" class="btn btn-success mb-3">{{ __('Download Selected Invoices') }}</button>
+                <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
+                    <thead>
+                        <tr>
+                            <th hidden>id</th>
+                            <th><input type="checkbox" id="select-all" /></th>
+                            <th>{{ __('Facture N°') }}</th>
+                            <th>{{ __('Designation') }}</th>
+                            <th>{{ __('Date') }}</th>
+                            <th>{{ __('TTC') }}</th>
+                            @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                <th>{{ __('Action') }}</th>
                             @endif
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($tvas as $tva)
-                                    <tr>
-                                        <td>
-                                            <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
-                                        </td>
-                                        <td hidden>{{ $tva->id }}</td>
-                                        <td>{{ bookingPrefix() . $tva->facture_number }}</td>
-                                        <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($tvas as $tva)
+                            <tr data-date="{{ $tva->created_at->format('Y-m-d') }}">
+                                <td>
+                                    <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
+                                </td>
+                                <td hidden>{{ $tva->id }}</td>
+                                <td>{{ bookingPrefix() . $tva->facture_number }}</td>
+                                <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
-                                        <td>
-                                            {{ dateFormat($tva->created_at) }}
-                                        </td>
-                                        <td>
-                                            {{ $tva->montant_ttc }} Dh
-                                        </td>
+                                <td>
+                                    {{ dateFormat($tva->created_at) }}
+                                </td>
+                                <td>
+                                    {{ $tva->montant_ttc }} Dh
+                                </td>
 
-                                         @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                     <td>
                                         <div class="cart-action">
                                             @can('show booking')
-                                            <a class="text-warning customModal" data-size="lg"
-                                            data-bs-toggle="tooltip"
-                                            data-bs-original-title="{{ __('Details') }}" href="#"
-                                            data-url="{{ route('tva.show', $tva->id) }}"
-                                            data-title="{{ __('TVA Details') }}">
-                                            <i data-feather="eye"></i>
-                                         </a>
-
+                                                <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
+                                                    data-bs-original-title="{{ __('Details') }}" href="#"
+                                                    data-url="{{ route('tva.show', $tva->id) }}"
+                                                    data-title="{{ __('TVA Details') }}">
+                                                    <i data-feather="eye"></i>
+                                                </a>
                                             @endcan
                                             @can('edit booking')
                                                 <a class="text-success" data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Edit')}}"
-                                                   href="{{ route('tva.edit',$tva->id)}}">
+                                                    data-bs-original-title="{{ __('Edit') }}"
+                                                    href="{{ route('tva.edit', $tva->id) }}">
                                                     <i data-feather="edit"></i></a>
                                             @endcan
                                             @can('delete booking')
-                                            <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                               data-bs-original-title="{{__('Delete')}}" href="#">
-                                                <i data-feather="trash-2"></i>
-                                            </a>
-                                        @endcan
+                                                <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
+                                                    data-bs-original-title="{{ __('Delete') }}" href="#">
+                                                    <i data-feather="trash-2"></i>
+                                                </a>
+                                            @endcan
                                         </div>
                                     </td>
                                 @endif
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </form>
-                </div>
-            </div>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </form>
         </div>
+    </div>
+    </div>
     </div>
 @endsection
 {{-- @push('scripts')
@@ -136,5 +182,38 @@
         $('#select-all').on('click', function() {
             $('input[name="invoice_ids[]"]').prop('checked', this.checked);
         });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('#filter_day, #filter_month, #filter_year').forEach(el => {
+                el.addEventListener('change', function(e) {
+                    e.preventDefault();
+                    filterTable();
+                });
+            });
+            filterTable();
+        });
+
+        function filterTable() {
+            const day = document.getElementById('filter_day').value;
+            const month = document.getElementById('filter_month').value;
+            const year = document.getElementById('filter_year').value;
+
+            const rows = document.querySelectorAll('#bookingTable tbody tr');
+
+            rows.forEach(row => {
+                const date = row.getAttribute('data-date');
+                if (!date) return;
+
+                const rowYear = date.substring(0, 4);
+                const rowMonth = date.substring(5, 7);
+
+                let show = true;
+                if (day && day !== date) show = false;
+                if (month && month !== rowMonth) show = false;
+                if (year && year !== rowYear) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
     </script>
 @endpush
