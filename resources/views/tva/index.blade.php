@@ -55,11 +55,18 @@
                                         </td>
                                         <td hidden>{{ $tva->id }}</td>
                                         <!-- To avoid the duplication of the prefix -->
-                                    @php
+                                    {{-- @php
                                     $prefix = bookingPrefix();
                                     $factureNumber = Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number;
                                     @endphp
-                                    <td>{{ $factureNumber }}</td>
+                                    <td>{{ $factureNumber }}</td> --}}
+                                        <td>
+                                            @if (isset($tva->facture_number))
+                                                {{ $tva->facture_number }}
+                                            @else
+                                                {{ __('N/A') }}
+                                            @endif
+                                        </td>
                                         <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
                                         <td>
