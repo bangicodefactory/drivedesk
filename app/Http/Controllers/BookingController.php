@@ -387,38 +387,75 @@ class BookingController extends Controller
         }
     }
 
+    // public function planning()
+    // {
+    //     // Skip auth check for testing - replace with proper auth later
+    //     // if (\Auth::user()->can('manage planning')) {
+        
+    //         // Temporarily hardcode parent_id to test (should use parentId() when authenticated properly)
+    //         $parentId = 2;
+    //         $bookings = Booking::where('parent_id', $parentId)->get();
+    //         $vehicles = Vehicle::where('parent_id', $parentId)->get();
+            
+    //         // Simple vehicle data - one row per vehicle
+    //         $vehicleData = [];
+    //         foreach ($vehicles as $vehicle) {
+    //             $vehicleArr = [
+    //                 'id' => (string)$vehicle->id, // Ensure it's a string
+    //                 'title' => $vehicle->name . ' - ' . $vehicle->license_plate,
+    //             ];
+    //             $vehicleData[] = $vehicleArr;
+    //         }
+            
+    //         // Simple booking data - each booking on its vehicle's row
+    //         $bookingData = [];
+    //         foreach ($bookings as $booking) {
+    //             $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
+                
+    //             // Use hardcoded prefix instead of function for testing
+    //             $prefix = 'BOK-'; // Replace with bookingPrefix() later
+                
+    //             $booked = [
+    //                 'id' => $booking->id,
+    //                 'resourceId' => (string)$booking->vehicle, // Ensure it's a string and matches vehicle ID
+    //                 'title' => $prefix . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
+    //                 'start' => $booking->start_date . 'T' . $booking->start_time,
+    //                 'end'   => $booking->end_date . 'T' . $booking->end_time,
+    //                 'url' => route('booking.show', Crypt::encrypt($booking->id)),
+    //             ];
+    //             $bookingData[] = $booked;
+    //         }
+
+    //         return view('booking.planning', compact('bookingData', 'vehicleData'));
+    //     // } else {
+    //     //     return redirect()->back()->with('error', __('Permission Denied.'));
+    //     // }
+    // }
+
     public function planning()
     {
-        // Skip auth check for testing - replace with proper auth later
+        // Temporarily disable auth for testing
         // if (\Auth::user()->can('manage planning')) {
-        
-            // Temporarily hardcode parent_id to test (should use parentId() when authenticated properly)
-            $parentId = 2;
+            $parentId = 2; // Use hardcoded parentId for testing
             $bookings = Booking::where('parent_id', $parentId)->get();
             $vehicles = Vehicle::where('parent_id', $parentId)->get();
             
-            // Simple vehicle data - one row per vehicle
             $vehicleData = [];
             foreach ($vehicles as $vehicle) {
                 $vehicleArr = [
-                    'id' => (string)$vehicle->id, // Ensure it's a string
+                    'id' => (string)$vehicle->id, // Ensure string type
                     'title' => $vehicle->name . ' - ' . $vehicle->license_plate,
                 ];
                 $vehicleData[] = $vehicleArr;
             }
             
-            // Simple booking data - each booking on its vehicle's row
             $bookingData = [];
             foreach ($bookings as $booking) {
                 $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
-                
-                // Use hardcoded prefix instead of function for testing
-                $prefix = 'BOK-'; // Replace with bookingPrefix() later
-                
                 $booked = [
                     'id' => $booking->id,
-                    'resourceId' => (string)$booking->vehicle, // Ensure it's a string and matches vehicle ID
-                    'title' => $prefix . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
+                    'resourceId' => (string)$booking->vehicle, // Ensure string type to match vehicle ID
+                    'title' => 'BOK-' . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
                     'start' => $booking->start_date . 'T' . $booking->start_time,
                     'end'   => $booking->end_date . 'T' . $booking->end_time,
                     'url' => route('booking.show', Crypt::encrypt($booking->id)),
@@ -431,7 +468,6 @@ class BookingController extends Controller
         //     return redirect()->back()->with('error', __('Permission Denied.'));
         // }
     }
-
     public function testPlanning()
     {
         try {
