@@ -102,7 +102,19 @@
                                     <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
                                 </td>
                                 <td hidden>{{ $tva->id }}</td>
-                                <td>{{ bookingPrefix() . $tva->facture_number }}</td>
+                                <!-- To avoid the duplication of the prefix -->
+                                {{-- @php
+                                    $prefix = bookingPrefix();
+                                    $factureNumber = Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number;
+                                    @endphp
+                                    <td>{{ $factureNumber }}</td> --}}
+                                <td>
+                                    @if (isset($tva->facture_number))
+                                        {{ $tva->facture_number }}
+                                    @else
+                                        {{ __('N/A') }}
+                                    @endif
+                                </td>
                                 <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
                                 <td>
@@ -111,38 +123,41 @@
                                 <td>
                                     {{ $tva->montant_ttc }} Dh
                                 </td>
-
-                                @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
-                                    <td>
-                                        <div class="cart-action">
-                                            @can('show booking')
-                                                <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Details') }}" href="#"
-                                                    data-url="{{ route('tva.show', $tva->id) }}"
-                                                    data-title="{{ __('TVA Details') }}">
-                                                    <i data-feather="eye"></i>
-                                                </a>
-                                            @endcan
-                                            @can('edit booking')
-                                                <a class="text-success" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Edit') }}"
-                                                    href="{{ route('tva.edit', $tva->id) }}">
-                                                    <i data-feather="edit"></i></a>
-                                            @endcan
-                                            @can('delete booking')
-                                                <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Delete') }}" href="#">
-                                                    <i data-feather="trash-2"></i>
-                                                </a>
-                                            @endcan
-                                        </div>
-                                    </td>
-                                @endif
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
             </form>
+            @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                <td>
+                    <div class="cart-action">
+                        @can('show booking')
+                            <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
+                                data-bs-original-title="{{ __('Details') }}" href="#"
+                                data-url="{{ route('tva.show', $tva->id) }}" data-title="{{ __('TVA Details') }}">
+                                <i data-feather="eye"></i>
+                            </a>
+                        @endcan
+                        @can('edit booking')
+                            <a class="text-success" data-bs-toggle="tooltip" data-bs-original-title="{{ __('Edit') }}"
+                                href="{{ route('tva.edit', $tva->id) }}">
+                                <i data-feather="edit"></i></a>
+                        @endcan
+                        @can('delete booking')
+                            <form method="POST" action="{{ route('tva.destroy', $tva->id) }}" class="delete-form d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-link text-danger p-0 m-0 confirm_dialog"
+                                    data-bs-toggle="tooltip" data-bs-original-title="{{ __('Delete') }}">
+                                    <i data-feather="trash-2"></i>
+                                </button>
+                            </form>
+                        @endcan
+
+                    </div>
+                </td>
+            @endif
+            </tr>
+            @endforeach
+            </tbody>
+            </table>
+
         </div>
     </div>
     </div>
@@ -215,5 +230,17 @@
                 row.style.display = show ? '' : 'none';
             });
         }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.confirm_dialog').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault(); // prevent default submit
+
+                    if (confirm("Are you sure you want to delete this TVA?")) {
+                        // Submit the parent form
+                        this.closest('form').submit();
+                    }
+                });
+            });
+        });
     </script>
 @endpush

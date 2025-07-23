@@ -3,8 +3,14 @@
         <div class="row">
             <div class="col-6">
                 <div class="detail-group">
+                    @php
+        $factureNumber = $tva->facture_number;
+    $prefix = bookingPrefix();
+    $displayFactureNumber = Str::startsWith($factureNumber, $prefix) ? $factureNumber : $prefix . $factureNumber;
+@endphp
                     <h6>{{ __('Facture Number') }}</h6>
-                    <p class="mb-20">{{ bookingPrefix() . $tva->facture_number }}</p>
+                    <!-- To avoid prefix duplication in case of edits -->
+                    <p class="mb-20">{{ $displayFactureNumber }}</p> 
                 </div>
             </div>
             <div class="col-6">

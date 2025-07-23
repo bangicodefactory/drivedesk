@@ -106,7 +106,17 @@
                                     <input type="checkbox" name="invoice_ids[]" value="<?php echo e($tva->id); ?>" />
                                 </td>
                                 <td hidden><?php echo e($tva->id); ?></td>
-                                <td><?php echo e(bookingPrefix() . $tva->facture_number); ?></td>
+                                <!-- To avoid the duplication of the prefix -->
+                                
+                                <td>
+                                    <?php if(isset($tva->facture_number)): ?>
+                                        <?php echo e($tva->facture_number); ?>
+
+                                    <?php else: ?>
+                                        <?php echo e(__('N/A')); ?>
+
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo e(!empty($tva->designation) ? $tva->designation : '-'); ?></td>
 
                                 <td>
@@ -116,38 +126,41 @@
                                 <td>
                                     <?php echo e($tva->montant_ttc); ?> Dh
                                 </td>
-
-                                <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
-                                    <td>
-                                        <div class="cart-action">
-                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('show booking')): ?>
-                                                <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="<?php echo e(__('Details')); ?>" href="#"
-                                                    data-url="<?php echo e(route('tva.show', $tva->id)); ?>"
-                                                    data-title="<?php echo e(__('TVA Details')); ?>">
-                                                    <i data-feather="eye"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit booking')): ?>
-                                                <a class="text-success" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="<?php echo e(__('Edit')); ?>"
-                                                    href="<?php echo e(route('tva.edit', $tva->id)); ?>">
-                                                    <i data-feather="edit"></i></a>
-                                            <?php endif; ?>
-                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete booking')): ?>
-                                                <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="<?php echo e(__('Delete')); ?>" href="#">
-                                                    <i data-feather="trash-2"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </tbody>
-                </table>
             </form>
+            <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
+                <td>
+                    <div class="cart-action">
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('show booking')): ?>
+                            <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
+                                data-bs-original-title="<?php echo e(__('Details')); ?>" href="#"
+                                data-url="<?php echo e(route('tva.show', $tva->id)); ?>" data-title="<?php echo e(__('TVA Details')); ?>">
+                                <i data-feather="eye"></i>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit booking')): ?>
+                            <a class="text-success" data-bs-toggle="tooltip" data-bs-original-title="<?php echo e(__('Edit')); ?>"
+                                href="<?php echo e(route('tva.edit', $tva->id)); ?>">
+                                <i data-feather="edit"></i></a>
+                        <?php endif; ?>
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete booking')): ?>
+                            <form method="POST" action="<?php echo e(route('tva.destroy', $tva->id)); ?>" class="delete-form d-inline">
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
+                                <button type="submit" class="btn btn-link text-danger p-0 m-0 confirm_dialog"
+                                    data-bs-toggle="tooltip" data-bs-original-title="<?php echo e(__('Delete')); ?>">
+                                    <i data-feather="trash-2"></i>
+                                </button>
+                            </form>
+                        <?php endif; ?>
+
+                    </div>
+                </td>
+            <?php endif; ?>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+            </table>
+
         </div>
     </div>
     </div>
@@ -192,6 +205,18 @@
                 row.style.display = show ? '' : 'none';
             });
         }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.confirm_dialog').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault(); // prevent default submit
+
+                    if (confirm("Are you sure you want to delete this TVA?")) {
+                        // Submit the parent form
+                        this.closest('form').submit();
+                    }
+                });
+            });
+        });
     </script>
 <?php $__env->stopPush(); ?>
 
