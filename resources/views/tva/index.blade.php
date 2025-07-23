@@ -123,41 +123,39 @@
                                 <td>
                                     {{ $tva->montant_ttc }} Dh
                                 </td>
+                                @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                    <td>
+                                        <div class="cart-action">
+                                            @can('show booking')
+                                                <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
+                                                    data-bs-original-title="{{ __('Details') }}" href="#"
+                                                    data-url="{{ route('tva.show', $tva->id) }}"
+                                                    data-title="{{ __('TVA Details') }}">
+                                                    <i data-feather="eye"></i>
+                                                </a>
+                                            @endcan
+                                            @can('edit booking')
+                                                <a class="text-success" data-bs-toggle="tooltip"
+                                                    data-bs-original-title="{{ __('Edit') }}"
+                                                    href="{{ route('tva.edit', $tva->id) }}">
+                                                    <i data-feather="edit"></i></a>
+                                            @endcan
+                                            @can('delete booking')
+                                                <a href="#" class="text-danger delete-btn" data-bs-toggle="tooltip"
+                                                    data-bs-original-title="{{ __('Delete') }}"
+                                                    data-url="{{ route('tva.destroy', $tva->id) }}">
+                                                    <i data-feather="trash-2"></i>
+                                                </a>
+                                            @endcan
+
+                                        </div>
+                                    </td>
+                                @endif
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </form>
-            @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
-                <td>
-                    <div class="cart-action">
-                        @can('show booking')
-                            <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
-                                data-bs-original-title="{{ __('Details') }}" href="#"
-                                data-url="{{ route('tva.show', $tva->id) }}" data-title="{{ __('TVA Details') }}">
-                                <i data-feather="eye"></i>
-                            </a>
-                        @endcan
-                        @can('edit booking')
-                            <a class="text-success" data-bs-toggle="tooltip" data-bs-original-title="{{ __('Edit') }}"
-                                href="{{ route('tva.edit', $tva->id) }}">
-                                <i data-feather="edit"></i></a>
-                        @endcan
-                        @can('delete booking')
-                            <form method="POST" action="{{ route('tva.destroy', $tva->id) }}" class="delete-form d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-link text-danger p-0 m-0 confirm_dialog"
-                                    data-bs-toggle="tooltip" data-bs-original-title="{{ __('Delete') }}">
-                                    <i data-feather="trash-2"></i>
-                                </button>
-                            </form>
-                        @endcan
-
-                    </div>
-                </td>
-            @endif
-            </tr>
-            @endforeach
-            </tbody>
-            </table>
-
         </div>
     </div>
     </div>
@@ -230,15 +228,45 @@
                 row.style.display = show ? '' : 'none';
             });
         }
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.confirm_dialog').forEach(button => {
-                button.addEventListener('click', function(event) {
-                    event.preventDefault(); // prevent default submit
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.delete-btn').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
 
-                    if (confirm("Are you sure you want to delete this TVA?")) {
-                        // Submit the parent form
-                        this.closest('form').submit();
-                    }
+                    const url = this.getAttribute('data-url');
+
+                    Swal.fire({
+                        title: 'Are you sure you want to delete this record ?',
+                        text: "This record can not be restore after delete. Do you want to confirm?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = url;
+
+                            const methodInput = document.createElement('input');
+                            methodInput.type = 'hidden';
+                            methodInput.name = '_method';
+                            methodInput.value = 'DELETE';
+                            form.appendChild(methodInput);
+
+                            // Add CSRF token
+                            const csrfInput = document.createElement('input');
+                            csrfInput.type = 'hidden';
+                            csrfInput.name = '_token';
+                            csrfInput.value = document.querySelector(
+                                'meta[name="csrf-token"]').content;
+                            form.appendChild(csrfInput);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    });
                 });
             });
         });
