@@ -26,17 +26,18 @@
             {{ Form::text('designation', null, ['class' => 'form-control','readonly' => true] ) }}
         </div>
         
-        @php
-        $prefix = bookingPrefix();
+        {{-- @php
+        // $prefix = bookingPrefix();
+        // $factureNumber = isset($tva->facture_number)
+        // ? (Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number)
+        // : '';
         $factureNumber = isset($tva->facture_number)
-        ? (Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number)
-        : '';
-        @endphp 
+        @endphp  --}}
         <!-- To avoid #BOK-000#BOK-0002 duplication in case of editing -->
 
         <div class="form-group col-md-6 col-lg-6">
         {{ Form::label('facture_number', __('Facture Number'), ['class' => 'form-label']) }}
-        {{ Form::text('facture_number', $factureNumber, ['class' => 'form-control', 'required' => true]) }}
+        {{ Form::text('facture_number', $tva->facture_number, ['class' => 'form-control', 'required' => true]) }}
         </div>
 
         {{-- Facture Date --}}
