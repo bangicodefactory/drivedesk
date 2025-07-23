@@ -98,23 +98,36 @@ class TvaController extends Controller
         $validated = $request->validate([
             'facture_date' => 'required|date',
             'montant_ttc' => 'required|numeric',
+            'unit_price_ht' => 'required|numeric',
+            'tva' => 'required|numeric',
+            'facture_number' => 'required|string|max:255',
         ]);
 
         $tva = Tva::findOrFail($id);
 
-        // Update only facture_date and montant_ttc
         $tva->facture_date = $validated['facture_date'];
         $tva->montant_ttc = $validated['montant_ttc'];
+        $tva->unit_price_ht = $validated['unit_price_ht'];
+        $tva->tva = $validated['tva'];
+        $tva->facture_number = $validated['facture_number'];
 
         $tva->save();
 
         return redirect()->route('tva.index')->with('success', __('TVA updated successfully.'));
     }
 
+
     public function show($id)
     {
         $tva = Tva::findOrFail($id);
         return view('tva.show', compact('tva'));
     }
+    public function destroy($id)
+    {
+        $tva = Tva::findOrFail($id);
+        $tva->delete();
+        return redirect()->back()->with('success', 'The TVA has been deleted.');
+    }
+
 
 }
