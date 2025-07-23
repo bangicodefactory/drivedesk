@@ -76,31 +76,38 @@
             {{ Form::number('montant_ttc', null, ['class' => 'form-control', 'step' => '0.01']) }}
         </div>
 
-        @push('scripts')
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
-        const puht = document.getElementById('unit_price_ht');
-        const tvaField = document.getElementById('tva');
-        const ttcField = document.getElementById('montant_ttc');
-        const tvaRate = 0.2; // can be changed
+       @push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const puht = document.getElementById('unit_price_ht');   // PUHT
+    const qte = document.getElementById('quantity');         // QTE
+    const htField = document.getElementById('total_ht');     // HT
+    const tvaField = document.getElementById('tva');         // TVA
+    const ttcField = document.getElementById('montant_ttc'); // TTC
+    const tvaRate = 0.2; // 20%
 
-        puht.addEventListener('input', function () {
-            let value = parseFloat(puht.value);
-            if (isNaN(value)) {
-                tvaField.value = '';
-                ttcField.value = '';
-                return;
-            }
+    puht.addEventListener('input', function () {
+        const puhtVal = parseFloat(puht.value);
+        const qteVal = parseFloat(qte.value);
 
-            let tva = +(value * tvaRate).toFixed(2);
-            let ttc = +(value + tva).toFixed(2);
+        if (isNaN(puhtVal) || isNaN(qteVal)) {
+            htField.value = '';
+            tvaField.value = '';
+            ttcField.value = '';
+            return;
+        }
 
-            tvaField.value = tva;
-            ttcField.value = ttc;
-            });
-        });
-        </script>
-        @endpush
+        const ht = +(puhtVal * qteVal).toFixed(2);          // HT = PUHT * QTE 
+        const tva = +(ht * tvaRate).toFixed(2);              // TVA = HT * 0.2
+        const ttc = +(ht + tva).toFixed(2);                  // TTC = HT + TVA
+
+        htField.value = ht;
+        tvaField.value = tva;
+        ttcField.value = ttc;
+    });
+});
+</script>
+@endpush
 
     </div>
     <div class="mt-4 text-end">

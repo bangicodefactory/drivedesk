@@ -46,15 +46,36 @@ class TvaController extends Controller
         ]);
 
         $invoices = Tva::whereIn('id', $request->invoice_ids)->get();
-
-        // Create temporary zip file
         $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");
-        $zip = new ZipArchive;
+        $zip = new \ZipArchive;
 
-        if ($zip->open($zipPath, ZipArchive::CREATE) === TRUE) {
+        if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
             foreach ($invoices as $invoice) {
-                $pdf = Pdf::loadView('pdf.invoice', compact('invoice'));
+                $items = [
+                    (object) [
+                        'description' => $invoice->designation,
+                        'quantity' => $invoice->quantity,
+                        'unit_price' => $invoice->unit_price_ht,
+                        'total_ht' => $invoice->total_ht,
+                    ]
+                ];
+                $invoice->items = $items;
+
+                $settings = settings();
+                $logoFile = $settings['company_logo'] ?? 'logo.png'; // we dont have logo in settings db
+                $logoPath = public_path('upload/logo/' . $logoFile);
+                if (!file_exists($logoPath)) {
+                    $logoPath = null;
+                } else {
+                    $logoPath = asset('upload/logo/' . $logoFile);
+                }
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
+                    'tva' => $invoice,
+                    'settings' => $settings,
+                    'logoPath' => $logoPath,
+                ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
                 $zip->addFromString($fileName, $pdfContent);
@@ -85,6 +106,7 @@ class TvaController extends Controller
         'unit_price_ht'  => 'required|numeric',
         'tva'            => 'required|numeric',
         'facture_number' => 'required|string|max:255',
+        'total_ht'     => 'required|numeric'
     ]);
 
     $tva = Tva::findOrFail($id);
@@ -94,6 +116,7 @@ class TvaController extends Controller
     $tva->unit_price_ht  = $validated['unit_price_ht'];
     $tva->tva            = $validated['tva'];
     $tva->facture_number = $validated['facture_number'];
+    $tva->total_ht       = $validated['total_ht'];
 
     $tva->save();
 
