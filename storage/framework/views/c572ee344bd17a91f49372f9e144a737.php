@@ -32,6 +32,7 @@
         <div class="col-md-12">
             <form method="GET" action="<?php echo e(route('tva.index')); ?>" id="auto-filter-form"
                 class="d-flex flex-wrap gap-3 justify-content-end">
+                <input type="hidden" name="per_page" value="<?php echo e(request('per_page', 30)); ?>">
                 <div>
                     <label for="filter_day" class="form-label"><?php echo e(__('Day')); ?></label>
                     <input type="date" id="filter_day" name="filter_day" class="form-control"
@@ -158,6 +159,10 @@
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-end mt-3">
+                    <?php echo e($tvas->links()); ?>
+
+                </div>
             </form>
         </div>
     </div>

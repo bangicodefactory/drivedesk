@@ -43,7 +43,16 @@ class TvaController extends Controller
         if ($request->filled('filter_year')) {
             $query->whereYear('created_at', $request->filter_year);
         }
-        $tvas = $query->get();
+        $perPage = $request->get('per_page', 30);
+        $tvas = $query->paginate($perPage);
+        
+        $tvas->appends([
+            'filter_day' => $request->filter_day,
+            'filter_month' => $request->filter_month,
+            'filter_year' => $request->filter_year,
+            'per_page' => $perPage
+        ]);
+
 
         return view('tva.index', compact('tvas'));
     }

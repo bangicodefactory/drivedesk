@@ -30,6 +30,7 @@
         <div class="col-md-12">
             <form method="GET" action="{{ route('tva.index') }}" id="auto-filter-form"
                 class="d-flex flex-wrap gap-3 justify-content-end">
+                <input type="hidden" name="per_page" value="{{ request('per_page', 30) }}">
                 <div>
                     <label for="filter_day" class="form-label">{{ __('Day') }}</label>
                     <input type="date" id="filter_day" name="filter_day" class="form-control"
@@ -155,6 +156,9 @@
                         @endforeach
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-end mt-3">
+                    {{ $tvas->links() }}
+                </div>
             </form>
         </div>
     </div>
