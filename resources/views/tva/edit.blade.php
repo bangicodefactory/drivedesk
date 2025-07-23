@@ -23,13 +23,22 @@
         </div>
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('designation', __('Vehicle'), ['class' => 'form-label']) }}
-            {{ Form::text('designation', null, ['class' => 'form-control']) }}
+            {{ Form::text('designation', null, ['class' => 'form-control','readonly' => true] ) }}
         </div>
+        
+        @php
+        $prefix = bookingPrefix();
+        $factureNumber = isset($tva->facture_number)
+        ? (Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number)
+        : '';
+        @endphp 
+        <!-- To avoid #BOK-000#BOK-0002 duplication in case of editing -->
 
         <div class="form-group col-md-6 col-lg-6">
-            {{ Form::label('facture_number', __('Facture Number'), ['class' => 'form-label']) }}
-            {{ Form::text('facture_number', bookingPrefix() . $tva->facture_number, ['class' => 'form-control', 'required' => true, 'readonly' => true]) }}
+        {{ Form::label('facture_number', __('Facture Number'), ['class' => 'form-label']) }}
+        {{ Form::text('facture_number', $factureNumber, ['class' => 'form-control', 'required' => true]) }}
         </div>
+
         {{-- Facture Date --}}
         <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('facture_date', __('Facture Date'), ['class' => 'form-label']) }}
@@ -37,7 +46,7 @@
         </div>
         {{-- Quantity --}}
         <div class="form-group col-md-6 col-lg-6">
-            {{ Form::label('quantity', __('Duration'), ['class' => 'form-label']) }}
+            {{ Form::label('quantity', __('Quantity'), ['class' => 'form-label']) }}
             {{ Form::number('quantity', null, ['class' => 'form-control', 'step' => '1', 'readonly' => true]) }}
         </div>
 
@@ -55,8 +64,8 @@
 
         {{-- Unit Price HT --}}
         <div class="form-group col-md-6 col-lg-6">
-            {{ Form::label('unit_price_ht', __('Unit Price HT'), ['class' => 'form-label']) }}
-            {{ Form::number('unit_price_ht', null, ['class' => 'form-control', 'step' => '0.01', 'readonly' => true]) }}
+            {{ Form::label('unit_price_ht', __('Unit Price HT (P.U.H.T)'), ['class' => 'form-label']) }}
+            {{ Form::number('unit_price_ht', null, ['class' => 'form-control', 'step' => '0.01']) }}
         </div>
 
 
@@ -65,8 +74,34 @@
             {{ Form::label('montant_ttc', __('Montant TTC'), ['class' => 'form-label']) }}
             {{ Form::number('montant_ttc', null, ['class' => 'form-control', 'step' => '0.01']) }}
         </div>
-    </div>
 
+        @push('scripts')
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const puht = document.getElementById('unit_price_ht');
+        const tvaField = document.getElementById('tva');
+        const ttcField = document.getElementById('montant_ttc');
+        const tvaRate = 0.2; // can be changed
+
+        puht.addEventListener('input', function () {
+            let value = parseFloat(puht.value);
+            if (isNaN(value)) {
+                tvaField.value = '';
+                ttcField.value = '';
+                return;
+            }
+
+            let tva = +(value * tvaRate).toFixed(2);
+            let ttc = +(value + tva).toFixed(2);
+
+            tvaField.value = tva;
+            ttcField.value = ttc;
+            });
+        });
+        </script>
+        @endpush
+
+    </div>
     <div class="mt-4 text-end">
         {{ Form::submit(__('Update TVA'), ['class' => 'btn btn-primary']) }}
     </div>
