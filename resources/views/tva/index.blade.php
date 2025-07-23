@@ -54,7 +54,12 @@
                                             <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
                                         </td>
                                         <td hidden>{{ $tva->id }}</td>
-                                        <td>{{ bookingPrefix() . $tva->facture_number }}</td>
+                                        <!-- To avoid the duplication of the prefix -->
+                                    @php
+                                    $prefix = bookingPrefix();
+                                    $factureNumber = Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number;
+                                    @endphp
+                                    <td>{{ $factureNumber }}</td>
                                         <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
                                         <td>
