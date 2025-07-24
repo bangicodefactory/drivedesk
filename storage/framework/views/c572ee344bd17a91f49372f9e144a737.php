@@ -180,113 +180,178 @@
 
 <?php $__env->startPush('scripts'); ?>
     <script>
-        $('#select-all').on('click', function() {
-            $('input[name="invoice_ids[]"]').prop('checked', this.checked);
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('#filter_day, #filter_month, #filter_year,#from_date,#to_date').forEach(
-                el => {
-                    el.addEventListener('change', function(e) {
-                        e.preventDefault();
-                        filterTable();
-                    });
-                });
-            filterTable();
-        });
-
-        function filterTable() {
-            const day = document.getElementById('filter_day').value;
-            const month = document.getElementById('filter_month').value;
-            const year = document.getElementById('filter_year').value;
-            const fromDate = document.getElementById('from_date')?.value;
-            const toDate = document.getElementById('to_date')?.value;
-
-            const rows = document.querySelectorAll('#bookingTable tbody tr');
-
-            rows.forEach(row => {
-                const date = row.getAttribute('data-date');
-                if (!date) return;
-
-                const rowYear = date.substring(0, 4);
-                const rowMonth = date.substring(5, 7);
-
-                let show = true;
-                if (day && day !== date) show = false;
-                if (month && month !== rowMonth) show = false;
-                if (year && year !== rowYear) show = false;
-                if (fromDate && date < fromDate) show = false;
-                if (toDate && date > toDate) show = false;
-
-                row.style.display = show ? '' : 'none';
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.delete-btn').forEach(element => {
-                element.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    const url = this.getAttribute('data-url');
-
-                    Swal.fire({
-                        title: 'Are you sure you want to delete this record ?',
-                        text: "This record can not be restore after delete. Do you want to confirm?",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Yes'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            const form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = url;
-
-                            const methodInput = document.createElement('input');
-                            methodInput.type = 'hidden';
-                            methodInput.name = '_method';
-                            methodInput.value = 'DELETE';
-                            form.appendChild(methodInput);
-
-                            // Add CSRF token
-                            const csrfInput = document.createElement('input');
-                            csrfInput.type = 'hidden';
-                            csrfInput.name = '_token';
-                            csrfInput.value = document.querySelector(
-                                'meta[name="csrf-token"]').content;
-                            form.appendChild(csrfInput);
-
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    });
-                });
-            });
-        });
         $(document).ready(function() {
+            // Destroy if already initialized to avoid reinitialization error
             if ($.fn.DataTable.isDataTable('#bookingTable')) {
                 $('#bookingTable').DataTable().destroy();
             }
 
-            $('#bookingTable').DataTable({
+            var table = $('#bookingTable').DataTable({
                 pageLength: 30,
                 lengthMenu: [
-                    [10, 25, 50, 100, -1], // -1 is the "All" option
-                    [10, 25, 50, 100, "All"] // labels shown to users
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
                 ],
                 searching: true,
                 ordering: true,
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
                 },
-                dom: '<"top"Bf>t<"bottom"lip>',
+                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" + // Top: Buttons + Filter
+                    "<'row'<'col-sm-12'tr>>" + // Table
+                    "<'row'<'col-sm-12 col-md-5'l><'col-sm-12 col-md-7'p>>", // Bottom: Length + Pagination
                 buttons: [
-                    'copyHtml5',
-                    'csvHtml5',
-                    'excelHtml5',
-                    'pdfHtml5',
-                    'print'
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ],
+                columnDefs: [{
+                        targets: 0,
+                        orderable: false,
+                        className: 'select-checkbox'
+                    },
+                    {
+                        targets: '_all',
+                        className: 'dt-center'
+                    }
                 ]
+            });
+
+            // Select All logic
+            $('#select-all').on('click', function(e) {
+                e.stopPropagation();
+                var isChecked = $(this).prop('checked');
+                table.rows({
+                    page: 'current'
+                }).nodes().to$().find('input[type="checkbox"]').prop('checked', isChecked);
+            });
+
+            $('#bookingTable tbody').on('click', 'input[type="checkbox"]', function(e) {
+                e.stopPropagation();
+                updateSelectAllState();
+            });
+
+            function updateSelectAllState() {
+                var allChecked = table.rows({
+                        page: 'current'
+                    }).nodes().to$().find('input[type="checkbox"]:checked').length ===
+                    table.rows({
+                        page: 'current'
+                    }).nodes().length;
+                $('#select-all').prop('checked', allChecked);
+            }
+
+            table.on('page.dt', function() {
+                $('#select-all').prop('checked', false);
+            });
+
+            $('#bookingTable thead').on('click', 'th:first-child', function(e) {
+                e.stopPropagation();
+            });
+
+            // Bulk download
+            $('#bulk-download-form').on('submit', function(e) {
+                e.preventDefault();
+                var selectedIds = [];
+
+                table.$('input[type="checkbox"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    Swal.fire('Error', 'Please select at least one invoice', 'warning');
+                    return false;
+                }
+
+                var form = $('<form>', {
+                    method: 'POST',
+                    action: $(this).attr('action')
+                }).append(
+                    $('<input>', {
+                        type: 'hidden',
+                        name: '_token',
+                        value: $('meta[name="csrf-token"]').attr('content')
+                    })
+                );
+
+                $.each(selectedIds, function(i, id) {
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: 'invoice_ids[]',
+                        value: id
+                    }));
+                });
+
+                $('body').append(form);
+                form.submit();
+            });
+
+            // Filters
+            function filterTable() {
+                var day = $('#filter_day').val();
+                var month = $('#filter_month').val();
+                var year = $('#filter_year').val();
+                var fromDate = $('#from_date').val();
+                var toDate = $('#to_date').val();
+
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        var date = new Date(data[4]);
+                        if (isNaN(date.getTime())) return false;
+
+                        var rowDate = date.toISOString().split('T')[0];
+                        var rowYear = rowDate.substring(0, 4);
+                        var rowMonth = rowDate.substring(5, 7);
+
+                        if (day && day !== rowDate) return false;
+                        if (month && month !== rowMonth) return false;
+                        if (year && year !== rowYear) return false;
+                        if (fromDate && rowDate < fromDate) return false;
+                        if (toDate && rowDate > toDate) return false;
+
+                        return true;
+                    }
+                );
+
+                table.draw();
+                $.fn.dataTable.ext.search.pop();
+            }
+
+            $('#filter_day, #filter_month, #filter_year, #from_date, #to_date').on('change', filterTable);
+
+            // Delete logic
+            $(document).on('click', '.delete-btn', function(e) {
+                e.preventDefault();
+                var url = $(this).data('url');
+
+                Swal.fire({
+                    title: 'Confirm Deletion',
+                    text: "This action cannot be undone. Are you sure?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var form = $('<form>', {
+                            method: 'POST',
+                            action: url
+                        }).append(
+                            $('<input>', {
+                                type: 'hidden',
+                                name: '_method',
+                                value: 'DELETE'
+                            }),
+                            $('<input>', {
+                                type: 'hidden',
+                                name: '_token',
+                                value: $('meta[name="csrf-token"]').attr('content')
+                            })
+                        );
+
+                        $('body').append(form);
+                        form.submit();
+                    }
+                });
             });
         });
     </script>
