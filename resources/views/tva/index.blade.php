@@ -206,7 +206,7 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            // Destroy if already initialized to avoid reinitialization error
+            // Destroy if already initialized
             if ($.fn.DataTable.isDataTable('#bookingTable')) {
                 $('#bookingTable').DataTable().destroy();
             }
@@ -222,12 +222,11 @@
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
                 },
-                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" + // Top: Buttons + Filter
+                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" + // Buttons + search
                     "<'row'<'col-sm-12'tr>>" + // Table
-                    "<'row'<'col-sm-12 col-md-5'l><'col-sm-12 col-md-7'p>>", // Bottom: Length + Pagination
-                buttons: [
-                    'copy', 'csv', 'excel', 'pdf', 'print'
-                ],
+                    "<'row'<'col-sm-6'l><'col-sm-6'p>>" + // Bottom: Length + Pagination
+                    "<'row'<'col-sm-12'i>>",
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
                 columnDefs: [{
                         targets: 0,
                         orderable: false,
@@ -240,7 +239,7 @@
                 ]
             });
 
-            // Select All logic
+            // === Select All logic (current page only) ===
             $('#select-all').on('click', function(e) {
                 e.stopPropagation();
                 var isChecked = $(this).prop('checked');
@@ -249,30 +248,31 @@
                 }).nodes().to$().find('input[type="checkbox"]').prop('checked', isChecked);
             });
 
-            $('#bookingTable tbody').on('click', 'input[type="checkbox"]', function(e) {
-                e.stopPropagation();
+            // === Individual checkbox handler ===
+            $('#bookingTable tbody').on('change', 'input[type="checkbox"]', function() {
+                updateSelectAllState();
+            });
+
+            // === Update header checkbox when page changes ===
+            table.on('draw', function() {
                 updateSelectAllState();
             });
 
             function updateSelectAllState() {
-                var allChecked = table.rows({
-                        page: 'current'
-                    }).nodes().to$().find('input[type="checkbox"]:checked').length ===
-                    table.rows({
-                        page: 'current'
-                    }).nodes().length;
-                $('#select-all').prop('checked', allChecked);
+                var checkboxes = table.rows({
+                    page: 'current'
+                }).nodes().to$().find('input[type="checkbox"]');
+                var checked = checkboxes.filter(':checked').length;
+                var total = checkboxes.length;
+                $('#select-all').prop('checked', total > 0 && total === checked);
             }
 
-            table.on('page.dt', function() {
-                $('#select-all').prop('checked', false);
-            });
-
+            // === Prevent header checkbox column click from sorting ===
             $('#bookingTable thead').on('click', 'th:first-child', function(e) {
                 e.stopPropagation();
             });
 
-            // Bulk download
+            // === Bulk Download ===
             $('#bulk-download-form').on('submit', function(e) {
                 e.preventDefault();
                 var selectedIds = [];
@@ -283,7 +283,7 @@
 
                 if (selectedIds.length === 0) {
                     Swal.fire('Error', 'Please select at least one invoice', 'warning');
-                    return false;
+                    return;
                 }
 
                 var form = $('<form>', {
@@ -297,7 +297,7 @@
                     })
                 );
 
-                $.each(selectedIds, function(i, id) {
+                selectedIds.forEach(id => {
                     form.append($('<input>', {
                         type: 'hidden',
                         name: 'invoice_ids[]',
@@ -309,40 +309,47 @@
                 form.submit();
             });
 
-            // Filters
+            function formatLocalDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0'); // getMonth is zero-based
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
             function filterTable() {
-                var day = $('#filter_day').val();
-                var month = $('#filter_month').val();
-                var year = $('#filter_year').val();
-                var fromDate = $('#from_date').val();
-                var toDate = $('#to_date').val();
+                const day = $('#filter_day').val();
+                const month = $('#filter_month').val();
+                const year = $('#filter_year').val();
+                const fromDate = $('#from_date').val();
+                const toDate = $('#to_date').val();
 
-                $.fn.dataTable.ext.search.push(
-                    function(settings, data, dataIndex) {
-                        var date = new Date(data[4]);
-                        if (isNaN(date.getTime())) return false;
+                $.fn.dataTable.ext.search.push(function(settings, data) {
+                    const rawDate = data[4]; // adjust index if needed
+                    const parsedDate = new Date(rawDate);
 
-                        var rowDate = date.toISOString().split('T')[0];
-                        var rowYear = rowDate.substring(0, 4);
-                        var rowMonth = rowDate.substring(5, 7);
+                    if (isNaN(parsedDate)) return false;
 
-                        if (day && day !== rowDate) return false;
-                        if (month && month !== rowMonth) return false;
-                        if (year && year !== rowYear) return false;
-                        if (fromDate && rowDate < fromDate) return false;
-                        if (toDate && rowDate > toDate) return false;
+                    const rowDateStr = formatLocalDate(parsedDate);
+                    const rowYear = rowDateStr.substring(0, 4);
+                    const rowMonth = rowDateStr.substring(5, 7);
 
-                        return true;
-                    }
-                );
+                    if (day && day !== rowDateStr) return false;
+                    if (month && month !== rowMonth) return false;
+                    if (year && year !== rowYear) return false;
+                    if (fromDate && rowDateStr < fromDate) return false;
+                    if (toDate && rowDateStr > toDate) return false;
+
+                    return true;
+                });
 
                 table.draw();
                 $.fn.dataTable.ext.search.pop();
             }
 
+
             $('#filter_day, #filter_month, #filter_year, #from_date, #to_date').on('change', filterTable);
 
-            // Delete logic
+            // === Delete Button ===
             $(document).on('click', '.delete-btn', function(e) {
                 e.preventDefault();
                 var url = $(this).data('url');
@@ -372,7 +379,6 @@
                                 value: $('meta[name="csrf-token"]').attr('content')
                             })
                         );
-
                         $('body').append(form);
                         form.submit();
                     }
