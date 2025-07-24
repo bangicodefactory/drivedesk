@@ -88,12 +88,12 @@ class TvaController extends Controller
                 $invoice->items = $items;
 
                 $settings = settings();
-                $logoFile = $settings['company_logo'] ?? 'logo.png'; // we dont have logo in settings db
-                $logoPath = public_path('upload/logo/' . $logoFile);
+                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
+
+                $logoPath = storage_path('upload/logo/' . $logoFile);
+
                 if (!file_exists($logoPath)) {
-                    $logoPath = null;
-                } else {
-                    $logoPath = asset('upload/logo/' . $logoFile);
+                $logoPath = null; 
                 }
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
