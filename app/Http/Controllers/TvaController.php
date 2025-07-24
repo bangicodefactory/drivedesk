@@ -43,14 +43,20 @@ class TvaController extends Controller
         if ($request->filled('filter_year')) {
             $query->whereYear('created_at', $request->filter_year);
         }
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date_column', [$request->from_date, $request->to_date]);
+        }
+
         $perPage = $request->get('per_page', 30);
         $tvas = $query->paginate($perPage);
-        
+
         $tvas->appends([
             'filter_day' => $request->filter_day,
             'filter_month' => $request->filter_month,
             'filter_year' => $request->filter_year,
-            'per_page' => $perPage
+            'per_page' => $perPage,
+            'from_date'=>$request->get('from_date'),
+            'to_date'=>$request->get('to_date'),
         ]);
 
 

@@ -30,19 +30,31 @@
 <?php $__env->startSection('content'); ?>
     <div class="row mb-4">
         <div class="col-md-12">
-            <form method="GET" action="<?php echo e(route('tva.index')); ?>" id="auto-filter-form"
-                class="d-flex flex-wrap gap-3 justify-content-end">
-                <input type="hidden" name="per_page" value="<?php echo e(request('per_page', 30)); ?>">
-                <div>
-                    <label for="filter_day" class="form-label"><?php echo e(__('Day')); ?></label>
-                    <input type="date" id="filter_day" name="filter_day" class="form-control"
-                        value="<?php echo e(request()->get('filter_day')); ?>">
-                </div>
-                <div>
-                    <label for="filter_month" class="form-label"><?php echo e(__('Month')); ?></label>
-                    <select id="filter_month" name="filter_month" class="form-control">
-                        <option value=""><?php echo e(__('Select Month')); ?></option>
-                        <?php $__currentLoopData = [
+            <form method="GET" action="<?php echo e(route('tva.index')); ?>" id="auto-filter-form">
+                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="mb-4">
+                            <label for="from_date" class="form-label"><?php echo e(__('From Date')); ?></label>
+                            <input type="date" id="from_date" name="from_date" class="form-control"
+                                value="<?php echo e(request()->get('from_date')); ?>">
+                        </div>
+                        <div class="mb-4">
+                            <label for="to_date" class="form-label"><?php echo e(__('To Date')); ?></label>
+                            <input type="date" id="to_date" name="to_date" class="form-control"
+                                value="<?php echo e(request()->get('to_date')); ?>">
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-end">
+                        <div>
+                            <label for="filter_day" class="form-label"><?php echo e(__('Day')); ?></label>
+                            <input type="date" id="filter_day" name="filter_day" class="form-control"
+                                value="<?php echo e(request()->get('filter_day')); ?>">
+                        </div>
+                        <div>
+                            <label for="filter_month" class="form-label"><?php echo e(__('Month')); ?></label>
+                            <select id="filter_month" name="filter_month" class="form-control">
+                                <option value=""><?php echo e(__('Select Month')); ?></option>
+                                <?php $__currentLoopData = [
             '01' => 'January',
             '02' => 'February',
             '03' => 'March',
@@ -56,27 +68,28 @@
             '11' => 'November',
             '12' => 'December',
         ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $num => $month): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($num); ?>"
-                                <?php echo e(request()->get('filter_month') == $num ? 'selected' : ''); ?>>
-                                <?php echo e($month); ?>
+                                    <option value="<?php echo e($num); ?>"
+                                        <?php echo e(request()->get('filter_month') == $num ? 'selected' : ''); ?>>
+                                        <?php echo e($month); ?>
 
-                            </option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter_year" class="form-label"><?php echo e(__('Year')); ?></label>
-                    <select id="filter_year" name="filter_year" class="form-control">
-                        <option value=""><?php echo e(__('Select Year')); ?></option>
-                        <?php for($year = now()->year; $year >= 2020; $year--): ?>
-                            <option value="<?php echo e($year); ?>"
-                                <?php echo e(request()->get('filter_year') == $year ? 'selected' : ''); ?>>
-                                <?php echo e($year); ?>
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter_year" class="form-label"><?php echo e(__('Year')); ?></label>
+                            <select id="filter_year" name="filter_year" class="form-control">
+                                <option value=""><?php echo e(__('Select Year')); ?></option>
+                                <?php for($year = now()->year; $year >= 2020; $year--): ?>
+                                    <option value="<?php echo e($year); ?>"
+                                        <?php echo e(request()->get('filter_year') == $year ? 'selected' : ''); ?>>
+                                        <?php echo e($year); ?>
 
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
+                                    </option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                    </div>
             </form>
         </div>
     </div>

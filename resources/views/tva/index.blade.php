@@ -28,19 +28,31 @@
 @section('content')
     <div class="row mb-4">
         <div class="col-md-12">
-            <form method="GET" action="{{ route('tva.index') }}" id="auto-filter-form"
-                class="d-flex flex-wrap gap-3 justify-content-end">
-                <input type="hidden" name="per_page" value="{{ request('per_page', 30) }}">
-                <div>
-                    <label for="filter_day" class="form-label">{{ __('Day') }}</label>
-                    <input type="date" id="filter_day" name="filter_day" class="form-control"
-                        value="{{ request()->get('filter_day') }}">
-                </div>
-                <div>
-                    <label for="filter_month" class="form-label">{{ __('Month') }}</label>
-                    <select id="filter_month" name="filter_month" class="form-control">
-                        <option value="">{{ __('Select Month') }}</option>
-                        @foreach ([
+            <form method="GET" action="{{ route('tva.index') }}" id="auto-filter-form">
+                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="mb-4">
+                            <label for="from_date" class="form-label">{{ __('From Date') }}</label>
+                            <input type="date" id="from_date" name="from_date" class="form-control"
+                                value="{{ request()->get('from_date') }}">
+                        </div>
+                        <div class="mb-4">
+                            <label for="to_date" class="form-label">{{ __('To Date') }}</label>
+                            <input type="date" id="to_date" name="to_date" class="form-control"
+                                value="{{ request()->get('to_date') }}">
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-end">
+                        <div>
+                            <label for="filter_day" class="form-label">{{ __('Day') }}</label>
+                            <input type="date" id="filter_day" name="filter_day" class="form-control"
+                                value="{{ request()->get('filter_day') }}">
+                        </div>
+                        <div>
+                            <label for="filter_month" class="form-label">{{ __('Month') }}</label>
+                            <select id="filter_month" name="filter_month" class="form-control">
+                                <option value="">{{ __('Select Month') }}</option>
+                                @foreach ([
             '01' => 'January',
             '02' => 'February',
             '03' => 'March',
@@ -54,31 +66,33 @@
             '11' => 'November',
             '12' => 'December',
         ] as $num => $month)
-                            <option value="{{ $num }}"
-                                {{ request()->get('filter_month') == $num ? 'selected' : '' }}>
-                                {{ $month }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="filter_year" class="form-label">{{ __('Year') }}</label>
-                    <select id="filter_year" name="filter_year" class="form-control">
-                        <option value="">{{ __('Select Year') }}</option>
-                        @for ($year = now()->year; $year >= 2020; $year--)
-                            <option value="{{ $year }}"
-                                {{ request()->get('filter_year') == $year ? 'selected' : '' }}>
-                                {{ $year }}
-                            </option>
-                        @endfor
-                    </select>
-                </div>
+                                    <option value="{{ $num }}"
+                                        {{ request()->get('filter_month') == $num ? 'selected' : '' }}>
+                                        {{ $month }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter_year" class="form-label">{{ __('Year') }}</label>
+                            <select id="filter_year" name="filter_year" class="form-control">
+                                <option value="">{{ __('Select Year') }}</option>
+                                @for ($year = now()->year; $year >= 2020; $year--)
+                                    <option value="{{ $year }}"
+                                        {{ request()->get('filter_year') == $year ? 'selected' : '' }}>
+                                        {{ $year }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
             </form>
         </div>
     </div>
     <div class="row">
         <div class="col-12">
             <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">
+                
                 @csrf
 
                 <button type="submit" class="btn btn-success mb-3">{{ __('Download Selected Invoices') }}</button>
