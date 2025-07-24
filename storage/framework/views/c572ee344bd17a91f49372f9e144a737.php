@@ -97,7 +97,6 @@
         <div class="col-12">
             <form id="bulk-download-form" method="POST" action="<?php echo e(route('tva.bulk.download')); ?>">
                 <?php echo csrf_field(); ?>
-
                 <button type="submit" class="btn btn-success mb-3"><?php echo e(__('Download Selected Invoices')); ?></button>
                 <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                     <thead>
@@ -190,7 +189,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('#filter_day, #filter_month, #filter_year').forEach(el => {
+            document.querySelectorAll('#filter_day, #filter_month, #filter_year,#from_date,#to_date').forEach(el => {
                 el.addEventListener('change', function(e) {
                     e.preventDefault();
                     filterTable();
@@ -203,6 +202,8 @@
             const day = document.getElementById('filter_day').value;
             const month = document.getElementById('filter_month').value;
             const year = document.getElementById('filter_year').value;
+            const fromDate = document.getElementById('from_date')?.value;
+            const toDate = document.getElementById('to_date')?.value;
 
             const rows = document.querySelectorAll('#bookingTable tbody tr');
 
@@ -217,6 +218,8 @@
                 if (day && day !== date) show = false;
                 if (month && month !== rowMonth) show = false;
                 if (year && year !== rowYear) show = false;
+                if (fromDate && date < fromDate) show = false;
+                if (toDate && date > toDate) show = false;
 
                 row.style.display = show ? '' : 'none';
             });
