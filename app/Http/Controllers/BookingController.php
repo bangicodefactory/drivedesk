@@ -274,6 +274,30 @@ class BookingController extends Controller
             $booking->vehicle_details = json_encode($vehicle_detail);
             $booking->daily_price_final = $request->daily_price;
             $booking->save();
+            
+            //update dynamic with tva section
+            $tva = Tva::where('booking_id', $booking->id)->first();
+            if ($tva) 
+            {
+            $quantity = 1; 
+            $unit_price_ht = $booking->daily_price_final;
+            $total_ht = $unit_price_ht * $quantity;
+            $tva_rate = 0.20; // 20% 
+            $tva_amount = $total_ht * $tva_rate;
+            $montant_ttc = $total_ht + $tva_amount;
+
+            // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A'; 
+            $tva->quantity = $quantity;
+            $tva->unit_price_ht = $unit_price_ht;
+            $tva->total_ht = $total_ht;
+            $tva->tva = $tva_amount;
+            $tva->montant_ttc = $montant_ttc;
+            $tva->total_amount = $montant_ttc;
+            $tva->tva_amount = $tva_amount;
+            $tva->updated_at = now();
+            $tva->save();
+            }
+
 
             if($bookingStatus){
                 $user=User::find($request->driver);
