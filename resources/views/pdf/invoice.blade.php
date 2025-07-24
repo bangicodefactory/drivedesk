@@ -42,7 +42,7 @@
             text-decoration: underline; 
             text-align: center; 
             flex-grow: 1; 
-            color: #c00;
+            color:mediumblue;
         }
         .top-right-logo img { 
             width: 100px; 
@@ -59,7 +59,7 @@
             width: 48%;
             border: 2px solid #000;
             padding: 8px;
-            background: #f9f9f9;
+            background: #ffffffff;
         }
         .company-info h3 { 
             color: #c00; 
@@ -143,7 +143,7 @@
                 @if($logoPath)
                     <img src="{{ $logoPath }}" alt="Logo de l'entreprise">
                 @else
-                    <div style="width:120px; height:60px; background:#c00; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                    <div style="width:120px; height:60px; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
                         LOGO
                     </div>
                 @endif
@@ -227,7 +227,7 @@
 
         <div class="footer-info">
             ICE : {{ $settings['ice'] ?? '---' }} | RC : {{ $settings['rc'] ?? '---' }} |
-            TP : {{ $tva->tp_number  ?? '---' }} | IF : {{ $tva->nif_number ?? '---' }}<br>
+            PATTENTE : {{ $settings['patente']  ?? '---' }} | IF : {{ $settings['if'] ?? '---' }}<br>
             MERCI POUR VOTRE CONFIANCE - CONTACT : {{ $settings['company_email'] ?? '---' }}
         </div>
     </div>
