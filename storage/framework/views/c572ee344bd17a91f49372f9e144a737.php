@@ -171,10 +171,6 @@
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
-                <div class="d-flex justify-content-end mt-3">
-                    <?php echo e($tvas->links()); ?>
-
-                </div>
             </form>
         </div>
     </div>
@@ -189,12 +185,13 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('#filter_day, #filter_month, #filter_year,#from_date,#to_date').forEach(el => {
-                el.addEventListener('change', function(e) {
-                    e.preventDefault();
-                    filterTable();
+            document.querySelectorAll('#filter_day, #filter_month, #filter_year,#from_date,#to_date').forEach(
+                el => {
+                    el.addEventListener('change', function(e) {
+                        e.preventDefault();
+                        filterTable();
+                    });
                 });
-            });
             filterTable();
         });
 
@@ -264,6 +261,28 @@
                         }
                     });
                 });
+            });
+        });
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#bookingTable')) {
+                $('#bookingTable').DataTable().destroy();
+            }
+
+            $('#bookingTable').DataTable({
+                pageLength: 30,
+                searching: true,
+                ordering: true,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
+                },
+                dom: '<"top"Bf>t<"bottom"lip>',
+                buttons: [
+                    'copyHtml5',
+                    'csvHtml5',
+                    'excelHtml5',
+                    'pdfHtml5',
+                    'print'
+                ]
             });
         });
     </script>

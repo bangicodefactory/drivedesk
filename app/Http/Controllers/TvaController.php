@@ -47,17 +47,7 @@ class TvaController extends Controller
             $query->whereBetween('date_column', [$request->from_date, $request->to_date]);
         }
 
-        $perPage = $request->get('per_page', 30);
-        $tvas = $query->paginate($perPage);
-
-        $tvas->appends([
-            'filter_day' => $request->filter_day,
-            'filter_month' => $request->filter_month,
-            'filter_year' => $request->filter_year,
-            'per_page' => $perPage,
-            'from_date'=>$request->get('from_date'),
-            'to_date'=>$request->get('to_date'),
-        ]);
+        $tvas = $query->get();
 
 
         return view('tva.index', compact('tvas'));
