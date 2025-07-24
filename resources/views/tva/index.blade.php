@@ -295,6 +295,10 @@
 
             $('#bookingTable').DataTable({
                 pageLength: 30,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1], // -1 is the "All" option
+                    [10, 25, 50, 100, "All"] // labels shown to users
+                ],
                 searching: true,
                 ordering: true,
                 language: {
