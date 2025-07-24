@@ -307,6 +307,10 @@ class BookingController extends Controller
     public function destroy(Booking $booking)
     {
         if (\Auth::user()->can('delete booking')) {
+            // Delete associated TVA record first
+            Tva::where('booking_id', $booking->id)->delete();
+            
+            // Then delete the booking
             $booking->delete();
             return redirect()->route('booking.index')->with('success', __('Booking successfully deleted.'));
         } else {
@@ -504,4 +508,6 @@ class BookingController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+   
 }
