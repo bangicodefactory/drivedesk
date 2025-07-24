@@ -89,7 +89,7 @@ class TvaController extends Controller
                 $logoPath = storage_path('upload/logo/' . $logoFile);
 
                 if (!file_exists($logoPath)) {
-                $logoPath = null; 
+                    $logoPath = null;
                 }
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
@@ -117,6 +117,7 @@ class TvaController extends Controller
 
         return view('tva.edit', compact('tva', 'books', 'vehicles', 'booking'));
     }
+
 
 
     public function update(Request $request, $id)
