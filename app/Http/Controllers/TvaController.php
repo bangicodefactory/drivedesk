@@ -16,7 +16,7 @@ use App\Models\BookingPayment;
 class TvaController extends Controller
 {
     //
-    public function index()
+    public function index(Request $request)
     {
         // if (\Auth::user()->can('manage booking')) {
         //     $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
@@ -29,6 +29,31 @@ class TvaController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+        $query = Tva::where('parent_id', '=', parentId());
+        if ($request->filled('filter_day')) {
+            $query->whereDate('created_at', $request->filter_day);
+        }
+
+        // Filter by month
+        if ($request->filled('filter_month')) {
+            $query->whereMonth('created_at', $request->filter_month);
+        }
+
+        // Filter by year
+        if ($request->filled('filter_year')) {
+            $query->whereYear('created_at', $request->filter_year);
+        }
+        $perPage = $request->get('per_page', 30);
+        $tvas = $query->paginate($perPage);
+        
+        $tvas->appends([
+            'filter_day' => $request->filter_day,
+            'filter_month' => $request->filter_month,
+            'filter_year' => $request->filter_year,
+            'per_page' => $perPage
+        ]);
+
+
         return view('tva.index', compact('tvas'));
     }
     public function create()
@@ -106,22 +131,20 @@ class TvaController extends Controller
         'unit_price_ht'  => 'required|numeric',
         'tva'            => 'required|numeric',
         'facture_number' => 'required|string|max:255',
-        'total_ht'     => 'required|numeric'
     ]);
 
-    $tva = Tva::findOrFail($id);
+        $tva = Tva::findOrFail($id);
 
     $tva->facture_date   = $validated['facture_date'];
     $tva->montant_ttc    = $validated['montant_ttc'];
     $tva->unit_price_ht  = $validated['unit_price_ht'];
     $tva->tva            = $validated['tva'];
     $tva->facture_number = $validated['facture_number'];
-    $tva->total_ht       = $validated['total_ht'];
 
-    $tva->save();
+        $tva->save();
 
-    return redirect()->route('tva.index')->with('success', __('TVA updated successfully.'));
-}
+        return redirect()->route('tva.index')->with('success', __('TVA updated successfully.'));
+    }
 
 
     public function show($id)
@@ -129,5 +152,12 @@ class TvaController extends Controller
         $tva = Tva::findOrFail($id);
         return view('tva.show', compact('tva'));
     }
+    public function destroy($id)
+    {
+        $tva = Tva::findOrFail($id);
+        $tva->delete();
+        return redirect()->back()->with('success', 'The TVA has been deleted.');
+    }
+
 
 }
