@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tva extends Model
 {
-    use HasFactory;
+    use HasFactory,SoftDeletes;
 
     protected $fillable = [
         // Existing columns
@@ -20,7 +21,7 @@ class Tva extends Model
         'generated_date',
         'created_at',
         'updated_at',
-        
+
         // New invoice columns
         'facture_number',
         'facture_date',
@@ -120,4 +121,5 @@ class Tva extends Model
         }
         return $this->total_ht ?? 0;
     }
+    protected $dates = ['deleted_at'];
 }
