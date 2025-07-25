@@ -1,246 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Facture #{{ $tva->facture_number }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            padding: 15px; 
+            color: #000; 
+            background: white; 
+            line-height: 1.4;
+        }
+        .invoice-container { 
+            max-width: 210mm; 
+            margin: 0 auto; 
+            border: 2px solid #000; 
+            padding: 15px; 
+            background: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.3;
-            color: #000;
-            background: white;
-            padding: 15px;
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+        }
+        .company-logo img { 
+            width: 120px; 
+            height: auto; 
+            border: 1px solid #eee;
+            padding: 3px;
+        }
+        .invoice-title { 
+            font-size: 24px; 
+            font-weight: bold; 
+            text-decoration: underline; 
+            text-align: center; 
+            flex-grow: 1; 
+            color:mediumblue;
+        }
+        .top-right-logo img { 
+            width: 100px; 
+            height: auto; 
         }
 
-        .invoice-container {
-            max-width: 210mm;
-            margin: 0 auto;
-            border: 2px solid #000;
-            padding: 15px;
-            height: fit-content;
+        .company-details { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 15px; 
+            gap: 20px; 
         }
-
-        .header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-direction: column;
-        }
-
-        .company-logo {
-        width: 120px;
-        height: 60px;
-        border: 2px solid #000;
-        border-radius: 25px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 10px;
-        text-align: center;
-        margin-bottom: 10px;
-        margin-left: auto;   /* Add this */
-        margin-right: auto;  /* Add this */
-    }
-
-        .invoice-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-decoration: underline;
-            color: #000;
-        }
-
-        .company-details {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    gap: 20px;
-    container: flex; /* Ensure flexbox is applied */
-}
-
-        .company-info {
+        .company-info, .client-box {
             width: 48%;
             border: 2px solid #000;
             padding: 8px;
             background: #ffffffff;
         }
-
-        .company-info h3 {
-            color: red;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 3px;
+        .company-info h3 { 
+            color: #c00; 
+            font-size: 12px; 
+            font-weight: bold; 
+            margin-bottom: 3px; 
+        }
+        .company-info p, .client-box p { 
+            margin: 3px 0; 
+            font-size: 10px; 
+            font-weight:bold;
+        }
+        .client-box strong { 
+            font-size: 11px; 
         }
 
-        .company-info p {
-            margin: 1px 0;
-            font-size: 10px;
+        .invoice-meta { 
+            margin-bottom: 15px; 
         }
-
-        .client-box {
-            width: 48%;
-            border: 2px solid #000;
-            padding: 8px;
-            height: 80px;
-        }
-
-        .client-box strong {
-            font-size: 11px;
-        }
-
-        .invoice-meta {
-            display: flex;
-            gap: 15px;
+        .meta-table, .items-table, .totals-table {
+            width: 100%; 
+            border-collapse: collapse; 
             margin-bottom: 15px;
         }
-
-        .meta-table {
-            border: 2px solid #000;
-            border-collapse: collapse;
-        }
-
-        .meta-table td {
-            border: 1px solid #000;
+        .meta-table td, .items-table td, .items-table th, .totals-table td {
+            border: 1px solid #000; 
             padding: 4px 8px;
-            font-size: 11px;
         }
-
-        .meta-table td:first-child {
-            font-weight: bold;
-            background-color: #f0f0f0;
-        }
-
-        .items-table {
-            width: 100%;
-            border: 2px solid #000;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-
-        .items-table th,
-        .items-table td {
-            border: 1px solid #000;
-            padding: 6px 4px;
-            text-align: center;
-            font-size: 11px;
-        }
-
-        .items-table th {
-            background-color: #f0f0f0;
+        .items-table th { 
+            background-color: #eaeaea; 
             font-weight: bold;
         }
-
-        .items-table td:first-child {
-            text-align: left;
-            width: 50%;
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
 
-        .bottom-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .bottom-section { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 20px; 
         }
-
-        .payment-terms {
-            width: 60%;
-            font-size: 10px;
-            line-height: 1.4;
+        .totals-box { 
+            width: 45%; 
         }
-
-        .totals-table {
-            border: 2px solid #000;
-            border-collapse: collapse;
-        }
-
-        .totals-table td {
-            border: 1px solid #000;
-            padding: 4px 8px;
-            font-size: 11px;
-        }
-
-        .totals-table td:first-child {
-            font-weight: bold;
-            background-color: #f0f0f0;
-            text-align: left;
-        }
-
-        .totals-table td:last-child {
+        .signature-box {
+            width: 45%;
             text-align: right;
+            margin-top: 30px;
+            margin-left: 350px;
+        }
+        .signature-box .label { 
+            font-size: 11px; 
+            margin-bottom: 5px; 
             font-weight: bold;
+        }
+        .signature-line {
+            height: 30px;
+            border-bottom: 1px solid #000;
+            width: 200px;
+            margin-left: auto;
         }
 
         .footer-info {
-            margin-top: 15px;
-            font-size: 9px;
-            text-align: center;
-            border-top: 1px solid #000;
+            margin-top: 40px; 
+            font-size: 9px; 
+            text-align: center; 
+            border-top: 1px solid #000; 
             padding-top: 5px;
+            color: #555;
         }
-
-        @media print {
-            body {
-                padding: 0;
-                font-size: 11px;
-            }
-            
-            .invoice-container {
-                border: 2px solid #000;
-                padding: 10px;
-                margin: 0;
-                max-width: none;
-            }
-
-            .header {
-                margin-bottom: 10px;
-            }
-
-            .company-details {
-                margin-bottom: 10px;
-            }
-
-            .invoice-meta {
-                margin-bottom: 10px;
-            }
-
-            .items-table {
-                margin-bottom: 10px;
-            }
-
-            .bottom-section {
-                margin-top: 10px;
-            }
-
-            .footer-info {
-                margin-top: 10px;
-            }
+        
+        .totals-table tr:last-child {
+            font-weight: bold;
+            background-color: #f0f0f0;
         }
     </style>
 </head>
-
 <body>
     <div class="invoice-container">
         <div class="header">
             <div class="company-logo">
-                TECH<br>SOLUTIONS<br>INC.
+                @if($logoPath)
+                    <img src="{{ $logoPath }}" alt="Logo de l'entreprise">
+                @else
+                    <div style="width:120px; height:60px; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                        LOGO
+                    </div>
+                @endif
             </div>
             <div class="invoice-title">FACTURE</div>
         </div>
 
         <div class="company-details">
             <div class="company-info">
-                <h3>TECHSOLUTIONS INC.</h3>
-                <p>ADDRESS: 123 Business Avenue</p>
-                <p>CITY: New York, NY 10001</p>
-                <p>PHONE: (555) 123-4567</p>
-                <p>EMAIL: billing@techsolutions.com</p>
+                <strong><h2 style="color:#c00 ;">{{ $settings['company_name'] ?? 'Nom de l\'entreprise' }}</h2></strong>
+                <p>{{ $settings['company_address'] ?? '' }}</p>
+                <p>TÉLÉPHONE : {{ $settings['company_phone'] ?? '' }}</p>
+                <p>EMAIL : {{ $settings['company_email'] ?? '' }}</p>
             </div>
             <div class="client-box">
                 <strong>CLIENT : {{ $tva->client_name }}</strong>
@@ -259,8 +176,9 @@
                     <td>{{ $tva->facture_number }}</td>
                 </tr>
                 <tr>
-                    <td>Reference:</td>
-                    <td>WEB-DEV</td>
+                    <td>Référence :</td>
+                    <td> ESPECE </td>
+                    <!-- <td>{{ $tva->designation }}</td> -->
                 </tr>
             </table>
         </div>
@@ -310,10 +228,10 @@
         </div>
 
         <div class="footer-info">
-            ICE: 002851390001S | RC: 50487 | TP: 51405652 | NIF: 0606843<br>
-            THANK YOU FOR YOUR BUSINESS - QUESTIONS? CONTACT: billing@techsolutions.com
+            ICE : {{ $settings['ice'] ?? '---' }} | RC : {{ $settings['rc'] ?? '---' }} |
+            PATTENTE : {{ $settings['patente']  ?? '---' }} | IF : {{ $settings['if'] ?? '---' }}<br>
+            MERCI POUR VOTRE CONFIANCE - CONTACT : {{ $settings['company_email'] ?? '---' }}
         </div>
     </div>
 </body>
-
 </html>

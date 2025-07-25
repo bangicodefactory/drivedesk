@@ -43,11 +43,15 @@ class TvaController extends Controller
         if ($request->filled('filter_year')) {
             $query->whereYear('created_at', $request->filter_year);
         }
-        if ($request->filled('from_date') && $request->filled('to_date')) {
-            $query->whereBetween('date_column', [$request->from_date, $request->to_date]);
-        }
-
-        $tvas = $query->get();
+        $perPage = $request->get('per_page', 30);
+        $tvas = $query->paginate($perPage);
+        
+        $tvas->appends([
+            'filter_day' => $request->filter_day,
+            'filter_month' => $request->filter_month,
+            'filter_year' => $request->filter_year,
+            'per_page' => $perPage
+        ]);
 
 
         return view('tva.index', compact('tvas'));
@@ -73,7 +77,30 @@ class TvaController extends Controller
 
         if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
             foreach ($invoices as $invoice) {
-                $pdf = Pdf::loadView('pdf.invoice', compact('invoice'));
+                $items = [
+                    (object) [
+                        'description' => $invoice->designation,
+                        'quantity' => $invoice->quantity,
+                        'unit_price' => $invoice->unit_price_ht,
+                        'total_ht' => $invoice->total_ht,
+                    ]
+                ];
+                $invoice->items = $items;
+
+                $settings = settings();
+                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
+
+                $logoPath = storage_path('upload/logo/' . $logoFile);
+
+                if (!file_exists($logoPath)) {
+                $logoPath = null; 
+                }
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
+                    'tva' => $invoice,
+                    'settings' => $settings,
+                    'logoPath' => $logoPath,
+                ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
                 $zip->addFromString($fileName, $pdfContent);
@@ -94,7 +121,6 @@ class TvaController extends Controller
 
         return view('tva.edit', compact('tva', 'books', 'vehicles', 'booking'));
     }
-
 
 
     public function update(Request $request, $id)
