@@ -287,16 +287,16 @@ class BookingController extends Controller
              
                 $quantity = isset($details->totalDays) ? $details->totalDays : 1;
                 $unit_price_ht = $booking->daily_price_final;
-                $total_ht = $unit_price_ht * $quantity;
+                $total_ht = $booking->amount * 0.8; // Assuming amount is total TTC, calculate HT
                 $tva_rate = 0.20; // 20% 
                 $tva_amount = $total_ht * $tva_rate;
-                $montant_ttc = $total_ht + $tva_amount;
+                $montant_ttc = $booking->amount;
 
                 // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A'; 
                 $tva->quantity = $quantity;
                 $tva->unit_price_ht = $unit_price_ht;
                 $tva->total_ht = $total_ht;
-                $tva->tva = $tva_amount;
+                $tva->tva = $montant_ttc * 0.2; // Assuming 20% TVA
                 $tva->montant_ttc = $montant_ttc;
                 $tva->total_amount = $montant_ttc;
                 $tva->tva_amount = $tva_amount;
