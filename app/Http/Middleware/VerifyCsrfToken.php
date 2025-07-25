@@ -12,6 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+            'settings/store-signature',
+            'settings/update-signature',
+            'settings/delete-signature',
     ];
 }
