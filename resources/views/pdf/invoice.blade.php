@@ -151,6 +151,7 @@ body {
         .signature-box .label {
             font-size: 11px;
             margin-top: 50px;
+
             margin-bottom: 5px;
             font-weight: bold;
         }
@@ -170,12 +171,14 @@ body {
 
         .footer-info {
             margin-top: 100px;
+
             font-size: 9px;
             text-align: center;
             border-top: 1px solid #000;
             padding-top: 5px;
             color: #555;
         }
+
 
 .totals-table tr:last-child {
     font-weight: bold;
@@ -226,7 +229,6 @@ body {
         page-break-inside: avoid;
     }
 }
-
     </style>
 </head>
 

@@ -9,11 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+
+    //soft delete is added to the tvas table
     public function up(): void
     {
         Schema::table('tvas', function (Blueprint $table) {
             Schema::table('tvas', function (Blueprint $table) {
-                $table->softDeletes(); 
+                $table->softDeletes();
             });
         });
     }

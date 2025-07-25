@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DefaultDataUsersTableSeeder::class,
-            AllReminderPermissionsSeeder::class
+            AllReminderPermissionsSeeder::class,
+            TvaSeeder::class,
         ]);
     }
 }
