@@ -18,13 +18,7 @@
     </ul>
 <?php $__env->stopSection(); ?>
 <?php $__env->startSection('card-action-btn'); ?>
-    <?php if(Gate::check('manage reminder')): ?>
-        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="<?php echo e(route('tva.create')); ?>"
-            data-title="<?php echo e(__('Create TVA')); ?>"> <i class="ti-plus mr-5"></i>
-            <?php echo e(__('Create TVA')); ?>
-
-        </a>
-    <?php endif; ?>
+    
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -98,7 +92,7 @@
             <form id="bulk-download-form" method="POST" action="<?php echo e(route('tva.bulk.download')); ?>">
                 <?php echo csrf_field(); ?>
                 <button type="submit" class="btn btn-success mb-3"><?php echo e(__('Download Selected Invoices')); ?></button>
-                <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
+                <table class="display dataTable cell-border datatbl-advance" id="tvaTable">
                     <thead>
                         <tr>
                             <th hidden>id</th>
@@ -115,10 +109,10 @@
                     <tbody>
                         <?php $__currentLoopData = $tvas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tva): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr data-date="<?php echo e($tva->created_at->format('Y-m-d')); ?>">
+                                <td hidden><?php echo e($tva->created_at); ?></td>
                                 <td>
                                     <input type="checkbox" name="invoice_ids[]" value="<?php echo e($tva->id); ?>" />
                                 </td>
-                                <td hidden><?php echo e($tva->id); ?></td>
                                 <!-- To avoid the duplication of the prefix -->
                                 
                                 <td>
@@ -182,11 +176,11 @@
     <script>
         $(document).ready(function() {
             // Destroy if already initialized
-            if ($.fn.DataTable.isDataTable('#bookingTable')) {
-                $('#bookingTable').DataTable().destroy();
+            if ($.fn.DataTable.isDataTable('#tvaTable')) {
+                $('#tvaTable').DataTable().destroy();
             }
 
-            var table = $('#bookingTable').DataTable({
+            var table = $('#tvaTable').DataTable({
                 pageLength: 30,
                 lengthMenu: [
                     [10, 25, 50, 100, -1],
@@ -194,6 +188,7 @@
                 ],
                 searching: true,
                 ordering: true,
+                order: [[0, 'desc']],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
                 },
@@ -224,12 +219,7 @@
             });
 
             // === Individual checkbox handler ===
-            $('#bookingTable tbody').on('change', 'input[type="checkbox"]', function() {
-                updateSelectAllState();
-            });
-
-            // === Update header checkbox when page changes ===
-            table.on('draw', function() {
+            $('#tvaTable tbody').on('change', 'input[type="checkbox"]', function() {
                 updateSelectAllState();
             });
 
@@ -243,7 +233,7 @@
             }
 
             // === Prevent header checkbox column click from sorting ===
-            $('#bookingTable thead').on('click', 'th:first-child', function(e) {
+            $('#tvaTable thead').on('click', 'th:first-child', function(e) {
                 e.stopPropagation();
             });
 
@@ -361,6 +351,7 @@
             });
         });
     </script>
+    
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/car_directonderweg/resources/views/tva/index.blade.php ENDPATH**/ ?>

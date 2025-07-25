@@ -7,13 +7,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.s
+     * Run the migrations.
      */
+    //parent_id is an integer that can be null, added to the tvas table test
     public function up(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->decimal('daily_price_final', 10, 2)->nullable();
+        Schema::table('tvas', function (Blueprint $table) {
             //
+            $table->integer('parent_id')->nullable()->after('id');
         });
     }
 
@@ -22,10 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn('daily_price_final');
-
+        Schema::table('tvas', function (Blueprint $table) {
             //
+            $table->dropColumn('parent_id');
         });
     }
 };
