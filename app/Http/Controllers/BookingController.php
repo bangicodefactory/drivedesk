@@ -159,6 +159,8 @@ class BookingController extends Controller
             $tva->parent_id = parentId();
             $tva->booking_id = $booking->id;
             $tva->generated_date = now();
+            $tva->total_amount = $booking->amount;
+            $tva->tva_amount = $booking->amount * 0.2;
             $tva->save();
 
 
