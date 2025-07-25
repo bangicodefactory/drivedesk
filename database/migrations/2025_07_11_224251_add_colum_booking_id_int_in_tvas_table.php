@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // booking_id is an integer that can be null, added to the tvas table test
     public function up(): void
     {
         Schema::table('tvas', function (Blueprint $table) {

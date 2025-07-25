@@ -140,6 +140,8 @@ class TvaController extends Controller
     $tva->unit_price_ht  = $validated['unit_price_ht'];
     $tva->tva            = $validated['tva'];
     $tva->facture_number = $validated['facture_number'];
+    $tva->total_ht = $request->total_ht;
+
 
         $tva->save();
 
