@@ -73,34 +73,7 @@ class TvaController extends Controller
 
         if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
             foreach ($invoices as $invoice) {
-                $items = [
-                    (object) [
-                        'description' => $invoice->designation,
-                        'quantity' => $invoice->quantity,
-                        'unit_price' => $invoice->unit_price_ht,
-                        'total_ht' => $invoice->total_ht,
-                    ]
-                ];
-                $invoice->items = $items;
-
-                $settings = settings();
-                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
-
-                $logoPath = storage_path('upload/logo/' . $logoFile);
-
-                if (!file_exists($logoPath)) {
-<<<<<<< HEAD
-                    $logoPath = null;
-=======
-                $logoPath = null; 
->>>>>>> origin/dev-achraf
-                }
-
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
-                    'tva' => $invoice,
-                    'settings' => $settings,
-                    'logoPath' => $logoPath,
-                ]);
+                $pdf = Pdf::loadView('pdf.invoice', compact('invoice'));
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
                 $zip->addFromString($fileName, $pdfContent);
