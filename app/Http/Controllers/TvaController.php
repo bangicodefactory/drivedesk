@@ -43,11 +43,15 @@ class TvaController extends Controller
         if ($request->filled('filter_year')) {
             $query->whereYear('created_at', $request->filter_year);
         }
-        if ($request->filled('from_date') && $request->filled('to_date')) {
-            $query->whereBetween('date_column', [$request->from_date, $request->to_date]);
-        }
-
-        $tvas = $query->get();
+        $perPage = $request->get('per_page', 30);
+        $tvas = $query->paginate($perPage);
+        
+        $tvas->appends([
+            'filter_day' => $request->filter_day,
+            'filter_month' => $request->filter_month,
+            'filter_year' => $request->filter_year,
+            'per_page' => $perPage
+        ]);
 
 
         return view('tva.index', compact('tvas'));
@@ -89,11 +93,7 @@ class TvaController extends Controller
                 $logoPath = storage_path('upload/logo/' . $logoFile);
 
                 if (!file_exists($logoPath)) {
-<<<<<<< HEAD
-                    $logoPath = null;
-=======
                 $logoPath = null; 
->>>>>>> origin/dev-achraf
                 }
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
@@ -121,7 +121,6 @@ class TvaController extends Controller
 
         return view('tva.edit', compact('tva', 'books', 'vehicles', 'booking'));
     }
-
 
 
     public function update(Request $request, $id)
