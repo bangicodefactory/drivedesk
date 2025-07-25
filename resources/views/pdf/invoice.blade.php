@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dev-achraf
 <head>
     <meta charset="UTF-8">
     <title>Facture #{{ $tva->facture_number }}</title>
     <style>
+<<<<<<< HEAD
         * {
             margin: 0;
             padding: 0;
@@ -128,19 +132,134 @@
 
         .totals-box {
             width: 45%;
+=======
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            padding: 15px; 
+            color: #000; 
+            background: white; 
+            line-height: 1.4;
+>>>>>>> origin/dev-achraf
+        }
+        .invoice-container { 
+            max-width: 210mm; 
+            margin: 0 auto; 
+            border: 2px solid #000; 
+            padding: 15px; 
+            background: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
 
+<<<<<<< HEAD
+=======
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+        }
+        .company-logo img { 
+            width: 120px; 
+            height: auto; 
+            border: 1px solid #eee;
+            padding: 3px;
+        }
+        .invoice-title { 
+            font-size: 24px; 
+            font-weight: bold; 
+            text-decoration: underline; 
+            text-align: center; 
+            flex-grow: 1; 
+            color:mediumblue;
+        }
+        .top-right-logo img { 
+            width: 100px; 
+            height: auto; 
+        }
+
+        .company-details { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 15px; 
+            gap: 20px; 
+        }
+        .company-info, .client-box {
+            width: 48%;
+            border: 2px solid #000;
+            padding: 8px;
+            background: #ffffffff;
+        }
+        .company-info h3 { 
+            color: #c00; 
+            font-size: 12px; 
+            font-weight: bold; 
+            margin-bottom: 3px; 
+        }
+        .company-info p, .client-box p { 
+            margin: 3px 0; 
+            font-size: 10px; 
+            font-weight:bold;
+        }
+        .client-box strong { 
+            font-size: 11px; 
+        }
+
+        .invoice-meta { 
+            margin-bottom: 15px; 
+        }
+        .meta-table, .items-table, .totals-table {
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 15px;
+        }
+        .meta-table td, .items-table td, .items-table th, .totals-table td {
+            border: 1px solid #000; 
+            padding: 4px 8px;
+        }
+        .items-table th { 
+            background-color: #eaeaea; 
+            font-weight: bold;
+        }
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .bottom-section { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 20px; 
+        }
+        .totals-box { 
+            width: 45%; 
+        }
+>>>>>>> origin/dev-achraf
         .signature-box {
             width: 45%;
             text-align: right;
             margin-top: 30px;
             margin-left: 350px;
         }
+<<<<<<< HEAD
 
         .signature-box .label {
             font-size: 11px;
             margin-bottom: 5px;
+=======
+        .signature-box .label { 
+            font-size: 11px; 
+            margin-bottom: 5px; 
+>>>>>>> origin/dev-achraf
             font-weight: bold;
+        }
+        .signature-line {
+            height: 30px;
+            border-bottom: 1px solid #000;
+            width: 200px;
+            margin-left: auto;
         }
 
         .signature-line {
@@ -151,6 +270,7 @@
         }
 
         .footer-info {
+<<<<<<< HEAD
             margin-top: 40px;
             font-size: 9px;
             text-align: center;
@@ -159,6 +279,16 @@
             color: #555;
         }
 
+=======
+            margin-top: 40px; 
+            font-size: 9px; 
+            text-align: center; 
+            border-top: 1px solid #000; 
+            padding-top: 5px;
+            color: #555;
+        }
+        
+>>>>>>> origin/dev-achraf
         .totals-table tr:last-child {
             font-weight: bold;
             background-color: #f0f0f0;
@@ -170,11 +300,18 @@
     <div class="invoice-container">
         <div class="header">
             <div class="company-logo">
+<<<<<<< HEAD
                 @if ($logoPath)
                     <img src="{{ $logoPath }}" alt="Logo de l'entreprise">
                 @else
                     <div
                         style="width:120px; height:60px; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+=======
+                @if($logoPath)
+                    <img src="{{ $logoPath }}" alt="Logo de l'entreprise">
+                @else
+                    <div style="width:120px; height:60px; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+>>>>>>> origin/dev-achraf
                         LOGO
                     </div>
                 @endif
@@ -184,7 +321,11 @@
 
         <div class="company-details">
             <div class="company-info">
+<<<<<<< HEAD
                 <h3>{{ $settings['company_name'] ?? 'Nom de l\'entreprise' }}</h3>
+=======
+                <strong><h2 style="color:#c00 ;">{{ $settings['company_name'] ?? 'Nom de l\'entreprise' }}</h2></strong>
+>>>>>>> origin/dev-achraf
                 <p>{{ $settings['company_address'] ?? '' }}</p>
                 <p>TÉLÉPHONE : {{ $settings['company_phone'] ?? '' }}</p>
                 <p>EMAIL : {{ $settings['company_email'] ?? '' }}</p>
@@ -207,7 +348,12 @@
                 </tr>
                 <tr>
                     <td>Référence :</td>
+<<<<<<< HEAD
                     <td>{{ $tva->designation }}</td>
+=======
+                    <td> ESPECE </td>
+                    <!-- <td>{{ $tva->designation }}</td> -->
+>>>>>>> origin/dev-achraf
                 </tr>
             </table>
         </div>
@@ -258,7 +404,11 @@
 
         <div class="footer-info">
             ICE : {{ $settings['ice'] ?? '---' }} | RC : {{ $settings['rc'] ?? '---' }} |
+<<<<<<< HEAD
             PATTENTE : {{ $settings['patente'] ?? '---' }} | IF : {{ $settings['if'] ?? '---' }}<br>
+=======
+            PATTENTE : {{ $settings['patente']  ?? '---' }} | IF : {{ $settings['if'] ?? '---' }}<br>
+>>>>>>> origin/dev-achraf
             MERCI POUR VOTRE CONFIANCE - CONTACT : {{ $settings['company_email'] ?? '---' }}
         </div>
     </div>
