@@ -235,7 +235,53 @@
             // === Prevent header checkbox column click from sorting ===
             $('#tvaTable thead').on('click', 'th:first-child', function(e) {
                 e.stopPropagation();
+
             });
+
+            // === Bulk Download ===
+            $('#bulk-download-form').on('submit', function(e) {
+                e.preventDefault();
+                var selectedIds = [];
+
+                table.$('input[type="checkbox"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    Swal.fire('Error', 'Please select at least one invoice', 'warning');
+                    return;
+                }
+
+                var form = $('<form>', {
+                    method: 'POST',
+                    action: $(this).attr('action')
+                }).append(
+                    $('<input>', {
+                        type: 'hidden',
+                        name: '_token',
+                        value: $('meta[name="csrf-token"]').attr('content')
+                    })
+                );
+
+                selectedIds.forEach(id => {
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: 'invoice_ids[]',
+                        value: id
+                    }));
+                });
+
+                $('body').append(form);
+                form.submit();
+            });
+
+            function formatLocalDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0'); // getMonth is zero-based
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
 
             // === Bulk Download ===
             $('#bulk-download-form').on('submit', function(e) {
