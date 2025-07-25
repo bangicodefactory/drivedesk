@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    //parent_id is an integer that can be null, added to the tvas table
     public function up(): void
     {
         Schema::table('tvas', function (Blueprint $table) {
