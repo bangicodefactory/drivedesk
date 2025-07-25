@@ -70,6 +70,7 @@
         .company-info p, .client-box p { 
             margin: 3px 0; 
             font-size: 10px; 
+            font-weight:bold;
         }
         .client-box strong { 
             font-size: 11px; 
@@ -153,7 +154,7 @@
 
         <div class="company-details">
             <div class="company-info">
-                <h3>{{ $settings['company_name'] ?? 'Nom de l\'entreprise' }}</h3>
+                <strong><h2 style="color:#c00 ;">{{ $settings['company_name'] ?? 'Nom de l\'entreprise' }}</h2></strong>
                 <p>{{ $settings['company_address'] ?? '' }}</p>
                 <p>TÉLÉPHONE : {{ $settings['company_phone'] ?? '' }}</p>
                 <p>EMAIL : {{ $settings['company_email'] ?? '' }}</p>
@@ -176,7 +177,8 @@
                 </tr>
                 <tr>
                     <td>Référence :</td>
-                    <td>{{ $tva->designation }}</td>
+                    <td> ESPECE </td>
+                    <!-- <td>{{ $tva->designation }}</td> -->
                 </tr>
             </table>
         </div>
