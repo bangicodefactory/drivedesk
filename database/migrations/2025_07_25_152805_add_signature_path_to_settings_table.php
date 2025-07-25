@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
  * Class AddSignaturePathToSettingsTable
  *
  * This migration adds a 'signature_path' column to the 'settings' table.
- * The column is nullable and will be placed after the 'value' column.
+ * The column is nullable and will be placed after the 'value' column.ss
  */
 class AddSignaturePathToSettingsTable extends Migration
 {
