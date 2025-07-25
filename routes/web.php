@@ -410,3 +410,9 @@ Route::post('signature-pad',[SignatureController::class, 'store'])->name('signat
 Route::delete('signature/{signature}', [SignatureController::class, 'destroy'])->name('signature.destroy');
 
 Route::get('/drivers/search', [App\Http\Controllers\RentalAgreementController::class, 'searchDrivers'])->name('drivers.search');
+
+
+Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name('tva.bulk.download');
+
+// Test route for calendar without authentication
+Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');

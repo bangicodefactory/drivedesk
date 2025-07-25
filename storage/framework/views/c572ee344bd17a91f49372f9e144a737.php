@@ -1,58 +1,60 @@
-@extends('layouts.app')
-@section('page-title')
-    {{ __('TVA') }}
-@endsection
-@section('breadcrumb')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('TVA')); ?>
+
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('breadcrumb'); ?>
     <ul class="breadcrumb mb-0">
         <li class="breadcrumb-item">
-            <a href="{{ route('dashboard') }}">
-                <h1>{{ __('Dashboard') }}</h1>
+            <a href="<?php echo e(route('dashboard')); ?>">
+                <h1><?php echo e(__('Dashboard')); ?></h1>
             </a>
         </li>
         <li class="breadcrumb-item active">
             <a href="#">
-                {{ __('TVA') }}
+                <?php echo e(__('TVA')); ?>
+
             </a>
         </li>
     </ul>
-@endsection
-@section('card-action-btn')
-    {{-- @if (Gate::check('manage reminder'))
-        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="{{ route('tva.create') }}"
-            data-title="{{ __('Create TVA') }}"> <i class="ti-plus mr-5"></i>
-            {{ __('Create TVA') }}
-        </a>
-    @endif --}}
-@endsection
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('card-action-btn'); ?>
+    <?php if(Gate::check('manage reminder')): ?>
+        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="<?php echo e(route('tva.create')); ?>"
+            data-title="<?php echo e(__('Create TVA')); ?>"> <i class="ti-plus mr-5"></i>
+            <?php echo e(__('Create TVA')); ?>
 
-@section('content')
+        </a>
+    <?php endif; ?>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
     <div class="row mb-4">
         <div class="col-md-12">
-            <form method="GET" action="{{ route('tva.index') }}" id="auto-filter-form">
+            <form method="GET" action="<?php echo e(route('tva.index')); ?>" id="auto-filter-form">
                 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
                     <div class="d-flex flex-wrap gap-3">
                         <div class="mb-4">
-                            <label for="from_date" class="form-label">{{ __('From Date') }}</label>
+                            <label for="from_date" class="form-label"><?php echo e(__('From Date')); ?></label>
                             <input type="date" id="from_date" name="from_date" class="form-control"
-                                value="{{ request()->get('from_date') }}">
+                                value="<?php echo e(request()->get('from_date')); ?>">
                         </div>
                         <div class="mb-4">
-                            <label for="to_date" class="form-label">{{ __('To Date') }}</label>
+                            <label for="to_date" class="form-label"><?php echo e(__('To Date')); ?></label>
                             <input type="date" id="to_date" name="to_date" class="form-control"
-                                value="{{ request()->get('to_date') }}">
+                                value="<?php echo e(request()->get('to_date')); ?>">
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-3 justify-content-end">
                         <div>
-                            <label for="filter_day" class="form-label">{{ __('Day') }}</label>
+                            <label for="filter_day" class="form-label"><?php echo e(__('Day')); ?></label>
                             <input type="date" id="filter_day" name="filter_day" class="form-control"
-                                value="{{ request()->get('filter_day') }}">
+                                value="<?php echo e(request()->get('filter_day')); ?>">
                         </div>
                         <div>
-                            <label for="filter_month" class="form-label">{{ __('Month') }}</label>
+                            <label for="filter_month" class="form-label"><?php echo e(__('Month')); ?></label>
                             <select id="filter_month" name="filter_month" class="form-control">
-                                <option value="">{{ __('Select Month') }}</option>
-                                @foreach ([
+                                <option value=""><?php echo e(__('Select Month')); ?></option>
+                                <?php $__currentLoopData = [
             '01' => 'January',
             '02' => 'February',
             '03' => 'March',
@@ -65,24 +67,26 @@
             '10' => 'October',
             '11' => 'November',
             '12' => 'December',
-        ] as $num => $month)
-                                    <option value="{{ $num }}"
-                                        {{ request()->get('filter_month') == $num ? 'selected' : '' }}>
-                                        {{ $month }}
+        ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $num => $month): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($num); ?>"
+                                        <?php echo e(request()->get('filter_month') == $num ? 'selected' : ''); ?>>
+                                        <?php echo e($month); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div>
-                            <label for="filter_year" class="form-label">{{ __('Year') }}</label>
+                            <label for="filter_year" class="form-label"><?php echo e(__('Year')); ?></label>
                             <select id="filter_year" name="filter_year" class="form-control">
-                                <option value="">{{ __('Select Year') }}</option>
-                                @for ($year = now()->year; $year >= 2020; $year--)
-                                    <option value="{{ $year }}"
-                                        {{ request()->get('filter_year') == $year ? 'selected' : '' }}>
-                                        {{ $year }}
+                                <option value=""><?php echo e(__('Select Year')); ?></option>
+                                <?php for($year = now()->year; $year >= 2020; $year--): ?>
+                                    <option value="<?php echo e($year); ?>"
+                                        <?php echo e(request()->get('filter_year') == $year ? 'selected' : ''); ?>>
+                                        <?php echo e($year); ?>
+
                                     </option>
-                                @endfor
+                                <?php endfor; ?>
                             </select>
                         </div>
                     </div>
@@ -91,81 +95,80 @@
     </div>
     <div class="row">
         <div class="col-12">
-            <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">
-                @csrf
-                <button type="submit" class="btn btn-success mb-3">{{ __('Download Selected Invoices') }}</button>
-                <table class="display dataTable cell-border datatbl-advance" id="tvaTable">
+            <form id="bulk-download-form" method="POST" action="<?php echo e(route('tva.bulk.download')); ?>">
+                <?php echo csrf_field(); ?>
+                <button type="submit" class="btn btn-success mb-3"><?php echo e(__('Download Selected Invoices')); ?></button>
+                <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                     <thead>
                         <tr>
                             <th hidden>id</th>
                             <th><input type="checkbox" id="select-all" /></th>
-                            <th>{{ __('Facture N°') }}</th>
-                            <th>{{ __('Designation') }}</th>
-                            <th>{{ __('Date') }}</th>
-                            <th>{{ __('TTC') }}</th>
-                            @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
-                                <th>{{ __('Action') }}</th>
-                            @endif
+                            <th><?php echo e(__('Facture N°')); ?></th>
+                            <th><?php echo e(__('Designation')); ?></th>
+                            <th><?php echo e(__('Date')); ?></th>
+                            <th><?php echo e(__('TTC')); ?></th>
+                            <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
+                                <th><?php echo e(__('Action')); ?></th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($tvas as $tva)
-                            <tr data-date="{{ $tva->created_at->format('Y-m-d') }}">
-                                <td hidden>{{ $tva->created_at }}</td>
+                        <?php $__currentLoopData = $tvas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tva): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <tr data-date="<?php echo e($tva->created_at->format('Y-m-d')); ?>">
                                 <td>
-                                    <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
+                                    <input type="checkbox" name="invoice_ids[]" value="<?php echo e($tva->id); ?>" />
                                 </td>
+                                <td hidden><?php echo e($tva->id); ?></td>
                                 <!-- To avoid the duplication of the prefix -->
-                                {{-- @php
-                                    $prefix = bookingPrefix();
-                                    $factureNumber = Str::startsWith($tva->facture_number, $prefix) ? $tva->facture_number : $prefix . $tva->facture_number;
-                                    @endphp
-                                    <td>{{ $factureNumber }}</td> --}}
+                                
                                 <td>
-                                    @if (isset($tva->facture_number))
-                                        {{ $tva->facture_number }}
-                                    @else
-                                        {{ __('N/A') }}
-                                    @endif
+                                    <?php if(isset($tva->facture_number)): ?>
+                                        <?php echo e($tva->facture_number); ?>
+
+                                    <?php else: ?>
+                                        <?php echo e(__('N/A')); ?>
+
+                                    <?php endif; ?>
                                 </td>
-                                <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
+                                <td><?php echo e(!empty($tva->designation) ? $tva->designation : '-'); ?></td>
 
                                 <td>
-                                    {{ dateFormat($tva->created_at) }}
+                                    <?php echo e(dateFormat($tva->created_at)); ?>
+
                                 </td>
                                 <td>
-                                    {{ $tva->montant_ttc }} Dh
+                                    <?php echo e($tva->montant_ttc); ?> Dh
                                 </td>
-                                @if (Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
+                                <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
                                     <td>
                                         <div class="cart-action">
-                                            @can('show booking')
+                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('show booking')): ?>
                                                 <a class="text-warning customModal" data-size="lg" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Details') }}" href="#"
-                                                    data-url="{{ route('tva.show', $tva->id) }}"
-                                                    data-title="{{ __('TVA Details') }}">
+                                                    data-bs-original-title="<?php echo e(__('Details')); ?>" href="#"
+                                                    data-url="<?php echo e(route('tva.show', $tva->id)); ?>"
+                                                    data-title="<?php echo e(__('TVA Details')); ?>">
                                                     <i data-feather="eye"></i>
                                                 </a>
-                                            @endcan
-                                            @can('edit booking')
+                                            <?php endif; ?>
+                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit booking')): ?>
                                                 <a class="text-success" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Edit') }}"
-                                                    href="{{ route('tva.edit', $tva->id) }}">
+                                                    data-bs-original-title="<?php echo e(__('Edit')); ?>"
+                                                    href="<?php echo e(route('tva.edit', $tva->id)); ?>">
                                                     <i data-feather="edit"></i></a>
-                                            @endcan
-                                            @can('delete booking')
+                                            <?php endif; ?>
+                                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete booking')): ?>
                                                 <a href="#" class="text-danger delete-btn" data-bs-toggle="tooltip"
-                                                    data-bs-original-title="{{ __('Delete') }}"
-                                                    data-url="{{ route('tva.destroy', $tva->id) }}">
+                                                    data-bs-original-title="<?php echo e(__('Delete')); ?>"
+                                                    data-url="<?php echo e(route('tva.destroy', $tva->id)); ?>">
                                                     <i data-feather="trash-2"></i>
                                                 </a>
-                                            @endcan
+                                            <?php endif; ?>
 
                                         </div>
                                     </td>
-                                @endif
+                                <?php endif; ?>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
             </form>
@@ -173,45 +176,17 @@
     </div>
     </div>
     </div>
-@endsection
-{{-- @push('scripts')
-    <script>
-        $(document).ready(function() {
-            $('.reminder-date').on('click', function(e) {
-                e.preventDefault();
+<?php $__env->stopSection(); ?>
 
-                var reminderDate = $(this).data('date');
-                var today = new Date();
-                var reminder = new Date(reminderDate);
-                var diffTime = reminder.getTime() - today.getTime();
-                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                var message = '';
-                if (diffDays > 0) {
-                    message = '{{ __('There are') }} ' + diffDays +
-                        ' {{ __('days remaining until this reminder.') }}';
-                } else if (diffDays < 0) {
-                    message = '{{ __('This reminder is overdue by') }} ' + Math.abs(diffDays) +
-                        ' {{ __('days.') }}';
-                } else {
-                    message = '{{ __('This reminder is due today!') }}';
-                }
-
-                $('#daysRemaining').html(message);
-                $('#dateModal').modal('show');
-            });
-        });
-    </script>
-@endpush --}}
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         $(document).ready(function() {
             // Destroy if already initialized
-            if ($.fn.DataTable.isDataTable('#tvaTable')) {
-                $('#tvaTable').DataTable().destroy();
+            if ($.fn.DataTable.isDataTable('#bookingTable')) {
+                $('#bookingTable').DataTable().destroy();
             }
 
-            var table = $('#tvaTable').DataTable({
+            var table = $('#bookingTable').DataTable({
                 pageLength: 30,
                 lengthMenu: [
                     [10, 25, 50, 100, -1],
@@ -219,7 +194,6 @@
                 ],
                 searching: true,
                 ordering: true,
-                order: [[0, 'desc']],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
                 },
@@ -250,7 +224,12 @@
             });
 
             // === Individual checkbox handler ===
-            $('#tvaTable tbody').on('change', 'input[type="checkbox"]', function() {
+            $('#bookingTable tbody').on('change', 'input[type="checkbox"]', function() {
+                updateSelectAllState();
+            });
+
+            // === Update header checkbox when page changes ===
+            table.on('draw', function() {
                 updateSelectAllState();
             });
 
@@ -264,7 +243,7 @@
             }
 
             // === Prevent header checkbox column click from sorting ===
-            $('#tvaTable thead').on('click', 'th:first-child', function(e) {
+            $('#bookingTable thead').on('click', 'th:first-child', function(e) {
                 e.stopPropagation();
             });
 
@@ -382,5 +361,6 @@
             });
         });
     </script>
-    
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/car_directonderweg/resources/views/tva/index.blade.php ENDPATH**/ ?>

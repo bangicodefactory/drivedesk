@@ -51,6 +51,7 @@
                                         {{ $vehicle->name . ' - ' . $vehicle->license_plate }}</option>
                                 @endforeach
                             </select>
+                            {{-- {{ Form::text('vehicle_name', $vehicle_name, ['class' => 'form-control', 'placeholder' => __('Vehicle Name'), 'readonly']) }} --}}
 
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
@@ -256,7 +257,7 @@
     var start_date_time = $("#start_date_time").val();
     var end_date_time = $("#end_date_time").val();
     var booking_id = $("#booking_id").val();
-    
+
     // Store the currently selected vehicle and daily price
     var currentlySelectedVehicle = $("#vehicle").val();
     var current_daily_price = $("#daily_price").val();
@@ -275,33 +276,33 @@
 
                 var selectElement = $("#vehicle");
                 selectElement.empty();
-                
+
                 // Add default option
                 selectElement.append('<option value="">{{ __("Select Vehicle") }}</option>');
-                
+
                 var keys = Object.keys(response).sort(function(a, b) {
                     return b - a;
                 });
-                
+
                 var vehicleStillAvailable = false;
-                
+
                 keys.forEach(function(key) {
                     var option = $("<option></option>").attr("value", key).text(response[key]);
                     selectElement.append(option);
-                    
+
                     // Check if the previously selected vehicle is still available
                     if (key == currentlySelectedVehicle) {
                         vehicleStillAvailable = true;
                     }
                 });
-                
+
                 // Restore selection if the vehicle is still available
                 if (vehicleStillAvailable && currentlySelectedVehicle) {
                     selectElement.val(currentlySelectedVehicle);
-                    
+
                     // Preserve the daily price and trigger recalculation
                     $("#daily_price").val(current_daily_price);
-                    
+
                     // Trigger change event to recalculate with preserved price
                     $('#vehicle').trigger('change');
                 } else if (currentlySelectedVehicle) {
@@ -323,7 +324,7 @@
     var addons = $(".addon").val();
     var pickup_place = $("#pickup_address").val();
     var drop_off_place = $("#drop_off_address").val();
-    
+
     // Store the current daily price (custom price set by user)
     var current_daily_price = $("#daily_price").val();
     var use_custom_price = current_daily_price && current_daily_price != '';
@@ -355,7 +356,7 @@
                 if (!use_custom_price) {
                     $('#daily_price').val(daily_price_data);
                 }
-                
+
                 $('#amount').val(sum);
                 $('#details').val(result);
 
@@ -378,10 +379,10 @@
     var end_date_time = $("#end_date_time").val();
     var pickup_place = $("#pickup_address").val();
     var drop_off_place = $("#drop_off_address").val();
-    
+
     // Use the current daily price (preserve custom pricing)
     var daily_price = $("#daily_price").val();
-    
+
     $.ajax({
         url: "{{ route('addon.rate.calculation') }}",
         type: "GET",
@@ -420,7 +421,7 @@
     var start_date_time = $("#start_date_time").val();
     var end_date_time = $("#end_date_time").val();
     var addons = $(".addon").val();
-    
+
     // Use the current daily price (preserve custom pricing)
     var daily_price = $("#daily_price").val();
     var daychange = 1;
@@ -496,7 +497,7 @@
                     var discountAmount = parseFloat($('#discount').val()) || 0;
                     var finalSum = sum - discountAmount;
 
-                    
+
                     $('#amount').val(finalSum);
                     $('#details').val(result);
                     $('#addonData').html(response['specificAddonCalculation']);

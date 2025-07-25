@@ -1,8 +1,9 @@
-# /vendor/srmklive
 /vendor
+/.idea
 /.vscode
 storage/installed
 public/images/  # Replace with the path to your images folder
 *.log           # Example for log files
 .env
 node_modules
+/storage/framework
