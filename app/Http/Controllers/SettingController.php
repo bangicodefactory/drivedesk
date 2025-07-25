@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class SettingController extends Controller
 {
@@ -108,7 +109,8 @@ class SettingController extends Controller
             if (Hash::check($data['current_password'], $current_password)) {
                 $user_id = $loginUser->id;
                 $user = User::find($user_id);
-                $user->password = Hash::make($data['new_password']);;
+                $user->password = Hash::make($data['new_password']);
+                ;
                 $user->save();
 
                 return redirect()->back()->with('success', __('Password successfully updated.'));
@@ -769,4 +771,98 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', __('Google Recaptcha settings save successfully.'));
     }
+    //=============Store Admin Signature========================
+    public function storeSignature(Request $request)
+    {
+        $request->validate([
+            'signature' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        $path = $request->file('signature')->store('signatures', 'public');
+
+        Setting::updateOrCreate(
+            ['name' => 'admin_signature', 'parent_id' => 2],
+            ['signature_path' => $path, 'value' => $path]
+        );
+
+        return redirect()->back()->with('success', 'Signature uploaded successfully.');
+    }
+    // public function getSignature()
+    // {
+    //     $setting = Setting::where('name', 'admin_signature')->first();
+
+    //     if (!$setting || !$setting->signature_path || !Storage::disk('public')->exists($setting->signature_path)) {
+    //         return response()->json(['message' => 'Signature not found.'], 404);
+    //     }
+
+    //     // Return the full URL to the file
+    //     return response()->json([
+    //         'signature_url' => Storage::url($setting->signature_path),
+    //         'signature_path' => $setting->signature_path
+    //     ]);
+    // }
+
+
+    // public function updateSignature(Request $request)
+    // {
+    //     Log::info('Starting updateSignature process.');
+
+    //     $request->validate([
+    //         'signature' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+    //     ]);
+    //     Log::info('Validation passed.');
+
+    //     if (!$request->hasFile('signature') || !$request->file('signature')->isValid()) {
+    //         Log::error('Invalid file upload.');
+    //         return redirect()->back()->with('error', 'Invalid file upload.');
+    //     }
+    //     Log::info('File upload is valid.');
+
+    //     $setting = Setting::where('name', 'admin_signature')->first();
+    //     Log::info('Setting retrieved.', ['setting' => $setting ? $setting->toArray() : null]);
+
+    //     if ($setting && $setting->value && Storage::disk('public')->exists($setting->value)) {
+    //         Storage::disk('public')->delete($setting->value);
+    //         Log::info('Old signature deleted.', ['old_path' => $setting->value]);
+    //     } else {
+    //         Log::info('No old signature to delete.');
+    //     }
+
+    //     $path = $request->file('signature')->store('signatures', 'public');
+    //     Log::info('New signature stored.', ['path' => $path]);
+
+    //     if (!$setting) {
+    //         $setting = new Setting();
+    //         $setting->name = 'admin_signature';
+    //         Log::info('New setting instance created.');
+    //     }
+
+    //     $setting->value = $path;
+    //     $setting->save();
+    //     Log::info('Setting saved.', ['setting' => $setting->toArray()]);
+
+    //     return redirect()->back()->with('success', 'Signature updated successfully.');
+    // }
+
+
+
+    // public function deleteSignature()
+    // {
+    //     $setting = Setting::where('name', 'admin_signature')->first();
+
+    //     if (!$setting) {
+    //         return redirect()->back()->with('error', 'No signature found to delete.');
+    //     }
+
+    //     if ($setting->value && Storage::disk('public')->exists($setting->value)) {
+    //         Storage::disk('public')->delete($setting->value);
+    //     }
+
+    //     $setting->update([
+    //         'value' => null,
+    //     ]);
+
+    //     return redirect()->back()->with('success', 'Signature deleted successfully.');
+    // }
+
 }
