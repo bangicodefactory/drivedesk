@@ -89,7 +89,11 @@ class TvaController extends Controller
                 $logoPath = storage_path('upload/logo/' . $logoFile);
 
                 if (!file_exists($logoPath)) {
+<<<<<<< HEAD
                     $logoPath = null;
+=======
+                $logoPath = null; 
+>>>>>>> origin/dev-achraf
                 }
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
@@ -121,22 +125,22 @@ class TvaController extends Controller
 
 
     public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'facture_date' => 'required|date',
-            'montant_ttc' => 'required|numeric',
-            'unit_price_ht' => 'required|numeric',
-            'tva' => 'required|numeric',
-            'facture_number' => 'required|string|max:255',
-        ]);
+{
+    $validated = $request->validate([
+        'facture_date'   => 'required|date',
+        'montant_ttc'    => 'required|numeric',
+        'unit_price_ht'  => 'required|numeric',
+        'tva'            => 'required|numeric',
+        'facture_number' => 'required|string|max:255',
+    ]);
 
         $tva = Tva::findOrFail($id);
 
-        $tva->facture_date = $validated['facture_date'];
-        $tva->montant_ttc = $validated['montant_ttc'];
-        $tva->unit_price_ht = $validated['unit_price_ht'];
-        $tva->tva = $validated['tva'];
-        $tva->facture_number = $validated['facture_number'];
+    $tva->facture_date   = $validated['facture_date'];
+    $tva->montant_ttc    = $validated['montant_ttc'];
+    $tva->unit_price_ht  = $validated['unit_price_ht'];
+    $tva->tva            = $validated['tva'];
+    $tva->facture_number = $validated['facture_number'];
 
         $tva->save();
 

@@ -17,12 +17,12 @@
     </ul>
 @endsection
 @section('card-action-btn')
-    @if (Gate::check('manage reminder'))
+    {{-- @if (Gate::check('manage reminder'))
         <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="{{ route('tva.create') }}"
             data-title="{{ __('Create TVA') }}"> <i class="ti-plus mr-5"></i>
             {{ __('Create TVA') }}
         </a>
-    @endif
+    @endif --}}
 @endsection
 
 @section('content')

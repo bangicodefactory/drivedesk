@@ -36,9 +36,9 @@ class BookingController extends Controller
             $vehicles = Vehicle::where('parent_id', parentId())->get();
 
             $drivers = User::where('parent_id', parentId())
-            ->where('type', 'driver')
-            ->orderBy('created_at', 'desc')
-            ->get();
+                ->where('type', 'driver')
+                ->orderBy('created_at', 'desc')
+                ->get();
             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
 
 
@@ -104,7 +104,7 @@ class BookingController extends Controller
             $booking->save();
 
 
-            $user=User::find($request->driver);
+            $user = User::find($request->driver);
             $module = 'new_booking';
             $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
             $setting = settings();
@@ -119,7 +119,7 @@ class BookingController extends Controller
 
                 $response = commonEmailSend($to, $data);
                 if ($response['status'] == 'error') {
-                    $errorMessage=$response['message'];
+                    $errorMessage = $response['message'];
                 }
             }
 
@@ -144,14 +144,14 @@ class BookingController extends Controller
             $tva->client_name = $user->name;
             $tva->client_address = $driver1 ? $driver1->address : '';
             $tva->company_name = $setting['company_name'];
-             $tva->company_address = $setting['company_address'];
-             $tva->designation = $vehicle_name . '-' . $vehicle_license_plate ;
+            $tva->company_address = $setting['company_address'];
+            $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
             $tva->quantity = $totalDays ?? 1; //days of booking
             $tva->total_ht = round($booking->getTotalAmount() * 0.8, 2);
             $tva->tva = round($booking->getTotalAmount() * 0.2, 2);
             // $tva->unit_price_ht = round($tva->total_ht / $tva->quantity, 2);
             $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
-            $tva->montant_ttc = $booking->amount ;
+            $tva->montant_ttc = $booking->amount;
             $tva->ice_number = $setting['ice'];
             $tva->rc_number = $setting['rc'];
             // // $tva->tp_number = $setting['tp_number'];
@@ -163,7 +163,7 @@ class BookingController extends Controller
 
 
 
-            return redirect()->route('booking.show', Crypt::encrypt($booking->id))->with('success', __('Booking successfully created.').'</br>'.$errorMessage);
+            return redirect()->route('booking.show', Crypt::encrypt($booking->id))->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -215,9 +215,9 @@ class BookingController extends Controller
                     });
                 })->distinct()->pluck('vehicle')->toArray();
 
-           $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->get();
+            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->get();
 
-            return view('booking.edit', compact('vehicles','drivers', 'status', 'booking', 'paymentStatus', 'places', 'addon'));
+            return view('booking.edit', compact('vehicles', 'drivers', 'status', 'booking', 'paymentStatus', 'places', 'addon'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -238,15 +238,15 @@ class BookingController extends Controller
                     'status' => 'required',
                     'amount' => 'required',
                     'daily_price' => 'required',
-                    ]
-                );
+                ]
+            );
 
-                if ($validator->fails()) {
-                    $messages = $validator->getMessageBag();
-                    return redirect()->back()->with('error', $messages->first());
-                }
+            if ($validator->fails()) {
+                $messages = $validator->getMessageBag();
+                return redirect()->back()->with('error', $messages->first());
+            }
 
-                $bookingStatus=$booking->status != $request->status;
+            $bookingStatus = $booking->status != $request->status;
 
 
             $vehicle_detail = Vehicle::find($request->vehicle);
@@ -275,8 +275,38 @@ class BookingController extends Controller
             $booking->daily_price_final = $request->daily_price;
             $booking->save();
 
-            if($bookingStatus){
-                $user=User::find($request->driver);
+            //update dynamic with tva section
+            $tva = Tva::where('booking_id', $booking->id)->first();
+            if ($tva) {
+                // Get totalDays from details object (now automatically cast from JSON)
+                $details = $booking->details;
+                // If it's a string (from request), decode it
+                if (is_string($details)) {
+                    $details = json_decode($details);
+                }
+             
+                $quantity = isset($details->totalDays) ? $details->totalDays : 1;
+                $unit_price_ht = $booking->daily_price_final;
+                $total_ht = $booking->amount * 0.8; // Assuming amount is total TTC, calculate HT
+                $tva_rate = 0.20; // 20% 
+                $tva_amount = $total_ht * $tva_rate;
+                $montant_ttc = $booking->amount;
+
+                // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A'; 
+                $tva->quantity = $quantity;
+                $tva->unit_price_ht = $unit_price_ht;
+                $tva->total_ht = $total_ht;
+                $tva->tva = $montant_ttc * 0.2; // Assuming 20% TVA
+                $tva->montant_ttc = $montant_ttc;
+                $tva->total_amount = $montant_ttc;
+                $tva->tva_amount = $tva_amount;
+                $tva->updated_at = now();
+                $tva->save();
+            }
+
+
+            if ($bookingStatus) {
+                $user = User::find($request->driver);
                 $module = 'booking_status';
                 $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
                 $setting = settings();
@@ -291,12 +321,12 @@ class BookingController extends Controller
 
                     $response = commonEmailSend($to, $data);
                     if ($response['status'] == 'error') {
-                        $errorMessage=$response['message'];
+                        $errorMessage = $response['message'];
                     }
                 }
             }
-            $errorMessage=!empty($errorMessage)?$errorMessage:'';
-            return redirect()->route('booking.index')->with('success', __('Booking successfully updated.').'</br>'.$errorMessage);
+            $errorMessage = !empty($errorMessage) ? $errorMessage : '';
+            return redirect()->route('booking.index')->with('success', __('Booking successfully updated.') . '</br>' . $errorMessage);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -307,6 +337,10 @@ class BookingController extends Controller
     public function destroy(Booking $booking)
     {
         if (\Auth::user()->can('delete booking')) {
+            // Delete associated TVA record first
+            Tva::where('booking_id', $booking->id)->delete();
+
+            // Then delete the booking
             $booking->delete();
             return redirect()->route('booking.index')->with('success', __('Booking successfully deleted.'));
         } else {
@@ -391,12 +425,12 @@ class BookingController extends Controller
     // {
     //     // Skip auth check for testing - replace with proper auth later
     //     // if (\Auth::user()->can('manage planning')) {
-        
+
     //         // Temporarily hardcode parent_id to test (should use parentId() when authenticated properly)
     //         $parentId = 2;
     //         $bookings = Booking::where('parent_id', $parentId)->get();
     //         $vehicles = Vehicle::where('parent_id', $parentId)->get();
-            
+
     //         // Simple vehicle data - one row per vehicle
     //         $vehicleData = [];
     //         foreach ($vehicles as $vehicle) {
@@ -406,15 +440,15 @@ class BookingController extends Controller
     //             ];
     //             $vehicleData[] = $vehicleArr;
     //         }
-            
+
     //         // Simple booking data - each booking on its vehicle's row
     //         $bookingData = [];
     //         foreach ($bookings as $booking) {
     //             $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
-                
+
     //             // Use hardcoded prefix instead of function for testing
     //             $prefix = 'BOK-'; // Replace with bookingPrefix() later
-                
+
     //             $booked = [
     //                 'id' => $booking->id,
     //                 'resourceId' => (string)$booking->vehicle, // Ensure it's a string and matches vehicle ID
@@ -436,34 +470,34 @@ class BookingController extends Controller
     {
         // Temporarily disable auth for testing
         // if (\Auth::user()->can('manage planning')) {
-            $parentId = 2; // Use hardcoded parentId for testing
-            $bookings = Booking::where('parent_id', $parentId)->get();
-            $vehicles = Vehicle::where('parent_id', $parentId)->get();
-            
-            $vehicleData = [];
-            foreach ($vehicles as $vehicle) {
-                $vehicleArr = [
-                    'id' => (string)$vehicle->id, // Ensure string type
-                    'title' => $vehicle->name . ' - ' . $vehicle->license_plate,
-                ];
-                $vehicleData[] = $vehicleArr;
-            }
-            
-            $bookingData = [];
-            foreach ($bookings as $booking) {
-                $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
-                $booked = [
-                    'id' => $booking->id,
-                    'resourceId' => (string)$booking->vehicle, // Ensure string type to match vehicle ID
-                    'title' => 'BOK-' . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
-                    'start' => $booking->start_date . 'T' . $booking->start_time,
-                    'end'   => $booking->end_date . 'T' . $booking->end_time,
-                    'url' => route('booking.show', Crypt::encrypt($booking->id)),
-                ];
-                $bookingData[] = $booked;
-            }
+        $parentId = 2; // Use hardcoded parentId for testing
+        $bookings = Booking::where('parent_id', $parentId)->get();
+        $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
-            return view('booking.planning', compact('bookingData', 'vehicleData'));
+        $vehicleData = [];
+        foreach ($vehicles as $vehicle) {
+            $vehicleArr = [
+                'id' => (string)$vehicle->id, // Ensure string type
+                'title' => $vehicle->name . ' - ' . $vehicle->license_plate,
+            ];
+            $vehicleData[] = $vehicleArr;
+        }
+
+        $bookingData = [];
+        foreach ($bookings as $booking) {
+            $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
+            $booked = [
+                'id' => $booking->id,
+                'resourceId' => (string)$booking->vehicle, // Ensure string type to match vehicle ID
+                'title' => 'BOK-' . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
+                'start' => $booking->start_date . 'T' . $booking->start_time,
+                'end'   => $booking->end_date . 'T' . $booking->end_time,
+                'url' => route('booking.show', Crypt::encrypt($booking->id)),
+            ];
+            $bookingData[] = $booked;
+        }
+
+        return view('booking.planning', compact('bookingData', 'vehicleData'));
         // } else {
         //     return redirect()->back()->with('error', __('Permission Denied.'));
         // }
@@ -475,12 +509,12 @@ class BookingController extends Controller
             $parentId = 2;
             $bookings = Booking::where('parent_id', $parentId)->get();
             $vehicles = Vehicle::where('parent_id', $parentId)->get();
-            
+
             // Debug: Check what we got
             $debug = [
                 'bookings_count' => $bookings->count(),
                 'vehicles_count' => $vehicles->count(),
-                'bookings_sample' => $bookings->take(2)->map(function($b) {
+                'bookings_sample' => $bookings->take(2)->map(function ($b) {
                     return [
                         'id' => $b->id,
                         'booking_id' => $b->booking_id,
@@ -489,7 +523,7 @@ class BookingController extends Controller
                         'end_date' => $b->end_date
                     ];
                 }),
-                'vehicles_sample' => $vehicles->take(2)->map(function($v) {
+                'vehicles_sample' => $vehicles->take(2)->map(function ($v) {
                     return [
                         'id' => $v->id,
                         'name' => $v->name,
@@ -497,9 +531,8 @@ class BookingController extends Controller
                     ];
                 })
             ];
-            
+
             return response()->json($debug);
-            
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

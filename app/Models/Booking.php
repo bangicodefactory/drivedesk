@@ -31,6 +31,11 @@ class Booking extends Model
         'discount',
     ];
 
+    protected $casts = [
+        'details' => 'object',
+        'vehicle_details' => 'object',
+    ];
+
     public static $status = [
         'yet_to_start' => 'Yet to Start',
         'completed' => 'Completed',
@@ -101,7 +106,9 @@ class Booking extends Model
 
     public function vehicleDetails()
     {
-         $vehicle_details=!empty($this->vehicle_details)?json_decode($this->vehicle_details):[];
-         return $vehicle_details;
+        if (is_string($this->vehicle_details)) {
+            return json_decode($this->vehicle_details) ?? (object)[];
+        }
+        return $this->vehicle_details ?? (object)[];
     }
 }
