@@ -18,13 +18,7 @@
     </ul>
 <?php $__env->stopSection(); ?>
 <?php $__env->startSection('card-action-btn'); ?>
-    <?php if(Gate::check('manage reminder')): ?>
-        <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="<?php echo e(route('tva.create')); ?>"
-            data-title="<?php echo e(__('Create TVA')); ?>"> <i class="ti-plus mr-5"></i>
-            <?php echo e(__('Create TVA')); ?>
-
-        </a>
-    <?php endif; ?>
+    
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -86,7 +80,7 @@
                 <?php echo csrf_field(); ?>
 
                 <button type="submit" class="btn btn-success mb-3"><?php echo e(__('Download Selected Invoices')); ?></button>
-                <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
+                <table class="display dataTable cell-border datatbl-advance" id="tvaTable">
                     <thead>
                         <tr>
                             <th hidden>id</th>
@@ -103,10 +97,10 @@
                     <tbody>
                         <?php $__currentLoopData = $tvas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tva): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr data-date="<?php echo e($tva->created_at->format('Y-m-d')); ?>">
+                                <td hidden><?php echo e($tva->created_at); ?></td>
                                 <td>
                                     <input type="checkbox" name="invoice_ids[]" value="<?php echo e($tva->id); ?>" />
                                 </td>
-                                <td hidden><?php echo e($tva->id); ?></td>
                                 <!-- To avoid the duplication of the prefix -->
                                 
                                 <td>
@@ -172,19 +166,112 @@
 
 <?php $__env->startPush('scripts'); ?>
     <script>
-        $('#select-all').on('click', function() {
-            $('input[name="invoice_ids[]"]').prop('checked', this.checked);
-        });
+        $(document).ready(function() {
+            // Destroy if already initialized
+            if ($.fn.DataTable.isDataTable('#tvaTable')) {
+                $('#tvaTable').DataTable().destroy();
+            }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('#filter_day, #filter_month, #filter_year').forEach(el => {
-                el.addEventListener('change', function(e) {
-                    e.preventDefault();
-                    filterTable();
-                });
+            var table = $('#tvaTable').DataTable({
+                pageLength: 30,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
+                ],
+                searching: true,
+                ordering: true,
+                order: [[0, 'desc']],
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
+                },
+                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" + // Buttons + search
+                    "<'row'<'col-sm-12'tr>>" + // Table
+                    "<'row'<'col-sm-6'l><'col-sm-6'p>>" + // Bottom: Length + Pagination
+                    "<'row'<'col-sm-12'i>>",
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+                columnDefs: [{
+                        targets: 0,
+                        orderable: false,
+                        className: 'select-checkbox'
+                    },
+                    {
+                        targets: '_all',
+                        className: 'dt-center'
+                    }
+                ]
             });
-            filterTable();
-        });
+
+            // === Select All logic (current page only) ===
+            $('#select-all').on('click', function(e) {
+                e.stopPropagation();
+                var isChecked = $(this).prop('checked');
+                table.rows({
+                    page: 'current'
+                }).nodes().to$().find('input[type="checkbox"]').prop('checked', isChecked);
+            });
+
+            // === Individual checkbox handler ===
+            $('#tvaTable tbody').on('change', 'input[type="checkbox"]', function() {
+                updateSelectAllState();
+            });
+
+            function updateSelectAllState() {
+                var checkboxes = table.rows({
+                    page: 'current'
+                }).nodes().to$().find('input[type="checkbox"]');
+                var checked = checkboxes.filter(':checked').length;
+                var total = checkboxes.length;
+                $('#select-all').prop('checked', total > 0 && total === checked);
+            }
+
+            // === Prevent header checkbox column click from sorting ===
+            $('#tvaTable thead').on('click', 'th:first-child', function(e) {
+                e.stopPropagation();
+            });
+
+            // === Bulk Download ===
+            $('#bulk-download-form').on('submit', function(e) {
+                e.preventDefault();
+                var selectedIds = [];
+
+                table.$('input[type="checkbox"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    Swal.fire('Error', 'Please select at least one invoice', 'warning');
+                    return;
+                }
+
+                var form = $('<form>', {
+                    method: 'POST',
+                    action: $(this).attr('action')
+                }).append(
+                    $('<input>', {
+                        type: 'hidden',
+                        name: '_token',
+                        value: $('meta[name="csrf-token"]').attr('content')
+                    })
+                );
+
+                selectedIds.forEach(id => {
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: 'invoice_ids[]',
+                        value: id
+                    }));
+                });
+
+                $('body').append(form);
+                form.submit();
+            });
+
+            function formatLocalDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0'); // getMonth is zero-based
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
 
         function filterTable() {
             const day = document.getElementById('filter_day').value;
@@ -251,6 +338,7 @@
             });
         });
     </script>
+    
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/car_directonderweg/resources/views/tva/index.blade.php ENDPATH**/ ?>
