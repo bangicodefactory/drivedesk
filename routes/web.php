@@ -148,7 +148,7 @@ Route::group(
 
     }
 );
-Route::post('settings/store-signature', [SettingController::class, 'storeSignature']);
+Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
 Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
 Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
 

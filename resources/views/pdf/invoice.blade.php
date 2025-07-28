@@ -325,11 +325,11 @@ body {
 
             <div class="signature-box">
                 <div class="label">Signature :</div>
-                <div class="signature-line"
+                <div class="signature-line" style="padding-left: 200px;"
                     style="{{ $setting && $setting->value ? 'height: auto; border: none;' : '' }}">
                     @if ($setting && $setting->value && Storage::disk('public')->exists($setting->value))
                         <img src="{{ Storage::disk('public')->path($setting->value) }}" alt="Admin Signature"
-                            style="max-height: 100px;">
+                        style="max-height: 300px; max-width: 300px;" >
                     @else
                         <span class="text-muted">No signature uploaded.</span>
                     @endif
