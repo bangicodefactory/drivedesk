@@ -773,20 +773,34 @@ class SettingController extends Controller
     }
     //=============Store Admin Signature========================
     public function storeSignature(Request $request)
-    {
-        $request->validate([
-            'signature' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-        ]);
+{
+    $request->validate([
+        'signature' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+    ]);
 
-        $path = $request->file('signature')->store('signatures', 'public');
+    $filename = 'signature_' . auth()->id() . '_' . time() . '.png';
 
-        Setting::updateOrCreate(
-            ['name' => 'admin_signature', 'parent_id' => 2],
-            ['signature_path' => $path, 'value' => $path]
-        );
+    $path = $request->file('signature')->storeAs(
+        'upload/signature-admin',  
+        $filename,
+        'public'                  
+    );
 
-        return redirect()->back()->with('success', 'Signature uploaded successfully.');
-    }
+    Setting::updateOrCreate(
+        ['name' => 'admin_signature', 'parent_id' => 2],
+        [
+            'signature_path' => $path,
+            'value' => $path
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Signature uploaded successfully.',
+        'path' => asset('storage/' . $path)
+    ]);
+}
+
     // public function getSignature()
     // {
     //     $setting = Setting::where('name', 'admin_signature')->first();
