@@ -11,7 +11,7 @@
         </div>
         <div class="form-group col-md-6">
             {{Form::label('email',__('Email'),array('class'=>'form-label'))}}
-            {{Form::text('email',null,array('class'=>'form-control','placeholder'=>__('Enter Email'),'required'=>'required'))}}
+            {{Form::text('email',null,array('class'=>'form-control','placeholder'=>__('Enter Email')))}}
         </div>
         <div class="form-group col-md-6">
             {{Form::label('phone_number',__('Phone Number'),array('class'=>'form-label')) }}
@@ -34,7 +34,7 @@
             {{Form::textarea('address',null,array('class'=>'form-control','placeholder'=>__('Enter address'),'required'=>'required','rows'=>1))}}
         </div>
 
-        <div class="form-group col-md-6">
+        <div class="form-group col-md-12">
             {{Form::label('license_number',__('License Number'),array('class'=>'form-label')) }}
             {{Form::text('license_number',null,array('class'=>'form-control','placeholder'=>__('Enter license number'),'required'=>'required'))}}
         </div>
@@ -46,17 +46,26 @@
             {{Form::label('expiration_date',__('Expiration Date'),array('class'=>'form-label')) }}
             {{Form::date('expiration_date',null,array('class'=>'form-control','required'=>'required'))}}
         </div>
+        
         <div class="form-group col-md-6">
-            {{Form::label('document',__('Document'),array('class'=>'form-label')) }}
-            {{Form::file('document',array('class'=>'form-control'))}}
-        </div>
-        <div class="form-group col-md-6">
-            {{Form::label('license',__('License'),array('class'=>'form-label')) }}
+            {{Form::label('license',__('License 1:'),array('class'=>'form-label')) }}
             {{Form::file('license',array('class'=>'form-control'))}}
         </div>
         <div class="form-group col-md-6">
+            {{Form::label('license1',__('License 2:'),array('class'=>'form-label')) }}
+            {{Form::file('license1',array('class'=>'form-control'))}}
+        </div>
+        <div class="form-group col-md-12">
             {{Form::label('reference',__('Reference'),array('class'=>'form-label')) }}
             {{Form::text('reference',null,array('class'=>'form-control','placeholder'=>__('Enter reference')))}}
+        </div>
+        <div class="form-group col-md-6">
+            {{Form::label('document',__('ID file 1:'),array('class'=>'form-label')) }}
+            {{Form::file('document',array('class'=>'form-control'))}}
+        </div>
+        <div class="form-group col-md-6">
+            {{Form::label('document1',__('ID file 2:'),array('class'=>'form-label')) }}
+            {{Form::file('document1',array('class'=>'form-control'))}}
         </div>
         <div class="form-group col-md-12">
             {{Form::label('notes',__('Notes'),array('class'=>'form-label')) }}

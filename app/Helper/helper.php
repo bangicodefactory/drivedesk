@@ -211,6 +211,7 @@ if (!function_exists('settingPriceFormat')) {
         // return $settings['CURRENCY_SYMBOL'] . $price;
         
         return $price . ' ' . $settings['CURRENCY_SYMBOL'];
+        
     }
 }
 if (!function_exists('settingTimeFormat')) {
@@ -225,6 +226,16 @@ if (!function_exists('dateFormat')) {
         $settings = settings();
 
         return date($settings['company_date_format'], strtotime($date));
+    }
+    // function to display also hour and minute
+    function dateFormatHourMinute($date)
+    {
+        $settings = settings();
+
+        return date(
+            $settings['company_date_format'] . ' H:i', 
+            strtotime(datetime: $date)
+        );
     }
 }
 if (!function_exists('timeFormat')) {
@@ -537,7 +548,8 @@ if (!function_exists('userLoggedHistory')) {
         {
             $place = Place::where('id', $placeId)->first();
             $placeData['place'] = $place->name;
-            $placeData['final_price'] = priceFormat($place->price);
+            // $placeData['final_price'] = priceFormat($place->price);
+            $placeData['final_price'] = $place->price;
             return $placeData;
         }
     }

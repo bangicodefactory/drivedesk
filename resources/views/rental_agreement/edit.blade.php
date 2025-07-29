@@ -6,6 +6,17 @@
             {!! Form::select('driver', $drivers,null,array('class' => 'form-control hidesearch ','required'=>'required')) !!}
         </div>
         <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('driver2', __('Driver2'), ['class' => 'form-label']) }}
+            <select name="driver2" id="driver2" class="form-control select2-search">
+                {{-- <option value="">{{ __('Select Driver') }}</option> --}}
+                @foreach ($drivers as $driverId => $driverName)
+                    <option value="{{ $driverId }}" {{ $driver2 == $driverId ? 'selected' : '' }}>
+                        {{ $driverName }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group col-md-6 col-lg-6">
             {{ Form::label('vehicle', __('Vehicle'),['class'=>'form-label']) }}
             <select name="vehicle" id="vehicle" class="form-control basic-select" required>
                 <option value="">{{__('Select Vehicle')}}</option>
@@ -16,13 +27,28 @@
             </select>
         </div>
 
-        <div class="form-group col-md-6 col-lg-6">
+        {{-- <div class="form-group col-md-6 col-lg-6">
             {{Form::label('rental_start_date',__('Rental Start Date'),array('class'=>'form-label')) }}
             {{Form::date('rental_start_date',null,array('class'=>'form-control','required'=>'required'))}}
         </div>
         <div class="form-group col-md-6 col-lg-6">
             {{Form::label('rental_end_date',__('Rental End Date'),array('class'=>'form-label')) }}
             {{Form::date('rental_end_date',null,array('class'=>'form-control','required'=>'required'))}}
+        </div> --}}
+        <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('rental_start_date', __('Rental Start Date'), ['class' => 'form-label']) }}
+            <div class="d-flex">
+                {{ Form::date('rental_start_date', date('Y-m-d', strtotime($rentalAgreement->rental_start_date)), ['class' => 'form-control', 'required' => 'required']) }}
+                {{ Form::time('rental_start_time', date('H:i', strtotime($rentalAgreement->rental_start_date)), ['class' => 'form-control ms-2', 'required' => 'required']) }}
+            </div>
+        </div>
+        
+        <div class="form-group col-md-6 col-lg-6">
+            {{ Form::label('rental_end_date', __('Rental End Date'), ['class' => 'form-label']) }}
+            <div class="d-flex">
+                {{ Form::date('rental_end_date', date('Y-m-d', strtotime($rentalAgreement->rental_end_date)), ['class' => 'form-control', 'required' => 'required']) }}
+                {{ Form::time('rental_end_time', date('H:i', strtotime($rentalAgreement->rental_end_date)), ['class' => 'form-control ms-2', 'required' => 'required']) }}
+            </div>
         </div>
         <div class="form-group col-md-6 col-lg-6">
             {{Form::label('rental_duration',__('Rental Duration (Days)'),array('class'=>'form-label')) }}

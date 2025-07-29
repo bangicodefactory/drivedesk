@@ -3,7 +3,7 @@
     <div class="row">
         <div class="form-group col-md-12">
             {{Form::label('title',__('Title'),array('class'=>'form-label')) }}
-            {{Form::text('title',null,array('class'=>'form-control','placeholder'=>__('Enter title'),'required'=>'required'))}}
+            {{Form::text('type',null,array('class'=>'form-control','placeholder'=>__('Enter title'),'required'=>'required'))}}
         </div>
     </div>
 </div>

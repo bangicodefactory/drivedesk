@@ -7,8 +7,14 @@
     "require": {
         "php": "^8.1",
         "anhskohbo/no-captcha": "^3.5",
+<<<<<<< HEAD
         "barryvdh/laravel-dompdf": "*",
         "creagia/laravel-sign-pad": "*",
+=======
+        "barryvdh/laravel-dompdf": "^3.1",
+        "creagia/laravel-sign-pad": "^2.1",
+        "doctrine/dbal": "^4.3",
+>>>>>>> 9f8a5d90fb1a4ca6a01a63259c17911a8b9ccd1e
         "guzzlehttp/guzzle": "^7.2",
         "kkomelin/laravel-translatable-string-exporter": "^1.21",
         "laravel/framework": "^10.0",

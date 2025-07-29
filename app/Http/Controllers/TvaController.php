@@ -9,8 +9,11 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use ZipArchive;
+<<<<<<< HEAD
 use Exception;
 use Illuminate\Support\Facades\Log;
+=======
+>>>>>>> 9f8a5d90fb1a4ca6a01a63259c17911a8b9ccd1e
 
 
 use App\Models\BookingPayment;
@@ -90,6 +93,7 @@ class TvaController extends Controller
                 $invoice->items = $items;
 
                 $settings = settings();
+<<<<<<< HEAD
                 $logoFile = $settings['company_logo'] ?? '2_logo.png'; // Updated default logo name
 
                 // Try multiple possible logo paths
@@ -141,6 +145,20 @@ class TvaController extends Controller
                     'tva' => $invoice,
                     'settings' => $settings,
                     'logoPath' => $logoBase64, // Use base64 instead of file path
+=======
+                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
+
+                $logoPath = storage_path('upload/logo/' . $logoFile);
+
+                if (!file_exists($logoPath)) {
+                $logoPath = null; 
+                }
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
+                    'tva' => $invoice,
+                    'settings' => $settings,
+                    'logoPath' => $logoPath,
+>>>>>>> 9f8a5d90fb1a4ca6a01a63259c17911a8b9ccd1e
                 ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';

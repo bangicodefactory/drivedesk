@@ -13,9 +13,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call(DefaultDataUsersTableSeeder::class);
         $this->call([
-            AddReminderPermissionsToSuperAdmin::class
+            DefaultDataUsersTableSeeder::class,
+            AllReminderPermissionsSeeder::class,
+            TvaSeeder::class,
         ]);
     }
 }
