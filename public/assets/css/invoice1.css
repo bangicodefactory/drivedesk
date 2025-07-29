@@ -1,0 +1,397 @@
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Arial", sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+/* Print Styles for A4 */
+@media print {
+  body {
+    background-color: white;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  .invoice-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 15mm;
+    box-shadow: none;
+    background: white;
+  }
+
+  /* Ensure proper page breaks */
+  .invoice-header,
+  .billing-section,
+  .invoice-items,
+  .invoice-totals {
+    page-break-inside: avoid;
+  }
+
+  /* Hide elements that shouldn't print */
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Container */
+.invoice-container {
+  max-width: 210mm;
+  margin: 20px auto;
+  background: white;
+  padding: 30px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* Header Section */
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid #2563eb;
+}
+
+.company-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.company-logo {
+  max-height: 80px;
+  width: auto;
+}
+
+.company-details h1 {
+  color: #2563eb;
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.company-details p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.invoice-title {
+  text-align: right;
+}
+
+.invoice-title h2 {
+  font-size: 36px;
+  color: #2563eb;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.invoice-meta p {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+/* Billing Section */
+.billing-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.bill-to h3,
+.bill-from h3 {
+  color: #2563eb;
+  font-size: 16px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.client-info p,
+.vendor-info p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* Invoice Items Table */
+.invoice-items {
+  margin-bottom: 30px;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.items-table thead {
+  background-color: #2563eb;
+  color: white;
+}
+
+.items-table th,
+.items-table td {
+  padding: 15px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.items-table th {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+}
+
+.items-table .description {
+  width: 50%;
+}
+
+.items-table .quantity,
+.items-table .rate,
+.items-table .amount {
+  width: 16.67%;
+  text-align: right;
+}
+
+.items-table .quantity {
+  text-align: center;
+}
+
+.items-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.items-table tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.description strong {
+  color: #2563eb;
+  font-size: 14px;
+}
+
+.description small {
+  color: #666;
+  font-size: 12px;
+  display: block;
+  margin-top: 5px;
+}
+
+/* Totals Section */
+.invoice-totals {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 40px;
+}
+
+.totals-table {
+  width: 300px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.total-row.discount .total-value {
+  color: #dc2626;
+}
+
+.total-row.grand-total {
+  background-color: #2563eb;
+  color: white;
+  padding: 15px 20px;
+  margin-top: 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  font-size: 18px;
+  border: none;
+}
+
+.total-label {
+  font-weight: 600;
+}
+
+.total-value {
+  font-weight: bold;
+}
+
+/* Payment Information */
+.payment-info {
+  margin-bottom: 30px;
+  background-color: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #2563eb;
+}
+
+.payment-info h3 {
+  color: #2563eb;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.payment-info p {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Notes and Terms */
+.invoice-notes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.notes h3,
+.terms h3 {
+  color: #2563eb;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.notes p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.terms ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.terms li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.terms li:before {
+  content: "•";
+  color: #2563eb;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+/* Footer */
+.invoice-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+  color: #666;
+}
+
+.footer-content p {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .invoice-container {
+    margin: 10px;
+    padding: 20px;
+  }
+
+  .invoice-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .company-info {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .invoice-title {
+    text-align: left;
+  }
+
+  .billing-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .invoice-notes {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .items-table {
+    font-size: 12px;
+  }
+
+  .items-table th,
+  .items-table td {
+    padding: 10px 5px;
+  }
+
+  .totals-table {
+    width: 100%;
+  }
+}
+
+/* Additional Print Optimizations */
+@media print {
+  .invoice-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+  }
+
+  .billing-section {
+    margin-bottom: 20px;
+  }
+
+  .invoice-items {
+    margin-bottom: 15px;
+  }
+
+  .invoice-totals {
+    margin-bottom: 20px;
+  }
+
+  .payment-info {
+    margin-bottom: 15px;
+    background-color: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  .invoice-notes {
+    margin-bottom: 15px;
+  }
+
+  /* Ensure colors print correctly */
+  .invoice-header,
+  .items-table thead,
+  .total-row.grand-total,
+  .payment-info {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
