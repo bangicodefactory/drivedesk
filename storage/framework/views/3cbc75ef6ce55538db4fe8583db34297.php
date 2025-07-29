@@ -3,6 +3,7 @@
     $settings=settings();
 ?>
 <html lang="en" style="<?php echo e(($settings['color_type']=='custom')?$settings['own_color']:''); ?>">
+
 <?php echo $__env->make('admin.head', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <body class="customizer-modal <?php echo e($settings['layout_direction']); ?> <?php echo e($settings['layout_mode']); ?>">
 <!-- Loader Start-->
@@ -49,6 +50,7 @@
 </div>
 
 <?php echo $__env->make('admin.footer', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
 <?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/layouts/app.blade.php ENDPATH**/ ?>

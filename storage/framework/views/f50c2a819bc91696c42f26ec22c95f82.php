@@ -158,6 +158,22 @@
                         </a>
                     </li>
                 <?php endif; ?>
+                <?php if(Gate::check('manage reminder')): ?>
+                    <li class="menu-item <?php echo e(in_array($routeName, ['tva.index']) ? 'active' : ''); ?>">
+                        <a href="<?php echo e(route('tva.index')); ?>">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span><?php echo e(__('TVA')); ?></span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if(Gate::check('manage reminder')): ?>
+                    <li class="menu-item <?php echo e(in_array($routeName, ['signature.index']) ? 'active' : ''); ?>">
+                        <a href="<?php echo e(route('signature.index')); ?>">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span><?php echo e(__('Signature')); ?></span>
+                        </a>
+                    </li>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if(Gate::check('manage vehicle type') ||
                     Gate::check('manage inspection type') ||
@@ -194,11 +210,7 @@
                                     <a href="<?php echo e(route('expense-type.index')); ?>"><?php echo e(__('Expense Type')); ?></a>
                                 </li>
                             <?php endif; ?>
-                            <?php if(Gate::check('manage reminder')): ?>
-                                <li class="<?php echo e(in_array($routeName, ['reminder-type.index']) ? 'active' : ''); ?>">
-                                    <a href="<?php echo e(route('reminder-type.index')); ?>"><?php echo e(__('Reminder Type')); ?></a>
-                                </li>
-                            <?php endif; ?>
+                            
 
 
                         </ul>

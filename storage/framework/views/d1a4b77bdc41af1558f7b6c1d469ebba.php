@@ -55,6 +55,9 @@
     <link href="<?php echo e(asset('assets/css/vendor/bootstrap.css')); ?>" rel="stylesheet">
 
     <link href="<?php echo e(asset('assets/css/vendor/sweetalert/sweetalert2.css')); ?>" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
     <?php echo $__env->yieldPushContent('css-page'); ?>
     <!-- Custom css-->
