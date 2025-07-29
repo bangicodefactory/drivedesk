@@ -3,8 +3,7 @@
     {{__('General Settings')}}
 @endsection
 @php
-    $settings=settings();
-
+    $settings=settings();    
 @endphp
 @section('breadcrumb')
     <ul class="breadcrumb mb-0">
@@ -48,146 +47,157 @@
                                     {{Form::file('landing_logo',array('class'=>'form-control'))}}
                                 </div>
                             </div>
-
                         @endif
                     </div>
-                    <div class="col-md-12">
-    <div class="form-group">
-        {{ Form::label('signature', __('Company Signature'), ['class' => 'form-label']) }}
-
-        <div class="border rounded p-3 bg-white">
-            <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; height: 200px;"></canvas>
-        </div>
-        <input type="hidden" name="company_signature" id="signatureData">
-
-        @if(!empty($settings['company_signature']) && file_exists(storage_path('app/public/upload/signature-company/'.$settings['company_signature'])))
-            <div class="mt-3">
-                <strong>{{ __('Current Signature') }}:</strong><br>
-                <img src="{{ asset('storage/upload/signature-company/' . $settings['company_signature']) }}" height="100">
-            </div>
-        @endif
-
-        <div class="mt-2">
-            <button type="button" class="btn btn-sm btn-danger" id="clearButton">{{ __('Clear Signature') }}</button>
-        </div>
-    </div>
-</div>
-
                     <div class="text-right">
-                        {{Form::submit(__('Save'),array('class'=>'btn btn-primary btn-rounded'))}}
+                        {{Form::submit(__('Save'), ['class' => 'btn btn-primary btn-rounded'])}}
                     </div>
                     {{ Form::close() }}
                 </div>
             </div>
         </div>
     </div>
+    <!-- Signature Section -->
+    <div class="row mt-4">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4>{{ __('Admin Signature') }}</h4>
+                    
+                    @if(!empty($settings['admin_signature']))
+                        <div class="mb-4">
+                            <p>{{ __('Current Signature:') }}</p>
+                            <img src="{{ asset('storage/' . $settings['admin_signature']) }}" alt="Signature">
+                        </div>
+                    @endif
+                    
+                    <div class="signature-container">
+                        <div class="border rounded p-3 bg-white">
+                            <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; height: 200px;"></canvas>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="button" id="clearButton" class="btn btn-danger">
+                                {{ __('Clear Signature') }}
+                            </button>
+                            <button type="button" id="saveButton" class="btn btn-success">
+                                {{ __('Save Signature') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
+@push('scripts')
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('signatureCanvas');
-            const context = canvas.getContext('2d');
-            let isDrawing = false;
-            let lastX = 0;
-            let lastY = 0;
-            
-            function resizeCanvas() {
-                const rect = canvas.parentElement.getBoundingClientRect();
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-                
-                context.strokeStyle = '#000000ff';
-                context.lineWidth = 2;
-                context.lineCap = 'round';
-                context.lineJoin = 'round';
-                
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, canvas.width, canvas.height);
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = 200;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    
+    function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+    
+    function startDrawing(e) {
+        drawing = true;
+        const pos = getPosition(e);
+        [lastX, lastY] = [pos.x, pos.y];
+    }
+    
+    function draw(e) {
+        if (!drawing) return;
+        
+        const pos = getPosition(e);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        [lastX, lastY] = [pos.x, pos.y];
+    }
+    
+    function stopDrawing() {
+        drawing = false;
+    }
+    
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        startDrawing(e.touches[0]);
+    });
+    
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        draw(e.touches[0]);
+    });
+    
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    document.getElementById('clearButton').addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+    
+    document.getElementById('saveButton').addEventListener('click', function() {
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                alert('Please draw a signature first');
+                return;
             }
             
-            resizeCanvas();
+            const formData = new FormData();
+            formData.append('signature', blob, 'signature.png');
+            formData.append('_token', '{{ csrf_token() }}');
             
-            window.addEventListener('resize', resizeCanvas);
-            
-            function getCoords(e) {
-                const rect = canvas.getBoundingClientRect();
-                let clientX, clientY;
-                
-                if (e.type.includes('touch')) {
-                    clientX = e.touches[0].clientX;
-                    clientY = e.touches[0].clientY;
+            fetch("{{ route('AdminSignature.store') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
                 } else {
-                    clientX = e.clientX;
-                    clientY = e.clientY;
+                    throw new Error(data.message);
                 }
-                
-                return {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top
-                };
-            }
-            
-            function startDrawing(e) {
-                isDrawing = true;
-                const coords = getCoords(e);
-                [lastX, lastY] = [coords.x, coords.y];
-            }
-            
-            function draw(e) {
-                if (!isDrawing) return;
-                
-                const coords = getCoords(e);
-                context.beginPath();
-                context.moveTo(lastX, lastY);
-                context.lineTo(coords.x, coords.y);
-                context.stroke();
-                [lastX, lastY] = [coords.x, coords.y];
-            }
-            
-            function stopDrawing() {
-                isDrawing = false;
-                updatePreview();
-            }
-            
-            function updatePreview() {
-                const dataUrl = canvas.toDataURL();
-                document.getElementById('signaturePreview').src = dataUrl;
-                document.getElementById('signatureDataUrl').textContent = dataUrl.substring(0, 100) + '...';
-            }
-            
-            function clearCanvas() {
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                document.getElementById('signaturePreview').src = '';
-                document.getElementById('signatureDataUrl').textContent = '';
-            }
-            
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            canvas.addEventListener('touchstart', startDrawing);
-            canvas.addEventListener('touchmove', function(e) {
-                e.preventDefault();
-                draw(e);
-            }, { passive: false });
-            canvas.addEventListener('touchend', stopDrawing);
-            canvas.addEventListener('touchcancel', stopDrawing);
-            
-            document.getElementById('clearButton').addEventListener('click', clearCanvas);
-            
-            document.getElementById('saveButton').addEventListener('click', function() {
-                if (document.getElementById('signaturePreview').src) {
-                    alert('Signature saved successfully!');
-                } else {
-                    alert('Please create a signature first.');
-                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
             });
-            
-            context.font = '20px Arial';
-            context.fillStyle = '#e0e0e0';
-            context.textAlign = 'center';
-            context.fillText('Draw your signature above', canvas.width / 2, canvas.height / 2);
-        });
-    </script>
+        }, 'image/png');
+    });
+});
+</script>
+@endpush
