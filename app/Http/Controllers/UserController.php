@@ -58,7 +58,7 @@ class UserController extends Controller
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->password = \Hash::make($request->password);
-                $user->phone_number = $request->phone_number;
+                $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->type = 'owner';
                 $user->lang = 'english';
                 $user->subscription = 1;
@@ -114,13 +114,15 @@ class UserController extends Controller
                 $userRole = Role::findById($request->role);
                 $user = new User();
                 $user->name = $request->name;
-                $user->phone_number = $request->phone_number;
+                $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->email = $request->email;
                 $user->password = \Hash::make($request->password);
                 $user->type = $userRole->name;
                 $user->profile = 'avatar.png';
                 $user->lang = 'english';
                 $user->parent_id = parentId();
+                //add email verification
+                $user->email_verified_at = now();
                 $user->save();
 
                 $user->assignRole($userRole);
@@ -209,7 +211,7 @@ class UserController extends Controller
                 $user = User::findOrFail($id);
                 $user->name = $request->name;
                 $user->email = $request->email;
-                $user->phone_number = $request->phone_number;
+                $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->type = $userRole->name;
                 $user->save();
                 $user->roles()->sync($userRole);

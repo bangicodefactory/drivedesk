@@ -158,6 +158,22 @@
                         </a>
                     </li>
                 @endif
+                @if (Gate::check('manage reminder'))
+                    <li class="menu-item {{ in_array($routeName, ['tva.index']) ? 'active' : '' }}">
+                        <a href="{{ route('tva.index') }}">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span>{{ __('TVA') }}</span>
+                        </a>
+                    </li>
+                @endif
+                @if (Gate::check('manage reminder'))
+                    <li class="menu-item {{ in_array($routeName, ['signature.index']) ? 'active' : '' }}">
+                        <a href="{{ route('signature.index') }}">
+                            <div class="icon-item"><i data-feather="file-text"></i></div>
+                            <span>{{ __('Signature') }}</span>
+                        </a>
+                    </li>
+                @endif
             @endif
             @if (Gate::check('manage vehicle type') ||
                     Gate::check('manage inspection type') ||
@@ -194,11 +210,11 @@
                                     <a href="{{ route('expense-type.index') }}">{{ __('Expense Type') }}</a>
                                 </li>
                             @endif
-                            @if (Gate::check('manage reminder'))
+                            {{-- @if (Gate::check('manage reminder'))
                                 <li class="{{ in_array($routeName, ['reminder-type.index']) ? 'active' : '' }}">
                                     <a href="{{ route('reminder-type.index') }}">{{ __('Reminder Type') }}</a>
                                 </li>
-                            @endif
+                            @endif --}}
 
 
                         </ul>

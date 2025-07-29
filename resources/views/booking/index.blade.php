@@ -27,15 +27,16 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                         <thead>
                         <tr>
+                            <th hidden>id</th>
                             <th>{{__('ID')}}</th>
                             <th>{{__('Driver')}}</th>
                             <th>{{__('Vehicle')}}</th>
                             <th>{{__('Duration')}}</th>
-                            <th>{{__('Status')}}</th>
-                            <th>{{__('Payment Status')}}</th>
+                            <th data-column="status">{{__('Status')}}</th>
+                            <th data-column="payment_status">{{__('Payment Status')}}</th>
                             @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
                                 <th>{{__('Action')}}</th>
                             @endif
@@ -43,40 +44,33 @@
                         </thead>
                         <tbody>
                         @foreach ($bookings as $booking)
-
                             <tr>
-                                <td>{{ bookingPrefix().$booking->booking_id }} </td>
-                                <td>{{ !empty($booking->drivers)?$booking->drivers->name:'-' }} </td>
-                                <td>{{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-' }} </td>
+                                <td hidden>{{ $booking->id }}</td>
+                                <td>{{ bookingPrefix().$booking->booking_id }}</td>
+                                <td>{{ !empty($booking->drivers)?$booking->drivers->name:'-' }}</td>
+                                <td>{{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-' }} - {{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->license_plate:'-' }}</td>
                                 <td>
                                     {{ dateFormat($booking->start_date) .' / '. timeFormat($booking->start_time)}} <br>
                                     {{ dateFormat($booking->end_date) .' / '. timeFormat($booking->end_time)}}
                                 </td>
-                                <td>
+                                <td data-status="{{ $booking->status }}">
                                     @if($booking->status=='yet_to_start')
-                                        <span
-                                            class="badge badge-primary">{{\App\Models\Booking::$status[$booking->status]}}</span>
-                                    @elseif($booking->status=='completed' )
-                                        <span
-                                            class="badge badge-success">{{\App\Models\Booking::$status[$booking->status]}}</span>
+                                        <span class="badge badge-primary">{{\App\Models\Booking::$status[$booking->status]}}</span>
+                                    @elseif($booking->status=='completed')
+                                        <span class="badge badge-success">{{\App\Models\Booking::$status[$booking->status]}}</span>
                                     @elseif($booking->status=='on_going')
-                                        <span
-                                            class="badge badge-warning">{{\App\Models\Booking::$status[$booking->status]}}</span>
+                                        <span class="badge badge-warning">{{\App\Models\Booking::$status[$booking->status]}}</span>
                                     @elseif($booking->status=='cancelled')
-                                        <span
-                                            class="badge badge-danger">{{\App\Models\Booking::$status[$booking->status]}}</span>
+                                        <span class="badge badge-danger">{{\App\Models\Booking::$status[$booking->status]}}</span>
                                     @endif
                                 </td>
-                                <td>
+                                <td data-payment-status="{{ $booking->payment_status }}">
                                     @if($booking->payment_status=='paye')
-                                        <span
-                                            class="badge badge-success">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
+                                        <span class="badge badge-success">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
                                     @elseif($booking->payment_status=='impaye')
-                                        <span
-                                            class="badge badge-danger">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
+                                        <span class="badge badge-danger">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
                                     @elseif($booking->payment_status=='partiellement_paye')
-                                        <span
-                                            class="badge badge-warning">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
+                                        <span class="badge badge-warning">{{\App\Models\Booking::$paymentStatus[$booking->payment_status]}}</span>
                                     @endif
                                 </td>
                                 @if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking'))
@@ -97,18 +91,17 @@
                                                     <i data-feather="edit"></i></a>
                                             @endcan
                                             @can('delete booking')
-                                                <a class=" text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                   data-bs-original-title="{{__('Detete')}}" href="#"> <i
-                                                        data-feather="trash-2"></i></a>
+                                                <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
+                                                   data-bs-original-title="{{__('Delete')}}" href="#"> 
+                                                    <i data-feather="trash-2"></i>
+                                                </a>
                                             @endcan
                                             {!! Form::close() !!}
                                         </div>
-
                                     </td>
                                 @endif
                             </tr>
                         @endforeach
-
                         </tbody>
                     </table>
                 </div>
@@ -116,3 +109,22 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#bookingTable')) {
+        $('#bookingTable').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#bookingTable').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+@endpush

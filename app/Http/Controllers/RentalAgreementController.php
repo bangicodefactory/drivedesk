@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use App\Models\Signature;
+use Illuminate\Support\Facades\Storage;
 
 class RentalAgreementController extends Controller
 {
@@ -16,7 +18,7 @@ class RentalAgreementController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage rental agreement')) {
-            $agreements = RentalAgreement::where('parent_id', parentId())->get();
+            $agreements = RentalAgreement::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
             return view('rental_agreement.index', compact('agreements'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -27,16 +29,21 @@ class RentalAgreementController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
-            $drivers->prepend(__('Select Driver'), '');
+            $drivers = User::where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->orderBy('created_at', 'desc')
+            ->get();            
+             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+
 
             $status = RentalAgreement::$status;
-            return view('rental_agreement.create', compact('vehicles', 'drivers', 'status'));
+            return view('rental_agreement.create', compact('vehicles', 'driversDropdown', 'status'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
     }
 
 
@@ -50,6 +57,8 @@ class RentalAgreementController extends Controller
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required',
                     'rental_duration' => 'required',
+                    'rental_start_time' => 'required',
+                    'rental_end_time' => 'required',
                     'driver' => 'required',
                 ]
             );
@@ -58,11 +67,17 @@ class RentalAgreementController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+                    // Combine date and time
+        $start_datetime = $request->rental_start_date . ' ' . $request->rental_start_time;
+        $end_datetime = $request->rental_end_date . ' ' . $request->rental_end_time;
+
             $rentalAgreement = new RentalAgreement();
             $rentalAgreement->agreement_id = $this->agreementNumber();
             $rentalAgreement->date = date('Y-m-d');
-            $rentalAgreement->rental_start_date = $request->rental_start_date;
-            $rentalAgreement->rental_end_date = $request->rental_end_date;
+            $rentalAgreement->rental_start_date = $start_datetime;
+            $rentalAgreement->rental_end_date = $end_datetime;
+            // $rentalAgreement->rental_start_date = $request->rental_start_date;
+            // $rentalAgreement->rental_end_date = $request->rental_end_date;
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
@@ -115,8 +130,12 @@ class RentalAgreementController extends Controller
             $terms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
             $terms = nl2br($terms);
 
+            //display Signature
+            $driver1Signature = $this->getUserSignature($rentalAgreement->driver);
+            $driver2Signature = $this->getUserSignature($rentalAgreement->driver2);
 
-            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1' , 'terms'));
+
+            return view('rental_agreement.show', compact('rentalAgreement', 'settings', 'driver_2', 'user_2', 'user_1' , 'terms','driver1Signature','driver2Signature'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -132,7 +151,10 @@ class RentalAgreementController extends Controller
             $drivers->prepend(__('Select Driver'), '');
 
             $status = RentalAgreement::$status;
-            return view('rental_agreement.edit', compact('vehicles', 'drivers', 'rentalAgreement', 'status'));
+
+            $driver2 = $rentalAgreement->driver2;
+
+            return view('rental_agreement.edit', compact('vehicles', 'drivers', 'rentalAgreement', 'status', 'driver2'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -149,6 +171,8 @@ class RentalAgreementController extends Controller
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required',
                     'rental_duration' => 'required',
+                    'rental_start_time' => 'required',
+                    'rental_end_time' => 'required',
                     'driver' => 'required',
                 ]
             );
@@ -157,13 +181,19 @@ class RentalAgreementController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+                    // Combine date and time
+        $start_datetime = $request->rental_start_date . ' ' . $request->rental_start_time;
+        $end_datetime = $request->rental_end_date . ' ' . $request->rental_end_time;
+
+
             $agreementStatus = $rentalAgreement->status != $request->status;
 
-            $rentalAgreement->rental_start_date = $request->rental_start_date;
-            $rentalAgreement->rental_end_date = $request->rental_end_date;
+            $rentalAgreement->rental_start_date = $start_datetime;
+            $rentalAgreement->rental_end_date = $end_datetime;
             $rentalAgreement->rental_duration = $request->rental_duration;
             $rentalAgreement->vehicle = $request->vehicle;
             $rentalAgreement->driver = $request->driver;
+            $rentalAgreement->driver2 = $request->driver2; // Update driver2
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
@@ -217,4 +247,41 @@ class RentalAgreementController extends Controller
         }
         return $latest->agreement_id + 1;
     }
+
+    /**
+ * Get the latest signature for a user
+ * 
+ * @param int $userId
+ * @return string|null Path to signature file
+ */
+private function getUserSignature($userId)
+{
+    // $signature = Signature::where('user_id', $userId)
+    //                ->latest()
+    //                ->first();
+    
+    // if ($signature && Storage::disk('public')->exists($signature->signature_path)) {
+    //     // return Storage::disk('public')->path($signature->signature_path);
+    //     return Storage::disk('public')->url( $signature->signature_path);
+    // }
+    
+    // return null;
+
+    $signature = Signature::where('user_id', $userId)
+                 ->latest()
+                 ->first();
+    
+    if ($signature && Storage::disk('public')->exists($signature->signature_path)) {
+        // Convert to base64 for reliable printing
+        $imagePath = Storage::disk('public')->path($signature->signature_path);
+        $imageData = file_get_contents($imagePath);
+        $base64 = base64_encode($imageData);
+        return 'data:image/png;base64,' . $base64;
+    }
+    
+    return null;
+}
+
+
+
 }

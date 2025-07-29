@@ -51,11 +51,12 @@
                                         {{ $vehicle->name . ' - ' . $vehicle->license_plate }}</option>
                                 @endforeach
                             </select>
+                            {{-- {{ Form::text('vehicle_name', $vehicle_name, ['class' => 'form-control', 'placeholder' => __('Vehicle Name'), 'readonly']) }} --}}
 
                         </div>
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('driver', __('Driver'), ['class' => 'form-label']) }}
-                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control hidesearch ']) !!}
+                            {!! Form::select('driver', $drivers, null, ['class' => 'form-control  basic-select']) !!}
                             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="{{ route('driver.new.create') }}"
                                     data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>
@@ -91,6 +92,28 @@
                                 'multiple',
                             ]) !!}
                         </div>
+                        {{-- add discount input  --}}
+
+                        {{-- <div class="form-group col-md-4 col-lg-4">
+    {{ Form::label('discount', __('Discount'), ['class' => 'form-label']) }}
+    {{ Form::number('discount', null, [
+        'class' => 'form-control',
+        'id' => 'discount',
+        'step' => 'any',
+        'min' => '0',
+        'placeholder' => __('Enter discount'),
+    ]) }}
+</div> --}}
+                        {{-- Final pric  --}}
+                        <div class="form-group col-md-4 col-lg-4">
+                            {{ Form::label('daily_price', __('Price a day'), ['class' => 'form-label']) }}
+                            {{ Form::number('daily_price', !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate, [
+                                'class' => 'form-control',
+                                'id' => 'daily_price',
+                                'step' => 'any',
+                                'min' => '0',
+                            ]) }}
+                        </div>
 
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('status', __('Status'), ['class' => 'form-label']) }}
@@ -110,7 +133,8 @@
                                     <tr>
                                         <td> {{ __('Duration') }}</td>
                                         <td class="duration">
-                                            {{ $details->considerDays . ' * ' . $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate) }}
+                                            {{-- {{ $details->considerDays . ' * ' . $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate) }} --}}
+                                            {{ $details->considerDays . ' * ' . $booking->daily_price_final . ' = ' . priceFormat($details->totalRate) }}
                                         </td>
                                     </tr>
                                 </tbody>
@@ -139,6 +163,12 @@
                                         <td>{{ priceFormat($booking->dropOffAddress->price) }}</td>
                                     </tr>
                                 </tbody>
+                                {{-- <tbody class="text-center">
+                                    <tr>
+                                        <td><b class="h6">{{ __('Discount') }}</b></td>
+                                        <td><b class="h6"> <span id="discountPlace"></span></b>{{ priceFormat($booking->discount)}} </td>
+                                    </tr>
+                                </tbody> --}}
                                 <tbody class="text-center">
                                     <tr>
                                         <td><b class="h6">{{ __('Total Amount') }}</b></td>
@@ -224,94 +254,228 @@
     </script>
     <script>
         $(document).on('change', '#start_date_time,#end_date_time', function(e) {
-            var start_date_time = $("#start_date_time").val();
-            var end_date_time = $("#end_date_time").val();
-            var booking_id = $("#booking_id").val();
+    var start_date_time = $("#start_date_time").val();
+    var end_date_time = $("#end_date_time").val();
+    var booking_id = $("#booking_id").val();
 
-            if (start_date_time != '' && end_date_time != '') {
-                $.ajax({
-                    url: "{{ route('available.vehicle') }}",
-                    type: "GET",
-                    data: {
-                        start_date_time: start_date_time,
-                        end_date_time: end_date_time,
-                        booking_id: booking_id
-                    },
-                    success: function(result) {
-                        var response = JSON.parse(result);
+    // Store the currently selected vehicle and daily price
+    var currentlySelectedVehicle = $("#vehicle").val();
+    var current_daily_price = $("#daily_price").val();
 
-                        var selectElement = $("#vehicle");
-                        selectElement.empty();
-                        var keys = Object.keys(response).sort(function(a, b) {
-                            return b - a;
-                        });
-                        keys.forEach(function(key) {
-                            var option = $("<option></option>").attr("value", key).text(
-                                response[key]);
-                            selectElement.append(option);
-                        });
-                        $('#vehicle').trigger('change');
-                    },
-                    error: function(result) {
-                        toastrs('error', result, 'error')
+    if (start_date_time != '' && end_date_time != '') {
+        $.ajax({
+            url: "{{ route('available.vehicle') }}",
+            type: "GET",
+            data: {
+                start_date_time: start_date_time,
+                end_date_time: end_date_time,
+                booking_id: booking_id
+            },
+            success: function(result) {
+                var response = JSON.parse(result);
+
+                var selectElement = $("#vehicle");
+                selectElement.empty();
+
+                // Add default option
+                selectElement.append('<option value="">{{ __("Select Vehicle") }}</option>');
+
+                var keys = Object.keys(response).sort(function(a, b) {
+                    return b - a;
+                });
+
+                var vehicleStillAvailable = false;
+
+                keys.forEach(function(key) {
+                    var option = $("<option></option>").attr("value", key).text(response[key]);
+                    selectElement.append(option);
+
+                    // Check if the previously selected vehicle is still available
+                    if (key == currentlySelectedVehicle) {
+                        vehicleStillAvailable = true;
                     }
                 });
+
+                // Restore selection if the vehicle is still available
+                if (vehicleStillAvailable && currentlySelectedVehicle) {
+                    selectElement.val(currentlySelectedVehicle);
+
+                    // Preserve the daily price and trigger recalculation
+                    $("#daily_price").val(current_daily_price);
+
+                    // Trigger change event to recalculate with preserved price
+                    $('#vehicle').trigger('change');
+                } else if (currentlySelectedVehicle) {
+                    // Show warning if previously selected vehicle is no longer available
+                    toastrs('warning', 'The previously selected vehicle is no longer available for the new time range. Please select another vehicle.', 'warning');
+                }
+            },
+            error: function(result) {
+                toastrs('error', result, 'error')
             }
-
-
         });
+    }
+});
 
         $(document).on('change', '#vehicle', function(e) {
-            var vahicle_id = $("#vehicle").val();
-            var start_date_time = $("#start_date_time").val();
-            var end_date_time = $("#end_date_time").val();
-            var addons = $(".addon").val();
-            var pickup_place = $("#pickup_address").val();
-            var drop_off_place = $("#drop_off_address").val();
+    var vahicle_id = $("#vehicle").val();
+    var start_date_time = $("#start_date_time").val();
+    var end_date_time = $("#end_date_time").val();
+    var addons = $(".addon").val();
+    var pickup_place = $("#pickup_address").val();
+    var drop_off_place = $("#drop_off_address").val();
 
-            if (vahicle_id != '' && start_date_time != '' && end_date_time != '') {
-                $.ajax({
-                    url: "{{ route('vehicle.rate.calculation') }}",
-                    type: "GET",
-                    data: {
-                        vahicle_id: vahicle_id,
-                        start_date_time: start_date_time,
-                        end_date_time: end_date_time,
-                        addons: addons,
-                        pickup_place: pickup_place,
-                        drop_off_place: drop_off_place,
-                    },
-                    success: function(result) {
-                        $('.detail_div').removeClass('d-none');
-                        var response = JSON.parse(result);
-                        var totalRate = parseFloat(response['totalRate']) || 0;
-                        var addonAmount = parseFloat(response['addonAmount']) || 0;
-                        var placeAmount = parseFloat(response['placeAmount']) || 0;
-                        var sum = totalRate + addonAmount + placeAmount;
-                        $('#amount').val(sum);
-                        $('#details').val(result);
+    // Store the current daily price (custom price set by user)
+    var current_daily_price = $("#daily_price").val();
+    var use_custom_price = current_daily_price && current_daily_price != '';
 
-                        $('.duration').html(response['duration']);
-                        $('#addonData').html(response['specificAddonCalculation']);
-                        $('#totalAmount').html(sum);
-                    },
-                    error: function(result) {
-                        toastrs('error', result, 'error')
-                    }
-                });
+    if (vahicle_id != '' && start_date_time != '' && end_date_time != '') {
+        $.ajax({
+            url: "{{ route('vehicle.rate.calculation') }}",
+            type: "GET",
+            data: {
+                vahicle_id: vahicle_id,
+                start_date_time: start_date_time,
+                end_date_time: end_date_time,
+                addons: addons,
+                pickup_place: pickup_place,
+                drop_off_place: drop_off_place,
+                daily_price: use_custom_price ? current_daily_price : null, // Pass custom price if exists
+                daychange: use_custom_price ? 1 : 0 // Flag to indicate custom price usage
+            },
+            success: function(result) {
+                $('.detail_div').removeClass('d-none');
+                var response = JSON.parse(result);
+                var totalRate = parseFloat(response['totalRate']) || 0;
+                var addonAmount = parseFloat(response['addonAmount']) || 0;
+                var placeAmount = parseFloat(response['placeAmount']) || 0;
+                var daily_price_data = parseFloat(response['daily_price']) || 0;
+                var sum = totalRate + addonAmount + placeAmount;
+
+                // Only update daily price if we're not using a custom price
+                if (!use_custom_price) {
+                    $('#daily_price').val(daily_price_data);
+                }
+
+                $('#amount').val(sum);
+                $('#details').val(result);
+
+                $('.duration').html(response['duration']);
+                $('#addonData').html(response['specificAddonCalculation']);
+                $('#totalAmount').html(sum);
+            },
+            error: function(result) {
+                toastrs('error', result, 'error')
             }
         });
+    }
+});
     </script>
     <script>
         $(document).on('change', '.addon', function(e) {
-            var addons = $(this).val();
+    var addons = $(this).val();
+    var vahicle_id = $("#vehicle").val();
+    var start_date_time = $("#start_date_time").val();
+    var end_date_time = $("#end_date_time").val();
+    var pickup_place = $("#pickup_address").val();
+    var drop_off_place = $("#drop_off_address").val();
+
+    // Use the current daily price (preserve custom pricing)
+    var daily_price = $("#daily_price").val();
+
+    $.ajax({
+        url: "{{ route('addon.rate.calculation') }}",
+        type: "GET",
+        data: {
+            addons: addons,
+            vahicle_id: vahicle_id,
+            start_date_time: start_date_time,
+            end_date_time: end_date_time,
+            pickup_place: pickup_place,
+            drop_off_place: drop_off_place,
+            daily_price: daily_price, // Pass the current daily price
+            daychange: 1 // Indicate we're using custom pricing
+        },
+        success: function(result) {
+            var response = JSON.parse(result);
+            var totalRate = parseFloat(response['totalRate']) || 0;
+            var addonAmount = parseFloat(response['addonAmount']) || 0;
+            var placeAmount = parseFloat(response['placeAmount']) || 0;
+
+            var sum = totalRate + addonAmount + placeAmount;
+            $('#amount').val(sum);
+            $('#details').val(result);
+            $('#addonData').html(response['specificAddonCalculation']);
+            $('#totalAmount').html(sum);
+        },
+        error: function(result) {
+            toastrs('error', result, 'error')
+        }
+    });
+});
+
+       $(document).on('change', '#pickup_address,#drop_off_address', function(e) {
+    var pickup_place = $("#pickup_address").val();
+    var drop_off_place = $("#drop_off_address").val();
+    var vehicle_id = $("#vehicle").val();
+    var start_date_time = $("#start_date_time").val();
+    var end_date_time = $("#end_date_time").val();
+    var addons = $(".addon").val();
+
+    // Use the current daily price (preserve custom pricing)
+    var daily_price = $("#daily_price").val();
+    var daychange = 1;
+
+    if (pickup_place != '' || drop_off_place != '') {
+        $.ajax({
+            url: "{{ route('place.rate.calculation') }}",
+            type: "GET",
+            data: {
+                vahicle_id: vehicle_id,
+                start_date_time: start_date_time,
+                end_date_time: end_date_time,
+                addons: addons,
+                pickup_place: pickup_place,
+                drop_off_place: drop_off_place,
+                daily_price: daily_price, // Use current daily price
+                daychange: daychange,
+            },
+            success: function(result) {
+                var response = JSON.parse(result);
+                var totalRate = parseFloat(response['totalRate']) || 0;
+                var addonAmount = parseFloat(response['addonAmount']) || 0;
+                var placeAmount = parseFloat(response['placeAmount']) || 0;
+                var sum = totalRate + addonAmount + placeAmount;
+
+                $('#amount').val(sum);
+                $('#details').val(result);
+                $('#pickupPlace').html(response['pickup_place']);
+                $('#dropPlace').html(response['drop_place']);
+                $('#totalAmount').html(sum);
+            },
+            error: function(result) {
+                toastrs('error', result, 'error')
+            }
+        });
+    }
+});
+
+        $(document).on('change', '#daily_price', function(e) {
+            var addons = $(".addon").val();
             var vahicle_id = $("#vehicle").val();
             var start_date_time = $("#start_date_time").val();
             var end_date_time = $("#end_date_time").val();
+
             var pickup_place = $("#pickup_address").val();
             var drop_off_place = $("#drop_off_address").val();
+
+            console.log('pickup_place: ' + pickup_place);
+            console.log('drop_off_place: ' + drop_off_place);
+
+            var daily_price = $("#daily_price").val();
+            var daychange = 1;
             $.ajax({
-                url: "{{ route('addon.rate.calculation') }}",
+                url: "{{ route('vehicle.rate.calculation') }}",
                 type: "GET",
                 data: {
                     addons: addons,
@@ -320,6 +484,8 @@
                     end_date_time: end_date_time,
                     pickup_place: pickup_place,
                     drop_off_place: drop_off_place,
+                    daily_price: daily_price,
+                    daychange: daychange,
                 },
                 success: function(result) {
                     var response = JSON.parse(result);
@@ -327,56 +493,45 @@
                     var addonAmount = parseFloat(response['addonAmount']) || 0;
                     var placeAmount = parseFloat(response['placeAmount']) || 0;
                     var sum = totalRate + addonAmount + placeAmount;
-                    $('#amount').val(sum);
+
+                    var discountAmount = parseFloat($('#discount').val()) || 0;
+                    var finalSum = sum - discountAmount;
+
+
+                    $('#amount').val(finalSum);
                     $('#details').val(result);
                     $('#addonData').html(response['specificAddonCalculation']);
-                    $('#totalAmount').html(sum);
+                    $('#totalAmount').html(finalSum);
+
+                    $('#discountPlace').html(discountAmount + ' Dh');
+
+                    $('.duration').html(response['duration']);
+
+                    console.log(response);
+                    console.log(response['duration']);
+                    console.log('Daily Price new :' + daily_price);
+                    console.log('Addon Amout new: ' + addonAmount);
+                    console.log('placeAmount:'  + placeAmount);
                 },
                 error: function(result) {
                     toastrs('error', result, 'error')
                 }
             });
-        });
+    });
 
-        $(document).on('change', '#pickup_address,#drop_off_address', function(e) {
-            var pickup_place = $("#pickup_address").val();
-            var drop_off_place = $("#drop_off_address").val();
-            var vehicle_id = $("#vehicle").val();
-            var start_date_time = $("#start_date_time").val();
-            var end_date_time = $("#end_date_time").val();
-            var addons = $(".addon").val();
+var userChangedDailyPrice = false;
 
-            if (pickup_place != '' || drop_off_place != '') {
-                $.ajax({
-                    url: "{{ route('place.rate.calculation') }}",
-                    type: "GET",
-                    data: {
-                        vahicle_id: vehicle_id,
-                        start_date_time: start_date_time,
-                        end_date_time: end_date_time,
-                        addons: addons,
-                        pickup_place: pickup_place,
-                        drop_off_place: drop_off_place,
-                    },
-                    success: function(result) {
-                        var response = JSON.parse(result);
-                        var totalRate = parseFloat(response['totalRate']) || 0;
-                        var addonAmount = parseFloat(response['addonAmount']) || 0;
-                        var placeAmount = parseFloat(response['placeAmount']) || 0;
-                        var sum = totalRate + addonAmount + placeAmount;
-                        let str = sum;
-                        let amo = str.replace("$", "");
-                        $('#amount').val(amo);
-                        $('#details').val(result);
-                        $('#pickupPlace').html(response['pickup_place']);
-                        $('#dropPlace').html(response['drop_place']);
-                        $('#totalAmount').html(sum);
-                    },
-                    error: function(result) {
-                        toastrs('error', result, 'error')
-                    }
-                });
-            }
-        });
+$(document).on('input', '#daily_price', function(e) {
+    userChangedDailyPrice = true;
+});
+
+// Reset the flag when vehicle changes (in case user wants to use the new vehicle's default price)
+$(document).on('change', '#vehicle', function(e) {
+    // Only reset if this is a new vehicle selection, not a programmatic restore
+    if (!$(this).data('restoring')) {
+        userChangedDailyPrice = false;
+    }
+});
+
     </script>
 @endpush

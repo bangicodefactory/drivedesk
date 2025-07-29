@@ -26,10 +26,14 @@ class Reminder extends Model
     }
     public function vehicles()
     {
-        return $this->hasOne('App\Models\Vehicle','id','vehicle');
+        return $this->hasOne('App\Models\Vehicle','id','id_vehicle');
     }
     public function users()
     {
         return $this->hasOne('App\Models\User','id','inspector');
     }
+    public function vehicle()
+{
+    return $this->belongsTo(Vehicle::class);
+}
 }

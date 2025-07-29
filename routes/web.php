@@ -25,6 +25,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RentalAgreementController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
+use App\Http\Controllers\SignatureController;
+use App\Http\Controllers\TvaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,15 +79,16 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::resource('subscriptions', SubscriptionController::class);
-    Route::get('coupons/history', [CouponController::class, 'history'])->name('coupons.history');
-    Route::delete('coupons/history/{id}/destroy', [CouponController::class, 'historyDestroy'])->name('coupons.history.destroy');
-    Route::get('coupons/apply', [CouponController::class, 'apply'])->name('coupons.apply');
-    Route::resource('coupons', CouponController::class);
-    Route::get('subscription/transaction', [SubscriptionController::class, 'transaction'])->name('subscription.transaction');
-}
+        Route::resource('subscriptions', SubscriptionController::class);
+        Route::get('coupons/history', [CouponController::class, 'history'])->name('coupons.history');
+        Route::delete('coupons/history/{id}/destroy', [CouponController::class, 'historyDestroy'])->name('coupons.history.destroy');
+        Route::get('coupons/apply', [CouponController::class, 'apply'])->name('coupons.apply');
+        Route::resource('coupons', CouponController::class);
+        Route::get('subscription/transaction', [SubscriptionController::class, 'transaction'])->name('subscription.transaction');
+    }
 );
 
 //-------------------------------Subscription Payment-------------------------------------------
@@ -96,10 +99,11 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::post('subscription/{id}/stripe/payment', [SubscriptionController::class, 'stripePayment'])->name('subscription.stripe.payment');
-}
+        Route::post('subscription/{id}/stripe/payment', [SubscriptionController::class, 'stripePayment'])->name('subscription.stripe.payment');
+    }
 );
 //-------------------------------Settings-------------------------------------------
 Route::group(
@@ -108,40 +112,45 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
-    Route::get('settings/account', [SettingController::class, 'account'])->name('setting.account');
-    Route::post('settings/account', [SettingController::class, 'accountData'])->name('setting.account');
-    Route::delete('settings/account/delete', [SettingController::class, 'accountDelete'])->name('setting.account.delete');
+    ],
+    function () {
+        Route::get('settings/account', [SettingController::class, 'account'])->name('setting.account');
+        Route::post('settings/account', [SettingController::class, 'accountData'])->name('setting.account');
+        Route::delete('settings/account/delete', [SettingController::class, 'accountDelete'])->name('setting.account.delete');
 
-    Route::get('settings/password', [SettingController::class, 'password'])->name('setting.password');
-    Route::post('settings/password', [SettingController::class, 'passwordData'])->name('setting.password');
+        Route::get('settings/password', [SettingController::class, 'password'])->name('setting.password');
+        Route::post('settings/password', [SettingController::class, 'passwordData'])->name('setting.password');
 
-    Route::get('settings/general', [SettingController::class, 'general'])->name('setting.general');
-    Route::post('settings/general', [SettingController::class, 'generalData'])->name('setting.general');
+        Route::get('settings/general', [SettingController::class, 'general'])->name('setting.general');
+        Route::post('settings/general', [SettingController::class, 'generalData'])->name('setting.general');
 
-    Route::get('settings/smtp', [SettingController::class, 'smtp'])->name('setting.smtp');
-    Route::post('settings/smtp', [SettingController::class, 'smtpData'])->name('setting.smtp');
+        Route::get('settings/smtp', [SettingController::class, 'smtp'])->name('setting.smtp');
+        Route::post('settings/smtp', [SettingController::class, 'smtpData'])->name('setting.smtp');
 
-    Route::get('settings/smtp-test', [SettingController::class, 'smtpTest'])->name('setting.smtp.test');
-    Route::post('settings/smtp-test', [SettingController::class, 'smtpTestMailSend'])->name('setting.smtp.testing');
+        Route::get('settings/smtp-test', [SettingController::class, 'smtpTest'])->name('setting.smtp.test');
+        Route::post('settings/smtp-test', [SettingController::class, 'smtpTestMailSend'])->name('setting.smtp.testing');
 
-    Route::get('settings/payment', [SettingController::class, 'payment'])->name('setting.payment');
-    Route::post('settings/payment', [SettingController::class, 'paymentData'])->name('setting.payment');
+        Route::get('settings/payment', [SettingController::class, 'payment'])->name('setting.payment');
+        Route::post('settings/payment', [SettingController::class, 'paymentData'])->name('setting.payment');
 
-    Route::get('settings/company', [SettingController::class, 'company'])->name('setting.company');
-    Route::post('settings/company', [SettingController::class, 'companyData'])->name('setting.company');
+        Route::get('settings/company', [SettingController::class, 'company'])->name('setting.company');
+        Route::post('settings/company', [SettingController::class, 'companyData'])->name('setting.company');
 
-    Route::get('language/{lang}', [SettingController::class, 'lanquageChange'])->name('language.change');
-    Route::post('theme/settings', [SettingController::class, 'themeSettings'])->name('theme.settings');
+        Route::get('language/{lang}', [SettingController::class, 'lanquageChange'])->name('language.change');
+        Route::post('theme/settings', [SettingController::class, 'themeSettings'])->name('theme.settings');
 
-    Route::get('settings/site-seo', [SettingController::class, 'siteSEO'])->name('setting.site.seo');
-    Route::post('settings/site-seo', [SettingController::class, 'siteSEOData'])->name('setting.site.seo');
+        Route::get('settings/site-seo', [SettingController::class, 'siteSEO'])->name('setting.site.seo');
+        Route::post('settings/site-seo', [SettingController::class, 'siteSEOData'])->name('setting.site.seo');
 
-    Route::get('settings/google-recaptcha', [SettingController::class, 'googleRecaptcha'])->name('setting.google.recaptcha');
-    Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData'])->name('setting.google.recaptcha');
-}
+        Route::get('settings/google-recaptcha', [SettingController::class, 'googleRecaptcha'])->name('setting.google.recaptcha');
+        Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData'])->name('setting.google.recaptcha');
+
+
+    }
 );
-
+Route::post('settings/store-signature', [SettingController::class, 'storeSignature']);
+Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
+Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
 
 //-------------------------------Role & Permissions-------------------------------------------
 Route::resource('permission', PermissionController::class)->middleware(
@@ -167,14 +176,16 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::get('logged/history', [UserController::class, 'loggedHistory'])->name('logged.history');
-    Route::get('logged/{id}/history/show', [UserController::class, 'loggedHistoryShow'])->name('logged.history.show');
-    Route::delete('logged/{id}/history', [UserController::class, 'loggedHistoryDestroy'])->name('logged.history.destroy');
+        Route::get('logged/history', [UserController::class, 'loggedHistory'])->name('logged.history');
+        Route::get('logged/{id}/history/show', [UserController::class, 'loggedHistoryShow'])->name('logged.history.show');
+        Route::delete('logged/{id}/history', [UserController::class, 'loggedHistoryDestroy'])->name('logged.history.destroy');
 
 
-});
+    }
+);
 
 
 //-------------------------------Plan Payment-------------------------------------------
@@ -185,15 +196,16 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::post('subscription/{id}/bank-transfer', [PaymentController::class, 'subscriptionBankTransfer'])->name('subscription.bank.transfer');
-    Route::get('subscription/{id}/bank-transfer/action/{status}', [PaymentController::class, 'subscriptionBankTransferAction'])->name('subscription.bank.transfer.action');
-    Route::post('subscription/{id}/paypal', [PaymentController::class, 'subscriptionPaypal'])->name('subscription.paypal');
-    Route::get('subscription/{id}/paypal/{status}', [PaymentController::class, 'subscriptionPaypalStatus'])->name('subscription.paypal.status');
-    Route::post('subscription/{id}/flutterwave', [PaymentController::class, 'subscriptionFlutterwave'])->name('subscription.flutterwave')->middleware(['XSS']);
-    Route::get('subscription/flutterwave/{id}/{txref}', [PaymentController::class, 'subscriptionFlutterwaveStatus'])->name('subscription.flutterwave.status');
-}
+        Route::post('subscription/{id}/bank-transfer', [PaymentController::class, 'subscriptionBankTransfer'])->name('subscription.bank.transfer');
+        Route::get('subscription/{id}/bank-transfer/action/{status}', [PaymentController::class, 'subscriptionBankTransferAction'])->name('subscription.bank.transfer.action');
+        Route::post('subscription/{id}/paypal', [PaymentController::class, 'subscriptionPaypal'])->name('subscription.paypal');
+        Route::get('subscription/{id}/paypal/{status}', [PaymentController::class, 'subscriptionPaypalStatus'])->name('subscription.paypal.status');
+        Route::post('subscription/{id}/flutterwave', [PaymentController::class, 'subscriptionFlutterwave'])->name('subscription.flutterwave')->middleware(['XSS']);
+        Route::get('subscription/flutterwave/{id}/{txref}', [PaymentController::class, 'subscriptionFlutterwaveStatus'])->name('subscription.flutterwave.status');
+    }
 );
 
 
@@ -204,11 +216,12 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::get('driver/new/create', [DriverController::class, 'newCreate'])->name('driver.new.create');
-    Route::resource('driver', DriverController::class);
-}
+        Route::get('driver/new/create', [DriverController::class, 'newCreate'])->name('driver.new.create');
+        Route::resource('driver', DriverController::class);
+    }
 );
 
 
@@ -226,12 +239,13 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::get('vehicle/rate/calculation', [VehicleController::class, 'getVehicleRateCalculation'])->name('vehicle.rate.calculation');
-    Route::get('vehicle/available', [VehicleController::class, 'getAvailableVehicle'])->name('available.vehicle');
-    Route::resource('vehicle', VehicleController::class);
-}
+        Route::get('vehicle/rate/calculation', [VehicleController::class, 'getVehicleRateCalculation'])->name('vehicle.rate.calculation');
+        Route::get('vehicle/available', [VehicleController::class, 'getAvailableVehicle'])->name('available.vehicle');
+        Route::resource('vehicle', VehicleController::class);
+    }
 );
 
 
@@ -258,14 +272,16 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::get('planning', [BookingController::class, 'planning'])->name('planning');
-    Route::get('booking/{id}/payment/create', [BookingController::class, 'paymentCreate'])->name('booking.payment.create');
-    Route::post('booking/{id}/payment/store', [BookingController::class, 'paymentStore'])->name('booking.payment.store');
-    Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class,'paymentDestroy'])->name('booking.payment.destroy');
-    Route::resource('booking', BookingController::class);
-});
+        Route::get('planning', [BookingController::class, 'planning'])->name('planning');
+        Route::get('booking/{id}/payment/create', [BookingController::class, 'paymentCreate'])->name('booking.payment.create');
+        Route::post('booking/{id}/payment/store', [BookingController::class, 'paymentStore'])->name('booking.payment.store');
+        Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class, 'paymentDestroy'])->name('booking.payment.destroy');
+        Route::resource('booking', BookingController::class);
+    }
+);
 
 Route::group(
     [
@@ -273,10 +289,12 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::resource('expense', ExpenseController::class);
-});
+        Route::resource('expense', ExpenseController::class);
+    }
+);
 //-------------------------------Option-------------------------------------------
 Route::group(
     [
@@ -284,10 +302,12 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::resource('option', OptionController::class);
-});
+        Route::resource('option', OptionController::class);
+    }
+);
 //-------------------------------Addon-------------------------------------------
 Route::group(
     [
@@ -295,13 +315,15 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
+    ],
+    function () {
 
-    Route::get('addon/rate/calculation', [AddonController::class, 'getAddonRateCalculation'])->name('addon.rate.calculation');
-    // reduction function 
-    Route::get('addon/rate/reduction', [AddonController::class, 'getReductionRateCalculation'])->name('addon.rate.reduction');
-    Route::resource('addon', AddonController::class);
-});
+        Route::get('addon/rate/calculation', [AddonController::class, 'getAddonRateCalculation'])->name('addon.rate.calculation');
+        // reduction function
+        Route::get('addon/rate/reduction', [AddonController::class, 'getReductionRateCalculation'])->name('addon.rate.reduction');
+        Route::resource('addon', AddonController::class);
+    }
+);
 //-------------------------------Place-------------------------------------------
 Route::group(
     [
@@ -309,10 +331,12 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
-    Route::get('place/rate/calculation', [PlaceController::class, 'getPlaceRateCalculation'])->name('place.rate.calculation');
-    Route::resource('place', PlaceController::class);
-});
+    ],
+    function () {
+        Route::get('place/rate/calculation', [PlaceController::class, 'getPlaceRateCalculation'])->name('place.rate.calculation');
+        Route::resource('place', PlaceController::class);
+    }
+);
 
 //-------------------------------Expense Type-------------------------------------------
 Route::group(
@@ -321,9 +345,11 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
-    Route::resource('expense-type', ExpenseTypeController::class);
-});
+    ],
+    function () {
+        Route::resource('expense-type', ExpenseTypeController::class);
+    }
+);
 //-------------------------------Rental Agreement-------------------------------------------
 Route::group(
     [
@@ -331,9 +357,11 @@ Route::group(
             'auth',
             'XSS',
         ],
-    ], function () {
-    Route::resource('rental-agreement', RentalAgreementController::class);
-});
+    ],
+    function () {
+        Route::resource('rental-agreement', RentalAgreementController::class);
+    }
+);
 
 
 
@@ -344,9 +372,9 @@ Route::resource('notification', NotificationController::class)->middleware(
         'XSS',
 
     ]
- );
+);
 
- Route::get('email-verification/{token}', [VerifyEmailController::class, 'verifyEmail'])->name('email-verification')->middleware(
+Route::get('email-verification/{token}', [VerifyEmailController::class, 'verifyEmail'])->name('email-verification')->middleware(
     [
         'XSS',
     ]
@@ -354,21 +382,63 @@ Route::resource('notification', NotificationController::class)->middleware(
 //new route for reminder and reminder_type tables
 
 //--------------------------------Reminder Types--------------------------------
-Route::group([
-    'middleware' => [
-        'auth',
-        'XSS',
-    ],
-], function () {
-    Route::resource('reminder-type', ReminderTypeController::class);
-});
+// Route::group([
+//     'middleware' => [
+//         'auth',
+//         'XSS',
+//     ],
+// ], function () {
+//     Route::resource('reminder-type', ReminderTypeController::class);
+// });
 
 //--------------------------------Reminders--------------------------------
+// Route::group([
+//     'middleware' => [
+//         'auth',
+//         'XSS',
+//     ],
+// ], function () {
+//     Route::resource('reminder', ReminderController::class);
+// });
+// Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');
+
+Route::middleware(['auth'])->group(function () {
+    // Existing reminder routes...
+    Route::resource('reminder', ReminderController::class);
+
+    // New automatic reminder routes
+    Route::get('/reminder/dashboard/data', [ReminderController::class, 'getDashboardData'])->name('reminder.dashboard.data');
+    Route::get('/reminder/urgent/list', [ReminderController::class, 'getUrgentReminders'])->name('reminder.urgent.list');
+    Route::get('/reminder/vehicle/{vehicle}', [ReminderController::class, 'getVehicleReminders'])->name('reminder.vehicle');
+    Route::get('/reminder/statistics/data', [ReminderController::class, 'getReminderStatistics'])->name('reminder.statistics');
+    Route::post('/reminder/{reminder}/complete', [ReminderController::class, 'markAsCompleted'])->name('reminder.complete');
+    Route::post('/reminder/{reminder}/snooze', [ReminderController::class, 'snoozeReminder'])->name('reminder.snooze');
+
+    // Manual update routes (for testing)
+    Route::post('/reminder/update-statuses', [ReminderController::class, 'updateReminderStatuses'])->name('reminder.update.statuses');
+    Route::post('/reminder/create-recurring', [ReminderController::class, 'createRecurringReminders'])->name('reminder.create.recurring');
+});
+
+
+//--------------------------------TVA--------------------------------
 Route::group([
     'middleware' => [
         'auth',
         'XSS',
     ],
 ], function () {
-    Route::resource('reminder', ReminderController::class);
+    Route::resource('tva', TvaController::class);
 });
+
+Route::get('signature', [SignatureController::class, 'index'])->name('signature.index');
+Route::get('signature/create', [SignatureController::class, 'create'])->name('signature.create');
+Route::post('signature-pad', [SignatureController::class, 'store'])->name('signature.store');
+Route::delete('signature/{signature}', [SignatureController::class, 'destroy'])->name('signature.destroy');
+
+Route::get('/drivers/search', [App\Http\Controllers\RentalAgreementController::class, 'searchDrivers'])->name('drivers.search');
+
+
+Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name('tva.bulk.download');
+
+// Test route for calendar without authentication
+Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');

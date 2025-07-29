@@ -3,6 +3,7 @@
     $settings=settings();
 @endphp
 <html lang="en" style="{{($settings['color_type']=='custom')?$settings['own_color']:''}}">
+
 @include('admin.head')
 <body class="customizer-modal {{$settings['layout_direction']}} {{$settings['layout_mode']}}">
 <!-- Loader Start-->
@@ -49,5 +50,6 @@
 </div>
 
 @include('admin.footer')
+@stack('scripts')
 </body>
 </html>
