@@ -29,15 +29,16 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <table class="display dataTable cell-border datatbl-advance">
+                    <table class="display dataTable cell-border datatbl-advance" id="bookingTable">
                         <thead>
                         <tr>
+                            <th hidden>id</th>
                             <th><?php echo e(__('ID')); ?></th>
                             <th><?php echo e(__('Driver')); ?></th>
                             <th><?php echo e(__('Vehicle')); ?></th>
                             <th><?php echo e(__('Duration')); ?></th>
-                            <th><?php echo e(__('Status')); ?></th>
-                            <th><?php echo e(__('Payment Status')); ?></th>
+                            <th data-column="status"><?php echo e(__('Status')); ?></th>
+                            <th data-column="payment_status"><?php echo e(__('Payment Status')); ?></th>
                             <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
                                 <th><?php echo e(__('Action')); ?></th>
                             <?php endif; ?>
@@ -45,41 +46,34 @@
                         </thead>
                         <tbody>
                         <?php $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-
                             <tr>
-                                <td><?php echo e(bookingPrefix().$booking->booking_id); ?> </td>
-                                <td><?php echo e(!empty($booking->drivers)?$booking->drivers->name:'-'); ?> </td>
-                                <td><?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-'); ?> </td>
+                                <td hidden><?php echo e($booking->id); ?></td>
+                                <td><?php echo e(bookingPrefix().$booking->booking_id); ?></td>
+                                <td><?php echo e(!empty($booking->drivers)?$booking->drivers->name:'-'); ?></td>
+                                <td><?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-'); ?> - <?php echo e(!empty($booking->vehicleDetails())?$booking->vehicleDetails()->license_plate:'-'); ?></td>
                                 <td>
                                     <?php echo e(dateFormat($booking->start_date) .' / '. timeFormat($booking->start_time)); ?> <br>
                                     <?php echo e(dateFormat($booking->end_date) .' / '. timeFormat($booking->end_time)); ?>
 
                                 </td>
-                                <td>
+                                <td data-status="<?php echo e($booking->status); ?>">
                                     <?php if($booking->status=='yet_to_start'): ?>
-                                        <span
-                                            class="badge badge-primary"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
-                                    <?php elseif($booking->status=='completed' ): ?>
-                                        <span
-                                            class="badge badge-success"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
+                                        <span class="badge badge-primary"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
+                                    <?php elseif($booking->status=='completed'): ?>
+                                        <span class="badge badge-success"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
                                     <?php elseif($booking->status=='on_going'): ?>
-                                        <span
-                                            class="badge badge-warning"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
+                                        <span class="badge badge-warning"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
                                     <?php elseif($booking->status=='cancelled'): ?>
-                                        <span
-                                            class="badge badge-danger"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
+                                        <span class="badge badge-danger"><?php echo e(\App\Models\Booking::$status[$booking->status]); ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td data-payment-status="<?php echo e($booking->payment_status); ?>">
                                     <?php if($booking->payment_status=='paye'): ?>
-                                        <span
-                                            class="badge badge-success"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
+                                        <span class="badge badge-success"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
                                     <?php elseif($booking->payment_status=='impaye'): ?>
-                                        <span
-                                            class="badge badge-danger"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
+                                        <span class="badge badge-danger"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
                                     <?php elseif($booking->payment_status=='partiellement_paye'): ?>
-                                        <span
-                                            class="badge badge-warning"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
+                                        <span class="badge badge-warning"><?php echo e(\App\Models\Booking::$paymentStatus[$booking->payment_status]); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <?php if(Gate::check('edit booking') || Gate::check('delete booking') || Gate::check('show booking')): ?>
@@ -101,19 +95,18 @@
                                                     <i data-feather="edit"></i></a>
                                             <?php endif; ?>
                                             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete booking')): ?>
-                                                <a class=" text-danger confirm_dialog" data-bs-toggle="tooltip"
-                                                   data-bs-original-title="<?php echo e(__('Detete')); ?>" href="#"> <i
-                                                        data-feather="trash-2"></i></a>
+                                                <a class="text-danger confirm_dialog" data-bs-toggle="tooltip"
+                                                   data-bs-original-title="<?php echo e(__('Delete')); ?>" href="#"> 
+                                                    <i data-feather="trash-2"></i>
+                                                </a>
                                             <?php endif; ?>
                                             <?php echo Form::close(); ?>
 
                                         </div>
-
                                     </td>
                                 <?php endif; ?>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
                         </tbody>
                     </table>
                 </div>
@@ -122,4 +115,22 @@
     </div>
 <?php $__env->stopSection(); ?>
 
+<?php $__env->startPush('scripts'); ?>
+<script>
+$(document).ready(function() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#bookingTable')) {
+        $('#bookingTable').DataTable().destroy();
+    }
+    
+    // Reinitialize
+    $('#bookingTable').DataTable({
+        columnDefs: [
+            // Your column definitions
+        ],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Applications/XAMPP/xamppfiles/htdocs/directonderweg/resources/views/booking/index.blade.php ENDPATH**/ ?>
