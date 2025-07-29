@@ -1,0 +1,125 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Tva extends Model
+{
+    use HasFactory,SoftDeletes;
+
+    protected $fillable = [
+        // Existing columns
+        'month',
+        'year',
+        'total_amount',
+        'tva_amount',
+        'status',
+        'generated_date',
+        'created_at',
+        'updated_at',
+
+        // New invoice columns
+        'facture_number',
+        'facture_date',
+        'reference',
+        'client_name',
+        'client_address',
+        'company_name',
+        'company_address',
+        'designation',
+        'quantity',
+        'unit_price_ht',
+        'total_ht',
+        'tva',
+        'montant_ttc',
+        'ice_number',
+        'rc_number',
+        'tp_number',
+        'nif_number',
+    ];
+
+    protected $casts = [
+        'facture_date' => 'date',
+        'generated_date' => 'date',
+        'quantity' => 'decimal:2',
+        'unit_price_ht' => 'decimal:2',
+        'total_ht' => 'decimal:2',
+        'tva' => 'decimal:2',
+        'montant_ttc' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'tva_amount' => 'decimal:2',
+    ];
+
+    // Accessor for formatted facture date
+    public function getFormattedFactureDateAttribute()
+    {
+        return $this->facture_date ? $this->facture_date->format('d/m/Y') : null;
+    }
+
+    // Accessor for formatted quantities and amounts
+    public function getFormattedQuantityAttribute()
+    {
+        return $this->quantity ? number_format($this->quantity, 2, ',', ' ') : null;
+    }
+
+    public function getFormattedUnitPriceHtAttribute()
+    {
+        return $this->unit_price_ht ? number_format($this->unit_price_ht, 2, ',', ' ') : null;
+    }
+
+    public function getFormattedTotalHtAttribute()
+    {
+        return $this->total_ht ? number_format($this->total_ht, 2, ',', ' ') : null;
+    }
+
+    public function getFormattedTvaAttribute()
+    {
+        return $this->tva ? number_format($this->tva, 2, ',', ' ') : null;
+    }
+
+    public function getFormattedMontantTtcAttribute()
+    {
+        return $this->montant_ttc ? number_format($this->montant_ttc, 2, ',', ' ') : null;
+    }
+
+    // Scope for filtering by facture number
+    public function scopeByFactureNumber($query, $factureNumber)
+    {
+        return $query->where('facture_number', $factureNumber);
+    }
+
+    // Scope for filtering by client
+    public function scopeByClient($query, $clientName)
+    {
+        return $query->where('client_name', 'like', '%' . $clientName . '%');
+    }
+
+    // Scope for filtering by date range
+    public function scopeByDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('facture_date', [$startDate, $endDate]);
+    }
+
+    // Calculate TVA amount based on total HT
+    public function calculateTvaAmount()
+    {
+        if ($this->total_ht && $this->tva) {
+            return ($this->total_ht * $this->tva) / 100;
+        }
+        return 0;
+    }
+
+    // Calculate TTC amount
+    public function calculateMontantTtc()
+    {
+        if ($this->total_ht && $this->tva) {
+            return $this->total_ht + $this->calculateTvaAmount();
+        }
+        return $this->total_ht ?? 0;
+    }
+    protected $dates = ['deleted_at'];
+}

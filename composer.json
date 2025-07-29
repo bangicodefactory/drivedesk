@@ -7,6 +7,8 @@
     "require": {
         "php": "^8.1",
         "anhskohbo/no-captcha": "^3.5",
+        "barryvdh/laravel-dompdf": "*",
+        "creagia/laravel-sign-pad": "*",
         "guzzlehttp/guzzle": "^7.2",
         "kkomelin/laravel-translatable-string-exporter": "^1.21",
         "laravel/framework": "^10.0",
