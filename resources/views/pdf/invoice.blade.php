@@ -331,7 +331,7 @@ body {
                         <img src="{{ Storage::disk('public')->path($setting->value) }}" alt="Admin Signature"
                             style="max-height: 100px;">
                     @else
-                        <span class="text-muted">No signature uploaded.</span>
+                        <span class="text-muted">No signature .</span>
                     @endif
                 </div>
 
