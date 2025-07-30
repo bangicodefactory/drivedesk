@@ -8,3 +8,4 @@ public/images/  # Replace with the path to your images folder
 node_modules
 /storage/framework
 /storage
+/storage_old
