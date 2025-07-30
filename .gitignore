@@ -7,3 +7,4 @@ public/images/  # Replace with the path to your images folder
 .env
 node_modules
 /storage/framework
+/storage
