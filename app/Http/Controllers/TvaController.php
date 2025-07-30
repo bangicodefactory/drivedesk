@@ -9,11 +9,8 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use ZipArchive;
-<<<<<<< HEAD
 use Exception;
 use Illuminate\Support\Facades\Log;
-=======
->>>>>>> 9f8a5d90fb1a4ca6a01a63259c17911a8b9ccd1e
 
 
 use App\Models\BookingPayment;
@@ -50,7 +47,7 @@ class TvaController extends Controller
         }
         $perPage = $request->get('per_page', 30);
         $tvas = $query->paginate($perPage);
-        
+
         $tvas->appends([
             'filter_day' => $request->filter_day,
             'filter_month' => $request->filter_month,
@@ -88,64 +85,12 @@ class TvaController extends Controller
                         'quantity' => $invoice->quantity,
                         'unit_price' => $invoice->unit_price_ht,
                         'total_ht' => $invoice->total_ht,
+
                     ]
                 ];
                 $invoice->items = $items;
 
                 $settings = settings();
-<<<<<<< HEAD
-                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // Updated default logo name
-
-                // Try multiple possible logo paths
-                $possiblePaths = [
-                    storage_path('upload/logo/' . $logoFile),
-                    storage_path('app/upload/logo/' . $logoFile),
-                    public_path('storage/logo/' . $logoFile),
-                    public_path('upload/logo/' . $logoFile)
-                ];
-
-                $logoPath = null;
-                foreach ($possiblePaths as $path) {
-                    if (file_exists($path) && is_readable($path)) {
-                        $logoPath = $path;
-                        break;
-                    }
-                }
-
-                // Convert to base64 for DomPDF compatibility if logo exists
-                $logoBase64 = null;
-                if ($logoPath && file_exists($logoPath)) {
-                    try {
-                        $imageData = file_get_contents($logoPath);
-                        $imageInfo = getimagesize($logoPath);
-                        if ($imageData && $imageInfo) {
-                            $mimeType = $imageInfo['mime'];
-                            $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
-                        }
-                    } catch (Exception $e) {
-                        // Log the error for debugging
-                        Log::error('Logo loading error: ' . $e->getMessage() . ' for path: ' . $logoPath);
-                        $logoBase64 = null;
-                    }
-                } else {
-                    Log::info('No logo found. Searched paths: ' . implode(', ', $possiblePaths));
-                }
-
-                // $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
-                //     'tva' => $invoice,
-                //     'settings' => $settings,
-                //     'logoPath' => $logoPath,
-                // ]);
-                // $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice2', [
-                //     'tva' => $invoice,
-                //     'settings' => $settings,
-                //     'logoPath' => $logoPath,
-                // ]);
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice1', [
-                    'tva' => $invoice,
-                    'settings' => $settings,
-                    'logoPath' => $logoBase64, // Use base64 instead of file path
-=======
                 $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
 
                 $logoPath = storage_path('upload/logo/' . $logoFile);
@@ -158,7 +103,6 @@ class TvaController extends Controller
                     'tva' => $invoice,
                     'settings' => $settings,
                     'logoPath' => $logoPath,
->>>>>>> 9f8a5d90fb1a4ca6a01a63259c17911a8b9ccd1e
                 ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
@@ -183,23 +127,23 @@ class TvaController extends Controller
 
 
     public function update(Request $request, $id)
-{
-    $validated = $request->validate([
-        'facture_date'   => 'required|date',
-        'montant_ttc'    => 'required|numeric',
-        'unit_price_ht'  => 'required|numeric',
-        'tva'            => 'required|numeric',
-        'facture_number' => 'required|string|max:255',
-    ]);
+    {
+        $validated = $request->validate([
+            'facture_date' => 'required|date',
+            'montant_ttc' => 'required|numeric',
+            'unit_price_ht' => 'required|numeric',
+            'tva' => 'required|numeric',
+            'facture_number' => 'required|string|max:255',
+        ]);
 
         $tva = Tva::findOrFail($id);
 
-    $tva->facture_date   = $validated['facture_date'];
-    $tva->montant_ttc    = $validated['montant_ttc'];
-    $tva->unit_price_ht  = $validated['unit_price_ht'];
-    $tva->tva            = $validated['tva'];
-    $tva->facture_number = $validated['facture_number'];
-    $tva->total_ht = $request->total_ht;
+        $tva->facture_date = $validated['facture_date'];
+        $tva->montant_ttc = $validated['montant_ttc'];
+        $tva->unit_price_ht = $validated['unit_price_ht'];
+        $tva->tva = $validated['tva'];
+        $tva->facture_number = $validated['facture_number'];
+        $tva->total_ht = $request->total_ht;
 
 
         $tva->save();
@@ -219,6 +163,130 @@ class TvaController extends Controller
         $tva->delete();
         return redirect()->back()->with('success', 'The TVA has been deleted.');
     }
+    protected function numberToFrenchWords($num)
+    {
+        if (!is_numeric($num)) {
+            throw new \Exception('Le nombre doit être numérique');
+        }
 
+        $num = (float) $num;
+        if ($num < 0 || $num > 999999999999) {
+            throw new \Exception('Le nombre doit être entre 0 et 999 999 999 999');
+        }
 
+        if ($num === 0) {
+            return 'Zéro';
+        }
+
+        $units = [
+            '',
+            'un',
+            'deux',
+            'trois',
+            'quatre',
+            'cinq',
+            'six',
+            'sept',
+            'huit',
+            'neuf',
+            'dix',
+            'onze',
+            'douze',
+            'treize',
+            'quatorze',
+            'quinze',
+            'seize',
+            'dix-sept',
+            'dix-huit',
+            'dix-neuf'
+        ];
+
+        $tens = [
+            '',
+            '',
+            'vingt',
+            'trente',
+            'quarante',
+            'cinquante',
+            'soixante',
+            'soixante',
+            'quatre-vingt',
+            'quatre-vingt'
+        ];
+
+        $convertUnder100 = function ($n) use ($units, $tens) {
+            if ($n < 20) {
+                return ucfirst($units[$n]);
+            }
+
+            $ten = floor($n / 10);
+            $unit = $n % 10;
+
+            if ($ten === 7) {
+                return $unit === 1 ? 'Soixante-et-onze' : 'Soixante-' . ($unit === 0 ? 'dix' : $units[10 + $unit]);
+            }
+            if ($ten === 8) {
+                return $unit === 0 ? 'Quatre-vingts' : 'Quatre-vingt-' . $units[$unit];
+            }
+            if ($ten === 9) {
+                return $unit === 0 ? 'Quatre-vingt-dix' : 'Quatre-vingt-' . $units[10 + $unit];
+            }
+
+            return ucfirst($tens[$ten]) . ($unit === 0 ? '' :
+                ($unit === 1 && $ten !== 8 && $ten !== 9 ? '-et-un' : '-' . $units[$unit]));
+        };
+
+        $convertUnder1000 = function ($n) use ($convertUnder100, $units) {
+            if ($n === 0) {
+                return '';
+            }
+
+            $hundreds = floor($n / 100);
+            $remainder = $n % 100;
+            $result = '';
+
+            if ($hundreds > 0) {
+                $result = $hundreds === 1 ? 'Cent' : ucfirst($units[$hundreds]) . ' cent';
+                if ($remainder === 0 && $hundreds > 1) {
+                    $result .= 's';
+                }
+            }
+
+            if ($remainder > 0) {
+                $result .= $result ? ' ' : '';
+                $result .= $convertUnder100($remainder);
+            }
+
+            return $result;
+        };
+
+        $billions = floor($num / 1000000000);
+        $millions = floor(($num % 1000000000) / 1000000);
+        $thousands = floor(($num % 1000000) / 1000);
+        $remainder = $num % 1000;
+
+        $result = '';
+
+        if ($billions > 0) {
+            $result .= $convertUnder1000($billions) . ($billions === 1 ? ' milliard' : ' milliards');
+        }
+
+        if ($millions > 0) {
+            $result .= $result ? ' ' : '';
+            $result .= $convertUnder1000($millions) . ($millions === 1 ? ' million' : ' millions');
+        }
+
+        if ($thousands > 0) {
+            $result .= $result ? ' ' : '';
+            $result .= $thousands === 1 ? 'mille' : $convertUnder1000($thousands) . ' mille';
+        }
+
+        if ($remainder > 0) {
+            $result .= $result ? ' ' : '';
+            $result .= $convertUnder1000($remainder);
+        }
+
+        // Capitalize first letter of the entire result
+        return ucfirst(strtolower($result));
+    }
 }

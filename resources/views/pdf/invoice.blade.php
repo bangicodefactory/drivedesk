@@ -6,132 +6,142 @@
     <title>Facture #{{ $tva->facture_number }}</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            padding: 15px;
-            color: #000;
-            background: white;
-            line-height: 1.4;
-        }
+body {
+    font-family:  Helvetica, sans-serif;
+    font-size: 12px;
+    padding: 15px;
+    color: #000;
+    background: white;
+    line-height: 1.4;
+}
 
-        .invoice-container {
-            max-width: 210mm;
-            margin: 0 auto;
-            border: 2px solid #000;
-            padding: 15px;
-            background: #fff;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
+.invoice-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    border: 2px solid #000;
+    padding: 15px;
+    background: #fff;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #ccc;
-        }
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 277mm; 
+}
 
-        .company-logo img {
-            width: 120px;
-            height: auto;
-            border: 1px solid #eee;
-            padding: 3px;
-        }
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px; 
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ccc;
+}
 
-        .invoice-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-decoration: underline;
-            text-align: center;
-            flex-grow: 1;
-            color: mediumblue;
-        }
+.company-logo img {
+    width: 120px;
+    height: auto;
+    border: 1px solid #eee;
+    padding: 3px;
+}
 
-        .top-right-logo img {
-            width: 100px;
-            height: auto;
-        }
+.invoice-title {
+    font-size: 28px;
+    font-weight: bold;
+    text-decoration: underline;
+    text-align: center;
+    flex-grow: 1;
+    color: mediumblue;
+    padding: 0 20px;
+}
 
-        .company-details {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            gap: 20px;
-        }
+.top-right-logo img {
+    width: 100px;
+    height: auto;
+}
 
-        .company-info,
-        .client-box {
-            width: 48%;
-            border: 2px solid #000;
-            padding: 8px;
-            background: #ffffffff;
-        }
+.company-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    gap: 30px;
+}
 
-        .company-info h3 {
-            color: #c00;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
+.company-info,
+.client-box {
+    width: 48%;
+    border: 2px solid #000;
+    padding: 15px; 
+    background: #fff;
+}
 
-        .company-info p,
-        .client-box p {
-            margin: 3px 0;
-            font-size: 10px;
-            font-weight: bold;
-        }
+.company-info h3 {
+    color: #c00;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
 
-        .client-box strong {
-            font-size: 11px;
-        }
+.company-info p,
+.client-box p {
+    margin: 6px 0;
+    font-size: 11px;
+    font-weight: bold;
+}
 
-        .invoice-meta {
-            margin-bottom: 15px;
-        }
+.client-box strong {
+    font-size: 12px;
+}
 
-        .meta-table,
-        .items-table,
-        .totals-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
+.invoice-meta {
+    margin-bottom: 25px;
+}
 
-        .meta-table td,
-        .items-table td,
-        .items-table th,
-        .totals-table td {
-            border: 1px solid #000;
-            padding: 4px 8px;
-        }
+.meta-table,
+.items-table,
+.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+}
 
-        .items-table th {
-            background-color: #eaeaea;
-            font-weight: bold;
-        }
+.meta-table td,
+.items-table td,
+.items-table th,
+.totals-table td {
+    border: 1px solid #000;
+    padding: 8px 12px;
+}
 
-        .items-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
+.items-table th {
+    background-color: #eaeaea;
+    font-weight: bold;
+}
 
-        .bottom-section {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
+.items-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
 
-        .totals-box {
-            width: 45%;
-        }
+.bottom-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto; 
+    align-items: flex-end;
+    gap: 30px;
+    padding-top: 30px;
+    border-top: 2px solid #ccc; 
+}
 
-        .signature-box {
+.totals-box {
+    width: 45%;
+}
+
+.signature-box {
             width: 45%;
             text-align: right;
             margin-top: 30px;
@@ -140,13 +150,14 @@
 
         .signature-box .label {
             font-size: 11px;
+            margin-top: 50px;
+
             margin-bottom: 5px;
             font-weight: bold;
         }
 
         .signature-line {
             min-height: auto;
-            /* or auto */
             border-bottom: none;
             width: 200px;
             margin-left: auto;
@@ -159,7 +170,8 @@
 
 
         .footer-info {
-            margin-top: 40px;
+            margin-top: 100px;
+
             font-size: 9px;
             text-align: center;
             border-top: 1px solid #000;
@@ -167,10 +179,56 @@
             color: #555;
         }
 
-        .totals-table tr:last-child {
-            font-weight: bold;
-            background-color: #f0f0f0;
-        }
+
+.totals-table tr:last-child {
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
+
+/* FOR PRINTING  */
+@page {
+    size: A4;
+    margin: 15mm;
+}
+
+@media print {
+    body, html {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 0;
+        background: white;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .invoice-container {
+        height: 277mm; 
+        box-sizing: border-box;
+        margin: 0 auto;
+        border: 2px solid #000;
+        padding: 25px 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .bottom-section {
+        margin-top: auto; 
+        padding-top: 30px;
+        border-top: 2px solid #ccc;
+    }
+
+    .invoice-container,
+    .items-table,
+    .totals-table {
+        page-break-inside: avoid;
+    }
+}
     </style>
 </head>
 
@@ -267,13 +325,13 @@
 
             <div class="signature-box">
                 <div class="label">Signature :</div>
-                <div class="signature-line"
+                <div class="signature-line" style="padding-left: 200px;"
                     style="{{ $setting && $setting->value ? 'height: auto; border: none;' : '' }}">
                     @if ($setting && $setting->value && Storage::disk('public')->exists($setting->value))
                         <img src="{{ Storage::disk('public')->path($setting->value) }}" alt="Admin Signature"
-                            style="max-height: 100px;">
+                        style="max-height: 300px; max-width: 300px;" >
                     @else
-                        <span class="text-muted">No signature uploaded.</span>
+                        <span class="text-muted">No signature .</span>
                     @endif
                 </div>
 

@@ -3,8 +3,7 @@
     {{__('General Settings')}}
 @endsection
 @php
-    $settings=settings();
-
+    $settings=settings();    
 @endphp
 @section('breadcrumb')
     <ul class="breadcrumb mb-0">
@@ -48,16 +47,157 @@
                                     {{Form::file('landing_logo',array('class'=>'form-control'))}}
                                 </div>
                             </div>
-
                         @endif
                     </div>
                     <div class="text-right">
-                        {{Form::submit(__('Save'),array('class'=>'btn btn-primary btn-rounded'))}}
+                        {{Form::submit(__('Save'), ['class' => 'btn btn-primary btn-rounded'])}}
                     </div>
                     {{ Form::close() }}
                 </div>
             </div>
         </div>
     </div>
+    <!-- Signature Section -->
+    <div class="row mt-4">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4>{{ __('Admin Signature') }}</h4>
+                    
+                    @if(!empty($settings['admin_signature']))
+                        <div class="mb-4">
+                            <p>{{ __('Current Signature:') }}</p>
+                            <img src="{{ asset('storage/' . $settings['admin_signature']) }}" alt="Signature">
+                        </div>
+                    @endif
+                    
+                    <div class="signature-container">
+                        <div class="border rounded p-3 bg-white">
+                            <canvas id="signatureCanvas" style="border: 1px solid #dee2e6; width: 100%; height: 200px;"></canvas>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="button" id="clearButton" class="btn btn-danger">
+                                {{ __('Clear Signature') }}
+                            </button>
+                            <button type="button" id="saveButton" class="btn btn-success">
+                                {{ __('Save Signature') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = 200;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    
+    function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+    
+    function startDrawing(e) {
+        drawing = true;
+        const pos = getPosition(e);
+        [lastX, lastY] = [pos.x, pos.y];
+    }
+    
+    function draw(e) {
+        if (!drawing) return;
+        
+        const pos = getPosition(e);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        [lastX, lastY] = [pos.x, pos.y];
+    }
+    
+    function stopDrawing() {
+        drawing = false;
+    }
+    
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        startDrawing(e.touches[0]);
+    });
+    
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        draw(e.touches[0]);
+    });
+    
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    document.getElementById('clearButton').addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+    
+    document.getElementById('saveButton').addEventListener('click', function() {
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                alert('Please draw a signature first');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('signature', blob, 'signature.png');
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            fetch("{{ route('AdminSignature.store') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }, 'image/png');
+    });
+});
+</script>
+@endpush
