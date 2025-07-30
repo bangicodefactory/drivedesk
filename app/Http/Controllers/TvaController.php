@@ -91,65 +91,18 @@ class TvaController extends Controller
                 $invoice->items = $items;
 
                 $settings = settings();
-                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // Updated default logo name
+                $logoFile = $settings['company_logo'] ?? '2_logo.png'; // we dont have logo in settings db
 
-                // Try multiple possible logo paths
-                $possiblePaths = [
-                    storage_path('upload/logo/' . $logoFile),
-                    storage_path('app/upload/logo/' . $logoFile),
-                    public_path('storage/logo/' . $logoFile),
-                    public_path('upload/logo/' . $logoFile)
-                ];
+                $logoPath = storage_path('upload/logo/' . $logoFile);
 
-                $logoPath = null;
-                foreach ($possiblePaths as $path) {
-                    if (file_exists($path) && is_readable($path)) {
-                        $logoPath = $path;
-                        break;
-                    }
+                if (!file_exists($logoPath)) {
+                $logoPath = null; 
                 }
 
-                // Convert to base64 for DomPDF compatibility if logo exists
-                $logoBase64 = null;
-                if ($logoPath && file_exists($logoPath)) {
-                    try {
-                        $imageData = file_get_contents($logoPath);
-                        $imageInfo = getimagesize($logoPath);
-                        if ($imageData && $imageInfo) {
-                            $mimeType = $imageInfo['mime'];
-                            $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
-                            Log::info('Logo loaded successfully: ' . $logoPath . ' - Size: ' . strlen($imageData) . ' bytes');
-                        }
-                    } catch (Exception $e) {
-                        // Log the error for debugging
-                        Log::error('Logo loading error: ' . $e->getMessage() . ' for path: ' . $logoPath);
-                        $logoBase64 = null;
-                    }
-                } else {
-                    Log::info('No logo found. Searched paths: ' . implode(', ', $possiblePaths));
-                }
-
-                // Debug: Always log what we're passing to the template
-                Log::info('LogoBase64 status: ' . ($logoBase64 ? 'Generated successfully' : 'NULL'));
-                $ttcInWords = $this->numberToFrenchWords(floor($invoice->montant_ttc)) . ' dirhams';
-                if (fmod($invoice->montant_ttc, 1) > 0) {
-                    $ttcInWords .= ' et ' . round(fmod($invoice->montant_ttc, 1) * 100) . ' centimes';
-                }
-                // $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
-                //     'tva' => $invoice,
-                //     'settings' => $settings,
-                //     'logoPath' => $logoPath,
-                // ]);
-                // $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice2', [
-                //     'tva' => $invoice,
-                //     'settings' => $settings,
-                //     'logoPath' => $logoPath,
-                // ]);
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice1', [
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', [
                     'tva' => $invoice,
                     'settings' => $settings,
-                    'logoPath' => $logoBase64,
-                    'ttcInWords' => $ttcInWords
+                    'logoPath' => $logoPath,
                 ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
