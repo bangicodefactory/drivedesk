@@ -253,6 +253,10 @@
             text-align: left;
             border-bottom: 1px solid #e5e7eb;
             font-size: 15px !important;
+            /* height: 50px; */
+        }
+        .items-table td {
+            height: 50px;
         }
 
         .items-table th {
