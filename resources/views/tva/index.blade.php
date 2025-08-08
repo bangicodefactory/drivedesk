@@ -110,8 +110,8 @@
                     </thead>
                     <tbody>
                         @foreach ($tvas as $tva)
-                            <tr data-date="{{ $tva->created_at->format('Y-m-d') }}">
-                                <td hidden>{{ $tva->created_at }}</td>
+                            <tr data-date="{{ $tva->facture_date->format('Y-m-d') }}">
+                                <td hidden>{{ $tva->facture_date }}</td>
                                 <td>
                                     <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
                                 </td>
@@ -131,7 +131,8 @@
                                 <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
                                 <td>
-                                    {{ dateFormat($tva->created_at) }}
+                                    {{-- {{ dateFormat($tva->created_at) }} --}}
+                                    {{ dateFormat($tva->facture_date) }}
                                 </td>
                                 <td>
                                     {{ $tva->montant_ttc }} Dh
