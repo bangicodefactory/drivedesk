@@ -19,7 +19,7 @@
             line-height: 1.4;
             color: #333;
             background-color: white;
-            font-size: 13pt;
+            font-size: 15pt;
         }
 
         /* Print Styles for A4 */
@@ -32,7 +32,7 @@
 
             body {
                 background-color: white;
-                font-size: 13pt;
+                font-size: 15pt;
                 line-height: 1.3;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -109,7 +109,7 @@
 
         .ttc-in-words {
             font-size: 12px;
-            margin-top: 5px;
+            margin-top: 8px;
             padding: 5px 0;
             text-align: right;
             font-style: italic;
@@ -151,22 +151,28 @@
         /* Header Section */
         .invoice-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column; /* stack elements to allow centered logo */
+            justify-content: center;
+            align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 3px solid #2563eb;
+            text-align: center;
         }
 
         .company-info {
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
+            flex-direction: column; /* logo above company details */
+            align-items: center; /* center horizontally */
+            gap: 8px;
+            width: 100%;
         }
 
         .company-logo {
             max-height: 150px;
             width: auto;
+            display: block;
+            margin: 0 auto; /* ensure centered in PDF render engines */
         }
 
         .company-details h1 {
@@ -183,13 +189,14 @@
         }
 
         .invoice-title {
-            text-align: right;
+            text-align: center; /* center title under logo */
             font-size: 32px !important;
+            margin-top: 10px;
         }
 
         .invoice-title h2 {
             font-size: 28px;
-            color: #2563eb;
+            color: #eb2525;
             margin-bottom: 10px;
             font-weight: bold;
         }
@@ -219,7 +226,7 @@
 
         .client-info p,
         .vendor-info p {
-            font-size: 15px;
+            font-size: 18px;
             line-height: 1.3;
             color: #555;
         }
@@ -257,6 +264,7 @@
 
         .items-table .description {
             width: 50%;
+            height: 30px;
         }
 
         .items-table .quantity,
@@ -276,7 +284,7 @@
 
         .description strong {
             color: #2563eb;
-            font-size: 15px;
+            font-size: 20px;
         }
 
         /* Totals Section */
@@ -289,7 +297,7 @@
         }
 
         .totals-table {
-            width: 300px;
+            width: 400px;
             margin-right: 0;
             float: right;
         }
@@ -299,22 +307,22 @@
             justify-content: space-between;
             padding: 6px 0;
             border-bottom: 1px solid #e5e7eb;
-            font-size: 15px;
+            font-size: 20px;
         }
 
         .total-row.grand-total {
             background-color: #2563eb;
             color: white;
             padding: 10px 15px;
-            margin-top: 8px;
+            margin-top: 12px;
             border-radius: 3px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 18px;
             border: none;
         }
 
         .total-label {
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .total-value {
@@ -333,12 +341,12 @@
         .payment-info h3 {
             color: #2563eb;
             margin-bottom: 15px;
-            font-size: 16px;
+            font-size: 19px;
         }
 
         .payment-info p {
             margin-bottom: 10px;
-            font-size: 14px;
+            font-size: 18px;
             line-height: 1.5;
         }
 
@@ -354,11 +362,11 @@
         .terms h3 {
             color: #2563eb;
             margin-bottom: 15px;
-            font-size: 16px;
+            font-size: 19px;
         }
 
         .notes p {
-            font-size: 14px;
+            font-size: 18px;
             line-height: 1.6;
             color: #555;
         }
@@ -369,7 +377,7 @@
         }
 
         .terms li {
-            font-size: 14px;
+            font-size: 18px;
             line-height: 1.6;
             color: #555;
             margin-bottom: 8px;
@@ -389,7 +397,7 @@
         .invoice-footer {
             text-align: center;
             text-align: center;
-            font-size: 20px !important;
+            font-size: 25px !important;
             padding: 5mm 0;
             border-top: 2px solid #e5e7eb;
             color: #666;
@@ -403,7 +411,7 @@
 
         .footer-content p {
             margin-bottom: 3px;
-            font-size: 15px !important;
+            font-size: 18px !important;
         }
 
         /* Additional Print Optimizations */
@@ -466,7 +474,7 @@
             .items-table th,
             .items-table td {
                 padding: 4px 3px !important;
-                font-size: 9px !important;
+                font-size: 12px !important;
             }
 
             /* Ensure colors print correctly */
@@ -517,7 +525,7 @@
                 <div class="invoice-meta">
                     <p><strong>FACTURE N° :</strong> {{ $tva->facture_number }}</p>
                     <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->created_at)->format('d/m/Y') }}</p>
-                    <p><strong>Référence:</strong> ESPECE</p>
+                    <p><strong>Mode de Paiment:</strong> ESPECE</p>
                 </div>
             </div>
         </header>
@@ -555,7 +563,7 @@
                         <th class="amount">TOTAL H.T</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody style="margin-top: 10px;">
                     @foreach ($tva->items as $item)
                         <tr>
                             <td class="description">
