@@ -528,7 +528,8 @@
                 <h2>FACTURE</h2>
                 <div class="invoice-meta">
                     <p><strong>FACTURE N° :</strong> {{ $tva->facture_number }}</p>
-                    <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->created_at)->format('d/m/Y') }}</p>
+                    {{-- <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->created_at)->format('d/m/Y') }}</p> --}}
+                    <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->facture_date)->format('d/m/Y') }}</p>
                     <p><strong>Mode de Paiment:</strong> ESPECE</p>
                 </div>
             </div>
