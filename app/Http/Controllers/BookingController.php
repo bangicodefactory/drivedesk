@@ -176,7 +176,22 @@ class BookingController extends Controller
     public function show($id)
     {
         if (\Auth::user()->can('show booking')) {
-            $booking = Booking::find(Crypt::decrypt($id));
+            try {
+                $decryptedId = Crypt::decrypt($id);
+            } catch (\Exception $e) {
+                // If it's not an encrypted value, assume it's a numeric id
+                $decryptedId = $id;
+            }
+
+            // Enforce tenant scope and fail with 404 if not found
+            $booking = Booking::where('id', $decryptedId)
+                ->where('parent_id', parentId())
+                ->first();
+
+            if (!$booking) {
+                abort(404);
+            }
+
             $settings = settings();
             return view('booking.show', compact('booking', 'settings'));
         } else {

@@ -15,7 +15,41 @@
     </ul>
 @endsection
 @push('css-page')
-
+    <style>
+        /* The lane that holds events should be the positioning context */
+        .fc-timeline .fc-timeline-lane .fc-timeline-events {
+            position: relative;
+            overflow: visible; /* let absolute children spill over */
+        }
+        /* When a row has hidden events, give it extra vertical space */
+        .fc-timeline .fc-timeline-lane.fc-has-more {
+            min-height: 48px; /* taller row for readability */
+        }
+        .fc-timeline .fc-timeline-lane.fc-has-more .fc-timeline-events {
+            padding-top: 18px; /* create a gap at the top for the +N pill */
+        }
+        /* Make the "+N more" appear as a small inline pill overlayed in the same car row */
+    .fc-timeline .fc-more-link.fc-more-inline {
+            position: absolute; /* overlay, not consuming row height */
+            top: 2px; /* stick to the very top of the row */
+            transform: none;
+            height: 18px;
+            line-height: 18px;
+            padding: 0 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #fff;
+            background: rgba(33, 150, 243, 0.7);
+            z-index: 20;
+            pointer-events: auto; /* clickable */
+            display: inline-block;
+            white-space: nowrap;
+        }
+        /* Ensure the event area can host the absolute element without clipping */
+        .fc-timeline .fc-event-area, .fc-timeline .fc-scroller-harness, .fc-timeline .fc-timeline-body {
+            overflow: visible;
+        }
+    </style>
 @endpush
 @push('script-page')
     <script src="{{ asset('js/index.global.js') }}"></script>
@@ -59,6 +93,52 @@
                 events: bookingData,
                 // Be explicit: allow overlapping events to render side-by-side on a row
                 eventOverlap: true,
+                // Render the more-link as an inline overlay within the same row
+                moreLinkClassNames: ['fc-more-inline'],
+                moreLinkDidMount: function(arg) {
+                    // Defensive in case class injection is blocked by theme
+                    arg.el.classList.add('fc-more-inline');
+                    // Keep FC's computed horizontal position; only force vertical/top
+                    arg.el.style.position = 'absolute';
+                    arg.el.style.top = '2px';
+                    arg.el.style.transform = 'none';
+                    arg.el.style.zIndex = '20';
+
+                    // Find lane and event container, then add space inline
+                    var eventsWrap = arg.el.closest('.fc-timeline-events');
+                    var lane = eventsWrap ? eventsWrap.closest('.fc-timeline-lane') : arg.el.closest('.fc-timeline-lane');
+                    if (lane) {
+                        lane.classList.add('fc-has-more');
+                        try { lane.style.minHeight = '56px'; } catch (e) {}
+                    }
+                    if (eventsWrap) {
+                        try { eventsWrap.style.position = 'relative'; } catch (e) {}
+                        try { eventsWrap.style.overflow = 'visible'; } catch (e) {}
+                        try { eventsWrap.style.paddingTop = '18px'; } catch (e) {}
+                    }
+                },
+                moreLinkContent: function(arg) {
+                    // Compact "+N" label
+                    return { html: '+' + arg.num + '' };
+                },
+                // Always navigate via event.url (works for items in "+N more" popovers too)
+                eventClick: function(info) {
+                    const url = info.event.url || (info.event.extendedProps && info.event.extendedProps.url);
+                    if (url) {
+                        info.jsEvent.preventDefault();
+                        window.location.href = url;
+                    }
+                },
+                // Make events semi-transparent to better see overlaps
+                eventDidMount: function(info) {
+                    const el = info.el;
+                    // Background with alpha
+                    el.style.backgroundColor = 'rgba(33, 150, 243, 0.35)'; // blue with transparency
+                    // Border more opaque for edges
+                    el.style.borderColor = 'rgba(33, 150, 243, 0.85)';
+                    // Keep readable text
+                    el.style.color = '#fff';
+                },
                 eventContent: function(arg) {
                     let customEventContent = document.createElement('div');
                     customEventContent.innerHTML = `<div class="fc-event-title">${arg.event.title}</div>`;
