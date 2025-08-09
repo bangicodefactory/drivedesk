@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
@@ -470,9 +471,10 @@ class BookingController extends Controller
 
     public function planning()
     {
-        // Temporarily disable auth for testing
-        // if (\Auth::user()->can('manage planning')) {
-        $parentId = 2; // Use hardcoded parentId for testing
+    // Use the authenticated tenant/owner id so production loads correct data
+    // You can re-enable the permission check if needed
+    // if (\Auth::user()->can('manage planning')) {
+    $parentId = parentId();
         $bookings = Booking::where('parent_id', $parentId)->get();
         $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
@@ -507,8 +509,12 @@ class BookingController extends Controller
     public function testPlanning()
     {
         try {
-            // Test planning method without authentication
-            $parentId = 2;
+            // Test planning method without forcing authentication
+            // Accept ?parent=ID for quick debugging, otherwise use logged-in parent if available, else fallback to 2
+            $parentId = request('parent');
+            if (!$parentId) {
+                $parentId = Auth::check() ? parentId() : 2;
+            }
             $bookings = Booking::where('parent_id', $parentId)->get();
             $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
