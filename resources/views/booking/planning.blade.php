@@ -42,11 +42,11 @@
                     resourceTimelineMonth: {
                         // Show hour-level slots within the month so events on the same day
                         // (but at different times) can sit on one line.
-                        slotDuration: '01:00',
+                        slotDuration: '02:00',
                         // Keep major labels at the day level for readability
                         slotLabelInterval: { days: 1 },
                         // Optional: prevent columns from becoming too narrow on small screens
-                        slotMinWidth: 40,
+                        slotMinWidth: 20,
                         // Keep a single vertical lane per vehicle in Month view
                         // Extra overlapping bookings are accessible via "+N more" popover.
                         eventMaxStack: 1
