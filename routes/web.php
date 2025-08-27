@@ -47,6 +47,22 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
         'XSS',
     ]
 );
+// Public landing (client) home page using new modular Blade layout
+Route::view('/landing', 'client.home')->name('client.home');
+
+// Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
+Route::view('/contact', 'client.pages.contact')->name('contact');
+Route::get('/search', function (\Illuminate\Http\Request $request) {
+    $q = $request->get('q');
+    return view('client.pages.search', compact('q'));
+})->name('search');
+Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
+    $data = $request->validate(['email' => 'required|email']);
+    // TODO: store subscription or dispatch job
+    return back()->with('status', 'Subscribed with ' . $data['email']);
+})->name('newsletter.subscribe');
+
+
 Route::get('home', [HomeController::class, 'index'])->name('home')->middleware(
     [
 
@@ -444,3 +460,25 @@ Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name(
 Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');
 // genere tva par mois 
 Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])->name('tva.generate');
+
+// --------------------------------------------------------------------------
+// UI COMPONENT TEST ROUTES (temporary for style / JS debugging)
+// Remove before production deployment.
+// --------------------------------------------------------------------------
+Route::prefix('ui-test')->name('ui.test.')->group(function () {
+    Route::view('/', 'client.tests.index')->name('index');
+    Route::view('/hero', 'client.tests.hero')->name('hero');
+    Route::view('/pickup', 'client.tests.pickup')->name('pickup');
+    Route::view('/feature-benefit', 'client.tests.feature-benefit')->name('feature');
+    Route::view('/about', 'client.tests.about')->name('about');
+    Route::view('/car-rentals', 'client.tests.car-rentals')->name('car_rentals');
+    Route::view('/car-service', 'client.tests.car-service')->name('car_service');
+    Route::view('/funfact', 'client.tests.funfact')->name('funfact');
+    Route::view('/popular-cars', 'client.tests.popular-cars')->name('popular_cars');
+    Route::view('/testimonials', 'client.tests.testimonials')->name('testimonials');
+    Route::view('/gallery', 'client.tests.gallery')->name('gallery');
+    Route::view('/news', 'client.tests.news')->name('news');
+    Route::view('/cta-rental', 'client.tests.cta-rental')->name('cta_rental');
+    Route::view('/cta-cheap-rental', 'client.tests.cta-cheap-rental')->name('cta_cheap_rental');
+    Route::view('/full', 'client.home')->name('full'); // full landing page
+});
