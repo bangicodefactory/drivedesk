@@ -57,119 +57,124 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        if (\Auth::user()->can('create booking')) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'vehicle' => 'required',
-                    'start_date_time' => 'required',
-                    'end_date_time' => 'required',
-                    'driver' => 'required',
-                    'pickup_address' => 'required',
-                    'drop_off_address' => 'required',
-                    'status' => 'required',
-                    'amount' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-            $vehicle_detail = Vehicle::find($request->vehicle);
-            $booking = new Booking();
-            $booking->booking_id = $this->bookingNumber();
-            $booking->vehicle = $request->vehicle;
-            $booking->driver = $request->driver;
-            if (!empty($request->start_date_time)) {
-                $startDateTime = explode(' ', $request->start_date_time);
-                $booking->start_date = $startDateTime[0];
-                $booking->start_time = $startDateTime[1];
-            }
-            if (!empty($request->end_date_time)) {
-                $endDateTime = explode(' ', $request->end_date_time);
-                $booking->end_date = $endDateTime[0];
-                $booking->end_time = $endDateTime[1];
-            }
-            $booking->pickup_address = $request->pickup_address;
-            $booking->drop_off_address = $request->drop_off_address;
-            $booking->addon = !empty($request->addon) ? implode(',', $request->addon) : null;
-            $booking->status = $request->status;
-            $booking->notes = $request->notes;
-            $booking->amount = $request->amount;
-            $booking->payment_status = 'impaye';
-            $booking->payment_notes = null;
-            $booking->details = $request->details;
-            $booking->vehicle_details = json_encode($vehicle_detail);
-            $booking->parent_id = parentId();
-            $booking->daily_price_final = !empty($request->daily_price) ? $request->daily_price : 0;
-            $booking->save();
-
-
-            $user = User::find($request->driver);
-            $module = 'new_booking';
-            $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
-            $setting = settings();
-            $errorMessage = '';
-            if (!empty($notification) && $notification->enabled_email == 1) {
-                $notification_responce = MessageReplace($notification, $booking->id);
-                $data['subject'] = $notification_responce['subject'];
-                $data['message'] = $notification_responce['message'];
-                $data['module'] = $module;
-                $data['logo'] = $setting['company_logo'];
-                $to = $user->email;
-
-                $response = commonEmailSend($to, $data);
-                if ($response['status'] == 'error') {
-                    $errorMessage = $response['message'];
-                }
-            }
-
-            //get address from drivers table
-            $driver1 = Driver::where('user_id', $request->driver)->first();
-
-            //calcul TOTAL HT and PUHT
-            $totalht = round($booking->amount - ($booking->amount * 0.2), 2);
-            $tva = round($booking->amount * 0.2, 2);
-            //return consider Days
-            $vehicleDetails = json_decode($booking->vehicle_details, true);
-            $vehicle_name = $vehicleDetails['name'] ?? '';
-            $vehicle_license_plate = $vehicleDetails['license_plate'] ?? '';
-            // Calculate total days between start and end date
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
-            $totalDays = $startDate->diffInDays($endDate);
-            //store tva
-            $tva = new Tva();
-            $tva->facture_number = $booking->booking_id;
-            $tva->facture_date = $booking->created_at;
-            $tva->client_name = $user->name;
-            $tva->client_address = $driver1 ? $driver1->address : '';
-            $tva->company_name = $setting['company_name'];
-            $tva->company_address = $setting['company_address'];
-            $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
-            $tva->quantity = $totalDays ?? 1; //days of booking
-            $tva->total_ht = round($booking->getTotalAmount() * 0.8, 2);
-            $tva->tva = round($booking->getTotalAmount() * 0.2, 2);
-            // $tva->unit_price_ht = round($tva->total_ht / $tva->quantity, 2);
-            $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
-            $tva->montant_ttc = $booking->amount;
-            $tva->ice_number = $setting['ice'];
-            $tva->rc_number = $setting['rc'];
-            // // $tva->tp_number = $setting['tp_number'];
-            $tva->nif_number = $setting['if'];
-            $tva->parent_id = parentId();
-            $tva->booking_id = $booking->id;
-            $tva->generated_date = now();
-            $tva->total_amount = $booking->amount;
-            $tva->tva_amount = $booking->amount * 0.2;
-            $tva->save();
-
-
-
-            return redirect()->route('booking.show', Crypt::encrypt($booking->id))->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
-        } else {
+        if (!\Auth::user()->can('create booking')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        // 🔹 Validate inputs
+        $validator = \Validator::make(
+            $request->all(),
+            [
+                'vehicle' => 'required|exists:vehicles,id',
+                'start_date_time' => 'required|date',
+                'end_date_time' => 'required|date|after:start_date_time',
+                'driver' => 'required|exists:users,id',
+                'pickup_address' => 'required|string',
+                'drop_off_address' => 'required|string',
+                'status' => 'required|string',
+                'amount' => 'required|numeric|min:0',
+            ]
+        );
+
+        if ($validator->fails()) {
+            $messages = $validator->getMessageBag();
+            return redirect()->back()->with('error', $messages->first());
+        }
+
+        // 🔹 Vehicle details
+        $vehicle_detail = Vehicle::find($request->vehicle);
+
+        // 🔹 Create booking
+        $booking = new Booking();
+        $booking->booking_id = $this->bookingNumber();
+        $booking->vehicle = $request->vehicle;
+        $booking->driver = $request->driver;
+
+        if (!empty($request->start_date_time)) {
+            $startDateTime = explode(' ', $request->start_date_time);
+            $booking->start_date = $startDateTime[0];
+            $booking->start_time = $startDateTime[1];
+        }
+        if (!empty($request->end_date_time)) {
+            $endDateTime = explode(' ', $request->end_date_time);
+            $booking->end_date = $endDateTime[0];
+            $booking->end_time = $endDateTime[1];
+        }
+
+        $booking->pickup_address = $request->pickup_address;
+        $booking->drop_off_address = $request->drop_off_address;
+        $booking->addon = !empty($request->addon) ? implode(',', $request->addon) : null;
+        $booking->status = $request->status;
+        $booking->notes = $request->notes;
+        $booking->amount = $request->amount;
+        $booking->payment_status = 'impaye';
+        $booking->payment_notes = null;
+        $booking->details = $request->details;
+        $booking->vehicle_details = json_encode($vehicle_detail);
+        $booking->parent_id = parentId();
+        $booking->daily_price_final = $request->daily_price ?? 0;
+        $booking->save();
+
+        // 🔹 User & driver
+        $user = User::find($request->driver);
+        $driver1 = Driver::where('user_id', $request->driver)->first();
+
+        // 🔹 Notification by email (optional)
+        $module = 'new_booking';
+        $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+        $setting = settings();
+        $errorMessage = '';
+        if (!empty($notification) && $notification->enabled_email == 1) {
+            $notification_responce = MessageReplace($notification, $booking->id);
+            $data['subject'] = $notification_responce['subject'];
+            $data['message'] = $notification_responce['message'];
+            $data['module'] = $module;
+            $data['logo'] = $setting['company_logo'];
+            $to = $user->email;
+
+            $response = commonEmailSend($to, $data);
+            if ($response['status'] == 'error') {
+                $errorMessage = $response['message'];
+            }
+        }
+
+        // 🔹 TVA Calculation
+        $startDate = Carbon::parse($booking->start_date);
+        $endDate = Carbon::parse($booking->end_date);
+        $totalDays = max(1, $startDate->diffInDays($endDate));
+
+        $vehicleDetails = json_decode($booking->vehicle_details, true);
+        $vehicle_name = $vehicleDetails['name'] ?? '';
+        $vehicle_license_plate = $vehicleDetails['license_plate'] ?? '';
+
+        $totalHT = round($booking->amount * 0.8, 2);
+        $tvaAmount = round($booking->amount * 0.2, 2);
+
+        $tva = new Tva();
+        $tva->facture_number = $booking->booking_id;
+        $tva->facture_date = $booking->created_at;
+        $tva->client_name = $user->name;
+        $tva->client_address = $driver1 ? $driver1->address : '';
+        $tva->company_name = $setting['company_name'];
+        $tva->company_address = $setting['company_address'];
+        $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
+        $tva->quantity = $totalDays;
+        $tva->total_ht = $totalHT;
+        $tva->tva = $tvaAmount;
+        $tva->unit_price_ht = $totalDays > 0 ? round($totalHT / $totalDays, 2) : 0;
+        $tva->montant_ttc = $booking->amount;
+        $tva->ice_number = $setting['ice'];
+        $tva->rc_number = $setting['rc'];
+        $tva->nif_number = $setting['if'];
+        $tva->parent_id = parentId();
+        $tva->booking_id = $booking->id;
+        $tva->generated_date = now();
+        $tva->total_amount = $booking->amount;
+        $tva->tva_amount = $tvaAmount;
+        $tva->save();
+
+        return redirect()->route('booking.show', Crypt::encrypt($booking->id))
+            ->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
     }
 
 
@@ -302,15 +307,15 @@ class BookingController extends Controller
                 if (is_string($details)) {
                     $details = json_decode($details);
                 }
-             
+
                 $quantity = isset($details->totalDays) ? $details->totalDays : 1;
-                $unit_price_ht = $booking->daily_price_final * 0.8; 
+                $unit_price_ht = $booking->daily_price_final * 0.8;
                 $total_ht = $booking->amount * 0.8; // Assuming amount is total TTC, calculate HT
-                $tva_rate = 0.20; // 20% 
+                $tva_rate = 0.20; // 20%
                 // $tva_amount = $total_ht * $tva_rate;
                 $montant_ttc = $booking->amount;
 
-                // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A'; 
+                // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A';
                 $tva->quantity = $quantity;
                 $tva->total_ht = $total_ht;
                 $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
