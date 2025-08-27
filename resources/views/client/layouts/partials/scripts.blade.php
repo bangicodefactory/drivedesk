@@ -8,8 +8,8 @@
 <script src="{{ asset('assets/js/client/bootstrap-datepicker.js') }}"></script>
 <script src="{{ asset('assets/js/client/swiper-bundle.min.js') }}"></script>
 <script src="{{ asset('assets/js/clientjquery.meanmenu.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery.magnific-popup.min.js') }}"></script>
-<script src="{{ asset('assets/js/animation.js') }}"></script>
-<script src="{{ asset('assets/js/wow.min.js') }}"></script>
-<script src="{{ asset('assets/js/main.js') }}"></script>
+<script src="{{ asset('assets/js/client/jquery.magnific-popup.min.js') }}"></script>
+<script src="{{ asset('assets/js/client/animation.js') }}"></script>
+<script src="{{ asset('assets/js/client/wow.min.js') }}"></script>
+<script src="{{ asset('assets/js/client/main.js') }}"></script>
 @stack('scripts')
