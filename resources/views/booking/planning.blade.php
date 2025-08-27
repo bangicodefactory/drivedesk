@@ -40,10 +40,11 @@
             font-size: 11px;
             color: #fff;
             background: rgba(33, 150, 243, 0.7);
-            z-index: 20;
+            z-index: 10002; /* above event elements */
             pointer-events: auto; /* clickable */
             display: inline-block;
             white-space: nowrap;
+            cursor: pointer;
         }
         /* Ensure the event area can host the absolute element without clipping */
         .fc-timeline .fc-event-area, .fc-timeline .fc-scroller-harness, .fc-timeline .fc-timeline-body {
@@ -95,6 +96,8 @@
                 eventOverlap: true,
                 // Render the more-link as an inline overlay within the same row
                 moreLinkClassNames: ['fc-more-inline'],
+                // Ensure clicking the +N pill opens the popover
+                moreLinkClick: 'popover',
                 moreLinkDidMount: function(arg) {
                     // Defensive in case class injection is blocked by theme
                     arg.el.classList.add('fc-more-inline');
@@ -102,7 +105,8 @@
                     arg.el.style.position = 'absolute';
                     arg.el.style.top = '2px';
                     arg.el.style.transform = 'none';
-                    arg.el.style.zIndex = '20';
+                    arg.el.style.zIndex = '10002';
+                    arg.el.style.pointerEvents = 'auto';
 
                     // Find lane and event container, then add space inline
                     var eventsWrap = arg.el.closest('.fc-timeline-events');
@@ -110,7 +114,22 @@
                     if (lane) {
                         lane.classList.add('fc-has-more');
                         try { lane.style.minHeight = '56px'; } catch (e) {}
+                        // Ensure lane is positioning context
+                        if (getComputedStyle(lane).position === 'static') {
+                            try { lane.style.position = 'relative'; } catch (e) {}
+                        }
                     }
+
+                    // Move the pill to the lane so it sits above events and keep horizontal position
+                    try {
+                        var left = arg.el.offsetLeft;
+                        // Append after events for highest paint order
+                        if (lane && arg.el.parentElement !== lane) {
+                            lane.appendChild(arg.el);
+                        }
+                        arg.el.style.left = left + 'px';
+                    } catch (e) {}
+
                     if (eventsWrap) {
                         try { eventsWrap.style.position = 'relative'; } catch (e) {}
                         try { eventsWrap.style.overflow = 'visible'; } catch (e) {}
@@ -123,6 +142,12 @@
                 },
                 // Always navigate via event.url (works for items in "+N more" popovers too)
                 eventClick: function(info) {
+                    // Ignore if the click originated from the more-link
+                    if (info.jsEvent && info.jsEvent.target && typeof info.jsEvent.target.closest === 'function') {
+                        if (info.jsEvent.target.closest('.fc-more-link')) {
+                            return;
+                        }
+                    }
                     const url = info.event.url || (info.event.extendedProps && info.event.extendedProps.url);
                     if (url) {
                         info.jsEvent.preventDefault();
