@@ -6,14 +6,14 @@
 <meta name="author" content="pixydrops">
 <meta name="description" content="@yield('meta_description','Remons - Booking Rental HTML Template')">
 <title>@yield('title','Remons - Booking Rental')</title>
-<link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
+<link rel="shortcut icon" href="{{ asset('assets/images/client/favicon.png') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/client/all.min.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/animate.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/magnific-popup.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/meanmenu.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/datepickerboot.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/nice-select.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/animate.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/magnific-popup.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/meanmenu.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/datepickerboot.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/swiper-bundle.min.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/nice-select.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/client/main.css') }}">
 @stack('styles')
