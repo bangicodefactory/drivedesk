@@ -34,7 +34,7 @@
                         <div class="icon"><i class="fas fa-phone-alt"></i></div>
                         <div class="content">
                             <p>Call Anytime</p>
-                            <h6><a href="tel:+9288009850">+92 (8800) - 9850</a></h6>
+                            <h6><a href="tel:{{$settings['company_phone']}}">{{$settings['company_phone']}}</a></h6>
                         </div>
                     </div>
                     <a href="#0" class="search-trigger search-icon"><i
