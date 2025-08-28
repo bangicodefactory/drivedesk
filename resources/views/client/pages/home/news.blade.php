@@ -2,7 +2,7 @@
 <section class="news-section section-padding fix">
     <div class="container">
         <div class="section-title text-center">
-            <img src="{{ asset('assets/img/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
+            <img src="{{ asset('assets/images/client/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
             <span class="wow fadeInUp" data-wow-delay=".2s">From the Blog</span>
             <h2 class="wow fadeInUp" data-wow-delay=".4s">Latest News & <br> Articles From the Blog</h2>
         </div>
@@ -11,7 +11,7 @@
             <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".{{ 2*$i+1 }}s">
                 <div class="news-card-items">
                     <div class="news-image">
-                        <img src="{{ asset('assets/img/news/0'.$i.'.jpg') }}" alt="news-img">
+                        <img src="{{ asset('assets/images/client/news/0'.$i.'.jpg') }}" alt="news-img">
                         <div class="post-date"></div>
                     </div>
                     <div class="news-content">

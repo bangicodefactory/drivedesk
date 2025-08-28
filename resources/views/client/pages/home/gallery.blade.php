@@ -22,9 +22,9 @@
             </div>
             <div class="col-xxl-2 col-xl-4 col-lg-4 col-md-6 col-sm-6">
                 <div class="gallery-image style-2">
-                    <img src="{{ asset('assets/img/gallery/g-9.jpg') }}" alt="img">
+                    <img src="{{ asset('assets/images/client/gallery/g-9.jpg') }}" alt="img">
                     <div class="icon-box">
-                        <a href="{{ asset('assets/img/gallery/g-9.jpg') }}" class="icon img-popup-2 style-two"></a>
+                        <a href="{{ asset('assets/images/client/gallery/g-9.jpg') }}" class="icon img-popup-2 style-two"></a>
                     </div>
                     <div class="mask"></div>
                     <div class="mask-second"></div>
