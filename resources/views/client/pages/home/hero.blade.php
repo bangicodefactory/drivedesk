@@ -11,16 +11,18 @@
     <div class="swiper hero-slider">
         <div class="swiper-wrapper">
             <div class="swiper-slide">
-                <div class="hero-image bg-cover" style="background-image: url('{{ asset('assets/img/hero/hero-1.jpg') }}');">
+                <div class="hero-image bg-cover"
+                    style="background-image: url('{{ asset('assets/images/client/hero/hero-1.jpg') }}');">
                     <div class="overlay-shape">
-                        <img src="{{ asset('assets/img/hero/overlay.png') }}" alt="img">
+                        <img src="{{ asset('assets/images/client/hero/overlay.png') }}" alt="img">
                     </div>
                 </div>
             </div>
             <div class="swiper-slide">
-                <div class="hero-image bg-cover" style="background-image: url('{{ asset('assets/img/hero/hero-2.jpg') }}');">
+                <div class="hero-image bg-cover"
+                    style="background-image: url('{{ asset('assets/images/client/hero/hero-2.jpg') }}');">
                     <div class="overlay-shape">
-                        <img src="{{ asset('assets/img/hero/overlay.png') }}" alt="img">
+                        <img src="{{ asset('assets/images/client/hero/overlay.png') }}" alt="img">
                     </div>
                 </div>
             </div>
