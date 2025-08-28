@@ -1,4 +1,5 @@
 <!-- Scripts -->
+
 <script src="{{ asset('assets/js/client/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ asset('assets/js/client/viewport.jquery.js') }}"></script>
 <script src="{{ asset('assets/js/client/bootstrap.bundle.min.js') }}"></script>
@@ -12,4 +13,5 @@
 <script src="{{ asset('assets/js/client/animation.js') }}"></script>
 <script src="{{ asset('assets/js/client/wow.min.js') }}"></script>
 <script src="{{ asset('assets/js/client/main.js') }}"></script>
+
 @stack('scripts')
