@@ -1,12 +1,22 @@
 <!-- Header Section Start -->
+@php
+    $admin_logo = getSettingsValByName('company_logo');
+    $ids = parentId();
+    $authUser = \App\Models\User::find($ids);
+    $subscription = \App\Models\Subscription::find($authUser->subscription);
+    $routeName = \Request::route()->getName();
+@endphp
+
 <header id="header-sticky" class="header-1">
     <div class="container-fluid">
         <div class="mega-menu-wrapper">
             <div class="header-main">
                 <div class="header-left">
                     <div class="logo">
-                        <a href="{{ url('/') }}" class="header-logo">
-                            <img src="{{ asset('assets/img/logo/black-logo.svg') }}" alt="logo-img">
+                        <a class="codexbrand-logo" href="{{ route('home') }}">
+                            <img class="img-fluid" style="max-height: 100px; "
+                                src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
+                                alt="theeme-logo">
                         </a>
                     </div>
                     <div class="mean__menu-wrapper">
