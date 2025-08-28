@@ -209,9 +209,9 @@ if (!function_exists('settingPriceFormat')) {
     {
         // Achraf changes
         // return $settings['CURRENCY_SYMBOL'] . $price;
-        
+
         return $price . ' ' . $settings['CURRENCY_SYMBOL'];
-        
+
     }
 }
 if (!function_exists('settingTimeFormat')) {
@@ -233,7 +233,7 @@ if (!function_exists('dateFormat')) {
         $settings = settings();
 
         return date(
-            $settings['company_date_format'] . ' H:i', 
+            $settings['company_date_format'] . ' H:i',
             strtotime(datetime: $date)
         );
     }
@@ -250,7 +250,7 @@ if (!function_exists('priceFormat')) {
     function priceFormat($price)
     {
         $settings = settings();
-// Achraf changes 
+// Achraf changes
         // return $settings['CURRENCY_SYMBOL'] . $price;
         return $price . ' ' . $settings['CURRENCY_SYMBOL'];
     }
@@ -263,6 +263,7 @@ if (!function_exists('parentId')) {
         } else {
             return \Auth::user()->parent_id;
         }
+        
     }
 }
 if (!function_exists('assignSubscription')) {

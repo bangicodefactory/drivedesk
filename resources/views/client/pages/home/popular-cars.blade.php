@@ -2,7 +2,7 @@
 <section class="popular-car-section fix section-padding">
     <div class="container">
         <div class="section-title text-center">
-            <img src="{{ asset('assets/img/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
+            <img src="{{ asset('assets/images/client/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
             <span class="wow fadeInUp" data-wow-delay=".2s">select car types</span>
             <h2 class="wow fadeInUp" data-wow-delay=".4s">We’re Offering Popular <br> Cars Models</h2>
         </div>
@@ -16,7 +16,7 @@
                         <p>Available for Rent</p>
                     </div>
                     <div class="car-image">
-                        <img src="{{ asset('assets/img/car/popular-car-'.($index+1).'.jpg') }}" alt="img">
+                        <img src="{{ asset('assets/images/client/car/popular-car-'.($index+1).'.jpg') }}" alt="img">
                     </div>
                 </div>
             </div>
