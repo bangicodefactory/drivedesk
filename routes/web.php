@@ -459,6 +459,9 @@ Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name(
 // Test route for calendar without authentication
 Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');
 
+// genere tva par mois 
+Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])->name('tva.generate');
+
 // --------------------------------------------------------------------------
 // UI COMPONENT TEST ROUTES (temporary for style / JS debugging)
 // Remove before production deployment.

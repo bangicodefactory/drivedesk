@@ -35,7 +35,10 @@
                         <div class="footer-gallery">
                             <div class="row g-2">
                                 @for($i=1;$i<=6;$i++)
-                                <img src="{{ asset('assets/img/car/0'.($i <= 4 ? $i : $i - 2).'.jpg') }}" alt="car" class="img-fluid"
+
+<div class="col-4">
+                                <img src="{{ asset('assets/img/car/0'.($i <= 4 ? $i : $i - 2).'.jpg') }}" alt="car" class="img-fluid">
+                                </div>
                                 @endfor
                             </div>
                         </div>
