@@ -89,6 +89,23 @@
             </form>
         </div>
     </div>
+    <div class="row mb-4">
+    <div class="col-md-12">
+        <form method="POST" action="{{ route('tva.generate') }}">
+            @csrf
+            <div class="d-flex gap-3 align-items-end">
+                <div>
+                    <label for="generate_month" class="form-label">{{ __('Select Month for TVA') }}</label>
+                    <input type="month" id="generate_month" name="month" class="form-control" required>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary mt-2">{{ __('Generate TVA') }}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
     <div class="row">
         <div class="col-12">
             <form id="bulk-download-form" method="POST" action="{{ route('tva.bulk.download') }}">

@@ -11,7 +11,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use ZipArchive;
 use Exception;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\User;
+use App\Models\Driver;
 
 use App\Models\BookingPayment;
 
@@ -336,4 +337,109 @@ class TvaController extends Controller
         // Capitalize first letter of the entire result
         return ucfirst(strtolower($result));
     }
+
+public function generateMonthlyTva(Request $request)
+{
+    $request->validate([
+        'month' => 'required|date_format:Y-m', 
+    ]);
+
+    $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
+    $monthEnd = $monthStart->copy()->endOfMonth();
+
+    $parentId = parentId();
+    if (!$parentId) {
+        return redirect()->back()->with('error', 'Parent ID not found. Please check your authentication.');
+    }
+    // dd(parentId());
+
+    $bookings = Booking::with(['drivers', 'vehicles'])
+        ->whereBetween('start_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+        ->get();
+
+    $createdCount = 0;
+    $setting = settings();
+
+    //  last facture number for this user(parent id)
+    $lastFacture = Tva::where('parent_id', $parentId)
+                      ->orderByDesc('id')
+                      ->first();
+    $lastNumber = 0;
+    if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+        $lastNumber = (int) $matches[0];
+    }
+    // logic for facture number
+    $factureCounter = $lastNumber;
+
+    foreach ($bookings as $booking) {
+        if (!$booking->id) {
+            continue;
+        }
+
+        $exists = Tva::where('booking_id', $booking->booking_id)
+                     ->where('month', $monthStart->month)
+                     ->where('year', $monthStart->year)
+                     ->exists();
+
+        if ($exists) continue;
+
+        $factureCounter++;
+        $factureNumber = $factureCounter;
+
+        $driverName = 'N/A';
+        $driverAddress = '';
+        if ($booking->drivers) {
+            $driverName = $booking->drivers->name ?? 'N/A';
+            $driver = Driver::where('user_id', $booking->driver)->first();
+            $driverAddress = $driver->address ?? '';
+        }
+
+        $vehicleDetails = json_decode($booking->vehicle_details, true);
+        $vehicleName = $vehicleDetails['name'] ?? '';
+        $vehicleLicensePlate = $vehicleDetails['license_plate'] ?? '';
+
+        // Quantity
+        $startDate = Carbon::parse($booking->start_date);
+        $endDate = Carbon::parse($booking->end_date);
+        $totalDays = $startDate->diffInDays($endDate) ?: 1;
+
+        //  amounts : HT TVA TTC
+        $totalHt = round($booking->amount * 0.8, 2);
+        $tvaAmount = round($booking->amount * 0.2, 2);
+        $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : 0;
+
+        $tva = new Tva();
+        
+        $tva->booking_id = $booking->booking_id;
+        $tva->parent_id = $parentId;
+        $tva->month = $monthStart->month;
+        $tva->year = $monthStart->year;
+        $tva->facture_number = $factureNumber;
+        $tva->facture_date = $booking->created_at ?? now();
+        $tva->client_name = $driverName;
+        $tva->client_address = $driverAddress;
+        $tva->company_name = $setting['company_name'];
+        $tva->company_address = $setting['company_address'];
+        $tva->designation = $vehicleName . ' - ' . $vehicleLicensePlate;
+        $tva->quantity = $totalDays;
+        $tva->unit_price_ht = $unitPriceHt;
+        $tva->total_ht = $totalHt;
+        $tva->tva = $tvaAmount;
+        $tva->montant_ttc = $booking->amount;
+        $tva->ice_number = $setting['ice'];
+        $tva->rc_number = $setting['rc'];
+        $tva->nif_number = $setting['if'];
+        $tva->generated_date = now();
+        $tva->total_amount = $booking->amount;
+        $tva->tva_amount = $tvaAmount;
+        
+        $tva->save();
+
+        $createdCount++;
+    }
+
+    return redirect()->back()->with('success', "$createdCount TVA(s) généré pour {$monthStart->format('F Y')}");
+}
+
+
 }
