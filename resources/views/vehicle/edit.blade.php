@@ -70,6 +70,10 @@
             {{Form::file('document',array('class'=>'form-control'))}}
         </div>
         <div class="form-group col-md-6">
+            {{ Form::label('picture', __('Photo de voiture'), ['class' => 'form-label']) }}
+            {{ Form::file('picture', ['class' => 'form-control']) }}
+        </div>
+        <div class="form-group col-md-6">
             {{Form::label('notes',__('Notes'),array('class'=>'form-label')) }}
             {{Form::textarea('notes',null,array('class'=>'form-control','placeholder'=>__('Enter notes'),'rows'=>1))}}
         </div>
