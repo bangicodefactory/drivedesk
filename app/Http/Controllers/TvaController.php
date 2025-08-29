@@ -28,11 +28,11 @@ class TvaController extends Controller
         // }
         // return view('tva.index', compact('bookings'));
         if (\Auth::user()->can('manage booking')) {
-            $tvas = Tva::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
+            $tvas = Tva::where('deleted_at', '=', null)->orderBy('created_at', 'desc')->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        $query = Tva::where('parent_id', '=', parentId());
+        $query = Tva::where('deleted_at', '=', null);
         if ($request->filled('filter_day')) {
             $query->whereDate('created_at', $request->filter_day);
         }
