@@ -3,14 +3,14 @@
     <div class="container">
         <div class="car-service-wrapper">
             <div class="shape-image">
-                <img src="{{ asset('assets/img/car/shape-column.png') }}" alt="shape-img">
+                <img src="{{ asset('assets/images/client/car/shape-column.png') }}" alt="shape-img">
             </div>
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="service-car-image">
-                        <img src="{{ asset('assets/img/decor-image-contact-home.jpg') }}" alt="img">
+                        <img src="{{ asset('assets/images/client/decor-image-contact-home.jpg') }}" alt="img">
                         <div class="color-shape">
-                            <img src="{{ asset('assets/img/car/secondary-shape-color.png') }}" alt="shape-img">
+                            <img src="{{ asset('assets/images/client/car/secondary-shape-color.png') }}" alt="shape-img">
                         </div>
                     </div>
                 </div>
