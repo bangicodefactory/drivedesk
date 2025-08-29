@@ -90,21 +90,60 @@
         </div>
     </div>
     <div class="row mb-4">
-    <div class="col-md-12">
-        <form method="POST" action="{{ route('tva.generate') }}">
-            @csrf
-            <div class="d-flex gap-3 align-items-end">
-                <div>
-                    <label for="generate_month" class="form-label">{{ __('Select Month for TVA') }}</label>
-                    <input type="month" id="generate_month" name="month" class="form-control" required>
+        <div class="col-md-12">
+            <form method="POST" action="{{ route('tva.generate') }}">
+                @csrf
+                <div class="d-flex gap-3 align-items-end">
+
+                    <!-- Select year -->
+                    <div>
+                        <label for="year" class="form-label">{{ __('Année') }}</label>
+                        <select id="year" class="form-control">
+                            @for ($y = now()->year; $y >= 2000; $y--)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    <!-- Select month -->
+                    <div>
+                        <label for="month_select" class="form-label">{{ __('Mois') }}</label>
+                        <select id="month_select" class="form-control">
+                            @foreach ([
+            1 => 'Janvier',
+            2 => 'Février',
+            3 => 'Mars',
+            4 => 'Avril',
+            5 => 'Mai',
+            6 => 'Juin',
+            7 => 'Juillet',
+            8 => 'Août',
+            9 => 'Septembre',
+            10 => 'Octobre',
+            11 => 'Novembre',
+            12 => 'Décembre',
+        ] as $num => $mois)
+                                <option value="{{ str_pad($num, 2, '0', STR_PAD_LEFT) }}">{{ $mois }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Hidden combined field (YYYY-MM) -->
+                    <input type="hidden" name="month" id="month">
+
+                    <!-- Submit -->
+                    <div>
+                        <button type="submit" class="btn btn-primary mt-2">
+                            {{ __('Générer TVA') }}
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <button type="submit" class="btn btn-primary mt-2">{{ __('Generate TVA') }}</button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
+
+
+
     </div>
-</div>
 
     <div class="row">
         <div class="col-12">
@@ -237,7 +276,9 @@
                 ],
                 searching: true,
                 ordering: true,
-                order: [[0, 'desc']],
+                order: [
+                    [0, 'desc']
+                ],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
                 },
@@ -338,7 +379,7 @@
                 const toDate = $('#to_date').val();
 
                 $.fn.dataTable.ext.search.push(function(settings, data) {
-                    const rawDate = data[4]; // adjust index if needed
+                    const rawDate = data[4];
                     const parsedDate = new Date(rawDate);
 
                     if (isNaN(parsedDate)) return false;
@@ -399,6 +440,25 @@
                 });
             });
         });
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form[action*="{{ route('tva.generate') }}"]');
+            const yearSel = document.getElementById('year');
+            const monthSel = document.getElementById('month_select');
+            const hidden = document.getElementById('month');
+
+            function fillHidden() {
+                hidden.value = `${yearSel.value}-${monthSel.value}`;
+            }
+
+            // initialise once
+            fillHidden();
+
+            // keep it in sync
+            yearSel.addEventListener('change', fillHidden);
+            monthSel.addEventListener('change', fillHidden);
+
+            // make sure it is filled before submit
+            form.addEventListener('submit', fillHidden);
+        });
     </script>
-    
 @endpush
