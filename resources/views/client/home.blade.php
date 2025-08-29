@@ -14,6 +14,6 @@
     @include('client.pages.home.testimonials')
     @include('client.pages.home.gallery')
     @include('client.pages.home.news')
-    @include('client.pages.home.cta-rental')
+    {{-- @include('client.pages.home.cta-rental') --}}
     @include('client.pages.home.cta-cheap-rental')
 @endsection

@@ -15,7 +15,7 @@
                         <div class="post-date"></div>
                     </div>
                     <div class="news-content">
-                        <div class="post-client"></div>
+                        <div class="post-client"><img src="assets/images/client/news/client.png" alt="img"></div>
                         <div class="news-cont">
                             <h5><a href="#">Sample Blog Post {{ $i }}</a></h5>
                             <p>Brief description about blog post {{ $i }}.</p>
