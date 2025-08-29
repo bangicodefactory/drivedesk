@@ -14,19 +14,21 @@
         </div>
         <div class="swiper testimonial-slider">
             <div class="swiper-wrapper">
-                @foreach(range(1,3) as $i)
-                <div class="swiper-slide">
-                    <div class="testimonial-card-items">
-                        <div class="testimoni-bg-shape"></div>
-                        <div class="client-info-items d-flex align-items-center gap-3">
-                            <div class="client-thumb"><img src="{{ asset("assets/images/client/testimonial/client-$i.jpg") }}" alt="client" onerror="this.style.display='none'"></div>
-                            <div class="content">
-                                <h5>Client {{ $i }}</h5>
-                                <p>"Great rental experience!"</p>
+                @foreach (range(1, 3) as $i)
+                    <div class="swiper-slide">
+                        <div class="testimonial-card-items">
+                            <div class="testimoni-bg-shape"></div>
+                            <div class="client-info-items d-flex align-items-center gap-3">
+                                <div class="client-thumb"><img
+                                        src="{{ asset("assets/images/client/testimonial/client-$i.png") }}"
+                                        alt="client" ></div>
+                                <div class="content">
+                                    <h5>Client {{ $i }}</h5>
+                                    <p>"Great rental experience!"</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 @endforeach
             </div>
         </div>
