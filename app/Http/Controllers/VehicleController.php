@@ -50,6 +50,7 @@ class VehicleController extends Controller
                     'license_plate' => 'required',
                     'registration_expiry_date' => 'required',
                     // 'document' => 'required',
+                    'picture'=>'mimes:jpeg,png,jpg,gif,svg|max:2048',
                     'daily_rate' => 'required',
                     'year_of_ﬁrst_immatriculation' => 'required',
                     'gearbox' => 'required',
@@ -73,6 +74,19 @@ class VehicleController extends Controller
             $vehicle->registration_expiry_date = !empty($request->registration_expiry_date) ? $request->registration_expiry_date : null;
             $vehicle->license_plate = $request->license_plate;
             $vehicle->document = $request->document;
+            if (!empty($request->picture)) {
+                $pictureFilenameWithExt = $request->file('picture')->getClientOriginalName();
+                $pictureFilename = pathinfo($pictureFilenameWithExt, PATHINFO_FILENAME);
+                $pictureExtension = $request->file('picture')->getClientOriginalExtension();
+                $pictureFileName = $pictureFilename . '_' . time() . '.' . $pictureExtension;
+                $dir = storage_path('upload/picture');
+                $image_path = $dir . $pictureFilenameWithExt;
+                if (!file_exists($dir)) {
+                    mkdir($dir, 0777, true);
+                }
+                $request->file('picture')->storeAs('upload/picture/', $pictureFileName);
+                $vehicle->picture = $pictureFileName;
+            }
             $vehicle->daily_rate = $request->daily_rate;
             $vehicle->year_of_ﬁrst_immatriculation = !empty($request->year_of_ﬁrst_immatriculation) ? $request->year_of_ﬁrst_immatriculation : 0;
             $vehicle->gearbox = $request->gearbox;
@@ -214,7 +228,7 @@ class VehicleController extends Controller
         $drop_off_place = $request->drop_off_place;
         $daily_price = $request->daily_price;
 
-        
+
         if (!empty($vehicle) && !empty($start_date_time) && !empty($end_date_time)) {
             $daily_rate = !empty($vehicle->daily_rate) && ($vehicle->daily_rate > 0) ? $vehicle->daily_rate : 0;
             $data = vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
@@ -233,7 +247,7 @@ class VehicleController extends Controller
             }
 
             $data['addonAmount'] = $addonAmount;
-            
+
 
 
 
@@ -265,7 +279,7 @@ class VehicleController extends Controller
             } else {
                 $pickupPlaceAmount = 0;
             }
-    
+
             if (!empty($drop_off_place)) {
                 $dropPlaceAmount = placesRateCalculation($drop_off_place);
             } else {
@@ -275,8 +289,8 @@ class VehicleController extends Controller
 
             $data['placeAmount'] = $placeAmount;
 
-            
-            // Add daily price to view 
+
+            // Add daily price to view
             $data['daily_price'] = $daily_rate;
 
             return json_encode($data);
