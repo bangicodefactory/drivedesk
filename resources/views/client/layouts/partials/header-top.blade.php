@@ -1,15 +1,18 @@
 <!-- Header Top Section Start -->
+@php
+    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+@endphp
 <div class="header-top-section">
     <div class="container-fluid">
         <div class="header-top-wrapper">
             <ul class="contact-list">
                 <li>
                     <i class="fas fa-envelope"></i>
-                    <a href="mailto:info@example.com" class="link">info@example.com</a>
+                    <a href="mailto:{{$settings['company_email']}}" class="link">{{$settings['company_email']}}</a>
                 </li>
                 <li>
                     <i class="fas fa-map-marker-alt"></i>
-                    88 Broklyn Golden Street. New York
+                    {{$settings['company_address']}}
                 </li>
             </ul>
             <div class="header-top-right">

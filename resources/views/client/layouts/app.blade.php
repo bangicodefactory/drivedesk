@@ -11,6 +11,7 @@
                 @include('client.layouts.partials.head')
             </head>
             <body class="antialiased">
+                
                 @include('client.layouts.partials.preloader')
                 @include('client.layouts.partials.offcanvas')
                 @include('client.layouts.partials.header-top')
@@ -219,7 +220,7 @@
                                 <div class="post-date">
                                     <h6>
                                         20 <br>
-                                        Mar 
+                                        Mar
                                     </h6>
                                 </div>
                             </div>
@@ -240,7 +241,7 @@
                                     <li>
                                        <a href="news-details.html">
                                             <i class="fa-solid fa-arrow-right-long"></i>
-                                            More 
+                                            More
                                        </a>
                                     </li>
                                 </ul>
@@ -254,7 +255,7 @@
                                 <div class="post-date">
                                     <h6>
                                         26 <br>
-                                        Mar 
+                                        Mar
                                     </h6>
                                 </div>
                             </div>
@@ -275,7 +276,7 @@
                                     <li>
                                        <a href="news-details.html">
                                             <i class="fa-solid fa-arrow-right-long"></i>
-                                            More 
+                                            More
                                        </a>
                                     </li>
                                 </ul>
@@ -289,7 +290,7 @@
                                 <div class="post-date">
                                     <h6>
                                         29 <br>
-                                        Mar 
+                                        Mar
                                     </h6>
                                 </div>
                             </div>
@@ -310,7 +311,7 @@
                                     <li>
                                        <a href="news-details.html">
                                             <i class="fa-solid fa-arrow-right-long"></i>
-                                            More 
+                                            More
                                        </a>
                                     </li>
                                 </ul>
@@ -393,7 +394,7 @@
                                 <div class="footer-content">
                                     <p>
                                         66 Road Broklyn Golden Street, 600
-                                        New York, USA 
+                                        New York, USA
                                     </p>
                                     <ul class="contact-info">
                                         <li>
@@ -415,7 +416,7 @@
                                 </div>
                                 <ul class="list-items">
                                     <li>
-                                        <a href="about.html"> 
+                                        <a href="about.html">
                                             About Us
                                         </a>
                                     </li>
@@ -532,32 +533,33 @@
                 </div>
             </div>
         </footer>
-        
+
         <!--<< All JS Plugins >>-->
-        <script src="assets/js/jquery-3.7.1.min.js"></script>
+        <script src="assets/js/client/jquery-3.7.1.min.js"></script>
         <!--<< Viewport Js >>-->
-        <script src="assets/js/viewport.jquery.js"></script>
+        <script src="assets/js/client/viewport.jquery.js"></script>
         <!--<< Bootstrap Js >>-->
-        <script src="assets/js/bootstrap.bundle.min.js"></script>
+        <script src="assets/js/client/bootstrap.bundle.min.js"></script>
         <!--<< Nice Select Js >>-->
-        <script src="assets/js/jquery.nice-select.min.js"></script>
+        <script src="assets/js/client/jquery.nice-select.min.js"></script>
+
         <!--<< Waypoints Js >>-->
-        <script src="assets/js/jquery.waypoints.js"></script>
+        <script src="assets/js/client/jquery.waypoints.js"></script>
         <!--<< Counterup Js >>-->
-        <script src="assets/js/jquery.counterup.min.js"></script>
+        <script src="assets/js/client/jquery.counterup.min.js"></script>
         <!--<< Datepicker Js >>-->
-        <script src="assets/js/bootstrap-datepicker.js"></script>
+        <script src="assets/js/client/bootstrap-datepicker.js"></script>
         <!--<< Swiper Slider Js >>-->
-        <script src="assets/js/swiper-bundle.min.js"></script>
+        <script src="assets/js/client/swiper-bundle.min.js"></script>
         <!--<< MeanMenu Js >>-->
-        <script src="assets/js/jquery.meanmenu.min.js"></script>
+        <script src="assets/js/client/jquery.meanmenu.min.js"></script>
         <!--<< Magnific Popup Js >>-->
-        <script src="assets/js/jquery.magnific-popup.min.js"></script>
+        <script src="assets/js/client/jquery.magnific-popup.min.js"></script>
         <!--<< GSAP Animation Js >>-->
-        <script src="assets/js/animation.js"></script>
+        <script src="assets/js/client/animation.js"></script>
         <!--<< Wow Animation Js >>-->
-        <script src="assets/js/wow.min.js"></script>
+        <script src="assets/js/client/wow.min.js"></script>
         <!--<< Main.js >>-->
-        <script src="assets/js/main.js"></script>
+        <script src="assets/js/client/main.js"></script>
     </body>
 </html>

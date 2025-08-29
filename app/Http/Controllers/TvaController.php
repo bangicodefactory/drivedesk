@@ -341,7 +341,7 @@ class TvaController extends Controller
 public function generateMonthlyTva(Request $request)
 {
     $request->validate([
-        'month' => 'required|date_format:Y-m', 
+        'month' => 'required|date_format:Y-m',
     ]);
 
     $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
@@ -409,7 +409,7 @@ public function generateMonthlyTva(Request $request)
         $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : 0;
 
         $tva = new Tva();
-        
+
         $tva->booking_id = $booking->booking_id;
         $tva->parent_id = $parentId;
         $tva->month = $monthStart->month;
@@ -432,7 +432,7 @@ public function generateMonthlyTva(Request $request)
         $tva->generated_date = now();
         $tva->total_amount = $booking->amount;
         $tva->tva_amount = $tvaAmount;
-        
+
         $tva->save();
 
         $createdCount++;
