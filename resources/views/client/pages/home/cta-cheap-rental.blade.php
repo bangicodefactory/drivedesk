@@ -1,11 +1,15 @@
 <!-- Cta Cheap Rental Section Start -->
+@php
+    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+@endphp
 <section class="cta-cheap-rental-section">
     <div class="container">
         <div class="cta-cheap-rental">
             <div class="cta-cheap-rental-left wow fadeInUp" data-wow-delay=".3s">
                 <div class="logo-thumb">
                     <a href="{{ url('/') }}">
-                        <img src="{{ asset('assets/img/logo/white-logo.svg') }}" alt="logo-img">
+                        <img class="img-fluid" style="max-height: 100px;"
+                            src="{{ asset(Storage::url('upload/logo/' . $settings['company_logo'])) }}" alt="theme-logo">
                     </a>
                 </div>
                 <h4 class="text-white">Save big with our cheap car rental</h4>

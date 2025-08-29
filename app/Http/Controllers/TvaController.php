@@ -28,11 +28,11 @@ class TvaController extends Controller
         // }
         // return view('tva.index', compact('bookings'));
         if (\Auth::user()->can('manage booking')) {
-            $tvas = Tva::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
+            $tvas = Tva::where('deleted_at', '=', null)->orderBy('created_at', 'desc')->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        $query = Tva::where('parent_id', '=', parentId());
+        $query = Tva::where('deleted_at', '=', null);
         if ($request->filled('filter_day')) {
             $query->whereDate('created_at', $request->filter_day);
         }
@@ -341,7 +341,7 @@ class TvaController extends Controller
 public function generateMonthlyTva(Request $request)
 {
     $request->validate([
-        'month' => 'required|date_format:Y-m', 
+        'month' => 'required|date_format:Y-m',
     ]);
 
     $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
@@ -409,7 +409,7 @@ public function generateMonthlyTva(Request $request)
         $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : 0;
 
         $tva = new Tva();
-        
+
         $tva->booking_id = $booking->booking_id;
         $tva->parent_id = $parentId;
         $tva->month = $monthStart->month;
@@ -432,7 +432,7 @@ public function generateMonthlyTva(Request $request)
         $tva->generated_date = now();
         $tva->total_amount = $booking->amount;
         $tva->tva_amount = $tvaAmount;
-        
+
         $tva->save();
 
         $createdCount++;

@@ -2,6 +2,7 @@
 
 <script src="{{ asset('assets/js/client/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ asset('assets/js/client/viewport.jquery.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
 <script src="{{ asset('assets/js/client/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/js/client/jquery.nice-select.min.js') }}"></script>
 <script src="{{ asset('assets/js/client/jquery.waypoints.js') }}"></script>
