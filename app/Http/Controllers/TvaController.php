@@ -21,41 +21,35 @@ class TvaController extends Controller
     //
     public function index(Request $request)
     {
-        // if (\Auth::user()->can('manage booking')) {
-        //     $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
-        // } else {
-        //     return redirect()->back()->with('error', __('Permission Denied.'));
-        // }
-        // return view('tva.index', compact('bookings'));
-        if (\Auth::user()->can('manage booking')) {
-            $tvas = Tva::where('deleted_at', '=', null)->orderBy('created_at', 'desc')->get();
-        } else {
+        if (!\Auth::user()->can('manage booking')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        $query = Tva::where('deleted_at', '=', null);
+
+        // Base query scoped to current parent (tenant) and not soft deleted
+        $query = Tva::whereNull('deleted_at');
+        if (function_exists('parentId') && parentId()) {
+            $query->where('parent_id', parentId());
+        }
+
+        // Unified filtering on facture_date (business date) instead of created_at
+        if ($request->filled('from_date')) {
+            $query->whereDate('facture_date', '>=', $request->get('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('facture_date', '<=', $request->get('to_date'));
+        }
         if ($request->filled('filter_day')) {
-            $query->whereDate('created_at', $request->filter_day);
+            $query->whereDate('facture_date', $request->get('filter_day'));
         }
-
-        // Filter by month
         if ($request->filled('filter_month')) {
-            $query->whereMonth('created_at', $request->filter_month);
+            $query->whereMonth('facture_date', $request->get('filter_month'));
         }
-
-        // Filter by year
         if ($request->filled('filter_year')) {
-            $query->whereYear('created_at', $request->filter_year);
+            $query->whereYear('facture_date', $request->get('filter_year'));
         }
-        $perPage = $request->get('per_page', 30);
-        $tvas = $query->paginate($perPage);
 
-        $tvas->appends([
-            'filter_day' => $request->filter_day,
-            'filter_month' => $request->filter_month,
-            'filter_year' => $request->filter_year,
-            'per_page' => $perPage
-        ]);
-
+        // Retrieve all (let DataTables handle client-side paging). If dataset grows large, switch to server-side.
+        $tvas = $query->orderByDesc('facture_date')->get();
 
         return view('tva.index', compact('tvas'));
     }

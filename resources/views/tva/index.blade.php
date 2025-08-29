@@ -167,7 +167,8 @@
                     <tbody>
                         @foreach ($tvas as $tva)
                             <tr data-date="{{ $tva->facture_date->format('Y-m-d') }}">
-                                <td hidden>{{ $tva->facture_date }}</td>
+                                <!-- Hidden sortable ISO date (YYYY-MM-DD) -->
+                                <td hidden>{{ $tva->facture_date->format('Y-m-d') }}</td>
                                 <td>
                                     <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
                                 </td>
@@ -270,32 +271,20 @@
 
             var table = $('#tvaTable').DataTable({
                 pageLength: 30,
-                lengthMenu: [
-                    [10, 25, 50, 100, -1],
-                    [10, 25, 50, 100, "All"]
-                ],
+                lengthMenu: [[10,25,50,100,-1],[10,25,50,100,'All']],
                 searching: true,
                 ordering: true,
-                order: [
-                    [0, 'desc']
-                ],
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json"
-                },
-                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" + // Buttons + search
-                    "<'row'<'col-sm-12'tr>>" + // Table
-                    "<'row'<'col-sm-6'l><'col-sm-6'p>>" + // Bottom: Length + Pagination
-                    "<'row'<'col-sm-12'i>>",
-                buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
-                columnDefs: [{
-                        targets: 0,
-                        orderable: false,
-                        className: 'select-checkbox'
-                    },
-                    {
-                        targets: '_all',
-                        className: 'dt-center'
-                    }
+                order: [[0,'desc']], // hidden ISO date column
+                language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/en-GB.json" },
+                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>"+
+                     "<'row'<'col-sm-12'tr>>"+
+                     "<'row'<'col-sm-6'l><'col-sm-6'p>>"+
+                     "<'row'<'col-sm-12'i>>",
+                buttons: ['copy','csv','excel','pdf','print'],
+                columnDefs: [
+                    { targets: 0, visible: false }, // keep first column hidden
+                    { targets: 1, orderable: false }, // checkbox column
+                    { targets: '_all', className: 'dt-center' }
                 ]
             });
 
@@ -364,45 +353,10 @@
                 form.submit();
             });
 
-            function formatLocalDate(date) {
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, '0'); // getMonth is zero-based
-                const dd = String(date.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            }
-
-            function filterTable() {
-                const day = $('#filter_day').val();
-                const month = $('#filter_month').val();
-                const year = $('#filter_year').val();
-                const fromDate = $('#from_date').val();
-                const toDate = $('#to_date').val();
-
-                $.fn.dataTable.ext.search.push(function(settings, data) {
-                    const rawDate = data[4];
-                    const parsedDate = new Date(rawDate);
-
-                    if (isNaN(parsedDate)) return false;
-
-                    const rowDateStr = formatLocalDate(parsedDate);
-                    const rowYear = rowDateStr.substring(0, 4);
-                    const rowMonth = rowDateStr.substring(5, 7);
-
-                    if (day && day !== rowDateStr) return false;
-                    if (month && month !== rowMonth) return false;
-                    if (year && year !== rowYear) return false;
-                    if (fromDate && rowDateStr < fromDate) return false;
-                    if (toDate && rowDateStr > toDate) return false;
-
-                    return true;
-                });
-
-                table.draw();
-                $.fn.dataTable.ext.search.pop();
-            }
-
-
-            $('#filter_day, #filter_month, #filter_year, #from_date, #to_date').on('change', filterTable);
+            // Auto submit server-side filter form on change
+            $('#filter_day, #filter_month, #filter_year, #from_date, #to_date').on('change', function(){
+                $('#auto-filter-form').submit();
+            });
 
             // === Delete Button ===
             $(document).on('click', '.delete-btn', function(e) {
