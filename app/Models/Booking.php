@@ -33,7 +33,8 @@ class Booking extends Model
 
     protected $casts = [
         'details' => 'object',
-        'vehicle_details' => 'object',
+        // Store vehicle snapshot as associative array for easy access
+        'vehicle_details' => 'array',
     ];
 
     public static $status = [
@@ -106,9 +107,17 @@ class Booking extends Model
 
     public function vehicleDetails()
     {
-        if (is_string($this->vehicle_details)) {
-            return json_decode($this->vehicle_details) ?? (object)[];
+        $data = $this->vehicle_details;
+        if (is_string($data)) {
+            $decoded = json_decode($data, true);
+            $data = is_array($decoded) ? $decoded : [];
         }
-        return $this->vehicle_details ?? (object)[];
+        if (is_object($data)) {
+            return $data; // already object (unlikely with array cast)
+        }
+        if (is_array($data)) {
+            return (object)$data;
+        }
+        return (object)[];
     }
 }
