@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
@@ -110,7 +111,12 @@ class BookingController extends Controller
         $booking->payment_status = 'impaye';
         $booking->payment_notes = null;
         $booking->details = $request->details;
-        $booking->vehicle_details = json_encode($vehicle_detail);
+        // Store only the minimal vehicle snapshot (avoid double encoding with model cast)
+    $booking->vehicle_details = [
+            'id' => $vehicle_detail->id,
+            'name' => $vehicle_detail->name,
+            'license_plate' => $vehicle_detail->license_plate,
+        ];
         $booking->parent_id = parentId();
         $booking->daily_price_final = $request->daily_price ?? 0;
         $booking->save();
@@ -143,9 +149,10 @@ class BookingController extends Controller
         $endDate = Carbon::parse($booking->end_date);
         $totalDays = max(1, $startDate->diffInDays($endDate));
 
-        $vehicleDetails = json_decode($booking->vehicle_details, true);
-        $vehicle_name = $vehicleDetails['name'] ?? '';
-        $vehicle_license_plate = $vehicleDetails['license_plate'] ?? '';
+    // vehicle_details is cast to object in Booking model; cast to array for safe key access
+    $vehicleDetailsObj = $booking->vehicleDetails();
+    $vehicle_name = $vehicleDetailsObj->name ?? '';
+    $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
 
         $totalHT = round($booking->amount * 0.8, 2);
         $tvaAmount = round($booking->amount * 0.2, 2);
@@ -158,19 +165,19 @@ class BookingController extends Controller
         $tva->company_name = $setting['company_name'];
         $tva->company_address = $setting['company_address'];
         $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
-        $tva->quantity = $totalDays;
-        $tva->total_ht = $totalHT;
-        $tva->tva = $tvaAmount;
-        $tva->unit_price_ht = $totalDays > 0 ? round($totalHT / $totalDays, 2) : 0;
-        $tva->montant_ttc = $booking->amount;
+    $tva->quantity = (float)$totalDays;
+    $tva->total_ht = number_format($totalHT, 2, '.', '');
+    $tva->tva = number_format($tvaAmount, 2, '.', '');
+    $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
+    $tva->montant_ttc = number_format($booking->amount, 2, '.', '');
         $tva->ice_number = $setting['ice'];
         $tva->rc_number = $setting['rc'];
         $tva->nif_number = $setting['if'];
         $tva->parent_id = parentId();
         $tva->booking_id = $booking->id;
-        $tva->generated_date = now();
-        $tva->total_amount = $booking->amount;
-        $tva->tva_amount = $tvaAmount;
+    $tva->generated_date = now()->toDateString();
+    $tva->total_amount = number_format($booking->amount, 2, '.', '');
+    $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
         $tva->save();
 
         return redirect()->route('booking.show', Crypt::encrypt($booking->id))
@@ -294,7 +301,11 @@ class BookingController extends Controller
             $booking->amount = $request->amount;
             $booking->payment_notes = null;
             $booking->details = $request->details;
-            $booking->vehicle_details = json_encode($vehicle_detail);
+            $booking->vehicle_details = [
+                'id' => $vehicle_detail->id,
+                'name' => $vehicle_detail->name,
+                'license_plate' => $vehicle_detail->license_plate,
+            ];
             $booking->daily_price_final = $request->daily_price;
             $booking->save();
 
@@ -315,7 +326,11 @@ class BookingController extends Controller
                 // $tva_amount = $total_ht * $tva_rate;
                 $montant_ttc = $booking->amount;
 
-                // $tva->designation = json_decode($booking->vehicle_details)->name ?? 'N/A';
+                // Update designation if vehicle details changed
+                $vd = (array)$booking->vehicle_details;
+                $designationName = trim(($vd['name'] ?? ''));
+                $designationPlate = trim(($vd['license_plate'] ?? ''));
+                $tva->designation = trim($designationName . ( ($designationName && $designationPlate) ? ' - ' : '' ) . $designationPlate);
                 $tva->quantity = $quantity;
                 $tva->total_ht = $total_ht;
                 $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
