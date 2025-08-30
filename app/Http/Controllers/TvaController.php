@@ -341,12 +341,7 @@ public function generateMonthlyTva(Request $request)
     $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
     $monthEnd = $monthStart->copy()->endOfMonth();
 
-    $parentId = parentId();
-    if (!$parentId) {
-        return redirect()->back()->with('error', 'Parent ID not found. Please check your authentication.');
-    }
-    // dd(parentId());
-
+    // Fetch all bookings overlapping the month (using start_date range as in original logic)
     $bookings = Booking::with(['drivers', 'vehicles'])
         ->whereBetween('start_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
         ->get();
@@ -354,15 +349,12 @@ public function generateMonthlyTva(Request $request)
     $createdCount = 0;
     $setting = settings();
 
-    //  last facture number for this user(parent id)
-    $lastFacture = Tva::where('parent_id', $parentId)
-                      ->orderByDesc('id')
-                      ->first();
+    // Global last facture number (ignoring tenant scoping per new requirement)
+    $lastFacture = Tva::orderByDesc('id')->first();
     $lastNumber = 0;
     if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-        $lastNumber = (int) $matches[0];
+        $lastNumber = (int)$matches[0];
     }
-    // logic for facture number
     $factureCounter = $lastNumber;
 
     foreach ($bookings as $booking) {
@@ -370,16 +362,20 @@ public function generateMonthlyTva(Request $request)
             continue;
         }
 
-        $exists = Tva::where('booking_id', $booking->booking_id)
-                     ->where('month', $monthStart->month)
-                     ->where('year', $monthStart->year)
-                     ->exists();
-
-        if ($exists) continue;
+        // Skip if an active (not soft-deleted) TVA already exists for this booking & month
+        $exists = Tva::where('booking_id', $booking->id)
+            ->where('month', $monthStart->month)
+            ->where('year', $monthStart->year)
+            ->whereNull('deleted_at')
+            ->exists();
+        if ($exists) {
+            continue;
+        }
 
         $factureCounter++;
         $factureNumber = $factureCounter;
 
+        // Driver info
         $driverName = 'N/A';
         $driverAddress = '';
         if ($booking->drivers) {
@@ -388,24 +384,32 @@ public function generateMonthlyTva(Request $request)
             $driverAddress = $driver->address ?? '';
         }
 
-        $vehicleDetails = json_decode($booking->vehicle_details, true);
-        $vehicleName = $vehicleDetails['name'] ?? '';
-        $vehicleLicensePlate = $vehicleDetails['license_plate'] ?? '';
+        // Vehicle snapshot (cast array or legacy JSON string)
+        $vd = $booking->vehicle_details;
+        if (is_string($vd)) {
+            $decoded = json_decode($vd, true);
+            if (is_array($decoded)) { $vd = $decoded; }
+        }
+        if (!is_array($vd)) { $vd = []; }
+        $vehicleName = $vd['name'] ?? '';
+        $vehicleLicensePlate = $vd['license_plate'] ?? '';
 
-        // Quantity
+        // Rental days
         $startDate = Carbon::parse($booking->start_date);
         $endDate = Carbon::parse($booking->end_date);
         $totalDays = $startDate->diffInDays($endDate) ?: 1;
 
-        //  amounts : HT TVA TTC
+        // Financials (assuming amount = TTC and 20% TVA)
         $totalHt = round($booking->amount * 0.8, 2);
         $tvaAmount = round($booking->amount * 0.2, 2);
         $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : 0;
 
         $tva = new Tva();
-
-        $tva->booking_id = $booking->booking_id;
-        $tva->parent_id = $parentId;
+        $tva->booking_id = $booking->id;
+        // Preserve parent_id if available but no longer required for generation logic
+        if (isset($booking->parent_id)) {
+            $tva->parent_id = $booking->parent_id;
+        }
         $tva->month = $monthStart->month;
         $tva->year = $monthStart->year;
         $tva->facture_number = $factureNumber;
@@ -414,7 +418,8 @@ public function generateMonthlyTva(Request $request)
         $tva->client_address = $driverAddress;
         $tva->company_name = $setting['company_name'];
         $tva->company_address = $setting['company_address'];
-        $tva->designation = $vehicleName . ' - ' . $vehicleLicensePlate;
+        $tva->designation = trim($vehicleName . (($vehicleName && $vehicleLicensePlate) ? ' - ' : '') . $vehicleLicensePlate);
+        // Assign raw numeric values (casts will handle decimals)
         $tva->quantity = $totalDays;
         $tva->unit_price_ht = $unitPriceHt;
         $tva->total_ht = $totalHt;
@@ -426,7 +431,6 @@ public function generateMonthlyTva(Request $request)
         $tva->generated_date = now();
         $tva->total_amount = $booking->amount;
         $tva->tva_amount = $tvaAmount;
-
         $tva->save();
 
         $createdCount++;
