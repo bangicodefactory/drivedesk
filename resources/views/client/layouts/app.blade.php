@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
     <!--<< Header Area >>-->
@@ -11,7 +12,7 @@
                 @include('client.layouts.partials.head')
             </head>
             <body class="antialiased">
-                
+
                 @include('client.layouts.partials.preloader')
                 @include('client.layouts.partials.offcanvas')
                 @include('client.layouts.partials.header-top')
