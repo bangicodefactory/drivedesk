@@ -420,18 +420,44 @@ class BookingController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'amount' => 'required',
+                    'amount' => 'required|numeric',
                     'date' => 'required',
                     'payment_method' => 'required',
                 ]
             );
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
+                if ($request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => $messages->first()], 422);
+                }
                 return redirect()->back()->with('error', $messages->first());
+            }
+            // Amount must be > 0
+            $rawAmount = $request->amount;
+            // Replace potential comma decimal delimiter
+            if (is_string($rawAmount)) {
+                $rawAmount = str_replace(',', '.', $rawAmount);
+            }
+            $numericAmount = (float)$rawAmount;
+            if ($numericAmount <= 0) {
+                $msg = __('Amount 0');
+                if ($request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg)->withInput();
+            }
+            // Business rule: Cash (Espece) payments cannot exceed 5000
+            $paymentMethodNormalized = strtolower($request->payment_method);
+            if ($paymentMethodNormalized === 'espece' && $request->amount > 5000) {
+                $msg = __('Cash payments over 5000 are not allowed. Please choose another method.');
+                if ($request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg);
             }
             $payment = new BookingPayment();
             $payment->booking_id = $id;
-            $payment->amount = $request->amount;
+            $payment->amount = $numericAmount;
             $payment->date = $request->date;
             $payment->payment_method = $request->payment_method;
             $payment->notes = $request->notes;
@@ -443,7 +469,14 @@ class BookingController extends Controller
             } else {
                 $status = 'partiellement_paye';
             }
+
+
+
+            
             Booking::statusChange($booking->id, $status);
+            if ($request->ajax()) {
+                return response()->json(['status' => 'success', 'message' => __('Booking payment successfully created.')]);
+            }
             return redirect()->back()->with('success', __('Booking payment successfully created.'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
