@@ -364,8 +364,6 @@ public function generateMonthlyTva(Request $request)
 
         // Skip if an active (not soft-deleted) TVA already exists for this booking & month
         $exists = Tva::where('booking_id', $booking->id)
-            ->where('month', $monthStart->month)
-            ->where('year', $monthStart->year)
             ->whereNull('deleted_at')
             ->exists();
         if ($exists) {
