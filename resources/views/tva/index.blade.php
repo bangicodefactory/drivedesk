@@ -168,7 +168,7 @@
                         @foreach ($tvas as $tva)
                             <tr data-date="{{ $tva->facture_date->format('Y-m-d') }}">
                                 <!-- Hidden sortable ISO date (YYYY-MM-DD) -->
-                                <td hidden>{{ $tva->facture_date->format('Y-m-d') }}</td>
+                                <td hidden>{{ $tva->created_at }}</td>
                                 <td>
                                     <input type="checkbox" name="invoice_ids[]" value="{{ $tva->id }}" />
                                 </td>
