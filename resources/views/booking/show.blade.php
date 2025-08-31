@@ -23,7 +23,8 @@
     </ul>
 @endsection
 @section('card-action-btn')
-    @if (Gate::check('create booking payment') && $booking->payment_status != 'paid')
+    {{-- Use correct payment status key (paye) & show payment button only if not fully paid --}}
+    @if (Gate::check('create booking payment') && $booking->payment_status != 'paye')
         <a class="btn btn-warning btn-sm ml-5 customModal" href="#" data-size="md"
             data-url="{{ route('booking.payment.create', $booking->id) }}" data-title="{{ __('Create Payment') }}"> <i
                 class="ti-credit-card mr-5"></i>
@@ -146,23 +147,36 @@
                                         </thead>
                                         <tbody>
                                             @php
-                                                $details = !empty($booking->details)
-                                                    ? json_decode($booking->details)
-                                                    : [];
-
+                                                // Normalize details to an object to avoid property access errors
+                                                $detailsRaw = $booking->details;
+                                                if (is_string($detailsRaw)) {
+                                                    $decoded = json_decode($detailsRaw);
+                                                    $detailsRaw = $decoded !== null ? $decoded : (object)[];
+                                                }
+                                                if (is_array($detailsRaw)) {
+                                                    $detailsRaw = (object)$detailsRaw; // cast array to object
+                                                }
+                                                if (empty($detailsRaw)) {
+                                                    $detailsRaw = (object)[];
+                                                }
+                                                $details = $detailsRaw;
                                             @endphp
                                             <tr>
                                                 <td>{{ __('Duration') }}</td>
                                                 <td>
-                                                    @if (isset($details->totalDays) && $details->totalDays > 0)
-                                                        {{ $details->totalDays }} {{ __('Days') }}
-                                                    @endif
-                                                    @if (isset($details->totalHours) && $details->totalHours > 0)
-                                                        ,{{ $details->totalHours }} {{ __('Hours') }}
-                                                    @endif
-                                                    @if (isset($details->totalMinuts) && $details->totalMinuts > 0)
-                                                        ,{{ $details->totalMinuts }} {{ __('Minuts') }}
-                                                    @endif
+                                                    @php
+                                                        $parts = [];
+                                                        if (property_exists($details, 'totalDays') && $details->totalDays > 0) {
+                                                            $parts[] = $details->totalDays . ' ' . __('Days');
+                                                        }
+                                                        if (property_exists($details, 'totalHours') && $details->totalHours > 0) {
+                                                            $parts[] = $details->totalHours . ' ' . __('Hours');
+                                                        }
+                                                        if (property_exists($details, 'totalMinuts') && $details->totalMinuts > 0) {
+                                                            $parts[] = $details->totalMinuts . ' ' . __('Minuts');
+                                                        }
+                                                    @endphp
+                                                    {{ implode(', ', $parts) }}
                                                 </td>
                                             </tr>
                                             @if (!empty($booking->addon))
@@ -177,13 +191,29 @@
                                             @endif
                                             <tr>
                                                 <td>{{ __('Pickup Address') }}</td>
-                                                <td>{{ !empty($booking->pickupAddress) ? $booking->pickupAddress->name : '-' }}
-                                                    ({{ priceFormat($booking->pickupAddress->price) }})</td>
+                                                <td>
+                                                    @if($booking->pickupAddress)
+                                                        {{ $booking->pickupAddress->name }}
+                                                        @if(isset($booking->pickupAddress->price))
+                                                            ({{ priceFormat($booking->pickupAddress->price) }})
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>{{ __('Drop Off Address') }}</td>
-                                                <td>{{ !empty($booking->dropOffAddress) ? $booking->dropOffAddress->name : '-' }}
-                                                    ({{ priceFormat($booking->dropOffAddress->price) }})</td>
+                                                <td>
+                                                    @if($booking->dropOffAddress)
+                                                        {{ $booking->dropOffAddress->name }}
+                                                        @if(isset($booking->dropOffAddress->price))
+                                                            ({{ priceFormat($booking->dropOffAddress->price) }})
+                                                        @endif
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
                                             </tr>
                                             {{-- <tr>
                                                 <td>{{ __('Status') }}</td>
