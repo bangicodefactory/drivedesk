@@ -37,8 +37,8 @@
                             <h6><a href="tel:{{$settings['company_phone']}}">{{$settings['company_phone']}}</a></h6>
                         </div>
                     </div>
-                    <a href="#0" class="search-trigger search-icon"><i
-                            class="fa fa-magnifying-glass"></i></a>
+                    {{-- <a href="#0" class="search-trigger search-icon"><i
+                            class="fa fa-magnifying-glass"></i></a> --}}
                     <div class="header-button">
                         <a href="#" class="header-btn">Find a Car</a>
                     </div>

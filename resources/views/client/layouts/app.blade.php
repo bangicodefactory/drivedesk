@@ -25,7 +25,7 @@
                 @include('client.layouts.partials.footer')
                 @include('client.layouts.partials.scripts')
             </body>
-        </html>
+        {{-- </html>
                                     </div>
                                 </div>
                                 <div class="client-info-items d-flex align-items-center gap-3">
@@ -533,7 +533,7 @@
                     </div>
                 </div>
             </div>
-        </footer>
+        </footer> --}}
 
         <!--<< All JS Plugins >>-->
         <script src="assets/js/client/jquery-3.7.1.min.js"></script>

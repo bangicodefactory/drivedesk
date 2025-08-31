@@ -1,6 +1,12 @@
 <!-- Funfact Section Start -->
-<section class="funfact-section section-padding bg-cover" style="background-image: url('{{ asset('assets/images/client/funfact-bg.jpg') }}');">
-    <div class="container">
+<section class="funfact-section section-padding bg-cover position-relative"
+         style="background-image: url('{{ asset('assets/images/client/funfact-bg.jpg') }}'); background-size: cover; background-position: top center;">
+
+    <!-- Red overlay with opacity -->
+    <div style="position: absolute; top:0; left:0; width:100%; height:100%; background-color: rgba(255,0,0,0.5); z-index:1;"></div>
+
+    <!-- Content above overlay -->
+    <div class="container position-relative" style="z-index:2;">
         <div class="funfact-wrapper">
             <div class="row g-4 align-items-center">
                 <div class="col-lg-6">
@@ -13,9 +19,9 @@
                 <div class="col-lg-6">
                     <div class="funfact-counter-area">
                         @foreach([
-                            ['count'=>120,'label'=>'Cars Available'],
-                            ['count'=>450,'label'=>'Happy Clients'],
-                            ['count'=>25,'label'=>'Awards Won']
+                            ['count'=>50,'label'=>'Cars Available'],
+                            ['count'=>800,'label'=>'Happy Clients'],
+                            ['count'=>7,'label'=>'Years of Service']
                         ] as $idx=>$fact)
                         <div class="funfact-items wow fadeInUp" data-wow-delay=".{{ 3 + $idx*2 }}s">
                             <h2 class="text-white"><span class="count">{{ $fact['count'] }}</span>+</h2>
@@ -27,4 +33,5 @@
             </div>
         </div>
     </div>
+
 </section>
