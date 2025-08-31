@@ -655,14 +655,29 @@ class SettingController extends Controller
 
     //    ---------------------- Language --------------------------------------------------------
 
-    public function lanquageChange($lang)
+    public function languageChange($lang)
     {
-        $user = \Auth::user();
-        $user->lang = $lang;
-        $user->save();
+        // Debug: Log that the method is being called
+        \Log::info('Language change called with: ' . $lang);
+        \Log::info('User authenticated: ' . (\Auth::check() ? 'Yes' : 'No'));
+
+        if (\Auth::check()) {
+            $user = \Auth::user();
+            $user->lang = $lang;
+            $user->save();
+            session(['locale' => $lang]);
+            \Log::info('Language saved for user: ' . $user->id);
+        } else {
+            session(['locale' => $lang]);
+            \Log::info('Language saved in session for guest');
+        }
+
+        app()->setLocale($lang);
+        \Log::info('App locale set to: ' . app()->getLocale());
 
         return redirect()->back()->with('success', __('Language successfully changed.'));
     }
+
 
     public function themeSettings(Request $request)
     {

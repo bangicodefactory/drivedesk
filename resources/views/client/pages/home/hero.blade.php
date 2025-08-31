@@ -1,29 +1,20 @@
-<!-- Hero Section Start -->
 @php
-    $languages = \App\Models\Custom::languages();
     $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
 
-    $displayLanguages = [
-        'ar' => 'Arabic',
-        'fr' => 'French',
-        'en' => 'English',
-    ];
-
-    // Hero slides with fallback images and text
     $heroSlides = [
         [
             'image' => Storage::exists('upload/home/' . ($settings['image_home_1'] ?? ''))
                 ? Storage::url('upload/home/' . $settings['image_home_1'])
                 : asset('assets/images/client/hero/default-hero-1.jpg'),
-            'subtitle' => 'Book Any Luxury Car at Low Price',
-            'title' => 'Car <span>Rental</span>',
+            'subtitle' => __('subtitle_1'),
+            'title' => __('title_1'),
         ],
         [
             'image' => Storage::exists('upload/home/' . ($settings['image_home_2'] ?? ''))
                 ? Storage::url('upload/home/' . $settings['image_home_2'])
                 : asset('assets/images/client/hero/default-hero-2.jpg'),
-            'subtitle' => 'Book Any Luxury Car at Low Price',
-            'title' => 'Car <span>Rental</span>',
+            'subtitle' => __('subtitle_2'),
+            'title' => __('title_2'),
         ],
     ];
 @endphp
@@ -68,4 +59,3 @@
         </div>
     </div>
 </section>
-<!-- Hero Section End -->

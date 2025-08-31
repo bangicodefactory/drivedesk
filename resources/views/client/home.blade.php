@@ -1,6 +1,6 @@
 @extends('client.layouts.app')
 
-@section('title','Home | Remons Rental')
+@section('title','Home ')
 
 @section('content')
     @include('client.pages.home.hero')
