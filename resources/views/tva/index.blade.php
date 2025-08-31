@@ -156,6 +156,7 @@
                             <th hidden>id</th>
                             <th><input type="checkbox" id="select-all" /></th>
                             <th>{{ __('Facture N°') }}</th>
+                            <th>{{ __('Booking ID') }}
                             <th>{{ __('Designation') }}</th>
                             <th>{{ __('Date') }}</th>
                             <th>{{ __('TTC') }}</th>
@@ -181,6 +182,13 @@
                                 <td>
                                     @if (isset($tva->facture_number))
                                         {{ $tva->facture_number }}
+                                    @else
+                                        {{ __('N/A') }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($tva->booking && isset($tva->booking->booking_id))
+                                        {{ bookingPrefix() . $tva->booking->booking_id }}
                                     @else
                                         {{ __('N/A') }}
                                     @endif
