@@ -145,52 +145,52 @@ class BookingController extends Controller
         }
 
         // 🔹 TVA Calculation
-        $startDate = Carbon::parse($booking->start_date);
-        $endDate = Carbon::parse($booking->end_date);
-        $totalDays = max(1, $startDate->diffInDays($endDate));
+        // $startDate = Carbon::parse($booking->start_date);
+        // $endDate = Carbon::parse($booking->end_date);
+        // $totalDays = max(1, $startDate->diffInDays($endDate));
 
-        // vehicle_details is cast to object in Booking model; cast to array for safe key access
-        $vehicleDetailsObj = $booking->vehicleDetails();
-        $vehicle_name = $vehicleDetailsObj->name ?? '';
-        $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
+        // // vehicle_details is cast to object in Booking model; cast to array for safe key access
+        // $vehicleDetailsObj = $booking->vehicleDetails();
+        // $vehicle_name = $vehicleDetailsObj->name ?? '';
+        // $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
 
-        $totalHT = round($booking->amount * 0.8, 2);
-        $tvaAmount = round($booking->amount * 0.2, 2);
-
-
-        // Global last facture number (ignoring tenant scoping per new requirement)
-        $lastFacture = Tva::orderByDesc('id')->first();
-        $lastNumber = 0;
-        if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-            $lastNumber = (int)$matches[0];
-        }
-        $factureCounter = $lastNumber;
-        $factureCounter++;
-        $factureNumber = $factureCounter;
+        // $totalHT = round($booking->amount * 0.8, 2);
+        // $tvaAmount = round($booking->amount * 0.2, 2);
 
 
-        $tva = new Tva();
-        $tva->facture_number = $factureNumber;
-        $tva->facture_date = $booking->created_at;
-        $tva->client_name = $user->name;
-        $tva->client_address = $driver1 ? $driver1->address : '';
-        $tva->company_name = $setting['company_name'];
-        $tva->company_address = $setting['company_address'];
-        $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
-        $tva->quantity = (float)$totalDays;
-        $tva->total_ht = number_format($totalHT, 2, '.', '');
-        $tva->tva = number_format($tvaAmount, 2, '.', '');
-        $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
-        $tva->montant_ttc = number_format($booking->amount, 2, '.', '');
-        $tva->ice_number = $setting['ice'];
-        $tva->rc_number = $setting['rc'];
-        $tva->nif_number = $setting['if'];
-        $tva->parent_id = parentId();
-        $tva->booking_id = $booking->id;
-        $tva->generated_date = now()->toDateString();
-        $tva->total_amount = number_format($booking->amount, 2, '.', '');
-        $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
-        $tva->save();
+        // // Global last facture number (ignoring tenant scoping per new requirement)
+        // $lastFacture = Tva::orderByDesc('id')->first();
+        // $lastNumber = 0;
+        // if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+        //     $lastNumber = (int)$matches[0];
+        // }
+        // $factureCounter = $lastNumber;
+        // $factureCounter++;
+        // $factureNumber = $factureCounter;
+
+
+        // $tva = new Tva();
+        // $tva->facture_number = $factureNumber;
+        // $tva->facture_date = $booking->created_at;
+        // $tva->client_name = $user->name;
+        // $tva->client_address = $driver1 ? $driver1->address : '';
+        // $tva->company_name = $setting['company_name'];
+        // $tva->company_address = $setting['company_address'];
+        // $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
+        // $tva->quantity = (float)$totalDays;
+        // $tva->total_ht = number_format($totalHT, 2, '.', '');
+        // $tva->tva = number_format($tvaAmount, 2, '.', '');
+        // $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
+        // $tva->montant_ttc = number_format($booking->amount, 2, '.', '');
+        // $tva->ice_number = $setting['ice'];
+        // $tva->rc_number = $setting['rc'];
+        // $tva->nif_number = $setting['if'];
+        // $tva->parent_id = parentId();
+        // $tva->booking_id = $booking->id;
+        // $tva->generated_date = now()->toDateString();
+        // $tva->total_amount = number_format($booking->amount, 2, '.', '');
+        // $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+        // $tva->save();
 
         return redirect()->route('booking.show', Crypt::encrypt($booking->id))
             ->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
@@ -322,37 +322,37 @@ class BookingController extends Controller
             $booking->save();
 
             //update dynamic with tva section
-            $tva = Tva::where('booking_id', $booking->id)->first();
-            if ($tva) {
-                // Get totalDays from details object (now automatically cast from JSON)
-                $details = $booking->details;
-                // If it's a string (from request), decode it
-                if (is_string($details)) {
-                    $details = json_decode($details);
-                }
+            // $tva = Tva::where('booking_id', $booking->id)->first();
+            // if ($tva) {
+            //     // Get totalDays from details object (now automatically cast from JSON)
+            //     $details = $booking->details;
+            //     // If it's a string (from request), decode it
+            //     if (is_string($details)) {
+            //         $details = json_decode($details);
+            //     }
 
-                $quantity = isset($details->totalDays) ? $details->totalDays : 1;
-                $unit_price_ht = $booking->daily_price_final * 0.8;
-                $total_ht = $booking->amount * 0.8; // Assuming amount is total TTC, calculate HT
-                $tva_rate = 0.20; // 20%
-                // $tva_amount = $total_ht * $tva_rate;
-                $montant_ttc = $booking->amount;
+            //     $quantity = isset($details->totalDays) ? $details->totalDays : 1;
+            //     $unit_price_ht = $booking->daily_price_final * 0.8;
+            //     $total_ht = $booking->amount * 0.8; // Assuming amount is total TTC, calculate HT
+            //     $tva_rate = 0.20; // 20%
+            //     // $tva_amount = $total_ht * $tva_rate;
+            //     $montant_ttc = $booking->amount;
 
-                // Update designation if vehicle details changed
-                $vd = (array)$booking->vehicle_details;
-                $designationName = trim(($vd['name'] ?? ''));
-                $designationPlate = trim(($vd['license_plate'] ?? ''));
-                $tva->designation = trim($designationName . (($designationName && $designationPlate) ? ' - ' : '') . $designationPlate);
-                $tva->quantity = $quantity;
-                $tva->total_ht = $total_ht;
-                $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
-                $tva->tva = $montant_ttc * 0.2; // Assuming 20% TVA
-                $tva->montant_ttc = $montant_ttc;
-                $tva->total_amount = $montant_ttc;
-                $tva->tva_amount = $montant_ttc * 0.2;
-                $tva->updated_at = now();
-                $tva->save();
-            }
+            //     // Update designation if vehicle details changed
+            //     $vd = (array)$booking->vehicle_details;
+            //     $designationName = trim(($vd['name'] ?? ''));
+            //     $designationPlate = trim(($vd['license_plate'] ?? ''));
+            //     $tva->designation = trim($designationName . (($designationName && $designationPlate) ? ' - ' : '') . $designationPlate);
+            //     $tva->quantity = $quantity;
+            //     $tva->total_ht = $total_ht;
+            //     $tva->unit_price_ht = $tva->quantity > 0 ? round($tva->total_ht / $tva->quantity, 2) : 0;
+            //     $tva->tva = $montant_ttc * 0.2; // Assuming 20% TVA
+            //     $tva->montant_ttc = $montant_ttc;
+            //     $tva->total_amount = $montant_ttc;
+            //     $tva->tva_amount = $montant_ttc * 0.2;
+            //     $tva->updated_at = now();
+            //     $tva->save();
+            // }
 
 
             if ($bookingStatus) {
@@ -470,9 +470,62 @@ class BookingController extends Controller
                 $status = 'partiellement_paye';
             }
 
+            // 🔹 Call Settings table
+            $setting = settings();
+            // 🔹 User & driver
+            $user = User::find($booking->driver);
+            $driver1 = Driver::where('user_id', $booking->driver)->first();
+            // 🔹 TVA Calculation. 🔹
+            $startDate = Carbon::parse($booking->start_date);
+            $endDate = Carbon::parse($booking->end_date);
+            $totalDays = max(1, $startDate->diffInDays($endDate));
+
+            // vehicle_details is cast to object in Booking model; cast to array for safe key access
+            $vehicleDetailsObj = $booking->vehicleDetails();
+            $vehicle_name = $vehicleDetailsObj->name ?? '';
+            $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
+
+            $totalHT = round($numericAmount * 0.8, 2);
+            $tvaAmount = round($numericAmount * 0.2, 2);
 
 
-            
+            // Global last facture number (ignoring tenant scoping per new requirement)
+            $lastFacture = Tva::orderByDesc('id')->first();
+            $lastNumber = 0;
+            if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+                $lastNumber = (int)$matches[0];
+            }
+            $factureCounter = $lastNumber;
+            $factureCounter++;
+            $factureNumber = $factureCounter;
+
+
+            $tva = new Tva();
+            $tva->facture_number = $factureNumber;
+            $tva->facture_date = $request->date;
+            $tva->idpaiment = $payment->id;
+            $tva->client_name = $user->name;
+            $tva->client_address = $driver1 ? $driver1->address : '';
+            $tva->company_name = $setting['company_name'];
+            $tva->company_address = $setting['company_address'];
+            $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
+            $tva->quantity = (float)$totalDays;
+            $tva->total_ht = number_format($totalHT, 2, '.', '');
+            $tva->tva = number_format($tvaAmount, 2, '.', '');
+            $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
+            $tva->montant_ttc = number_format($numericAmount, 2, '.', '');
+            $tva->ice_number = $setting['ice'];
+            $tva->rc_number = $setting['rc'];
+            $tva->nif_number = $setting['if'];
+            $tva->parent_id = parentId();
+            $tva->booking_id = $booking->id;
+            $tva->generated_date = now()->toDateString();
+            $tva->total_amount = number_format($booking->amount, 2, '.', '');
+            $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+            $tva->save();
+
+
+
             Booking::statusChange($booking->id, $status);
             if ($request->ajax()) {
                 return response()->json(['status' => 'success', 'message' => __('Booking payment successfully created.')]);
@@ -487,7 +540,11 @@ class BookingController extends Controller
     {
         if (\Auth::user()->can('delete booking payment')) {
             $payment = BookingPayment::find($id);
-            $payment->delete();
+            if ($payment) {
+                // Delete linked TVA records created for this payment via idpaiment
+                Tva::where('idpaiment', $payment->id)->delete();
+                $payment->delete();
+            }
 
             $bookinmg = Booking::find($booking_id);
             if ($bookinmg->getTotalDueAmount() <= 0) {
