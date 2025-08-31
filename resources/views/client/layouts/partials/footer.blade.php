@@ -1,3 +1,7 @@
+@php
+    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+
+@endphp
 <footer class="footer-section fix">
     <div class="container">
         <div class="footer-widgets-wrapper">
@@ -9,17 +13,16 @@
                         </div>
                         <div class="footer-content">
                             <p>
-                                66 Road Broklyn Golden Street, 600
-                                New York, USA
+                                {{ $settings['company_address'] ?? '123 Street, City, Country' }}
                             </p>
                             <ul class="contact-info">
                                 <li>
                                     <i class="fa-regular fa-envelope"></i>
-                                    <a href="mailto:needhelp@company.com">needhelp@company.com</a>
+                                    <a href="mailto:{{$settings['company_email']}}">{{$settings['company_email']}}</a>
                                 </li>
                                 <li>
                                     <i class="fa-solid fa-phone-volume"></i>
-                                    <a href="tel:926668880000">+92 (666) 888 0000</a>
+                                    <a href="tel:{{$settings['company_phone']}}">{{$settings['company_phone']}}</a>
                                 </li>
                             </ul>
                         </div>
@@ -48,7 +51,7 @@
                             </li>
                             <li>
                                 <a href="{{ url('/blog') }}">
-                                    Latest News
+                                    Latest Instagram posts
                                 </a>
                             </li>
                             <li>
