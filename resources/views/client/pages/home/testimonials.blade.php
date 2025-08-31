@@ -1,4 +1,3 @@
-<!-- Testimonial Section Start -->
 <section class="testimonial-section fix section-padding">
     <div class="testimonial-bg-shape">
         <img src="{{ asset('assets/images/client/testimonial/testimonial-bg.jpg') }}" alt="shape-img">
@@ -7,13 +6,11 @@
         <div class="section-title-area">
             <div class="section-title">
                 <img src="{{ asset('assets/images/client/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
-                <span class="wow fadeInUp" data-wow-delay=".2s">our testimonials</span>
-                <h2 class="wow fadeInUp" data-wow-delay=".4s">What They're Talking <br> About Direct Onderweg</h2>
+                <span class="wow fadeInUp" data-wow-delay=".2s">{{ __('testimonial_section_label') }}</span>
+                <h2 class="wow fadeInUp" data-wow-delay=".4s">{!! __('testimonial_heading') !!}</h2>
             </div>
             <p class="wow fadeInUp" data-wow-delay=".5s">
-                Hear from our valued clients who have experienced our commitment to quality and service.
-                Their stories reflect the trust, satisfaction, and long-lasting relationships we build every day at
-                Direct Onderweg.
+                {{ __('testimonial_description') }}
             </p>
         </div>
 
@@ -23,35 +20,31 @@
                     $testimonials = [
                         [
                             'name' => 'Jessica Brown',
-                            'role' => 'Customer',
+                            'role' => __('testimonial_customer'),
                             'image' => 'client-1.png',
                             'rating' => 4,
-                            'text' =>
-                                'I was very impressed by the remons service lorem ipsum is simply free text used by copy typing refreshing. Neque porro est qui dolorem ipsum quia.',
+                            'text' => __('testimonial_text_1'),
                         ],
                         [
                             'name' => 'Kevin Martin',
-                            'role' => 'Customer',
+                            'role' => __('testimonial_customer'),
                             'image' => 'client-2.png',
                             'rating' => 5,
-                            'text' =>
-                                'I was very impressed by the remons service lorem ipsum is simply free text used by copy typing refreshing. Neque porro est qui dolorem ipsum quia.',
+                            'text' => __('testimonial_text_2'),
                         ],
                         [
                             'name' => 'Jessica Brown',
-                            'role' => 'Customer',
+                            'role' => __('testimonial_customer'),
                             'image' => 'client-3.png',
                             'rating' => 5,
-                            'text' =>
-                                'I was very impressed by the remons service lorem ipsum is simply free text used by copy typing refreshing. Neque porro est qui dolorem ipsum quia.',
+                            'text' => __('testimonial_text_3'),
                         ],
                         [
                             'name' => 'Michael Johnson',
-                            'role' => 'Customer',
+                            'role' => __('testimonial_customer'),
                             'image' => 'client-4.png',
                             'rating' => 4,
-                            'text' =>
-                                'I was very impressed by the remons service lorem ipsum is simply free text used by copy typing refreshing. Neque porro est qui dolorem ipsum quia.',
+                            'text' => __('testimonial_text_4'),
                         ],
                     ];
                 @endphp

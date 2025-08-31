@@ -1,20 +1,20 @@
 @php
     $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
-
 @endphp
+
 <footer class="footer-section fix">
     <div class="container">
         <div class="footer-widgets-wrapper">
             <div class="row justify-content-between">
+
+                <!-- Contact -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
                     <div class="single-footer-widget shape-map">
                         <div class="widget-head">
-                            <h4>Contact</h4>
+                            <h4>{{ __('footer_contact') }}</h4>
                         </div>
                         <div class="footer-content">
-                            <p>
-                                {{ $settings['company_address'] ?? '123 Street, City, Country' }}
-                            </p>
+                            <p>{{ $settings['company_address'] ?? '123 Street, City, Country' }}</p>
                             <ul class="contact-info">
                                 <li>
                                     <i class="fa-regular fa-envelope"></i>
@@ -28,112 +28,56 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Quick Links -->
                 <div class="col-xl-2 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h4>Quick Links</h4>
+                            <h4>{{ __('footer_quick_links') }}</h4>
                         </div>
                         <ul class="list-items">
-                            <li>
-                                <a href="{{ url('/') }}">
-                                    Home
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/cars') }}">
-                                    Our Cars
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/about') }}">
-                                    About Us
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/blog') }}">
-                                    Latest Instagram posts
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ url('/contact') }}">
-                                    Contact
-                                </a>
-                            </li>
+                            <li><a href="{{ url('/') }}">{{ __('footer_home') }}</a></li>
+                            <li><a href="{{ url('/cars') }}">{{ __('footer_cars') }}</a></li>
+                            <li><a href="{{ url('/about') }}">{{ __('footer_about') }}</a></li>
+                            <li><a href="{{ url('/blog') }}">{{ __('footer_blog') }}</a></li>
+                            <li><a href="{{ url('/contact') }}">{{ __('footer_contact_us') }}</a></li>
                         </ul>
                     </div>
                 </div>
+
+                <!-- Gallery -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h4>Gallery</h4>
+                            <h4>{{ __('footer_gallery') }}</h4>
                         </div>
                         <div class="footer-gallery">
                             <div class="gallery-wrap">
-                                <div class="gallery-item">
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-1.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-1.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
+                                @for ($i = 1; $i <= 6; $i++)
+                                    <div class="gallery-item">
+                                        <div class="thumb">
+                                            <a href="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" class="img-popup">
+                                                <img src="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" alt="gallery-img">
+                                                <div class="icon"><i class="far fa-plus"></i></div>
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-2.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-2.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-3.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-3.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="gallery-item">
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-4.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-4.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-5.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-5.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="thumb">
-                                        <a href="{{ asset('assets/images/client/footer/gallery-6.jpg') }}" class="img-popup">
-                                            <img src="{{ asset('assets/images/client/footer/gallery-6.jpg') }}" alt="gallery-img">
-                                            <div class="icon">
-                                                <i class="far fa-plus"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </div>
+                                @endfor
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Newsletter -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h4>Newsletter</h4>
+                            <h4>{{ __('footer_newsletter') }}</h4>
                         </div>
                         <div class="footer-content">
-                            <p>Subscribe our newsletter to get our latest update & news</p>
+                            <p>{{ __('footer_newsletter_text') }}</p>
                             <div class="footer-input">
-                                <input type="email" id="email2" placeholder="Email address">
+                                <input type="email" id="email2" placeholder="{{ __('footer_email_placeholder') }}">
                                 <button class="newsletter-btn" type="submit">
                                     <i class="fa-regular fa-paper-plane"></i>
                                 </button>
@@ -141,12 +85,15 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
+
+        <!-- Footer Bottom -->
         <div class="footer-bottom">
             <div class="footer-wrapper">
                 <p class="wow fadeInUp" data-wow-delay=".4s">
-                    © Copyright {{ date('Y') }} by <a href="{{ url('/') }}">Remons.com</a>
+                    © {{ date('Y') }} {{ __('footer_copyright') }} <a href="{{ url('/') }}">{{ $settings['company_name'] ?? 'Remons.com' }}</a>
                 </p>
             </div>
         </div>

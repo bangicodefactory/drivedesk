@@ -3,13 +3,12 @@
     $vehicles = \App\Models\Vehicle::all();
 @endphp
 
-
 <section class="car-rentals-section section-padding fix">
     <div class="container">
         <div class="section-title text-center">
             <img src="{{ asset('assets/images/client/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
-            <span class="wow fadeInUp" data-wow-delay=".2s">Checkout our cars</span>
-            <h2 class="wow fadeInUp" data-wow-delay=".4s">Cars We're Offering <br> for Rentals</h2>
+            <span class="wow fadeInUp" data-wow-delay=".2s">{{ __('car_rentals_subtitle') }}</span>
+            <h2 class="wow fadeInUp" data-wow-delay=".4s">{{ __('car_rentals_title') }}</h2>
         </div>
     </div>
 
@@ -26,7 +25,7 @@
                                     alt="{{ $vehicle->name }}" class="car-image">
 
                                 <div class="model-badge">
-                                    <span class="badge"> {{ $vehicle->model }} Model</span>
+                                    <span class="badge">{{ __('car_model') }} {{ $vehicle->model }}</span>
                                 </div>
                             </div>
                             <div class="car-content">
@@ -38,48 +37,42 @@
                                         <i class="fas fa-star"></i>
                                         <i class="fas fa-star"></i>
                                     </div>
-                                    <span class="review-count">2 Reviews</span>
+                                    <span class="review-count">2 {{ __('car_reviews') }}</span>
                                 </div>
                                 <h4 class="car-title">
                                     <a href="#">{{ $vehicle->name }} {{ $vehicle->model }}</a>
                                 </h4>
                                 <div class="price-section">
                                     <span class="price">${{ number_format($vehicle->daily_rate, 2) }}</span>
-                                    <span class="period">/ Day</span>
+                                    <span class="period">/ {{ __('car_per_day') }}</span>
                                 </div>
                                 <div class="car-specifications">
                                     <div class="spec-row">
                                         <div class="spec-item">
                                             <i class="fas fa-users spec-icon"></i>
-                                            <span>{{ $vehicle->number_of_seats ?? '6' }} Seats</span>
+                                            <span>{{ $vehicle->number_of_seats ?? '6' }} {{ __('car_seats') }}</span>
                                         </div>
                                         <div class="spec-item">
                                             <i class="fas fa-cog spec-icon"></i>
-                                            <span>{{ $vehicle->gearbox ?? 'Automatic' }}</span>
+                                            <span>{{ $vehicle->gearbox ?? __('car_automatic') }}</span>
                                         </div>
                                     </div>
                                     <div class="spec-row">
                                         <div class="spec-item">
                                             <i class="fas fa-door-open spec-icon"></i>
-                                            <span>{{ $vehicle->doors ?? '4' }} Doors</span>
+                                            <span>{{ $vehicle->doors ?? '4' }} {{ __('car_doors') }}</span>
                                         </div>
                                         <div class="spec-item">
                                             <i class="fas fa-gas-pump spec-icon"></i>
-                                            <span>{{ $vehicle->fuel_type ?? 'Petrol' }}</span>
+                                            <span>{{ $vehicle->fuel_type ?? __('car_petrol') }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="book-button">
-                                    {{-- @if ($vehicle->status === 'available') --}}
                                     <a href="{{ route('booking.create', $vehicle->id) }}"
                                         class="theme-btn bg-color w-100 text-center">
-                                        Book Now <i class="fas fa-arrow-right"></i>
+                                        {{ __('car_book_now') }} <i class="fas fa-arrow-right"></i>
                                     </a>
-                                    {{-- @else
-                                        <button class="btn-book-now disabled" disabled>
-                                            Not Available
-                                        </button>
-                                    @endif --}}
                                 </div>
                             </div>
                         </div>
@@ -175,7 +168,6 @@
         }
     }
 
-    /* keep the rest of your original styles below */
     .swiper-slide {
         padding: 20px;
     }
@@ -326,54 +318,6 @@
         width: 16px;
     }
 
-    /* .book-button {
-        margin-top: auto;
-    }
-
-    .btn-book-now {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all .3s ease;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .btn-book-now:hover {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-        transform: translateY(-1px);
-        color: white;
-        text-decoration: none;
-    }
-
-    .btn-book-now.disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-    }
-
-    .btn-book-now.disabled:hover {
-        transform: none;
-        background: #9ca3af;
-    }
-
-    .btn-book-now i {
-        font-size: 12px;
-        transition: transform .3s ease;
-    }
-
-    .btn-book-now:hover i {
-        transform: translateX(3px);
-    } */
-
     @media (max-width: 768px) {
         .spec-row {
             flex-direction: column;
@@ -385,24 +329,3 @@
         }
     }
 </style>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const swiper = new Swiper('.car-rentals-slider', {
-            loop: true,
-            spaceBetween: 30,
-            slidesPerView: 1,
-            breakpoints: {
-                640: {
-                    slidesPerView: 2,
-                },
-                1024: {
-                    slidesPerView: 3,
-                },
-            },
-            navigation: {
-                nextEl: '.testimonial-next',
-                prevEl: '.testimonial-prev',
-            },
-        });
-    });
-</script>

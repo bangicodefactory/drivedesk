@@ -1,31 +1,33 @@
-
 <!DOCTYPE html>
 <html lang="en">
-    <!--<< Header Area >>-->
+<!--<< Header Area >>-->
+
+<head>
+    <!-- ========== Meta Tags ========== -->
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!DOCTYPE html>
+    <html lang="{{ app()->getLocale() }}">
+
     <head>
-        <!-- ========== Meta Tags ========== -->
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <!DOCTYPE html>
-        <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-            <head>
-                @include('client.layouts.partials.head')
-            </head>
-            <body class="antialiased">
+        @include('client.layouts.partials.head')
+    </head>
 
-                @include('client.layouts.partials.preloader')
-                @include('client.layouts.partials.offcanvas')
-                @include('client.layouts.partials.header-top')
-                @include('client.layouts.partials.header')
+<body class="antialiased">
 
-                <main>
-                    @yield('content')
-                </main>
+    @include('client.layouts.partials.preloader')
+    @include('client.layouts.partials.offcanvas')
+    @include('client.layouts.partials.header-top')
+    @include('client.layouts.partials.header')
 
-                @include('client.layouts.partials.footer')
-                @include('client.layouts.partials.scripts')
-            </body>
-        {{-- </html>
+    <main>
+        @yield('content')
+    </main>
+
+    @include('client.layouts.partials.footer')
+    @include('client.layouts.partials.scripts')
+</body>
+{{-- </html>
                                     </div>
                                 </div>
                                 <div class="client-info-items d-flex align-items-center gap-3">
@@ -535,32 +537,35 @@
             </div>
         </footer> --}}
 
-        <!--<< All JS Plugins >>-->
-        <script src="assets/js/client/jquery-3.7.1.min.js"></script>
-        <!--<< Viewport Js >>-->
-        <script src="assets/js/client/viewport.jquery.js"></script>
-        <!--<< Bootstrap Js >>-->
-        <script src="assets/js/client/bootstrap.bundle.min.js"></script>
-        <!--<< Nice Select Js >>-->
-        <script src="assets/js/client/jquery.nice-select.min.js"></script>
+<!--<< All JS Plugins >>-->
+<script src="assets/js/client/jquery-3.7.1.min.js"></script>
+<!--<< Viewport Js >>-->
+<script src="assets/js/client/viewport.jquery.js"></script>
+<!--<< Bootstrap Js >>-->
+<script src="assets/js/client/bootstrap.bundle.min.js"></script>
+<!--<< Nice Select Js >>-->
+<script src="assets/js/client/jquery.nice-select.min.js"></script>
 
-        <!--<< Waypoints Js >>-->
-        <script src="assets/js/client/jquery.waypoints.js"></script>
-        <!--<< Counterup Js >>-->
-        <script src="assets/js/client/jquery.counterup.min.js"></script>
-        <!--<< Datepicker Js >>-->
-        <script src="assets/js/client/bootstrap-datepicker.js"></script>
-        <!--<< Swiper Slider Js >>-->
-        <script src="assets/js/client/swiper-bundle.min.js"></script>
-        <!--<< MeanMenu Js >>-->
-        <script src="assets/js/client/jquery.meanmenu.min.js"></script>
-        <!--<< Magnific Popup Js >>-->
-        <script src="assets/js/client/jquery.magnific-popup.min.js"></script>
-        <!--<< GSAP Animation Js >>-->
-        <script src="assets/js/client/animation.js"></script>
-        <!--<< Wow Animation Js >>-->
-        <script src="assets/js/client/wow.min.js"></script>
-        <!--<< Main.js >>-->
-        <script src="assets/js/client/main.js"></script>
-    </body>
+<!--<< Waypoints Js >>-->
+<script src="assets/js/client/jquery.waypoints.js"></script>
+<!--<< Counterup Js >>-->
+<script src="assets/js/client/jquery.counterup.min.js"></script>
+<!--<< Datepicker Js >>-->
+<script src="assets/js/client/bootstrap-datepicker.js"></script>
+<!--<< Swiper Slider Js >>-->
+<script src="assets/js/client/swiper-bundle.min.js"></script>
+<!--<< MeanMenu Js >>-->
+<script src="assets/js/client/jquery.meanmenu.min.js"></script>
+<!--<< Magnific Popup Js >>-->
+<script src="assets/js/client/jquery.magnific-popup.min.js"></script>
+<!--<< GSAP Animation Js >>-->
+<script src="assets/js/client/animation.js"></script>
+<!--<< Wow Animation Js >>-->
+<script src="assets/js/client/wow.min.js"></script>
+<!--<< Main.js >>-->
+<script src="assets/js/client/main.js"></script>
+<script src="assets/js/client/bootstrap.bundle.min.js"></script>
+
+</body>
+
 </html>

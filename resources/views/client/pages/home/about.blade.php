@@ -1,4 +1,3 @@
-<!-- About Section Start -->
 <section class="about-section fix section-padding pt-0">
     <div class="container">
         <div class="about-wrapper">
@@ -18,7 +17,7 @@
                         </div>
                         <div class="counter-content wow fadeInLeft" data-wow-delay=".4s">
                             <h2 class="text-white"><span class="count">7</span></h2>
-                            <p class="text-white">Years of Experience</p>
+                            <p class="text-white">{{ __('about_years_experience') }}</p>
                         </div>
                         <div class="about-image-1 wow fadeInDown" data-wow-delay=".3s">
                             <img src="{{ asset('assets/images/client/about/01.jpg') }}"
@@ -38,30 +37,30 @@
                     <div class="about-content">
                         <div class="section-title">
                             <img src="{{ asset('assets/images/client/sub-icon.png') }}" alt="icon-img" class="wow fadeInUp">
-                            <span class="wow fadeInUp" data-wow-delay=".2s">Get to know us</span>
-                            <h2 class="wow fadeInUp" data-wow-delay=".4s">We Provide The Best Rental Experience</h2>
+                            <span class="wow fadeInUp" data-wow-delay=".2s">{{ __('about_get_to_know_us') }}</span>
+                            <h2 class="wow fadeInUp" data-wow-delay=".4s">{{ __('about_best_rental_experience') }}</h2>
                         </div>
 
                         <h4 class="mt-3 mt-md-0 wow fadeInUp" data-wow-delay=".3s">
-                            Committed to providing our customers with exceptional service.
+                            {{ __('about_committed_service') }}
                         </h4>
 
                         <p class="wow fadeInUp" data-wow-delay=".5s">
-                            At Direct Onderweg ma Rental, we strive to deliver seamless car rental experiences with a focus on convenience, reliability, and customer satisfaction. From luxury vehicles to everyday cars, we have the perfect ride for every journey.
+                            {{ __('about_description') }}
                         </p>
 
                         <div class="about-list-item wow fadeInUp" data-wow-delay=".7s">
                             <ul>
-                                <li>Wide range of vehicles: from economy to luxury</li>
-                                <li>Competitive and transparent pricing</li>
+                                <li>{{ __('about_list_vehicles_range') }}</li>
+                                <li>{{ __('about_list_pricing') }}</li>
                             </ul>
                             <ul>
-                                <li>24/7 customer support for peace of mind</li>
-                                <li>Fast and easy online booking process</li>
+                                <li>{{ __('about_list_customer_support') }}</li>
+                                <li>{{ __('about_list_online_booking') }}</li>
                             </ul>
                         </div>
 
-                        <a href="#" class="theme-btn wow fadeInUp" data-wow-delay=".8s">Discover More</a>
+                        <a href="#" class="theme-btn wow fadeInUp" data-wow-delay=".8s">{{ __('about_discover_more') }}</a>
                     </div>
                 </div>
             </div>
