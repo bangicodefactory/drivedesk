@@ -5520,6 +5520,91 @@ input.main-search-input::placeholder {
 .car-service-wrapper .service-car-content h3 .text {
   margin-left: -10px;
 }
+.car-content {
+    padding: 25px 35px;
+    background-color: #ffffff;
+    border-radius: 0 0 10px 10px;
+    border: 1px solid #d0d7de;
+    position: relative;
+}
+
+.car-content .post-cat {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background-color: #007bff;
+    color: #ffffff;
+    position: absolute;
+    right: 30px;
+    top: -15px;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.car-content .star {
+    margin-bottom: 5px;
+}
+
+.car-content .star i {
+    font-size: 14px;
+    color: #f4c150;
+}
+
+.car-content .star span {
+    font-size: 14px;
+}
+
+.car-content h4 {
+    margin-bottom: 10px;
+}
+
+.car-content h4 a:hover {
+    color: #ff6600;
+}
+
+.car-content h6 {
+    font-size: 14px;
+    color: #007bff;
+}
+
+.car-content h6 span {
+    color: #333333;
+}
+
+.car-content .icon-items {
+    margin-top: 20px;
+    border-top: 1px solid #d0d7de;
+    padding-top: 20px;
+    display: flex;
+    gap: 70px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .car-content .icon-items {
+        gap: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .car-content .icon-items {
+        gap: 20px;
+    }
+}
+
+.car-content .icon-items ul li:not(:last-child) {
+    margin-bottom: 5px;
+}
+
+.car-content .theme-btn {
+    line-height: 1;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 1.3px;
+}
+
+.car-content:hover .car-image img {
+    transform: scale(1.1);
+}
 
 .popular-card-items {
   display: flex;
