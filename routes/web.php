@@ -27,6 +27,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TvaController;
+use App\Http\Controllers\RequestBookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -482,4 +483,8 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
     Route::view('/cta-rental', 'client.tests.cta-rental')->name('cta_rental');
     Route::view('/cta-cheap-rental', 'client.tests.cta-cheap-rental')->name('cta_cheap_rental');
     Route::view('/full', 'client.home')->name('full'); // full landing page
+
+
 });
+    Route::get('/car/{id}', [RequestBookingController::class, 'show'])->name('client.details');
+    Route::post('/booking', [RequestBookingController::class, 'storeBooking'])->name('booking.store');
