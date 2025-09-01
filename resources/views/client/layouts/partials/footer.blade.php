@@ -1,77 +1,100 @@
-<!-- Footer Section Start -->
+@php
+    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+@endphp
+
 <footer class="footer-section fix">
     <div class="container">
         <div class="footer-widgets-wrapper">
             <div class="row justify-content-between">
+
+                <!-- Contact -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
                     <div class="single-footer-widget shape-map">
                         <div class="widget-head">
-                            <h5>About</h5>
+                            <h4>{{ __('footer_contact') }}</h4>
                         </div>
                         <div class="footer-content">
-                            <p>Premium car rental service providing quality vehicles.</p>
+                            <p>{{ $settings['company_address'] ?? '123 Street, City, Country' }}</p>
+                            <ul class="contact-info">
+                                <li>
+                                    <i class="fa-regular fa-envelope"></i>
+                                    <a href="mailto:{{$settings['company_email']}}">{{$settings['company_email']}}</a>
+                                </li>
+                                <li>
+                                    <i class="fa-solid fa-phone-volume"></i>
+                                    <a href="tel:{{$settings['company_phone']}}">{{$settings['company_phone']}}</a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
+
+                <!-- Quick Links -->
                 <div class="col-xl-2 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".4s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h5>Links</h5>
+                            <h4>{{ __('footer_quick_links') }}</h4>
                         </div>
                         <ul class="list-items">
-                            <li><a href="{{ url('/') }}">Home</a></li>
-                            <li><a href="#">Cars</a></li>
-                            <li><a href="#">About</a></li>
-                            <li><a href="#">Blog</a></li>
-                            <li><a href="{{ Route::has('contact') ? route('contact') : url('/contact') }}">Contact</a></li>
+                            <li><a href="{{ url('/') }}">{{ __('footer_home') }}</a></li>
+                            <li><a href="{{ url('/cars') }}">{{ __('footer_cars') }}</a></li>
+                            <li><a href="{{ url('/about') }}">{{ __('footer_about') }}</a></li>
+                            <li><a href="{{ url('/blog') }}">{{ __('footer_blog') }}</a></li>
+                            <li><a href="{{ url('/contact') }}">{{ __('footer_contact_us') }}</a></li>
                         </ul>
                     </div>
                 </div>
+
+                <!-- Gallery -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".6s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h5>Gallery</h5>
+                            <h4>{{ __('footer_gallery') }}</h4>
                         </div>
                         <div class="footer-gallery">
-                            <div class="row g-2">
-                                @for($i=1;$i<=6;$i++)
-
-<div class="col-4">
-                                <img src="{{ asset('assets/img/car/0'.($i <= 4 ? $i : $i - 2).'.jpg') }}" alt="car" class="img-fluid">
-                                </div>
+                            <div class="gallery-wrap">
+                                @for ($i = 1; $i <= 6; $i++)
+                                    <div class="gallery-item">
+                                        <div class="thumb">
+                                            <a href="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" class="img-popup">
+                                                <img src="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" alt="gallery-img">
+                                                <div class="icon"><i class="far fa-plus"></i></div>
+                                            </a>
+                                        </div>
+                                    </div>
                                 @endfor
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Newsletter -->
                 <div class="col-xl-3 col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".8s">
                     <div class="single-footer-widget">
                         <div class="widget-head">
-                            <h5>Newsletter</h5>
+                            <h4>{{ __('footer_newsletter') }}</h4>
                         </div>
                         <div class="footer-content">
-                            <p>Subscribe to get latest updates.</p>
-                            <form action="{{ route('newsletter.subscribe') }}" method="post">
-                                @csrf
-                                <div class="input-group mb-2">
-                                    <input type="email" name="email" class="form-control" placeholder="Email" required>
-                                    <button class="theme-btn" type="submit"><i class="fa fa-paper-plane"></i></button>
-                                </div>
-                            </form>
-                            <div class="social-icon d-flex align-items-center mt-3">
-                                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                                <a href="#"><i class="fab fa-twitter"></i></a>
-                                <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
-                                <a href="#"><i class="fa-brands fa-youtube"></i></a>
+                            <p>{{ __('footer_newsletter_text') }}</p>
+                            <div class="footer-input">
+                                <input type="email" id="email2" placeholder="{{ __('footer_email_placeholder') }}">
+                                <button class="newsletter-btn" type="submit">
+                                    <i class="fa-regular fa-paper-plane"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
+
+        <!-- Footer Bottom -->
         <div class="footer-bottom">
             <div class="footer-wrapper">
-                <p class="wow fadeInUp" data-wow-delay=".4s">© {{ date('Y') }} <a href="{{ url('/') }}">Remons.com</a></p>
+                <p class="wow fadeInUp" data-wow-delay=".4s">
+                    © {{ date('Y') }} {{ __('footer_copyright') }} <a href="{{ url('/') }}">{{ $settings['company_name'] ?? 'Remons.com' }}</a>
+                </p>
             </div>
         </div>
     </div>

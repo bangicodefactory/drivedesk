@@ -21,41 +21,35 @@ class TvaController extends Controller
     //
     public function index(Request $request)
     {
-        // if (\Auth::user()->can('manage booking')) {
-        //     $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
-        // } else {
-        //     return redirect()->back()->with('error', __('Permission Denied.'));
-        // }
-        // return view('tva.index', compact('bookings'));
-        if (\Auth::user()->can('manage booking')) {
-            $tvas = Tva::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->get();
-        } else {
+        if (!\Auth::user()->can('manage booking')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        $query = Tva::where('parent_id', '=', parentId());
+
+        // Base query scoped to current parent (tenant) and not soft deleted
+        $query = Tva::whereNull('deleted_at');
+        if (function_exists('parentId') && parentId()) {
+            $query->where('parent_id', parentId());
+        }
+
+        // Unified filtering on facture_date (business date) instead of created_at
+        if ($request->filled('from_date')) {
+            $query->whereDate('facture_date', '>=', $request->get('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('facture_date', '<=', $request->get('to_date'));
+        }
         if ($request->filled('filter_day')) {
-            $query->whereDate('created_at', $request->filter_day);
+            $query->whereDate('facture_date', $request->get('filter_day'));
         }
-
-        // Filter by month
         if ($request->filled('filter_month')) {
-            $query->whereMonth('created_at', $request->filter_month);
+            $query->whereMonth('facture_date', $request->get('filter_month'));
         }
-
-        // Filter by year
         if ($request->filled('filter_year')) {
-            $query->whereYear('created_at', $request->filter_year);
+            $query->whereYear('facture_date', $request->get('filter_year'));
         }
-        $perPage = $request->get('per_page', 30);
-        $tvas = $query->paginate($perPage);
 
-        $tvas->appends([
-            'filter_day' => $request->filter_day,
-            'filter_month' => $request->filter_month,
-            'filter_year' => $request->filter_year,
-            'per_page' => $perPage
-        ]);
-
+        // Retrieve all (let DataTables handle client-side paging). If dataset grows large, switch to server-side.
+    $tvas = $query->with('booking')->orderByDesc('facture_date')->get();
 
         return view('tva.index', compact('tvas'));
     }
@@ -280,8 +274,7 @@ class TvaController extends Controller
                 return $unit === 0 ? 'Quatre-vingt-dix' : 'Quatre-vingt-' . $units[10 + $unit];
             }
 
-            return ucfirst($tens[$ten]) . ($unit === 0 ? '' :
-                ($unit === 1 && $ten !== 8 && $ten !== 9 ? '-et-un' : '-' . $units[$unit]));
+            return ucfirst($tens[$ten]) . ($unit === 0 ? '' : ($unit === 1 && $ten !== 8 && $ten !== 9 ? '-et-un' : '-' . $units[$unit]));
         };
 
         $convertUnder1000 = function ($n) use ($convertUnder100, $units) {
@@ -338,108 +331,108 @@ class TvaController extends Controller
         return ucfirst(strtolower($result));
     }
 
-public function generateMonthlyTva(Request $request)
-{
-    $request->validate([
-        'month' => 'required|date_format:Y-m', 
-    ]);
+    public function generateMonthlyTva(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
 
-    $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
-    $monthEnd = $monthStart->copy()->endOfMonth();
+        $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+        // 1. Delete existing TVA records in the selected month (facture_date within month)
+        $deleteQuery = Tva::whereYear('facture_date', $monthStart->year)
+            ->whereMonth('facture_date', $monthStart->month);
+        $deletedCount = $deleteQuery->count();
+        $deleteQuery->delete();
 
-    $parentId = parentId();
-    if (!$parentId) {
-        return redirect()->back()->with('error', 'Parent ID not found. Please check your authentication.');
-    }
-    // dd(parentId());
+        // 2. Pull BookingPayments in that month to build TVAs (per payment)
+        $paymentQuery = BookingPayment::whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+        $payments = $paymentQuery->get();
 
-    $bookings = Booking::with(['drivers', 'vehicles'])
-        ->whereBetween('start_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-        ->get();
+        $setting = settings();
+        $createdCount = 0;
 
-    $createdCount = 0;
-    $setting = settings();
+        // Continue numbering globally
+        $lastFacture = Tva::orderByDesc('id')->first();
+        $lastNumber = 0;
+        if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+            $lastNumber = (int)$matches[0];
+        }
+        $factureCounter = $lastNumber;
 
-    //  last facture number for this user(parent id)
-    $lastFacture = Tva::where('parent_id', $parentId)
-                      ->orderByDesc('id')
-                      ->first();
-    $lastNumber = 0;
-    if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-        $lastNumber = (int) $matches[0];
-    }
-    // logic for facture number
-    $factureCounter = $lastNumber;
+        foreach ($payments as $payment) {
+            $booking = Booking::with('drivers')->find($payment->booking_id);
+            if (!$booking) {
+                continue;
+            }
 
-    foreach ($bookings as $booking) {
-        if (!$booking->id) {
-            continue;
+            // Driver / client
+            $driverName = 'N/A';
+            $driverAddress = '';
+            if ($booking->drivers) {
+                $driverName = $booking->drivers->name ?? 'N/A';
+                $driver = Driver::where('user_id', $booking->driver)->first();
+                $driverAddress = $driver->address ?? '';
+            }
+
+            // Vehicle snapshot
+            $vd = $booking->vehicle_details;
+            if (is_string($vd)) {
+                $decoded = json_decode($vd, true);
+                if (is_array($decoded)) {
+                    $vd = $decoded;
+                }
+            }
+            if (!is_array($vd)) {
+                $vd = [];
+            }
+            $vehicleName = $vd['name'] ?? '';
+            $vehicleLicensePlate = $vd['license_plate'] ?? '';
+
+            // Rental days (for unit price / quantity consistency with earlier logic)
+            $startDate = Carbon::parse($booking->start_date);
+            $endDate = Carbon::parse($booking->end_date);
+            $totalDays = $startDate->diffInDays($endDate) ?: 1;
+
+            // Financials based on payment amount (TTC) with fixed 20% VAT assumption
+            $paymentTtc = (float)$payment->amount;
+            $totalHt = round($paymentTtc * 0.8, 2);
+            $tvaAmount = round($paymentTtc * 0.2, 2);
+            $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : $totalHt; // spread across days
+
+            $factureCounter++;
+            $factureNumber = $factureCounter;
+
+            $tva = new Tva();
+            $tva->booking_id = $booking->id;
+            if (isset($booking->parent_id)) {
+                $tva->parent_id = $booking->parent_id;
+            }
+            $tva->month = $monthStart->month;
+            $tva->year = $monthStart->year;
+            $tva->facture_number = $factureNumber;
+            $tva->facture_date = $payment->date ?? now();
+            $tva->client_name = $driverName;
+            $tva->client_address = $driverAddress;
+            $tva->company_name = $setting['company_name'];
+            $tva->company_address = $setting['company_address'];
+            $tva->designation = trim($vehicleName . (($vehicleName && $vehicleLicensePlate) ? ' - ' : '') . $vehicleLicensePlate);
+            $tva->idpaiment = $payment->id;
+            $tva->quantity = number_format($totalDays, 2, '.', '');
+            $tva->unit_price_ht = number_format($unitPriceHt, 2, '.', '');
+            $tva->total_ht = number_format($totalHt, 2, '.', '');
+            $tva->tva = number_format($tvaAmount, 2, '.', '');
+            $tva->montant_ttc = number_format($paymentTtc, 2, '.', '');
+            $tva->ice_number = $setting['ice'];
+            $tva->rc_number = $setting['rc'];
+            $tva->nif_number = $setting['if'];
+            $tva->generated_date = Carbon::now();
+            $tva->total_amount = number_format($paymentTtc, 2, '.', '');
+            $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+            $tva->save();
+            $createdCount++;
         }
 
-        $exists = Tva::where('booking_id', $booking->booking_id)
-                     ->where('month', $monthStart->month)
-                     ->where('year', $monthStart->year)
-                     ->exists();
-
-        if ($exists) continue;
-
-        $factureCounter++;
-        $factureNumber = $factureCounter;
-
-        $driverName = 'N/A';
-        $driverAddress = '';
-        if ($booking->drivers) {
-            $driverName = $booking->drivers->name ?? 'N/A';
-            $driver = Driver::where('user_id', $booking->driver)->first();
-            $driverAddress = $driver->address ?? '';
-        }
-
-        $vehicleDetails = json_decode($booking->vehicle_details, true);
-        $vehicleName = $vehicleDetails['name'] ?? '';
-        $vehicleLicensePlate = $vehicleDetails['license_plate'] ?? '';
-
-        // Quantity
-        $startDate = Carbon::parse($booking->start_date);
-        $endDate = Carbon::parse($booking->end_date);
-        $totalDays = $startDate->diffInDays($endDate) ?: 1;
-
-        //  amounts : HT TVA TTC
-        $totalHt = round($booking->amount * 0.8, 2);
-        $tvaAmount = round($booking->amount * 0.2, 2);
-        $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : 0;
-
-        $tva = new Tva();
-        
-        $tva->booking_id = $booking->booking_id;
-        $tva->parent_id = $parentId;
-        $tva->month = $monthStart->month;
-        $tva->year = $monthStart->year;
-        $tva->facture_number = $factureNumber;
-        $tva->facture_date = $booking->created_at ?? now();
-        $tva->client_name = $driverName;
-        $tva->client_address = $driverAddress;
-        $tva->company_name = $setting['company_name'];
-        $tva->company_address = $setting['company_address'];
-        $tva->designation = $vehicleName . ' - ' . $vehicleLicensePlate;
-        $tva->quantity = $totalDays;
-        $tva->unit_price_ht = $unitPriceHt;
-        $tva->total_ht = $totalHt;
-        $tva->tva = $tvaAmount;
-        $tva->montant_ttc = $booking->amount;
-        $tva->ice_number = $setting['ice'];
-        $tva->rc_number = $setting['rc'];
-        $tva->nif_number = $setting['if'];
-        $tva->generated_date = now();
-        $tva->total_amount = $booking->amount;
-        $tva->tva_amount = $tvaAmount;
-        
-        $tva->save();
-
-        $createdCount++;
+        return redirect()->back()->with('success', "{$deletedCount} TVA supprimées. {$createdCount} TVA(s) générées pour " . $monthStart->format('F Y'));
     }
-
-    return redirect()->back()->with('success', "$createdCount TVA(s) généré pour {$monthStart->format('F Y')}");
-}
-
-
 }

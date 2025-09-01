@@ -133,9 +133,7 @@ class SettingController extends Controller
 
     public function generalData(Request $request)
     {
-
         if (\Auth::user()->type == 'super admin') {
-
             $validator = \Validator::make(
                 $request->all(),
                 [
@@ -169,11 +167,25 @@ class SettingController extends Controller
                     ]
                 );
             }
-
+            if ($request->image_home_1) {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'image_home_1' => 'required|mimes:png',
+                    ]
+                );
+            }
+            if ($request->image_home_2) {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'image_home_2' => 'required|mimes:png',
+                    ]
+                );
+            }
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-
                 return redirect()->back()->with('error', $messages->first());
             }
 
@@ -183,7 +195,6 @@ class SettingController extends Controller
                 ];
                 Custom::setCommon($array);
             }
-
 
             if ($request->logo) {
                 $superadminLogoName = 'logo.png';
@@ -199,6 +210,23 @@ class SettingController extends Controller
                 $superadminFavicon = 'favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
             }
+            if ($request->favicon) {
+                $superadminFavicon = 'favicon.png';
+                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
+            }
+            if ($request->favicon) {
+                $superadminFavicon = 'favicon.png';
+                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
+            }
+
+            if ($request->image_home_1) {
+                $request->file('image_home_1')->storeAs('upload/home/', 'image_home_1.png');
+            }
+
+            if ($request->image_home_2) {
+                $request->file('image_home_2')->storeAs('upload/home/', 'image_home_2.png');
+            }
+
         } elseif (\Auth::user()->type == 'owner') {
             $validator = \Validator::make(
                 $request->all(),
@@ -227,10 +255,8 @@ class SettingController extends Controller
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-
                 return redirect()->back()->with('error', $messages->first());
             }
-
 
             if (!empty($request->application_name)) {
                 \DB::insert(
@@ -242,7 +268,6 @@ class SettingController extends Controller
                     ]
                 );
             }
-
 
             if ($request->logo) {
                 $ownerLogoName = parentId() . '_logo.png';
@@ -271,14 +296,31 @@ class SettingController extends Controller
                     ]
                 );
             }
+
+            if ($request->image_home_1) {
+                $fileName = parentId() . '_image_home_1.png';
+                $request->file('image_home_1')->storeAs('upload/home/', $fileName);
+                \DB::insert(
+                    'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+                    [$fileName, 'image_home_1', parentId()]
+                );
+            }
+
+            if ($request->image_home_2) {
+                $fileName = parentId() . '_image_home_2.png';
+                $request->file('image_home_2')->storeAs('upload/home/', $fileName);
+                \DB::insert(
+                    'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+                    [$fileName, 'image_home_2', parentId()]
+                );
+            }
+
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
 
-
         return redirect()->back()->with('success', __('General setting successfully saved.'));
     }
-
     //    ---------------------- SMTP --------------------------------------------------------
 
     public function smtp()
@@ -613,14 +655,29 @@ class SettingController extends Controller
 
     //    ---------------------- Language --------------------------------------------------------
 
-    public function lanquageChange($lang)
+    public function languageChange($lang)
     {
-        $user = \Auth::user();
-        $user->lang = $lang;
-        $user->save();
+        // Debug: Log that the method is being called
+        \Log::info('Language change called with: ' . $lang);
+        \Log::info('User authenticated: ' . (\Auth::check() ? 'Yes' : 'No'));
+
+        if (\Auth::check()) {
+            $user = \Auth::user();
+            $user->lang = $lang;
+            $user->save();
+            session(['locale' => $lang]);
+            \Log::info('Language saved for user: ' . $user->id);
+        } else {
+            session(['locale' => $lang]);
+            \Log::info('Language saved in session for guest');
+        }
+
+        app()->setLocale($lang);
+        \Log::info('App locale set to: ' . app()->getLocale());
 
         return redirect()->back()->with('success', __('Language successfully changed.'));
     }
+
 
     public function themeSettings(Request $request)
     {
@@ -781,9 +838,9 @@ class SettingController extends Controller
     $filename = 'signature_' . auth()->id() . '_' . time() . '.png';
 
     $path = $request->file('signature')->storeAs(
-        'upload/signature-admin',  
+        'upload/signature-admin',
         $filename,
-        'public'                  
+        'public'
     );
 
     Setting::updateOrCreate(
