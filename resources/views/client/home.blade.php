@@ -1,6 +1,6 @@
 @extends('client.layouts.app')
 
-@section('title','Home | Remons Rental')
+@section('title','Home ')
 
 @section('content')
     @include('client.pages.home.hero')
@@ -12,8 +12,8 @@
     @include('client.pages.home.funfact')
     @include('client.pages.home.popular-cars')
     @include('client.pages.home.testimonials')
-    @include('client.pages.home.gallery')
+    {{-- @include('client.pages.home.gallery') --}}
     @include('client.pages.home.news')
-    @include('client.pages.home.cta-rental')
+    {{-- @include('client.pages.home.cta-rental') --}}
     @include('client.pages.home.cta-cheap-rental')
 @endsection

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Booking;
 
 class Tva extends Model
 {
@@ -40,18 +41,20 @@ class Tva extends Model
         'rc_number',
         'tp_number',
         'nif_number',
+    'booking_id',
+    'idpaiment',
     ];
 
     protected $casts = [
         'facture_date' => 'date',
         'generated_date' => 'date',
-        'quantity' => 'decimal:2',
-        'unit_price_ht' => 'decimal:2',
-        'total_ht' => 'decimal:2',
-        'tva' => 'decimal:2',
-        'montant_ttc' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-        'tva_amount' => 'decimal:2',
+    'quantity' => 'float',
+    'unit_price_ht' => 'float',
+    'total_ht' => 'float',
+    'tva' => 'float',
+    'montant_ttc' => 'float',
+    'total_amount' => 'float',
+    'tva_amount' => 'float',
     ];
 
     // Accessor for formatted facture date
@@ -122,4 +125,10 @@ class Tva extends Model
         return $this->total_ht ?? 0;
     }
     protected $dates = ['deleted_at'];
+
+    // Relations
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class, 'booking_id');
+    }
 }
