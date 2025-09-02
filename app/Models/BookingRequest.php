@@ -32,13 +32,15 @@ class BookingRequest extends Model
 
     public function guest()
     {
-        return $this->belongsTo(Guest::class);
+        return $this->belongsTo(Guest::class,'driver');
     }
 
-    public function car()
-    {
-        return $this->belongsTo(Vehicle::class, 'vehicle');
-    } 
+// In BookingRequest.php
+public function car()
+{
+    return $this->belongsTo(\App\Models\Vehicle::class, 'vehicle', 'id');
+}
+
     public function pickupPlace()
     {
         return $this->belongsTo(Place::class, 'pickup_address');
@@ -47,5 +49,9 @@ class BookingRequest extends Model
     public function dropOffPlace()
     {
         return $this->belongsTo(Place::class, 'drop_off_address');
+    }
+    public function getTotalAmount()
+    {
+        return $this->amount;
     }
 }
