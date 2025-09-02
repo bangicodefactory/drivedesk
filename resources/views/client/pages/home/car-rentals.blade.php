@@ -69,7 +69,7 @@
                                     </div>
                                 </div>
                                 <div class="book-button">
-                                    <a href="{{ route('booking.create', $vehicle->id) }}"
+                                    <a href="{{ route('client.details', $vehicle->id) }}"
                                         class="theme-btn bg-color w-100 text-center">
                                         {{ __('car_book_now') }} <i class="fas fa-arrow-right"></i>
                                     </a>

@@ -298,6 +298,10 @@ Route::group(
         Route::post('booking/{id}/payment/store', [BookingController::class, 'paymentStore'])->name('booking.payment.store');
         Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class, 'paymentDestroy'])->name('booking.payment.destroy');
         Route::resource('booking', BookingController::class);
+        Route::post('/booking_requests/{id}/approve', [RequestBookingController::class, 'confirmBooking'])->name('booking_requests.approve');
+        Route::post('/booking_requests/{id}/refuse', [RequestBookingController::class, 'refuseBooking'])
+     ->name('booking_requests.refuse');
+
     }
 );
 
@@ -487,5 +491,7 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
 
 
 });
-    Route::get('/car/{id}', [RequestBookingController::class, 'show'])->name('client.details');
+    Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
     Route::post('/booking', [RequestBookingController::class, 'storeBooking'])->name('booking.store');
+    Route::resource('booking_requests', RequestBookingController::class);
+
