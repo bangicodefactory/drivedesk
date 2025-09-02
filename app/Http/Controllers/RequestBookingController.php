@@ -122,14 +122,17 @@ class RequestBookingController extends Controller
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
 
-             $booking->vehicle_name = $vehicle->name;
-             $booking->vehicle_model = $vehicle->model;
-             $booking->vehicle_type = $vehicle->types->type ?? $vehicle->type;
-             $booking->vehicle_fuel_type = $vehicle->fuel_type;
-             $booking->vehicle_gearbox = $vehicle->gearbox;
-             $booking->vehicle_seats = $vehicle->number_of_seats;
-             $booking->vehicle_license_plate = $vehicle->license_plate;
-             $booking->vehicle_year = $vehicle->year_of_first_immatriculation;
+             $booking->vehicle_details = json_encode([
+                'name'          => $vehicle->name,
+                'model'         => $vehicle->model,
+                'type'          => $vehicle->types->type ?? $vehicle->type,
+                'fuel_type'     => $vehicle->fuel_type,
+                'gearbox'       => $vehicle->gearbox,
+                'seats'         => $vehicle->number_of_seats,
+                'license_plate' => $vehicle->license_plate,
+                'year'          => $vehicle->year_of_first_immatriculation,
+            ]);
+            
              $booking->save();
 
              DB::commit();
