@@ -1,7 +1,6 @@
-
 @extends('layouts.app')
 @section('page-title')
-    {{ __('Booking') }}
+    {{ __('Booking ') }}
 @endsection
 @section('breadcrumb')
     <ul class="breadcrumb mb-0">
@@ -11,13 +10,13 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ route('booking.index') }}">
-                {{ __('Booking') }}
+            <a href="{{ route('booking_requests.index') }}">
+                {{ __('Booking Request') }}
             </a>
         </li>
         <li class="breadcrumb-item active">
             <a href="#">
-                {{ bookingPrefix() . $booking->booking_id }} {{ __('Details') }}
+                {{ bookingPrefix() . $booking->id }} {{ __('Details') }}
             </a>
         </li>
     </ul>
@@ -51,8 +50,8 @@
                                 <div class="codex-brand" style="top: 0; left: 0; max-width: 130px; max-height: 130px;">
                                     <a class="codexbrand-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
-                                        src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
-                                        alt="invoice-logo">
+                                            src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
+                                            alt="invoice-logo">
                                     </a>
                                     {{-- <a class="codexdark-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
@@ -102,15 +101,15 @@
                                     <ul class="detail-list">
                                         <li>
                                             <div class="icon-wrap"><i class="fa fa-user"></i></div>
-                                            {{ !empty($booking->drivers) ? $booking->drivers->name : '' }}
+                                            {{ !empty($booking->guest) ? $booking->guest->name : '' }}
                                         </li>
                                         <li>
                                             <div class="icon-wrap"><i class="fa fa-phone"></i></div>
-                                            {{ !empty($booking->drivers) ? $booking->drivers->phone_number : '' }}
+                                            {{ !empty($booking->guest) ? $booking->guest->phone_number : '' }}
                                         </li>
                                         <li>
                                             <div class="icon-wrap"><i class="fa fa-envelope"></i></div>
-                                            {{ !empty($booking->drivers) ? $booking->drivers->email : '' }}
+                                            {{ !empty($booking->guest) ? $booking->guest->email : '' }}
                                         </li>
 
                                     </ul>
@@ -120,7 +119,7 @@
                                         <li>{{ __('Booking Date') }}: <span> {{ dateFormat($booking->created_at) }}</span>
                                         </li>
                                         <li>{{ __('Booking ID') }}:
-                                            <span>{{ bookingPrefix() . $booking->booking_id }}</span>
+                                            <span>{{ bookingPrefix() . $booking->id }}</span>
                                         </li>
                                         <li>{{ __('Start Date') }}:
                                             <span>{{ dateFormat($booking->start_date) }} -
@@ -141,7 +140,7 @@
                                         <thead>
                                             <tr>
                                                 <th>{{ __('Vehicle') }}</th>
-                                                <th>{{ !empty($booking->vehicleDetails()) ? $booking->vehicleDetails()->name : '-' }}
+                                                <th>{{ !empty($booking->car) ? $booking->car->name : '-' }}
                                                 </th>
                                             </tr>
                                         </thead>
@@ -151,13 +150,13 @@
                                                 $detailsRaw = $booking->details;
                                                 if (is_string($detailsRaw)) {
                                                     $decoded = json_decode($detailsRaw);
-                                                    $detailsRaw = $decoded !== null ? $decoded : (object)[];
+                                                    $detailsRaw = $decoded !== null ? $decoded : (object) [];
                                                 }
                                                 if (is_array($detailsRaw)) {
-                                                    $detailsRaw = (object)$detailsRaw; // cast array to object
+                                                    $detailsRaw = (object) $detailsRaw; // cast array to object
                                                 }
                                                 if (empty($detailsRaw)) {
-                                                    $detailsRaw = (object)[];
+                                                    $detailsRaw = (object) [];
                                                 }
                                                 $details = $detailsRaw;
                                             @endphp
@@ -165,21 +164,28 @@
                                                 <td>{{ __('Duration') }}</td>
                                                 <td>
                                                     @php
+                                                        $start = \Carbon\Carbon::parse(
+                                                            $booking->start_date . ' ' . $booking->start_time,
+                                                        );
+                                                        $end = \Carbon\Carbon::parse(
+                                                            $booking->end_date . ' ' . $booking->end_time,
+                                                        );
+                                                        $diff = $start->diff($end);
                                                         $parts = [];
-                                                        if (property_exists($details, 'totalDays') && $details->totalDays > 0) {
-                                                            $parts[] = $details->totalDays . ' ' . __('Days');
+                                                        if ($diff->d > 0) {
+                                                            $parts[] = $diff->d . ' ' . __('Days');
                                                         }
-                                                        if (property_exists($details, 'totalHours') && $details->totalHours > 0) {
-                                                            $parts[] = $details->totalHours . ' ' . __('Hours');
+                                                        if ($diff->h > 0) {
+                                                            $parts[] = $diff->h . ' ' . __('Hours');
                                                         }
-                                                        if (property_exists($details, 'totalMinuts') && $details->totalMinuts > 0) {
-                                                            $parts[] = $details->totalMinuts . ' ' . __('Minuts');
+                                                        if ($diff->i > 0) {
+                                                            $parts[] = $diff->i . ' ' . __('Minutes');
                                                         }
                                                     @endphp
                                                     {{ implode(', ', $parts) }}
                                                 </td>
                                             </tr>
-                                            @if (!empty($booking->addon))
+                                            {{-- @if (!empty($booking->addon))
                                                 @foreach ($booking->addons() as $addon)
                                                     <tr>
                                                         <td>{{ $addon->name }}</td>
@@ -188,30 +194,22 @@
                                                         </td>
                                                     </tr>
                                                 @endforeach
-                                            @endif
+                                            @endif --}}
                                             <tr>
                                                 <td>{{ __('Pickup Address') }}</td>
                                                 <td>
-                                                    @if($booking->pickupAddress)
-                                                        {{ $booking->pickupAddress->name }}
-                                                        @if(isset($booking->pickupAddress->price))
-                                                            ({{ priceFormat($booking->pickupAddress->price) }})
-                                                        @endif
-                                                    @else
-                                                        -
+                                                    {{ $booking->pickupPlace ? $booking->pickupPlace->name : '-' }}
+                                                    @if ($booking->pickupPlace && isset($booking->pickupPlace->price))
+                                                        ({{ priceFormat($booking->pickupPlace->price) }})
                                                     @endif
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td>{{ __('Drop Off Address') }}</td>
                                                 <td>
-                                                    @if($booking->dropOffAddress)
-                                                        {{ $booking->dropOffAddress->name }}
-                                                        @if(isset($booking->dropOffAddress->price))
-                                                            ({{ priceFormat($booking->dropOffAddress->price) }})
-                                                        @endif
-                                                    @else
-                                                        -
+                                                    {{ $booking->dropOffPlace ? $booking->dropOffPlace->name : '-' }}
+                                                    @if($booking->dropOffPlace && isset($booking->dropOffPlace->price))
+                                                        ({{ priceFormat($booking->dropOffPlace->price) }})
                                                     @endif
                                                 </td>
                                             </tr>
@@ -233,7 +231,7 @@
                                                     @endif
                                                 </td>
                                             </tr> --}}
-                                            <tr>
+                                            {{-- <tr>
                                                 <td>{{ __('Payment Status') }}</td>
                                                 <td>
                                                     @if ($booking->payment_status == 'paye')
@@ -247,7 +245,7 @@
                                                             class="badge badge-warning">{{ \App\Models\Booking::$paymentStatus[$booking->payment_status] }}</span>
                                                     @endif
                                                 </td>
-                                            </tr>
+                                            </tr> --}}
                                             {{-- <tr>
                                                 <td>{{ __('Notes') }}</td>
                                                 <td>{{ $booking->notes }} </td>
@@ -259,15 +257,15 @@
                             </div>
 
                             <div style=" width: 40%; margin-left:auto;">
-                            {{-- <div class="footer-invoice"> --}}
+                                {{-- <div class="footer-invoice"> --}}
 
                                 <table class="table table-bordered">
                                     <tbody>
-                                        <tr >
+                                        <tr>
                                             <td>{{ __('Total Amount') }}</td>
-                                            <td>{{ priceFormat($booking->getTotalAmount() * 0.8) }}</td>
+                                            {{-- <td>{{ priceFormat($booking->getTotalAmount() * 0.8) }}</td>
                                         </tr>
-                                        <tr >
+                                            <tr >
                                             <td>TVA:</td>
                                             <td>{{ priceFormat($booking->getTotalAmount() * 0.2) }}</td>
                                         </tr>
@@ -275,9 +273,9 @@
                                             <td>{{ __('Rest') }}</td>
                                             <td>{{ priceFormat($booking->getTotalDueAmount()) }}</td>
                                         </tr>
-                                        <tr>
-                                            <td>{{ __('Due Amount') }}</td>
-                                            <td>{{ priceFormat($booking->getTotalAmount()) }}</td>
+                                             <tr>
+                                            <td>{{ __('Due Amount') }}</td> --}}
+                                            <td>{{ priceFormat($booking->getTotalAmount())}}</td>
                                         </tr>
 
                                     </tbody>
@@ -289,7 +287,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        {{-- <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
@@ -334,7 +332,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 @endsection
 @push('script-page')
