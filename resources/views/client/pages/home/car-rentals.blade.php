@@ -43,7 +43,7 @@
                                     <a href="#">{{ $vehicle->name }} {{ $vehicle->model }}</a>
                                 </h4>
                                 <div class="price-section">
-                                    <span class="price">${{ number_format($vehicle->daily_rate, 2) }}</span>
+                                    <span class="price">{{ number_format($vehicle->daily_rate, 2) }} Dh</span>
                                     <span class="period">/ {{ __('car_per_day') }}</span>
                                 </div>
                                 <div class="car-specifications">
