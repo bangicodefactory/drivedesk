@@ -1,9 +1,12 @@
+@php
+    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+@endphp
 <!-- Preloader Start -->
 <div id="preloader" class="preloader">
     <div class="animation-preloader">
         <div class="spinner"></div>
         <div class="txt-loading">
-            @foreach(str_split('REMONS') as $letter)
+            @foreach(str_split($settings['company_name']) as $letter)
                 <span data-text-preloader="{{ $letter }}" class="letters-loading">{{ $letter }}</span>
             @endforeach
         </div>
