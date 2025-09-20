@@ -257,10 +257,10 @@
                                     </table>
                                 </div>
                             </div>
-                            
+
                             <div style=" width: 40%; margin-left:auto;">
                             {{-- <div class="footer-invoice"> --}}
-                               
+
                                 <table class="table table-bordered">
                                     <tbody>
                                         <tr >
@@ -279,7 +279,7 @@
                                             <td>{{ __('Due Amount') }}</td>
                                             <td>{{ priceFormat($booking->getTotalAmount()) }}</td>
                                         </tr>
-                                       
+
                                     </tbody>
                                 </table>
                             </div>

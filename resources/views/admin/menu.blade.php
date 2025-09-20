@@ -7,18 +7,18 @@
 @endphp
 <aside class="codex-sidebar sidebar-{{ $settings['sidebar_mode'] }}">
     <div class="logo-gridwrap" style=" justify-content: center; align-items: center;">
-        
+
             <a class="codexbrand-logo" href="{{ route('home') }}">
                 <img class="img-fluid" style="max-height: 100px; "
                     src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
                     alt="theeme-logo">
             </a>
-        
+
         <a class="codex-darklogo" href="{{ route('home') }}">
             <img class="img-fluid"
                 src="{{ asset(Storage::url('upload/logo/')) . '/' . (isset($admin_logo) && !empty($admin_logo) ? $admin_logo : 'logo.png') }}"
                 alt="theeme-logo"></a>
-            
+
         <div class="sidebar-action" style="margin-left: auto;"><i data-feather="menu"></i></div>
     </div>
     <div class="icon-logo">
@@ -84,6 +84,7 @@
                     Gate::check('manage vehicle') ||
                     Gate::check('manage inspection') ||
                     Gate::check('manage booking') ||
+
                     Gate::check('manage expense') ||
                     Gate::check('manage reminder') ||
                     Gate::check('manage rental agreement'))
@@ -125,6 +126,15 @@
                         </a>
                     </li>
                 @endif
+                @if (Gate::check('manage booking'))
+                <li
+                    class="menu-item {{ in_array($routeName, ['booking_requests.index', 'booking_requests.create', 'booking_requests.edit', 'booking_requests.show']) ? 'active' : '' }}">
+                    <a href="{{ route('booking_requests.index') }}">
+                        <div class="icon-item"><i data-feather="file"></i></div>
+                        <span>{{ __('Booking requests') }}</span>
+                    </a>
+                </li>
+            @endif
                 @if (Gate::check('manage planning'))
                     <li class="menu-item {{ in_array($routeName, ['planning']) ? 'active' : '' }}">
                         <a href="{{ route('planning') }}">
