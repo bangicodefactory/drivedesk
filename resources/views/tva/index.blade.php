@@ -130,7 +130,7 @@
 
                     <!-- Hidden combined field (YYYY-MM) -->
                     <input type="hidden" name="month" id="month">
-
+                    <input type="number" name="tva_number" class="form-control" placeholder="Numéro de TVA" >
                     <!-- Submit -->
                     <div>
                         <button type="submit" class="btn btn-primary mt-2">
