@@ -49,7 +49,7 @@ class TvaController extends Controller
         }
 
         // Retrieve all (let DataTables handle client-side paging). If dataset grows large, switch to server-side.
-    $tvas = $query->with('booking')->orderByDesc('facture_date')->get();
+        $tvas = $query->with('booking')->orderByDesc('facture_date')->get();
 
         return view('tva.index', compact('tvas'));
     }
@@ -353,11 +353,16 @@ class TvaController extends Controller
         $createdCount = 0;
 
         // Continue numbering globally
-        $lastFacture = Tva::orderByDesc('id')->first();
-        $lastNumber = 0;
-        if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-            $lastNumber = (int)$matches[0];
+        $lastNumber = (int) $request->tva_number;
+        
+        if ($lastNumber <= 0) {
+            $lastFacture = Tva::orderByDesc('id')->first();
+            $lastNumber = 0;
+            if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+                $lastNumber = (int)$matches[0];
+            }
         }
+
         $factureCounter = $lastNumber;
 
         foreach ($payments as $payment) {

@@ -263,7 +263,7 @@ if (!function_exists('parentId')) {
         } else {
             return \Auth::user()->parent_id;
         }
-        
+
     }
 }
 if (!function_exists('assignSubscription')) {
@@ -944,4 +944,40 @@ if (!function_exists('defaultDriverCreate')) {
             return $return;
         }
     }
+
+
+   if (!function_exists('trans_custom')) {
+    function trans_custom($key, $parameters = [], $locale = null)
+    {
+        $localeMap = [
+            'ar' => 'arabic',
+            'fr' => 'french',
+            'en' => 'english'
+        ];
+
+        $currentLocale = $locale ?? app()->getLocale();
+        $mappedLocale = $localeMap[$currentLocale] ?? $currentLocale;
+
+        // Get translation file path
+        $filePath = resource_path("lang/{$mappedLocale}.json");
+
+        if (file_exists($filePath)) {
+            $translations = json_decode(file_get_contents($filePath), true);
+
+            if (isset($translations[$key])) {
+                $translation = $translations[$key];
+
+                // Replace parameters if any
+                foreach ($parameters as $param => $value) {
+                    $translation = str_replace(':' . $param, $value, $translation);
+                }
+
+                return $translation;
+            }
+        }
+
+        // Fallback to key if translation not found
+        return $key;
+    }
+}
 }

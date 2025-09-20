@@ -27,6 +27,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TvaController;
+use App\Http\Controllers\RequestBookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,7 +153,7 @@ Route::group(
         Route::get('settings/company', [SettingController::class, 'company'])->name('setting.company');
         Route::post('settings/company', [SettingController::class, 'companyData'])->name('setting.company');
 
-        Route::get('language/{lang}', [SettingController::class, 'lanquageChange'])->name('language.change');
+
         Route::post('theme/settings', [SettingController::class, 'themeSettings'])->name('theme.settings');
 
         Route::get('settings/site-seo', [SettingController::class, 'siteSEO'])->name('setting.site.seo');
@@ -164,6 +165,7 @@ Route::group(
 
     }
 );
+Route::get('language/{lang}', [SettingController::class, 'languageChange'])->name('language.change');
 Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
 Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
 Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
@@ -296,6 +298,10 @@ Route::group(
         Route::post('booking/{id}/payment/store', [BookingController::class, 'paymentStore'])->name('booking.payment.store');
         Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class, 'paymentDestroy'])->name('booking.payment.destroy');
         Route::resource('booking', BookingController::class);
+        Route::post('/booking_requests/{id}/approve', [RequestBookingController::class, 'confirmBooking'])->name('booking_requests.approve');
+        Route::post('/booking_requests/{id}/refuse', [RequestBookingController::class, 'refuseBooking'])
+     ->name('booking_requests.refuse');
+
     }
 );
 
@@ -459,7 +465,7 @@ Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name(
 // Test route for calendar without authentication
 Route::get('/test-planning', [BookingController::class, 'testPlanning'])->name('test.planning');
 
-// genere tva par mois 
+// genere tva par mois
 Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])->name('tva.generate');
 
 // --------------------------------------------------------------------------
@@ -482,4 +488,10 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
     Route::view('/cta-rental', 'client.tests.cta-rental')->name('cta_rental');
     Route::view('/cta-cheap-rental', 'client.tests.cta-cheap-rental')->name('cta_cheap_rental');
     Route::view('/full', 'client.home')->name('full'); // full landing page
+
+
 });
+    Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
+    Route::post('/booking', [RequestBookingController::class, 'storeBooking'])->name('booking.store');
+    Route::resource('booking_requests', RequestBookingController::class);
+
