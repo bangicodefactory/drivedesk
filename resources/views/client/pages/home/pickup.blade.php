@@ -1,7 +1,7 @@
 @php
 $vehicleTypes = \App\Models\VehicleType::all();
 @endphp
-<div class="pickup-loaction-area bg-cover"
+<div id="search" class="pickup-loaction-area bg-cover"
      style="background-image: url('{{ asset('assets/images/client/brand-bg.png') }}');">
     <div class="container">
         <div class="pickup-wrapper wow fadeInUp" data-wow-delay=".4s">

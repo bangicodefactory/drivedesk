@@ -74,7 +74,7 @@
                     </div>
 
                     <div class="header-button">
-                        <a href="#" class="header-btn">{{ __('header_find_a_car') }}</a>
+                        <a href="{{ route('client.home') }}#search" class="header-btn">{{ __('header_find_a_car') }}</a>
                     </div>
                     <div class="header__hamburger d-xl-none my-auto">
                         <div class="sidebar__toggle">
