@@ -492,6 +492,6 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
 
 });
     Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
-    Route::post('/booking', [RequestBookingController::class, 'storeBooking'])->name('booking.store');
+    Route::post('/booking_request', [RequestBookingController::class, 'storeBooking'])->name('booking.store_request');
     Route::resource('booking_requests', RequestBookingController::class);
 

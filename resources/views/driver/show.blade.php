@@ -138,6 +138,12 @@
                     <p class="mb-20">{{!empty($driver) && !empty($driver->notes)?$driver->notes:'-'}}</p>
                 </div>
             </div>
+            <div class="col-12">
+                <div class="detail-group">
+                    <h6>{{__('ICE_company')}}</h6>
+                    <p class="mb-20">{{!empty($driver) && !empty($driver->ICE_company)?$driver->ICE_company:'-'}}</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

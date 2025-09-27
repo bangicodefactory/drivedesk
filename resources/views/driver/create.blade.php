@@ -71,6 +71,10 @@
             {{Form::label('notes',__('Notes'),array('class'=>'form-label')) }}
             {{Form::textarea('notes',null,array('class'=>'form-control','placeholder'=>__('Enter notes'),'rows'=>1))}}
         </div>
+        <div class="form-group col-md-12">
+            {{Form::label('ICE_company',__('ICE_company'),array('class'=>'form-label')) }}
+            {{Form::text('ICE_company',null,array('class'=>'form-control','placeholder'=>__('Enter ICE if client company')))}}
+        </div>
     </div>
 </div>
 <div class="modal-footer">
