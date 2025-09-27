@@ -56,6 +56,150 @@ class BookingController extends Controller
         }
     }
 
+    // public function store(Request $request)
+    // {
+    //     if (!\Auth::user()->can('create booking')) {
+    //         return redirect()->back()->with('error', __('Permission Denied.'));
+    //     }
+
+    //     // 🔹 Validate inputs
+    //     $validator = \Validator::make(
+    //         $request->all(),
+    //         [
+    //             'vehicle' => 'required|exists:vehicles,id',
+    //             'start_date_time' => 'required|date',
+    //             'end_date_time' => 'required|date|after:start_date_time',
+    //             'driver' => 'required|exists:users,id',
+    //             'pickup_address' => 'required|string',
+    //             'drop_off_address' => 'required|string',
+    //             'status' => 'required|string',
+    //             'amount' => 'required|numeric|min:0',
+    //         ]
+    //     );
+
+    //     if ($validator->fails()) {
+    //         // Return with full validation error bag instead of only first error
+    //         return redirect()
+    //             ->back()
+    //             ->withErrors($validator)
+    //             ->withInput();
+    //     }
+
+    //     // 🔹 Vehicle details
+    //     $vehicle_detail = Vehicle::find($request->vehicle);
+
+    //     // 🔹 Create booking
+    //     $booking = new Booking();
+    //     $booking->booking_id = $this->bookingNumber();
+    //     $booking->vehicle = $request->vehicle;
+    //     $booking->driver = $request->driver;
+
+    //     if (!empty($request->start_date_time)) {
+    //         $startDateTime = explode(' ', $request->start_date_time);
+    //         $booking->start_date = $startDateTime[0];
+    //         $booking->start_time = $startDateTime[1];
+    //     }
+    //     if (!empty($request->end_date_time)) {
+    //         $endDateTime = explode(' ', $request->end_date_time);
+    //         $booking->end_date = $endDateTime[0];
+    //         $booking->end_time = $endDateTime[1];
+    //     }
+
+    //     $booking->pickup_address = $request->pickup_address;
+    //     $booking->drop_off_address = $request->drop_off_address;
+    //     $booking->addon = !empty($request->addon) ? implode(',', $request->addon) : null;
+    //     $booking->status = $request->status;
+    //     $booking->notes = $request->notes;
+    //     $booking->amount = $request->amount;
+    //     $booking->payment_status = 'impaye';
+    //     $booking->payment_notes = null;
+    //     $booking->details = $request->details;
+    //     // Store only the minimal vehicle snapshot (avoid double encoding with model cast)
+    //     $booking->vehicle_details = [
+    //         'id' => $vehicle_detail->id,
+    //         'name' => $vehicle_detail->name,
+    //         'license_plate' => $vehicle_detail->license_plate,
+    //     ];
+    //     $booking->parent_id = parentId();
+    //     $booking->daily_price_final = $request->daily_price ?? 0;
+    //     $booking->save();
+
+    //     // 🔹 User & driver
+    //     $user = User::find($request->driver);
+    //     $driver1 = Driver::where('user_id', $request->driver)->first();
+
+    //     // 🔹 Notification by email (optional)
+    //     $module = 'new_booking';
+    //     $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+    //     $setting = settings();
+    //     $errorMessage = '';
+    //     if (!empty($notification) && $notification->enabled_email == 1) {
+    //         $notification_responce = MessageReplace($notification, $booking->id);
+    //         $data['subject'] = $notification_responce['subject'];
+    //         $data['message'] = $notification_responce['message'];
+    //         $data['module'] = $module;
+    //         $data['logo'] = $setting['company_logo'];
+    //         $to = $user->email;
+
+    //         $response = commonEmailSend($to, $data);
+    //         if ($response['status'] == 'error') {
+    //             $errorMessage = $response['message'];
+    //         }
+    //     }
+
+    //     // 🔹 TVA Calculation
+    //     // $startDate = Carbon::parse($booking->start_date);
+    //     // $endDate = Carbon::parse($booking->end_date);
+    //     // $totalDays = max(1, $startDate->diffInDays($endDate));
+
+    //     // // vehicle_details is cast to object in Booking model; cast to array for safe key access
+    //     // $vehicleDetailsObj = $booking->vehicleDetails();
+    //     // $vehicle_name = $vehicleDetailsObj->name ?? '';
+    //     // $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
+
+    //     // $totalHT = round($booking->amount * 0.8, 2);
+    //     // $tvaAmount = round($booking->amount * 0.2, 2);
+
+
+    //     // // Global last facture number (ignoring tenant scoping per new requirement)
+    //     // $lastFacture = Tva::orderByDesc('id')->first();
+    //     // $lastNumber = 0;
+    //     // if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
+    //     //     $lastNumber = (int)$matches[0];
+    //     // }
+    //     // $factureCounter = $lastNumber;
+    //     // $factureCounter++;
+    //     // $factureNumber = $factureCounter;
+
+
+    //     // $tva = new Tva();
+    //     // $tva->facture_number = $factureNumber;
+    //     // $tva->facture_date = $booking->created_at;
+    //     // $tva->client_name = $user->name;
+    //     // $tva->client_address = $driver1 ? $driver1->address : '';
+    //     // $tva->company_name = $setting['company_name'];
+    //     // $tva->company_address = $setting['company_address'];
+    //     // $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
+    //     // $tva->quantity = (float)$totalDays;
+    //     // $tva->total_ht = number_format($totalHT, 2, '.', '');
+    //     // $tva->tva = number_format($tvaAmount, 2, '.', '');
+    //     // $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
+    //     // $tva->montant_ttc = number_format($booking->amount, 2, '.', '');
+    //     // $tva->ice_number = $setting['ice'];
+    //     // $tva->rc_number = $setting['rc'];
+    //     // $tva->nif_number = $setting['if'];
+    //     // $tva->parent_id = parentId();
+    //     // $tva->booking_id = $booking->id;
+    //     // $tva->generated_date = now()->toDateString();
+    //     // $tva->total_amount = number_format($booking->amount, 2, '.', '');
+    //     // $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+    //     // $tva->save();
+
+    //     return redirect()->route('booking.show', Crypt::encrypt($booking->id))
+    //         ->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
+    // }
+
+
     public function store(Request $request)
     {
         if (!\Auth::user()->can('create booking')) {
@@ -193,10 +337,8 @@ class BookingController extends Controller
         // $tva->save();
 
         return redirect()->route('booking.show', Crypt::encrypt($booking->id))
-            ->with('success', __('Booking successfully created.') . '</br>' . $errorMessage);
+            ->with('success', __('Booking successfully created.')  . $errorMessage);
     }
-
-
     public function show($id)
     {
         if (\Auth::user()->can('show booking')) {
@@ -522,6 +664,7 @@ class BookingController extends Controller
             $tva->generated_date = now()->toDateString();
             $tva->total_amount = number_format($booking->amount, 2, '.', '');
             $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+            $tva->payment_method = $request->payment_method;
             $tva->save();
 
 
@@ -543,6 +686,7 @@ class BookingController extends Controller
             if ($payment) {
                 // Delete linked TVA records created for this payment via idpaiment
                 Tva::where('idpaiment', $payment->id)->delete();
+                
                 $payment->delete();
             }
 

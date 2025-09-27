@@ -85,6 +85,18 @@ class TvaController extends Controller
                 ];
                 $invoice->items = $items;
 
+                // Fetch client ICE from related booking/driver
+                $clientIce = null;
+                try {
+                    $bookingForInvoice = Booking::with('drivers')->find($invoice->booking_id);
+                    if ($bookingForInvoice && $bookingForInvoice->driver) {
+                        $driverRow = Driver::where('user_id', $bookingForInvoice->driver)->first();
+                        $clientIce = $driverRow ? $driverRow->ICE_company : null;
+                    }
+                } catch (\Exception $e) {
+                    // Ignore and leave $clientIce as null
+                }
+
                 $settings = settings();
                 $logoFile = $settings['company_logo'] ?? '2_logo.png'; // Updated default logo name
 
@@ -144,7 +156,8 @@ class TvaController extends Controller
                     'tva' => $invoice,
                     'settings' => $settings,
                     'logoPath' => $logoBase64,
-                    'ttcInWords' => $ttcInWords
+                    'ttcInWords' => $ttcInWords,
+                    'clientIce' => $clientIce,
                 ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
@@ -190,7 +203,7 @@ class TvaController extends Controller
 
         $tva->save();
 
-        return redirect()->route('tva.index')->with('success', __('TVA updated successfully.'));
+    return redirect()->route('tva.index')->with('success', 'TVA updated successfully.');
     }
 
 
@@ -431,9 +444,10 @@ class TvaController extends Controller
             $tva->ice_number = $setting['ice'];
             $tva->rc_number = $setting['rc'];
             $tva->nif_number = $setting['if'];
-            $tva->generated_date = Carbon::now();
+            $tva->generated_date = null;
             $tva->total_amount = number_format($paymentTtc, 2, '.', '');
             $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+            $tva->payment_method = $payment->payment_method ?? 'Espece';
             $tva->save();
             $createdCount++;
         }
