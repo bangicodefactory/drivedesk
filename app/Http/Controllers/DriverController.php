@@ -168,6 +168,7 @@ class DriverController extends Controller
                 $driver->expiration_date = !empty($request->expiration_date) ? $request->expiration_date : null;
                 $driver->reference = !empty($request->reference) ? $request->reference : null;
                 $driver->notes = !empty($request->notes) ? $request->notes : null;
+                $driver->ICE_company = !empty($request->ICE_company) ? $request->ICE_company : null;
                 $driver->parent_id = parentId();
 // Save id document 
                 if (!empty($request->document)) {

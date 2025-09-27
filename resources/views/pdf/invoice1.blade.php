@@ -530,7 +530,7 @@
                     <p><strong>FACTURE N° :</strong> {{ $tva->facture_number }}</p>
                     {{-- <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->created_at)->format('d/m/Y') }}</p> --}}
                     <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($tva->facture_date)->format('d/m/Y') }}</p>
-                    <p><strong>Mode de Paiment:</strong> ESPECE</p>
+                    <p><strong>Mode de Paiment:</strong> {{ $tva->payment_method }}</p>
                 </div>
             </div>
         </header>
@@ -542,19 +542,13 @@
                 <div class="client-info">
                     <p><strong>{{ $tva->client_name }}</strong><br>
                         {{ $tva->client_address }}<br>
-
+                        @if($clientIce)
+                            ICE: {{ $clientIce ?? '' }}
+                        @endif
+                        
                 </div>
             </div>
-            {{-- <div class="bill-from">
-                <h3>From:</h3>
-                <div class="vendor-info">
-                    <p><strong>Your Company Name</strong><br>
-                    Jane Smith<br>
-                    123 Business Street<br>
-                    City, State 12345<br>
-                    Tax ID: 12-3456789</p>
-                </div>
-            </div> --}}
+            
         </section>
 
         <!-- Invoice Items Table -->
