@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 @section('page-title')
     {{ __('Booking') }}
@@ -51,8 +50,8 @@
                                 <div class="codex-brand" style="top: 0; left: 0; max-width: 130px; max-height: 130px;">
                                     <a class="codexbrand-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
-                                        src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
-                                        alt="invoice-logo">
+                                            src="{{ asset('storage/upload/logo/' . ($settings['company_logo'] ?? 'logo.png')) }}"
+                                            alt="invoice-logo">
                                     </a>
                                     {{-- <a class="codexdark-logo" href="Javascript:void(0);">
                                         <img class="img-fluid"
@@ -112,6 +111,10 @@
                                             <div class="icon-wrap"><i class="fa fa-envelope"></i></div>
                                             {{ !empty($booking->drivers) ? $booking->drivers->email : '' }}
                                         </li>
+                                        <li>
+                                            <div class="icon-wrap"><i class="fa fa-industry"></i></div>
+                                            ICE:{{ optional(\App\Models\Driver::where('user_id', $booking->drivers->id)->first())->ICE_company }}
+                                        </li>
 
                                     </ul>
                                 </div>
@@ -151,13 +154,13 @@
                                                 $detailsRaw = $booking->details;
                                                 if (is_string($detailsRaw)) {
                                                     $decoded = json_decode($detailsRaw);
-                                                    $detailsRaw = $decoded !== null ? $decoded : (object)[];
+                                                    $detailsRaw = $decoded !== null ? $decoded : (object) [];
                                                 }
                                                 if (is_array($detailsRaw)) {
-                                                    $detailsRaw = (object)$detailsRaw; // cast array to object
+                                                    $detailsRaw = (object) $detailsRaw; // cast array to object
                                                 }
                                                 if (empty($detailsRaw)) {
-                                                    $detailsRaw = (object)[];
+                                                    $detailsRaw = (object) [];
                                                 }
                                                 $details = $detailsRaw;
                                             @endphp
@@ -166,13 +169,22 @@
                                                 <td>
                                                     @php
                                                         $parts = [];
-                                                        if (property_exists($details, 'totalDays') && $details->totalDays > 0) {
+                                                        if (
+                                                            property_exists($details, 'totalDays') &&
+                                                            $details->totalDays > 0
+                                                        ) {
                                                             $parts[] = $details->totalDays . ' ' . __('Days');
                                                         }
-                                                        if (property_exists($details, 'totalHours') && $details->totalHours > 0) {
+                                                        if (
+                                                            property_exists($details, 'totalHours') &&
+                                                            $details->totalHours > 0
+                                                        ) {
                                                             $parts[] = $details->totalHours . ' ' . __('Hours');
                                                         }
-                                                        if (property_exists($details, 'totalMinuts') && $details->totalMinuts > 0) {
+                                                        if (
+                                                            property_exists($details, 'totalMinuts') &&
+                                                            $details->totalMinuts > 0
+                                                        ) {
                                                             $parts[] = $details->totalMinuts . ' ' . __('Minuts');
                                                         }
                                                     @endphp
@@ -192,9 +204,9 @@
                                             <tr>
                                                 <td>{{ __('Pickup Address') }}</td>
                                                 <td>
-                                                    @if($booking->pickupAddress)
+                                                    @if ($booking->pickupAddress)
                                                         {{ $booking->pickupAddress->name }}
-                                                        @if(isset($booking->pickupAddress->price))
+                                                        @if (isset($booking->pickupAddress->price))
                                                             ({{ priceFormat($booking->pickupAddress->price) }})
                                                         @endif
                                                     @else
@@ -205,9 +217,9 @@
                                             <tr>
                                                 <td>{{ __('Drop Off Address') }}</td>
                                                 <td>
-                                                    @if($booking->dropOffAddress)
+                                                    @if ($booking->dropOffAddress)
                                                         {{ $booking->dropOffAddress->name }}
-                                                        @if(isset($booking->dropOffAddress->price))
+                                                        @if (isset($booking->dropOffAddress->price))
                                                             ({{ priceFormat($booking->dropOffAddress->price) }})
                                                         @endif
                                                     @else
@@ -259,19 +271,19 @@
                             </div>
 
                             <div style=" width: 40%; margin-left:auto;">
-                            {{-- <div class="footer-invoice"> --}}
+                                {{-- <div class="footer-invoice"> --}}
 
                                 <table class="table table-bordered">
                                     <tbody>
-                                        <tr >
+                                        <tr>
                                             <td>{{ __('Total Amount') }}</td>
                                             <td>{{ priceFormat($booking->getTotalAmount() * 0.8) }}</td>
                                         </tr>
-                                        <tr >
+                                        <tr>
                                             <td>TVA:</td>
                                             <td>{{ priceFormat($booking->getTotalAmount() * 0.2) }}</td>
                                         </tr>
-                                         <tr>
+                                        <tr>
                                             <td>{{ __('Rest') }}</td>
                                             <td>{{ priceFormat($booking->getTotalDueAmount()) }}</td>
                                         </tr>

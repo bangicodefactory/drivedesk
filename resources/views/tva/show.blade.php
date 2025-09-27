@@ -49,10 +49,16 @@
                     <p class="mb-20">{{ number_format($tva->montant_ttc, 2) }}</p>
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-6">
                 <div class="detail-group">
                     <h6>{{ __('Vehicle') }}</h6>
                     <p class="mb-20">{{ $tva->designation ?? '-' }}</p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="detail-group">
+                    <h6>{{ __('ICE:') }}</h6>
+                    <p class="mb-20">{{ $tva->payment_method ?? '-' }}</p>
                 </div>
             </div>
         </div>

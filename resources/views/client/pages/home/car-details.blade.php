@@ -314,7 +314,7 @@
                 <p>Send your requirement to us. We will check email and contact you soon.</p>
             </div>
             
-            <form action="{{ route('booking.store') }}" method="POST" class="contact-form-items" id="bookingForm">
+            <form action="{{ route('booking.store_request') }}" method="POST" class="contact-form-items" id="bookingForm">
             @csrf
             <input type="hidden" name="vehicle_id" value="{{ $car->id }}">
             <div class="row g-4">
@@ -507,7 +507,7 @@
                     <div class="col-lg-4">
                         <div class="car-list-sidebar">
                             <h4 class="title">Quick Booking</h4>
-                            <form action="{{ route('booking.store') }}" method="POST">
+                            <form action="{{ route('booking.store_request') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="vehicle_id" value="{{ $car->id }}">
                                 <div class="row g-4">

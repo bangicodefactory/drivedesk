@@ -32,6 +32,7 @@
     <!-- theme body start-->
     <div class="theme-body @yield('page-class') " data-simplebar>
         <div class="custom-container common-dash">
+            @include('partials.alerts')
             @include('admin.content')
         </div>
     </div>
