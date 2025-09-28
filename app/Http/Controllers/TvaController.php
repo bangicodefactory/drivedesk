@@ -48,8 +48,19 @@ class TvaController extends Controller
             $query->whereYear('facture_date', $request->get('filter_year'));
         }
 
+        // Filter by driver name if provided: match on saved client_name or related booking driver's user name
+        if ($request->filled('driver_name')) {
+            $name = $request->get('driver_name');
+            $query->where(function ($q) use ($name) {
+                $q->where('client_name', 'like', "%{$name}%")
+                    ->orWhereHas('booking.drivers', function ($q2) use ($name) {
+                        $q2->where('name', 'like', "%{$name}%");
+                    });
+            });
+        }
+
         // Retrieve all (let DataTables handle client-side paging). If dataset grows large, switch to server-side.
-        $tvas = $query->with('booking')->orderByDesc('facture_date')->get();
+        $tvas = $query->with(['booking', 'booking.drivers'])->orderByDesc('facture_date')->get();
 
         return view('tva.index', compact('tvas'));
     }

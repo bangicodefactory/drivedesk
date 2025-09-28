@@ -44,6 +44,11 @@
                     </div>
                     <div class="d-flex flex-wrap gap-3 justify-content-end">
                         <div>
+                            <label for="driver_name" class="form-label">{{ __('Driver Name') }}</label>
+                            <input type="text" id="driver_name" name="driver_name" class="form-control" placeholder="{{ __('Search by driver') }}"
+                                   value="{{ request()->get('driver_name') }}">
+                        </div>
+                        <div>
                             <label for="filter_day" class="form-label">{{ __('Day') }}</label>
                             <input type="date" id="filter_day" name="filter_day" class="form-control"
                                 value="{{ request()->get('filter_day') }}">
@@ -156,7 +161,8 @@
                             <th hidden>id</th>
                             <th><input type="checkbox" id="select-all" /></th>
                             <th>{{ __('Facture N°') }}</th>
-                            <th>{{ __('Booking ID') }}
+                            <th>{{ __('Booking ID') }}</th>
+                            <th>{{ __('Driver') }}</th>
                             <th>{{ __('Designation') }}</th>
                             <th>{{ __('Date') }}</th>
                             <th>{{ __('TTC') }}</th>
@@ -192,6 +198,12 @@
                                     @else
                                         {{ __('N/A') }}
                                     @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $driverName = $tva->client_name ?? optional(optional($tva->booking)->drivers)->name;
+                                    @endphp
+                                    {{ $driverName ?? __('N/A') }}
                                 </td>
                                 <td>{{ !empty($tva->designation) ? $tva->designation : '-' }}</td>
 
@@ -365,6 +377,19 @@
             $('#filter_day, #filter_month, #filter_year, #from_date, #to_date').on('change', function(){
                 $('#auto-filter-form').submit();
             });
+
+            // Debounced submit for driver name text input
+            function debounce(fn, wait) {
+                let t;
+                return function() {
+                    const ctx = this, args = arguments;
+                    clearTimeout(t);
+                    t = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+                };
+            }
+            $('#driver_name').on('input', debounce(function(){
+                $('#auto-filter-form').submit();
+            }, 500));
 
             // === Delete Button ===
             $(document).on('click', '.delete-btn', function(e) {
