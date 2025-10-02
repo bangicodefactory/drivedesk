@@ -5,6 +5,13 @@
         [
             'image' => Storage::exists('upload/home/' . ($settings['image_home_1'] ?? ''))
                 ? Storage::url('upload/home/' . $settings['image_home_1'])
+                : asset('assets/images/client/hero/default-hero-2.jpg'),
+            'subtitle' => __('subtitle_1'),
+            'title' => __('title_1'),
+        ],
+        [
+            'image' => Storage::exists('upload/home/' . ($settings['image_home_1'] ?? ''))
+                ? Storage::url('upload/home/' . $settings['image_home_1'])
                 : asset('assets/images/client/hero/default-hero-1.jpg'),
             'subtitle' => __('subtitle_1'),
             'title' => __('title_1'),
@@ -12,7 +19,7 @@
         [
             'image' => Storage::exists('upload/home/' . ($settings['image_home_2'] ?? ''))
                 ? Storage::url('upload/home/' . $settings['image_home_2'])
-                : asset('assets/images/client/hero/default-hero-2.jpg'),
+                : asset('assets/images/client/hero/default-hero-3.jpg'),
             'subtitle' => __('subtitle_2'),
             'title' => __('title_2'),
         ],
@@ -50,12 +57,19 @@
                                     <h1 class="text-white" data-animation="fadeInUp" data-delay="1.3s">
                                         {!! $slide['title'] !!}
                                     </h1>
+                                    <div class="hero-button" data-animation="fadeInUp" data-delay="1.3s">
+                                        <label class="field-label style-2"></label>
+                                        <a href="#search" class="theme-btn">{{ __('find_car_button') }}</a>
+                                    </div>
+                                   
                                 </div>
                             </div>
+                          
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
     </div>
+   
 </section>

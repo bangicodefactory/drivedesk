@@ -30,7 +30,7 @@
                                     <li><a href="{{ url('/') }}">{{ __('menu_home') }}</a></li>
                                     <li><a href="#">{{ __('menu_cars') }}</a></li>
                                     <li><a href="#">{{ __('menu_about') }}</a></li>
-                                    <li><a href="#">{{ __('menu_blog') }}</a></li>
+                                    {{-- <li><a href="#">{{ __('menu_blog') }}</a></li> --}}
                                     <li><a href="{{ route('contact') }}">{{ __('menu_contact') }}</a></li>
                                 </ul>
                             </nav>
