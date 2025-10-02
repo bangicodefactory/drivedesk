@@ -59,16 +59,23 @@ $vehicleTypes = \App\Models\VehicleType::all();
                 <button class="array-next-2"><i class="fas fa-chevron-right"></i></button>
             </div>
             <div class="swiper brand-slider">
-                <div class="swiper-wrapper">
+                <div class="swiper-wrapper swiper-slide-duplicate-active">
                     @for ($i = 1; $i <= 6; $i++)
                         <div class="swiper-slide">
                             <div class="brand-image">
-                                <img src="{{ asset('assets/images/client/brand/0' . $i . '.png') }}" alt="brand">
+                                <img  src="{{ asset('assets/images/client/brand/0' . $i . '.png') }}" alt="brand">
                             </div>
                         </div>
                     @endfor
                 </div>
             </div>
+            
+            <!-- Keep ALL brand logos in hovered state (full opacity) -->
+            <style>
+                .brand-wrapper .brand-image img {
+                    opacity: 1 !important;
+                }
+            </style>
         </div>
     </div>
 </div>

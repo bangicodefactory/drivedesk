@@ -19,28 +19,28 @@
                 @php
                     $testimonials = [
                         [
-                            'name' => 'Jessica Brown',
+                            'name' => 'Amal bakali',
                             'role' => __('testimonial_customer'),
                             'image' => 'client-1.png',
                             'rating' => 4,
                             'text' => __('testimonial_text_1'),
                         ],
                         [
-                            'name' => 'Kevin Martin',
+                            'name' => 'Hassan el fassi',
                             'role' => __('testimonial_customer'),
                             'image' => 'client-2.png',
                             'rating' => 5,
                             'text' => __('testimonial_text_2'),
                         ],
                         [
-                            'name' => 'Jessica Brown',
+                            'name' => 'Alae ziani',
                             'role' => __('testimonial_customer'),
                             'image' => 'client-3.png',
                             'rating' => 5,
                             'text' => __('testimonial_text_3'),
                         ],
                         [
-                            'name' => 'Michael Johnson',
+                            'name' => 'ikram benkirane',
                             'role' => __('testimonial_customer'),
                             'image' => 'client-4.png',
                             'rating' => 4,

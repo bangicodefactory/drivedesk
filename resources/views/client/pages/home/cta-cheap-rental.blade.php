@@ -18,10 +18,10 @@
             </div>
             <div class="cta-cheap-rental-right ms-auto wow fadeInUp" data-wow-delay=".5s">
                 <div class="social-icon d-flex align-items-center gap-3">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.facebook.com/profile.php?id=100075895973021"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/directonderwegma/"><i class="fab fa-instagram"></i></a>
+                    {{-- <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a> --}}
                 </div>
             </div>
         </div>

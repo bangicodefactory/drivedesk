@@ -463,7 +463,7 @@
                                 <div class="content">
                                     <div class="head d-flex flex-wrap gap-3 align-items-center justify-content-between">
                                         <div class="con">
-                                            <h4>Kevin Martin</h4>
+                                            <h4>Khalid bensdik</h4>
                                         </div>
                                         <div class="star">
                                             <i class="fa-solid fa-star"></i>
