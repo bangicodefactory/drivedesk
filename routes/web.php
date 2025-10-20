@@ -450,6 +450,7 @@ Route::group([
     ],
 ], function () {
     Route::resource('tva', TvaController::class);
+    Route::get('/tva-report', [TvaController::class, 'report'])->name('tva.report');
 });
 
 Route::get('signature', [SignatureController::class, 'index'])->name('signature.index');
