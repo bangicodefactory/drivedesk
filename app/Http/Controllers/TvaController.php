@@ -11,9 +11,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use ZipArchive;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Driver;
-
 use App\Models\BookingPayment;
 
 class TvaController extends Controller
@@ -464,5 +464,145 @@ class TvaController extends Controller
         }
 
         return redirect()->back()->with('success', "{$deletedCount} TVA supprimées. {$createdCount} TVA(s) générées pour " . $monthStart->format('F Y'));
+    }
+
+    public function report(Request $request)
+    {
+        if (!\Auth::user()->can('manage booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        // Base query scoped to current parent (tenant) and not soft deleted
+        $query = Tva::whereNull('deleted_at');
+        if (function_exists('parentId') && parentId()) {
+            $query->where('parent_id', parentId());
+        }
+
+        // Get current year for default filter
+        $currentYear = now()->year;
+        $selectedYear = $request->get('year', $currentYear);
+        
+        // Filter by year
+        $query->whereYear('facture_date', $selectedYear);
+
+        // Get all TVA records for the selected year
+        $tvas = $query->with(['booking', 'booking.drivers'])->get();
+
+        // Calculate monthly statistics
+        $monthlyStats = [];
+        $totalTvaAmount = 0;
+        $totalHtAmount = 0;
+        $totalTtcAmount = 0;
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthlyTvas = $tvas->filter(function ($tva) use ($month) {
+                return Carbon::parse($tva->facture_date)->month == $month;
+            });
+
+            $monthTvaAmount = $monthlyTvas->sum('tva_amount');
+            $monthHtAmount = $monthlyTvas->sum('total_ht');
+            $monthTtcAmount = $monthlyTvas->sum('montant_ttc');
+            $count = $monthlyTvas->count();
+
+            $monthlyStats[$month] = [
+                'month_name' => Carbon::create($selectedYear, $month, 1)->format('F'),
+                'count' => $count,
+                'tva_amount' => $monthTvaAmount,
+                'ht_amount' => $monthHtAmount,
+                'ttc_amount' => $monthTtcAmount,
+            ];
+
+            $totalTvaAmount += $monthTvaAmount;
+            $totalHtAmount += $monthHtAmount;
+            $totalTtcAmount += $monthTtcAmount;
+        }
+
+        // Calculate yearly statistics
+        $yearlyStats = [
+            'total_invoices' => $tvas->count(),
+            'total_tva_amount' => $totalTvaAmount,
+            'total_ht_amount' => $totalHtAmount,
+            'total_ttc_amount' => $totalTtcAmount,
+            'average_tva_per_month' => $totalTvaAmount / 12,
+            'average_invoice_value' => $tvas->count() > 0 ? $totalHtAmount / $tvas->count() : 0,
+        ];
+
+        // Get top clients by TVA amount
+        $topClients = $tvas->groupBy('client_name')
+            ->map(function ($clientTvas) {
+                return [
+                    'client_name' => $clientTvas->first()->client_name,
+                    'total_tva' => $clientTvas->sum('tva_amount'),
+                    'total_ttc' => $clientTvas->sum('montant_ttc'),
+                    'count' => $clientTvas->count(),
+                ];
+            })
+            ->sortByDesc('total_tva')
+            ->take(5);
+
+        // Get car statistics
+        $carStats = $tvas->filter(function ($tva) {
+                return !empty($tva->designation);
+            })
+            ->groupBy('designation')
+            ->map(function ($carTvas) {
+                return [
+                    'car_name' => $carTvas->first()->designation,
+                    'rental_count' => $carTvas->count(),
+                    'total_revenue_ht' => $carTvas->sum('total_ht'),
+                    'total_revenue_ttc' => $carTvas->sum('montant_ttc'),
+                    'total_tva' => $carTvas->sum('tva_amount'),
+                    'average_rental_value_ht' => $carTvas->count() > 0 ? $carTvas->sum('total_ht') / $carTvas->count() : 0,
+                    'total_rental_days' => $carTvas->sum('quantity'),
+                ];
+            })
+            ->sortByDesc('rental_count');
+
+        // Top 5 most rented cars
+        $topRentedCars = $carStats->take(5);
+
+        // Top 5 most profitable cars by revenue HT
+        $topProfitableCars = $carStats->sortByDesc('total_revenue_ht')->take(5);
+
+        // Car performance statistics
+        $carPerformanceStats = [
+            'total_unique_cars' => $carStats->count(),
+            'most_rented_car' => $carStats->first(),
+            'most_profitable_car' => $carStats->sortByDesc('total_revenue_ht')->first(),
+            'average_rentals_per_car' => $carStats->count() > 0 ? $carStats->sum('rental_count') / $carStats->count() : 0,
+            'total_rental_days' => $carStats->sum('total_rental_days'),
+        ];
+
+        // Prepare chart data
+        $chartData = [
+            'months' => array_values(array_column($monthlyStats, 'month_name')),
+            'tva_amounts' => array_values(array_column($monthlyStats, 'tva_amount')),
+            'ht_amounts' => array_values(array_column($monthlyStats, 'ht_amount')),
+            'ttc_amounts' => array_values(array_column($monthlyStats, 'ttc_amount')),
+            'counts' => array_values(array_column($monthlyStats, 'count')),
+        ];
+
+        // Get available years for dropdown
+        $availableYears = Tva::selectRaw('YEAR(facture_date) as year')
+            ->whereNull('deleted_at')
+            ->when(function_exists('parentId') && parentId(), function ($q) {
+                return $q->where('parent_id', parentId());
+            })
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year');
+
+        return view('tva.report', compact(
+            'monthlyStats',
+            'yearlyStats',
+            'topClients',
+            'chartData',
+            'selectedYear',
+            'availableYears',
+            'topRentedCars',
+            'topProfitableCars',
+            'carPerformanceStats',
+            'carStats'
+        ));
     }
 }

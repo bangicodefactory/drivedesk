@@ -169,11 +169,21 @@
                     </li>
                 @endif
                 @if (Gate::check('manage reminder'))
-                    <li class="menu-item {{ in_array($routeName, ['tva.index']) ? 'active' : '' }}">
-                        <a href="{{ route('tva.index') }}">
+                    <li
+                        class="menu-item {{ in_array($routeName, ['tva.index', 'tva.report']) ? 'active' : '' }}">
+                        <a href="javascript:void(0);">
                             <div class="icon-item"><i data-feather="file-text"></i></div>
-                            <span>{{ __('TVA') }}</span>
+                            <span>{{ __('TVA') }}</span><i class="fa fa-angle-down"></i>
                         </a>
+                        <ul class="submenu-list"
+                            style="display: {{ in_array($routeName, ['tva.index', 'tva.report']) ? 'block' : 'none' }}">
+                            <li class=" {{ in_array($routeName, ['tva.index']) ? 'active' : '' }}">
+                                <a href="{{ route('tva.index') }}">{{ __('TVA Management') }} </a>
+                            </li>
+                            <li class="{{ in_array($routeName, ['tva.report']) ? 'active' : '' }}">
+                                <a href="{{ route('tva.report') }}">{{ __('TVA Report') }}</a>
+                            </li>
+                        </ul>
                     </li>
                 @endif
                 @if (Gate::check('manage reminder'))

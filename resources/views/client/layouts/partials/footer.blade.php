@@ -53,7 +53,7 @@
                         </div>
                         <div class="footer-gallery">
                             <div class="gallery-wrap">
-                                @for ($i = 1; $i <= 6; $i++)
+                                @for ($i = 1; $i <= 4; $i++)
                                     <div class="gallery-item">
                                         <div class="thumb">
                                             <a href="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" class="img-popup">
@@ -93,7 +93,7 @@
         <div class="footer-bottom">
             <div class="footer-wrapper">
                 <p class="wow fadeInUp" data-wow-delay=".4s">
-                    © {{ date('Y') }} {{ __('footer_copyright') }} <a href="{{ url('/') }}">{{ $settings['company_name'] ?? 'Remons.com' }}</a>
+                    © {{ date('Y') }} {{ __('footer_copyright') }} <a href="https://bangicode.ma/">Bangicode.ma</a>
                 </p>
             </div>
         </div>
