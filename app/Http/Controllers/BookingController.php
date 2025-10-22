@@ -622,6 +622,11 @@ class BookingController extends Controller
             $endDate = Carbon::parse($booking->end_date);
             $totalDays = max(1, $startDate->diffInDays($endDate));
 
+            // Calcul totaldays by numericAmount
+            $totalDaysAmount = ($numericAmount * $totalDays ) / $booking->amount;
+            $totalDays = max(1, round($totalDaysAmount));
+
+
             // vehicle_details is cast to object in Booking model; cast to array for safe key access
             $vehicleDetailsObj = $booking->vehicleDetails();
             $vehicle_name = $vehicleDetailsObj->name ?? '';

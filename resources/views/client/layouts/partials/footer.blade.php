@@ -52,12 +52,12 @@
                             <h4>{{ __('footer_gallery') }}</h4>
                         </div>
                         <div class="footer-gallery">
-                            <div class="gallery-wrap">
+                            <div class="gallery-wrap" style="display: flex; flex-wrap: wrap; gap: 10px;">
                                 @for ($i = 1; $i <= 4; $i++)
-                                    <div class="gallery-item">
+                                    <div class="gallery-item" style="flex: 0 0 calc(50% - 5px);">
                                         <div class="thumb">
                                             <a href="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" class="img-popup">
-                                                <img src="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" alt="gallery-img">
+                                                <img src="{{ asset('assets/images/client/footer/gallery-' . $i . '.jpg') }}" alt="gallery-img" style="width: 100%; height: auto; object-fit: cover;">
                                                 <div class="icon"><i class="far fa-plus"></i></div>
                                             </a>
                                         </div>
