@@ -632,8 +632,10 @@ class BookingController extends Controller
             $vehicle_name = $vehicleDetailsObj->name ?? '';
             $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
 
-            $totalHT = round($numericAmount * 0.8, 2);
-            $tvaAmount = round($numericAmount * 0.2, 2);
+            // $totalHT = round($numericAmount * 0.8, 2);
+            // $tvaAmount = round($numericAmount * 0.2, 2);
+            $totalHT = round($numericAmount / 1.2, 2);
+            $tvaAmount = round($numericAmount - $totalHT, 2);
 
 
             // Global last facture number (ignoring tenant scoping per new requirement)
