@@ -81,7 +81,7 @@
                     @if(!empty($settings['admin_signature']))
                         <div class="mb-4">
                             <p>{{ __('Current Signature:') }}</p>
-                            <img src="{{ asset('storage/' . $settings['admin_signature']) }}" alt="Signature">
+                            <img src="{{ Storage::url($settings['admin_signature']) }}" alt="Signature" style="max-height: 100px;">
                         </div>
                     @endif
 
