@@ -167,8 +167,8 @@ Route::group(
 );
 Route::get('language/{lang}', [SettingController::class, 'languageChange'])->name('language.change');
 Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
-Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
-Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
+// Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
+// Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
 
 //-------------------------------Role & Permissions-------------------------------------------
 Route::resource('permission', PermissionController::class)->middleware(

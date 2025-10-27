@@ -149,6 +149,30 @@ class TvaController extends Controller
 
                 // Debug: Always log what we're passing to the template
                 Log::info('LogoBase64 status: ' . ($logoBase64 ? 'Generated successfully' : 'NULL'));
+                
+                // Convert admin signature to base64 for DomPDF compatibility
+                $signatureBase64 = null;
+                if (!empty($settings['admin_signature'])) {
+                    // The signature path is stored as: upload/signature-admin/signature_X_timestamp.png
+                    $signaturePath = storage_path('app/public/' . $settings['admin_signature']);
+                    
+                    if (file_exists($signaturePath) && is_readable($signaturePath)) {
+                        try {
+                            $imageData = file_get_contents($signaturePath);
+                            $imageInfo = getimagesize($signaturePath);
+                            if ($imageData && $imageInfo) {
+                                $mimeType = $imageInfo['mime'];
+                                $signatureBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                                Log::info('Signature loaded successfully: ' . $signaturePath);
+                            }
+                        } catch (Exception $e) {
+                            Log::error('Signature loading error: ' . $e->getMessage() . ' for path: ' . $signaturePath);
+                        }
+                    } else {
+                        Log::warning('Signature file not found or not readable: ' . $signaturePath);
+                    }
+                }
+                
                 $ttcInWords = $this->numberToFrenchWords(floor($invoice->montant_ttc)) . ' dirhams';
                 if (fmod($invoice->montant_ttc, 1) > 0) {
                     $ttcInWords .= ' et ' . round(fmod($invoice->montant_ttc, 1) * 100) . ' centimes';
@@ -169,6 +193,7 @@ class TvaController extends Controller
                     'logoPath' => $logoBase64,
                     'ttcInWords' => $ttcInWords,
                     'clientIce' => $clientIce,
+                    'signaturePath' => $signatureBase64,
                 ]);
                 $pdfContent = $pdf->output();
                 $fileName = 'invoice_' . $invoice->facture_number . '.pdf';
