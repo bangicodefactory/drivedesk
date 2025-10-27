@@ -609,22 +609,19 @@
 
         <div style="clear: both;"></div>
 
-        @php
-            $setting = \App\Models\Setting::where('name', 'admin_signature')->first();
-        @endphp
-        <!-- Payment Information -->
-        {{-- <section class="payment-info">
-            <div class="payment-details">
-                <h3>Signature</h3>
-                <p><strong>Payment Terms:</strong> Net 30 days</p>
-                <p><strong>Payment Method:</strong> Bank Transfer, Check, or Credit Card</p>
-                <p><strong>Bank Details:</strong><br>
-                    Account Name: Your Company Name<br>
-                    Account Number: 1234567890<br>
-                    Routing Number: 987654321<br>
-                    Bank: First National Bank</p>
+        <!-- Admin Signature Section -->
+        @if(!empty($signaturePath))
+        <section class="" style="margin-top: 5px;">
+            <div>
+                <h5>Signature :</h5>
+                <div style="margin-top: 5px; ">
+                    <img src="{{ $signaturePath }}" 
+                         alt="Admin Signature" 
+                         style="height: 80px; width: 150px; border: 1px solid #e5e7eb; padding: 2px; background: white; margin-bottom: 3px;">
+                </div>
             </div>
-        </section> --}}
+        </section>
+        @endif
 
         <!-- Notes and Terms -->
         {{-- <section class="invoice-notes">
