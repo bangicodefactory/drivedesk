@@ -153,10 +153,23 @@ class TvaController extends Controller
                 // Convert admin signature to base64 for DomPDF compatibility
                 $signatureBase64 = null;
                 if (!empty($settings['admin_signature'])) {
-                    // The signature path is stored as: upload/signature-admin/signature_X_timestamp.png
-                    $signaturePath = storage_path('app/public/' . $settings['admin_signature']);
+                    // Try multiple possible signature paths
+                    $possibleSignaturePaths = [
+                        storage_path('app/public/' . $settings['admin_signature']),
+                        public_path('storage/' . $settings['admin_signature']),
+                        base_path('public/storage/' . $settings['admin_signature']),
+                        storage_path('app/' . $settings['admin_signature']),
+                    ];
                     
-                    if (file_exists($signaturePath) && is_readable($signaturePath)) {
+                    $signaturePath = null;
+                    foreach ($possibleSignaturePaths as $path) {
+                        if (file_exists($path) && is_readable($path)) {
+                            $signaturePath = $path;
+                            break;
+                        }
+                    }
+                    
+                    if ($signaturePath && file_exists($signaturePath)) {
                         try {
                             $imageData = file_get_contents($signaturePath);
                             $imageInfo = getimagesize($signaturePath);
@@ -169,7 +182,7 @@ class TvaController extends Controller
                             Log::error('Signature loading error: ' . $e->getMessage() . ' for path: ' . $signaturePath);
                         }
                     } else {
-                        Log::warning('Signature file not found or not readable: ' . $signaturePath);
+                        Log::warning('Signature file not found. Searched paths: ' . implode(', ', $possibleSignaturePaths));
                     }
                 }
                 
