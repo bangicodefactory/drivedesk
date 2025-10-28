@@ -558,8 +558,8 @@
                     <tr>
                         <th class="description">Description</th>
                         <th class="quantity">Qty</th>
-                        <th class="rate">P.U.H.T</th>
-                        <th class="amount">TOTAL H.T</th>
+                        <th class="rate">P.U.TTC</th>
+                        <th class="amount">TOTAL:</th>
                     </tr>
                 </thead>
                 <tbody style="margin-top: 10px;">
@@ -572,7 +572,7 @@
                             <td class="quantity">{{ $item->quantity }}</td>
 
                             <td class="rate">{{ number_format($item->unit_price, 2) }} MAD</td>
-                            <td class="amount">{{ number_format($item->total_ht, 2) }} MAD</td>
+                            <td class="amount">{{ number_format($item->total_ttc, 2) }} MAD</td>
                         </tr>
                     @endforeach
 

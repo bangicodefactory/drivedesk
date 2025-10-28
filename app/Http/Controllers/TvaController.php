@@ -90,7 +90,7 @@ class TvaController extends Controller
                         'description' => $invoice->designation,
                         'quantity' => $invoice->quantity,
                         'unit_price' => $invoice->unit_price_ht,
-                        'total_ht' => $invoice->total_ht,
+                        'total_ttc' => $invoice->montant_ttc,
 
                     ]
                 ];
@@ -463,9 +463,9 @@ class TvaController extends Controller
 
             // Financials based on payment amount (TTC) with fixed 20% VAT assumption
             $paymentTtc = (float)$payment->amount;
-            $totalHt = round($paymentTtc * 0.8, 2);
-            $tvaAmount = round($paymentTtc * 0.2, 2);
-            $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : $totalHt; // spread across days
+            $totalHt = round($paymentTtc / 1.2, 2);
+            $tvaAmount = round($paymentTtc - $totalHt, 2);
+            $unitPriceHt = $totalDays > 0 ? round($paymentTtc / $totalDays, 2) : $paymentTtc; // spread across days
 
             $factureCounter++;
             $factureNumber = $factureCounter;
