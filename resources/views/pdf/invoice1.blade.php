@@ -610,12 +610,12 @@
         <div style="clear: both;"></div>
 
         <!-- Admin Signature Section -->
-        @if(!empty($settings['admin_signature']))
+        @if(!empty($signaturePath))
         <section class="" style="margin-top: 5px;">
             <div>
                 <h5>Signature :</h5>
                 <div style="margin-top: 5px; ">
-                    <img src="{{ asset('storage/' . $settings['admin_signature']) }}" 
+                    <img src="{{ $signaturePath }}" 
                          alt="Admin Signature" 
                          style="height: 80px; width: 150px; border: 1px solid #e5e7eb; padding: 2px; background: white; margin-bottom: 3px;">
                 </div>

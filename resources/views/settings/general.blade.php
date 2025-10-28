@@ -81,7 +81,11 @@
                     @if(!empty($settings['admin_signature']))
                         <div class="mb-4">
                             <p>{{ __('Current Signature:') }}</p>
-                            <img src="{{ asset('storage/' . $settings['admin_signature']) }}" alt="Signature" style="max-height: 100px;">
+                            <img src="{{ asset('storage/' . $settings['admin_signature']) }}" 
+                                 alt="Signature" 
+                                 style="max-height: 100px;"
+                                 onerror="this.onerror=null; this.src=''; this.alt='Signature not found - Path: {{ $settings['admin_signature'] }}'; this.style.border='1px dashed red'; this.style.padding='10px';">
+                            <small class="text-muted d-block mt-1">Path: {{ $settings['admin_signature'] }}</small>
                         </div>
                     @endif
 
