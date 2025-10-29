@@ -90,7 +90,7 @@ class TvaController extends Controller
                         'description' => $invoice->designation,
                         'quantity' => $invoice->quantity,
                         'unit_price' => $invoice->unit_price_ht,
-                        'total_ht' => $invoice->total_ht,
+                        'total_ttc' => $invoice->montant_ttc,
 
                     ]
                 ];
@@ -153,10 +153,23 @@ class TvaController extends Controller
                 // Convert admin signature to base64 for DomPDF compatibility
                 $signatureBase64 = null;
                 if (!empty($settings['admin_signature'])) {
-                    // The signature path is stored as: upload/signature-admin/signature_X_timestamp.png
-                    $signaturePath = storage_path('app/public/' . $settings['admin_signature']);
+                    // Try multiple possible signature paths
+                    $possibleSignaturePaths = [
+                        storage_path('app/public/' . $settings['admin_signature']),
+                        public_path('storage/' . $settings['admin_signature']),
+                        base_path('public/storage/' . $settings['admin_signature']),
+                        storage_path('app/' . $settings['admin_signature']),
+                    ];
                     
-                    if (file_exists($signaturePath) && is_readable($signaturePath)) {
+                    $signaturePath = null;
+                    foreach ($possibleSignaturePaths as $path) {
+                        if (file_exists($path) && is_readable($path)) {
+                            $signaturePath = $path;
+                            break;
+                        }
+                    }
+                    
+                    if ($signaturePath && file_exists($signaturePath)) {
                         try {
                             $imageData = file_get_contents($signaturePath);
                             $imageInfo = getimagesize($signaturePath);
@@ -169,7 +182,7 @@ class TvaController extends Controller
                             Log::error('Signature loading error: ' . $e->getMessage() . ' for path: ' . $signaturePath);
                         }
                     } else {
-                        Log::warning('Signature file not found or not readable: ' . $signaturePath);
+                        Log::warning('Signature file not found. Searched paths: ' . implode(', ', $possibleSignaturePaths));
                     }
                 }
                 
@@ -450,9 +463,9 @@ class TvaController extends Controller
 
             // Financials based on payment amount (TTC) with fixed 20% VAT assumption
             $paymentTtc = (float)$payment->amount;
-            $totalHt = round($paymentTtc * 0.8, 2);
-            $tvaAmount = round($paymentTtc * 0.2, 2);
-            $unitPriceHt = $totalDays > 0 ? round($totalHt / $totalDays, 2) : $totalHt; // spread across days
+            $totalHt = round($paymentTtc / 1.2, 2);
+            $tvaAmount = round($paymentTtc - $totalHt, 2);
+            $unitPriceHt = $totalDays > 0 ? round($paymentTtc / $totalDays, 2) : $paymentTtc; // spread across days
 
             $factureCounter++;
             $factureNumber = $factureCounter;
