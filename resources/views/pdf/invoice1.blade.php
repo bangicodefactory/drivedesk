@@ -558,8 +558,8 @@
                     <tr>
                         <th class="description">Description</th>
                         <th class="quantity">Qty</th>
-                        <th class="rate">P.U.H.T</th>
-                        <th class="amount">TOTAL H.T</th>
+                        <th class="rate">P.U.TTC</th>
+                        <th class="amount">TOTAL:</th>
                     </tr>
                 </thead>
                 <tbody style="margin-top: 10px;">
@@ -572,7 +572,7 @@
                             <td class="quantity">{{ $item->quantity }}</td>
 
                             <td class="rate">{{ number_format($item->unit_price, 2) }} MAD</td>
-                            <td class="amount">{{ number_format($item->total_ht, 2) }} MAD</td>
+                            <td class="amount">{{ number_format($item->total_ttc, 2) }} MAD</td>
                         </tr>
                     @endforeach
 
@@ -610,12 +610,12 @@
         <div style="clear: both;"></div>
 
         <!-- Admin Signature Section -->
-        @if(!empty($settings['admin_signature']))
+        @if(!empty($signaturePath))
         <section class="" style="margin-top: 5px;">
             <div>
                 <h5>Signature :</h5>
                 <div style="margin-top: 5px; ">
-                    <img src="{{ asset('storage/' . $settings['admin_signature']) }}" 
+                    <img src="{{ $signaturePath }}" 
                          alt="Admin Signature" 
                          style="height: 80px; width: 150px; border: 1px solid #e5e7eb; padding: 2px; background: white; margin-bottom: 3px;">
                 </div>
