@@ -557,8 +557,9 @@
                 <thead>
                     <tr>
                         <th class="description">Description</th>
-                        {{-- <th class="quantity">Qty</th> --}}
+                        <th class="quantity">Qty</th>
                         {{-- <th class="rate">P.U.TTC</th> --}}
+                        <th class="rate">P.U</th>
                         <th class="amount">TOTAL:</th>
                     </tr>
                 </thead>
@@ -570,8 +571,10 @@
                                 {{-- <small>{{ $item->details }}</small> --}}
                             </td>
                             {{-- <td class="quantity">{{ $item->quantity }}</td> --}}
+                            <td class="quantity">8</td>
 
                             {{-- <td class="rate">{{ number_format($item->unit_price, 2) }} MAD</td> --}}
+                            <td class="rate">{{ $item->total_ttc / 8 }} MAD</td>
                             <td class="amount">{{ number_format($item->total_ttc, 2) }} MAD</td>
                         </tr>
                     @endforeach
