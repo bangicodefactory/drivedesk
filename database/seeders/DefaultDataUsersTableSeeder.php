@@ -427,6 +427,14 @@ class DefaultDataUsersTableSeeder extends Seeder
                     'name' => 'delete reminder',
                     'guard_name' => 'web',
                 ],
+                [
+                    'name' => 'manage tva',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'manage tva report',
+                    'guard_name' => 'web',
+                ],
             ];
             Permission::insert($allPermission);
 
@@ -589,6 +597,9 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit reminder'],
                 ['name' => 'delete reminder'],
 
+                ['name' => 'manage tva'],
+                ['name' => 'manage tva report'],
+
             ];
             $systemOwnerRole->givePermissionTo($systemOwnerPermission);
 
@@ -685,6 +696,9 @@ class DefaultDataUsersTableSeeder extends Seeder
 ['name' => 'create reminder'],
 ['name' => 'edit reminder'],
 ['name' => 'delete reminder'],
+
+                ['name' => 'manage tva'],
+                ['name' => 'manage tva report'],
             ];
             $systemManagerRole->givePermissionTo($systemManagerPermission);
             // Default Manager Create
