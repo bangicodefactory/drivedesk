@@ -21,7 +21,7 @@ class TvaController extends Controller
     //
     public function index(Request $request)
     {
-        if (!\Auth::user()->can('manage booking')) {
+        if (!\Auth::user()->can('manage tva')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
@@ -506,7 +506,7 @@ class TvaController extends Controller
 
     public function report(Request $request)
     {
-        if (!\Auth::user()->can('manage booking')) {
+        if (!\Auth::user()->can('manage tva report')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
