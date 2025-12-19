@@ -553,7 +553,16 @@ class BookingController extends Controller
     {
         $booking = Booking::find($id);
         $paymentMethod = BookingPayment::$paymentMethod;
-        return view('booking.payment', compact('booking', 'paymentMethod'));
+        
+        // Calculate default quantity (total days adjusted by payment amount)
+        $startDate = Carbon::parse($booking->start_date);
+        $endDate = Carbon::parse($booking->end_date);
+        $totalDays = max(1, $startDate->diffInDays($endDate));
+        $dueAmount = $booking->getTotalDueAmount();
+        $totalDaysAmount = ($dueAmount * $totalDays) / $booking->amount;
+        $defaultQuantity = max(1, round($totalDaysAmount));
+        
+        return view('booking.payment', compact('booking', 'paymentMethod', 'defaultQuantity'));
     }
 
     public function paymentStore(Request $request, $id)
@@ -618,13 +627,18 @@ class BookingController extends Controller
             $user = User::find($booking->driver);
             $driver1 = Driver::where('user_id', $booking->driver)->first();
             // 🔹 TVA Calculation. 🔹
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
-            $totalDays = max(1, $startDate->diffInDays($endDate));
-
-            // Calcul totaldays by numericAmount
-            $totalDaysAmount = ($numericAmount * $totalDays ) / $booking->amount;
-            $totalDays = max(1, round($totalDaysAmount));
+            
+            // Use quantity from request if provided, otherwise calculate
+            if ($request->has('quantity') && $request->quantity > 0) {
+                $totalDays = (int)$request->quantity;
+            } else {
+                $startDate = Carbon::parse($booking->start_date);
+                $endDate = Carbon::parse($booking->end_date);
+                $totalDays = max(1, $startDate->diffInDays($endDate));
+                // Calcul totaldays by numericAmount
+                $totalDaysAmount = ($numericAmount * $totalDays ) / $booking->amount;
+                $totalDays = max(1, round($totalDaysAmount));
+            }
 
 
             // vehicle_details is cast to object in Booking model; cast to array for safe key access
