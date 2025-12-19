@@ -11,6 +11,10 @@
             {{Form::number('amount',$booking->getTotalDueAmount(),array('class'=>'form-control','placeholder'=>__('Enter payment amount'),'required'=>'required'))}}
         </div>
         <div class="form-group">
+            {{Form::label('quantity',__('Quantity (Days)'),array('class'=>'form-label')) }}
+            {{Form::number('quantity',$defaultQuantity,array('class'=>'form-control','placeholder'=>__('Enter quantity'),'required'=>'required','min'=>'1','step'=>'1'))}}
+        </div>
+        <div class="form-group">
             {{ Form::label('payment_method', __('Method'),['class'=>'form-label']) }}
             {!! Form::select('payment_method', $paymentMethod,null,array('class' => 'form-control hidesearch ')) !!}
         </div>

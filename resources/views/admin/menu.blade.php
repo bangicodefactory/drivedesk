@@ -168,7 +168,7 @@
                         </a>
                     </li>
                 @endif
-                @if (Gate::check('manage reminder'))
+                @if (Gate::check('manage tva') || Gate::check('manage tva report'))
                     <li
                         class="menu-item {{ in_array($routeName, ['tva.index', 'tva.report']) ? 'active' : '' }}">
                         <a href="javascript:void(0);">
@@ -177,12 +177,16 @@
                         </a>
                         <ul class="submenu-list"
                             style="display: {{ in_array($routeName, ['tva.index', 'tva.report']) ? 'block' : 'none' }}">
-                            <li class=" {{ in_array($routeName, ['tva.index']) ? 'active' : '' }}">
-                                <a href="{{ route('tva.index') }}">{{ __('TVA Management') }} </a>
-                            </li>
-                            <li class="{{ in_array($routeName, ['tva.report']) ? 'active' : '' }}">
-                                <a href="{{ route('tva.report') }}">{{ __('TVA Report') }}</a>
-                            </li>
+                            @if (Gate::check('manage tva'))
+                                <li class=" {{ in_array($routeName, ['tva.index']) ? 'active' : '' }}">
+                                    <a href="{{ route('tva.index') }}">{{ __('TVA Management') }} </a>
+                                </li>
+                            @endif
+                            @if (Gate::check('manage tva report'))
+                                <li class="{{ in_array($routeName, ['tva.report']) ? 'active' : '' }}">
+                                    <a href="{{ route('tva.report') }}">{{ __('TVA Report') }}</a>
+                                </li>
+                            @endif
                         </ul>
                     </li>
                 @endif

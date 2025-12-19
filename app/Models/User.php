@@ -104,6 +104,7 @@ class User extends Authenticatable
         'logged history',
         'settings',
         'reminder',
+        'tva',
     ];
 
     public function languageKeyword()
