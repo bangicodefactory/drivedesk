@@ -27,6 +27,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TvaController;
+use App\Http\Controllers\CreditController;
 use App\Http\Controllers\RequestBookingController;
 
 /*
@@ -451,6 +452,23 @@ Route::group([
 ], function () {
     Route::resource('tva', TvaController::class);
     Route::get('/tva-report', [TvaController::class, 'report'])->name('tva.report');
+});
+
+//--------------------------------Credits--------------------------------
+Route::group([
+    'middleware' => [
+        'auth',
+        'XSS',
+    ],
+], function () {
+    Route::get('credit', [CreditController::class, 'index'])->name('credit.index');
+    Route::get('credit/create', [CreditController::class, 'create'])->name('credit.create');
+    Route::post('credit', [CreditController::class, 'store'])->name('credit.store');
+    Route::get('credit/{credit}', [CreditController::class, 'show'])->name('credit.show');
+    Route::get('credit/{credit}/edit', [CreditController::class, 'edit'])->name('credit.edit');
+    Route::put('credit/{credit}', [CreditController::class, 'update'])->name('credit.update');
+    Route::delete('credit/{credit}', [CreditController::class, 'destroy'])->name('credit.destroy');
+    Route::get('credit/search-drivers', [CreditController::class, 'searchDrivers'])->name('credit.search.drivers');
 });
 
 Route::get('signature', [SignatureController::class, 'index'])->name('signature.index');
