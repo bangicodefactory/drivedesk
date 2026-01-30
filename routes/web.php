@@ -464,6 +464,7 @@ Route::group([
     Route::get('credit', [CreditController::class, 'index'])->name('credit.index');
     Route::get('credit/create', [CreditController::class, 'create'])->name('credit.create');
     Route::post('credit', [CreditController::class, 'store'])->name('credit.store');
+    Route::get('credit/{credit}', [CreditController::class, 'show'])->name('credit.show');
     Route::get('credit/{credit}/edit', [CreditController::class, 'edit'])->name('credit.edit');
     Route::put('credit/{credit}', [CreditController::class, 'update'])->name('credit.update');
     Route::delete('credit/{credit}', [CreditController::class, 'destroy'])->name('credit.destroy');

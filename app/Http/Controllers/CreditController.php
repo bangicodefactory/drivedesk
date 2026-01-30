@@ -41,6 +41,59 @@ class CreditController extends Controller
         return view('credit.index', compact('credits', 'drivers'));
     }
 
+    /**
+     * Show all credits for the driver of the given credit.
+     */
+    public function show(Credit $credit)
+    {
+        if (!Auth::user()->can('manage driver')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        if (function_exists('parentId') && $credit->parent_id != parentId()) {
+            return redirect()->route('credit.index')->with('error', __('Permission Denied.'));
+        }
+
+        $driver = $credit->driver;
+        if (!$driver) {
+            return redirect()->route('credit.index')->with('error', __('Driver not found.'));
+        }
+
+        $credits = Credit::where('driver_id', $driver->id)
+            ->where('parent_id', $credit->parent_id)
+            ->orderByDesc('credit_date')
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Chart 1: Credits by status (amount)
+        $paidAmount = $credits->where('status', 'payé')->sum('amount');
+        $unpaidAmount = $credits->where('status', 'non payé')->sum('amount');
+        $chartStatus = [
+            'labels' => [__('credit.status_paid'), __('credit.status_unpaid')],
+            'amounts' => [(float) $paidAmount, (float) $unpaidAmount],
+        ];
+
+        // Chart 2: Credits amount by month (last 12 months)
+        $byMonth = $credits->groupBy(function ($c) {
+            $date = $c->credit_date ?? $c->created_at;
+            return $date ? \Carbon\Carbon::parse($date)->format('Y-m') : null;
+        })->map->sum('amount')->filter();
+
+        $last12 = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $key = now()->subMonths($i)->format('Y-m');
+            $last12->put($key, (float) ($byMonth->get($key, 0)));
+        }
+        $chartByMonth = [
+            'months' => $last12->keys()->map(function ($m) {
+                return \Carbon\Carbon::createFromFormat('Y-m', $m)->translatedFormat('M Y');
+            })->values()->toArray(),
+            'amounts' => $last12->values()->toArray(),
+        ];
+
+        return view('credit.show', compact('credit', 'driver', 'credits', 'chartStatus', 'chartByMonth'));
+    }
+
     public function create()
     {
         if (!Auth::user()->can('manage driver')) {

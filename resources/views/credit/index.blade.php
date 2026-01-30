@@ -76,12 +76,12 @@
                             @foreach ($credits as $credit)
                                 <tr>
                                     <td>{{ $credit->driver ? $credit->driver->name : __('credit.n_a') }}</td>
-                                    <td>{{ number_format($credit->amount, 2) }} {{ __('credit.currency') }}</td>
+                                    <td>{{ number_format($credit->amount, 2) }} Dh</td>
                                     <td>
                                         @if ($credit->status === 'payé')
-                                            <span class="badge badge-success">{{ __('credit.status_paid') }}</span>
+                                            <span class="badge badge-primary">{{ __('credit.status_paid') }}</span>
                                         @else
-                                            <span class="badge badge-warning">{{ __('credit.status_unpaid') }}</span>
+                                            <span class="badge badge-danger">{{ __('credit.status_unpaid') }}</span>
                                         @endif
                                     </td>
                                     <td>{{ $credit->credit_date ? dateFormat($credit->credit_date) : __('credit.none') }}</td>
@@ -89,6 +89,11 @@
                                     @if (Gate::check('manage driver'))
                                         <td>
                                             <div class="cart-action">
+                                                <a class="text-primary" data-bs-toggle="tooltip"
+                                                   data-bs-original-title="{{ __('credit.view_driver_credits') }}"
+                                                   href="{{ route('credit.show', $credit) }}">
+                                                    <i data-feather="eye"></i>
+                                                </a>
                                                 <a class="text-success customModal" data-bs-toggle="tooltip"
                                                    data-bs-original-title="{{ __('credit.edit') }}" href="#"
                                                    data-url="{{ route('credit.edit', $credit) }}"
