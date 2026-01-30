@@ -99,6 +99,14 @@
                         </a>
                     </li>
                 @endif
+                @if (Gate::check('manage driver'))
+                    <li class="menu-item {{ in_array($routeName, ['credit.index']) ? 'active' : '' }}">
+                        <a href="{{ route('credit.index') }}">
+                            <div class="icon-item"><i data-feather="credit-card"></i></div>
+                            <span>{{ __('Credits') }}</span>
+                        </a>
+                    </li>
+                @endif
                 @if (Gate::check('manage vehicle'))
                     <li class="menu-item {{ in_array($routeName, ['vehicle.index']) ? 'active' : '' }}">
                         <a href="{{ route('vehicle.index') }}">

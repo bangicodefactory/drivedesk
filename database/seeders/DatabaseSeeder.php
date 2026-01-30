@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             DefaultDataUsersTableSeeder::class,
             AllReminderPermissionsSeeder::class,
             TvaSeeder::class,
+            DriverSeeder::class,
         ]);
     }
 }
