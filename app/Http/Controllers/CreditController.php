@@ -245,4 +245,28 @@ class CreditController extends Controller
             'parent_id' => function_exists('parentId') ? (parentId() ?? 0) : 0,
         ]);
     }
+
+    public function getDriverCredit($driver_id)
+    {
+        if (Auth::user()->can('manage rental agreement') || Auth::user()->can('manage driver') || Auth::user()->can('create rental agreement')) {
+             $credits = Credit::where('driver_id', $driver_id)
+                ->where('parent_id', parentId())
+                ->get();
+
+            $totalUnpaid = $credits->where('status', 'non payé')->sum('amount');
+            $history = $credits->sortByDesc('created_at')->take(5)->map(function ($credit) {
+                return [
+                    'amount' => $credit->amount,
+                    'status' => $credit->status,
+                    'date' => $credit->credit_date ? $credit->credit_date->format('Y-m-d') : $credit->created_at->format('Y-m-d'),
+                ];
+            });
+
+            return response()->json([
+                'total_unpaid' => $totalUnpaid,
+                'history' => $history
+            ]);
+        }
+        return response()->json(['error' => 'Permission Denied'], 403);
+    }
 }

@@ -469,6 +469,7 @@ Route::group([
     Route::put('credit/{credit}', [CreditController::class, 'update'])->name('credit.update');
     Route::delete('credit/{credit}', [CreditController::class, 'destroy'])->name('credit.destroy');
     Route::get('credit/search-drivers', [CreditController::class, 'searchDrivers'])->name('credit.search.drivers');
+    Route::get('credit/driver-credit/{driver_id}', [CreditController::class, 'getDriverCredit'])->name('credit.driver.details');
 });
 
 Route::get('signature', [SignatureController::class, 'index'])->name('signature.index');

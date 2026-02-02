@@ -13,6 +13,18 @@
             <span class="float-end"> <a class=" customModal" href="#" data-size="lg"
                                     data-url="{{ route('driver.new.create') }}"
                                     data-title="{{ __('Create Driver') }}">{{ __('Create New Driver') }}</a></span>
+            
+            <div id="driver-credit-info" class="mt-2" style="display:none;">
+                <div class="alert alert-secondary mb-0 p-2" role="alert">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>{{ __('Total Unpaid Credit:') }}</strong>
+                        <span id="credit-amount" class="font-weight-bold" style="font-size: 1.1em;"></span>
+                    </div>
+                    <hr class="my-1">
+                    <p class="mb-1 text-muted small">{{ __('Recent History:') }}</p>
+                    <ul id="credit-history" class="list-unstyled mb-0 small pl-0"></ul>
+                </div>
+            </div>
                       
         </div>
 
@@ -91,5 +103,55 @@
     {{ Form::submit(__('Create'), ['class' => 'btn btn-primary ml-10']) }}
 </div>
 {{ Form::close() }}
+<script>
+    $(document).on('change', '#driver', function() {
+        var driverId = $(this).val();
+        if (driverId) {
+            var url = '{{ route("credit.driver.details", ["driver_id" => "driver_id_placeholder"]) }}';
+            url = url.replace('driver_id_placeholder', driverId);
+            
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    $('#driver-credit-info').show();
+                    // Assuming currency symbol is not provided by backend, just number
+                    $('#credit-amount').text(parseFloat(response.total_unpaid).toFixed(2)); 
+                    
+                    var alertBox = $('#driver-credit-info .alert');
+                    
+                    // Simple logic: if unpaid > 0, danger.
+                    // alertBox.removeClass('alert-secondary alert-success').addClass('alert-danger'); // Removed to keep text clearer on grey background
+                    // alertBox.removeClass('alert-secondary alert-danger').addClass('alert-success');
+                    
+                    // Reset to secondary just in case
+                    alertBox.removeClass('alert-success alert-danger').addClass('alert-secondary');
+
+                    if(parseFloat(response.total_unpaid) > 0) {
+                        $('#credit-amount').removeClass('text-success').addClass('text-danger');
+                    } else {
+                        $('#credit-amount').removeClass('text-danger').addClass('text-success');
+                    }
+
+                    var historyHtml = '';
+                    if(response.history && response.history.length > 0) {
+                        $.each(response.history, function(index, item) {
+                            var color = item.status == 'payé' ? 'text-success' : 'text-danger';
+                            historyHtml += '<li class="d-flex justify-content-between ' + color + '"><span>' + item.date + '</span> <span>' + parseFloat(item.amount).toFixed(2) + ' (' + item.status + ')</span></li>';
+                        });
+                    } else {
+                         historyHtml = '<li class="text-muted">{{ __("No history found") }}</li>';
+                    }
+                    $('#credit-history').html(historyHtml);
+                },
+                error: function() {
+                     $('#driver-credit-info').hide();
+                }
+            });
+        } else {
+            $('#driver-credit-info').hide();
+        }
+    });
+</script>
 
 
