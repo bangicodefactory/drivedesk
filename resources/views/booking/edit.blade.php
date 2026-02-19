@@ -153,14 +153,14 @@
                                     <tr>
                                         <td>{{ !empty($booking->pickupAddress) ? $booking->pickupAddress->name : '-' }}
                                         </td>
-                                        <td>{{ priceFormat($booking->pickupAddress->price) }}</td>
+                                        <td>{{ $booking->pickupAddress ? priceFormat($booking->pickupAddress->price) : '-' }}</td>
                                     </tr>
                                 </tbody>
                                 <tbody class="text-center" id="dropPlace">
                                     <tr>
                                         <td>{{ !empty($booking->dropOffAddress) ? $booking->dropOffAddress->name : '-' }}
                                         </td>
-                                        <td>{{ priceFormat($booking->dropOffAddress->price) }}</td>
+                                        <td>{{ $booking->dropOffAddress ? priceFormat($booking->dropOffAddress->price) : '-' }}</td>
                                     </tr>
                                 </tbody>
                                 {{-- <tbody class="text-center">

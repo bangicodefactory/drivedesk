@@ -96,6 +96,13 @@
             {{ Form::label('description', __('Description'), ['class' => 'form-label']) }}
             {{ Form::textarea('description', null, ['class' => 'form-control', 'placeholder' => __('Enter description'), 'rows' => 5]) }}
         </div>
+        <div class="form-group col-md-12 col-lg-12">
+            <input type="hidden" name="create_booking" value="0">
+            <div class="form-check">
+                {{ Form::checkbox('create_booking', 1, old('create_booking', false), ['class' => 'form-check-input', 'id' => 'create_booking']) }}
+                {{ Form::label('create_booking', __('Create booking from this rental agreement'), ['class' => 'form-check-label']) }}
+            </div>
+        </div>
     </div>
 </div>
 <div class="modal-footer">
