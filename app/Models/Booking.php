@@ -29,6 +29,7 @@ class Booking extends Model
         'notes',
         'vehicle_details',
         'discount',
+        'daily_price_final',
     ];
 
     protected $casts = [
