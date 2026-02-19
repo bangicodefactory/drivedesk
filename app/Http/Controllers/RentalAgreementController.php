@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Driver;
 use App\Models\Notification;
+use App\Models\Place;
 use App\Models\RentalAgreement;
+use App\Models\Booking;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
@@ -60,6 +62,7 @@ class RentalAgreementController extends Controller
                     'rental_start_time' => 'required',
                     'rental_end_time' => 'required',
                     'driver' => 'required',
+                    'create_booking' => 'required|boolean',
                 ]
             );
             if ($validator->fails()) {
@@ -107,6 +110,65 @@ class RentalAgreementController extends Controller
                     $errorMessage = $response['message'];
                 }
             }
+
+            // Create booking if not exists (check by boolean field in rental agreement)
+            if ($request->create_booking == 1) {
+                $booking = new Booking();
+                $booking->booking_id = (new BookingController())->bookingNumber();
+                $booking->vehicle = $request->vehicle;
+                $booking->driver = $request->driver;
+
+                // Form sends separate date/time fields; use them directly (no explode)
+                if (!empty($request->rental_start_date)) {
+                    $booking->start_date = $request->rental_start_date;
+                    $booking->start_time = $request->rental_start_time ?? null;
+                }
+                if (!empty($request->rental_end_date)) {
+                    $booking->end_date = $request->rental_end_date;
+                    $booking->end_time = $request->rental_end_time ?? null;
+                }
+
+                // Use an existing place (e.g. Tetouan) or first place for parent; fallback 0
+                $defaultPlaceId = Place::where('parent_id', parentId())
+                    ->where(function ($q) {
+                        $q->where('name', 'Tetouan')->orWhere('city', 'Tetouan');
+                    })
+                    ->value('id')
+                    ?? Place::where('parent_id', parentId())->value('id')
+                    ?? 0;
+                $booking->pickup_address = $defaultPlaceId;
+                $booking->drop_off_address = $defaultPlaceId;
+                $booking->status = 'Yet to Start';
+                $booking->payment_status = 'impaye';
+                $booking->notes = null;
+
+                // rental_duration = daily price (from form); considerDays = computed from start/end date
+                $dailyPrice = (float) $request->rental_duration;
+                $start_datetime = $request->rental_start_date . ' ' . ($request->rental_start_time ?? '00:00');
+                $end_datetime = $request->rental_end_date . ' ' . ($request->rental_end_time ?? '00:00');
+                $rateData = vehicleRateCalculation($dailyPrice, $start_datetime, $end_datetime);
+                $considerDays = (int) $rateData['considerDays'];
+                $totalRate = (float) $rateData['totalRate'];
+
+                $booking->details = json_encode([
+                    'considerDays' => $considerDays,
+                    'totalRate'    => $totalRate,
+                ]);
+                $booking->amount = (int) round($totalRate);
+
+                $vehicle = Vehicle::find($request->vehicle);
+                $booking->vehicle_details = [
+                    'id' => $vehicle->id,
+                    'name' => $vehicle->name,
+                    'license_plate' => $vehicle->license_plate,
+                ];
+                $booking->parent_id = parentId();
+                $booking->daily_price_final = $dailyPrice;
+                $booking->save();
+            }
+
+
+
 
 
             return redirect()->route('rental-agreement.index')->with('success', __('Rental agreement successfully created.') . '</br>' . $errorMessage);
