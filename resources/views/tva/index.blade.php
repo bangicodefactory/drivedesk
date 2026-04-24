@@ -17,6 +17,10 @@
     </ul>
 @endsection
 @section('card-action-btn')
+    <a class="btn btn-warning btn-sm ml-20" href="{{ route('tva.renumber.index') }}">
+        <i class="ti ti-refresh mr-5"></i>
+        {{ __('Renumber Invoices') }}
+    </a>
     {{-- @if (Gate::check('manage reminder'))
         <a class="btn btn-primary btn-sm ml-20 customModal" href="#" data-size="lg" data-url="{{ route('tva.create') }}"
             data-title="{{ __('Create TVA') }}"> <i class="ti-plus mr-5"></i>
