@@ -107,6 +107,12 @@ class Tva extends Model
         return $query->whereBetween('facture_date', [$startDate, $endDate]);
     }
 
+    // Scope for filtering by year of facture_date
+    public function scopeForYear($query, int $year)
+    {
+        return $query->whereYear('facture_date', $year);
+    }
+
     // Calculate TVA amount based on total HT
     public function calculateTvaAmount()
     {

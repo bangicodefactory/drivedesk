@@ -27,6 +27,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReminderTypeController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TvaController;
+use App\Http\Controllers\TvaRenumberController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\RequestBookingController;
 
@@ -450,6 +451,12 @@ Route::group([
         'XSS',
     ],
 ], function () {
+    Route::prefix('tva/renumber')->name('tva.renumber.')->group(function () {
+        Route::get('/',        [TvaRenumberController::class, 'index'])->name('index');
+        Route::post('/apply',  [TvaRenumberController::class, 'apply'])->name('apply');
+        Route::get('/preview', [TvaRenumberController::class, 'previewJson'])->name('preview');
+    });
+
     Route::resource('tva', TvaController::class);
     Route::get('/tva-report', [TvaController::class, 'report'])->name('tva.report');
 });
