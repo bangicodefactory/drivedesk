@@ -493,10 +493,13 @@ class TvaController extends Controller
             $tva->ice_number = $setting['ice'];
             $tva->rc_number = $setting['rc'];
             $tva->nif_number = $setting['if'];
-            $tva->generated_date = null;
+            // `generated_date` is a NOT NULL timestamp in the DB schema.
+            $tva->generated_date = $payment->date ?? now();
             $tva->total_amount = number_format($paymentTtc, 2, '.', '');
             $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
             $tva->payment_method = $payment->payment_method ?? 'Espece';
+            // DB column is required (no default); keep consistent with seeder usage.
+            $tva->status = 1;
             $tva->save();
             $createdCount++;
         }

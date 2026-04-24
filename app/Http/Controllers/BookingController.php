@@ -640,6 +640,8 @@ class BookingController extends Controller
             $tva->total_amount = number_format($booking->amount, 2, '.', '');
             $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
             $tva->payment_method = $request->payment_method;
+            // DB column is required (no default); keep consistent with seeder usage.
+            $tva->status = 1;
             $tva->save();
 
 
