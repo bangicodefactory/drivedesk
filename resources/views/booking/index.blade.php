@@ -21,6 +21,14 @@
             {{__('Create Booking')}}
         </a>
     @endif
+    @can('create booking')
+        <a class="btn btn-success btn-sm ml-10" href="{{ route('booking.template') }}">
+            <i class="ti-download mr-5"></i>{{__('Template')}}
+        </a>
+        <button class="btn btn-warning btn-sm ml-10" data-bs-toggle="modal" data-bs-target="#importBookingModal">
+            <i class="ti-upload mr-5"></i>{{__('Import Excel')}}
+        </button>
+    @endcan
 @endsection
 @section('content')
     <div class="row">
@@ -109,6 +117,48 @@
         </div>
     </div>
 @endsection
+
+{{-- Import Excel Modal --}}
+@can('create booking')
+<div class="modal fade" id="importBookingModal" tabindex="-1" aria-labelledby="importBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importBookingModalLabel">{{ __('Import Bookings from Excel') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+            </div>
+            {!! Form::open(['route' => 'booking.import', 'method' => 'POST', 'enctype' => 'multipart/form-data']) !!}
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    {{ __('Upload an .xlsx or .xls file. Download the') }}
+                    <a href="{{ route('booking.template') }}" target="_blank">{{ __('template') }}</a>
+                    {{ __('to see the required format.') }}
+                </p>
+                <div class="mb-3">
+                    <label for="importFile" class="form-label fw-semibold">{{ __('Excel File') }}</label>
+                    <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls,.csv" required>
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <strong>{{ __('Tips:') }}</strong>
+                    <ul class="mb-0 ps-3 mt-1">
+                        <li>{{ __('Driver Name must match an existing driver in the system.') }}</li>
+                        <li>{{ __('Vehicle License Plate must match an existing vehicle.') }}</li>
+                        <li>{{ __('Addresses must match existing place names.') }}</li>
+                        <li>{{ __('Valid statuses: yet_to_start, on_going, completed, cancelled') }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="ti-upload mr-5"></i>{{ __('Import') }}
+                </button>
+            </div>
+            {!! Form::close() !!}
+        </div>
+    </div>
+</div>
+@endcan
 
 @push('scripts')
 <script>
