@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class BookingController extends Controller
 {
@@ -492,6 +495,269 @@ class BookingController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'Driver Name',
+            'Vehicle License Plate',
+            'Start Date (YYYY-MM-DD)',
+            'Start Time (HH:MM)',
+            'End Date (YYYY-MM-DD)',
+            'End Time (HH:MM)',
+            'Pickup Address',
+            'Drop-off Address',
+            'Status',
+            'Amount',
+            'Daily Price',
+            'Notes',
+        ];
+
+        foreach ($headers as $col => $header) {
+            $sheet->setCellValueByColumnAndRow($col + 1, 1, $header);
+            $sheet->getColumnDimensionByColumn($col + 1)->setWidth(22);
+        }
+
+        // Style header row
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+        ];
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+
+        // Example row
+        $sheet->fromArray([
+            'John Doe',
+            'ABC-1234',
+            date('Y-m-d'),
+            '09:00',
+            date('Y-m-d', strtotime('+3 days')),
+            '18:00',
+            'Tetouan Airport',
+            'Tetouan Airport',
+            'yet_to_start',
+            900,
+            300,
+            'Example note',
+        ], null, 'A2');
+
+        // Add a hints sheet
+        $hints = $spreadsheet->createSheet();
+        $hints->setTitle('Hints');
+        $hints->setCellValue('A1', 'Status values');
+        $hints->setCellValue('A2', 'yet_to_start');
+        $hints->setCellValue('A3', 'on_going');
+        $hints->setCellValue('A4', 'completed');
+        $hints->setCellValue('A5', 'cancelled');
+
+        $spreadsheet->setActiveSheetIndex(0);
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'bookings_import_template.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function importExcel(Request $request)
+    {
+        if (!\Auth::user()->can('create booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv']);
+
+        $file = $request->file('file');
+
+        try {
+            $spreadsheet = IOFactory::load($file->getPathname());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', __('Could not read the file: ') . $e->getMessage());
+        }
+
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows  = $sheet->toArray(null, true, true, false);
+
+        if (count($rows) < 2) {
+            return redirect()->back()->with('error', __('The file has no data rows.'));
+        }
+
+        // Pre-load tenant data for quick lookups
+        $pid      = parentId();
+        $drivers  = User::where('parent_id', $pid)->where('type', 'driver')->get()->keyBy(fn($u) => strtolower(trim($u->name)));
+        $vehicles = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => strtolower(trim($v->license_plate)));
+        $places   = Place::where('parent_id', $pid)->get()->keyBy(fn($p) => strtolower(trim($p->name)));
+
+        $validStatuses = array_keys(Booking::$status);
+        $imported = 0;
+        $skipped  = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            if ($rowIndex === 0) {
+                continue; // skip header
+            }
+
+            [
+                $driverName,
+                $licensePlate,
+                $startDate,
+                $startTime,
+                $endDate,
+                $endTime,
+                $pickupName,
+                $dropoffName,
+                $status,
+                $amount,
+                $dailyPrice,
+                $notes,
+            ] = array_pad($row, 12, null);
+
+            $lineNum = $rowIndex + 1;
+            $errors  = [];
+
+            // Skip fully empty rows
+            if (empty(array_filter(array_map('trim', array_map('strval', $row))))) {
+                continue;
+            }
+
+            $driver = $drivers[strtolower(trim((string) $driverName))] ?? null;
+            if (!$driver) {
+                $errors[] = "driver '{$driverName}' not found";
+            }
+
+            $vehicle = $vehicles[strtolower(trim((string) $licensePlate))] ?? null;
+            if (!$vehicle) {
+                $errors[] = "vehicle '{$licensePlate}' not found";
+            }
+
+            $pickup = $places[strtolower(trim((string) $pickupName))] ?? null;
+            if (!$pickup) {
+                $errors[] = "pickup address '{$pickupName}' not found";
+            }
+
+            $dropoff = $places[strtolower(trim((string) $dropoffName))] ?? null;
+            if (!$dropoff) {
+                $errors[] = "drop-off address '{$dropoffName}' not found";
+            }
+
+            // Parse dates (handles Excel serial dates and string dates)
+            $startDateParsed = $this->parseExcelDate($startDate);
+            $endDateParsed   = $this->parseExcelDate($endDate);
+
+            if (!$startDateParsed) {
+                $errors[] = "invalid start date '{$startDate}'";
+            }
+            if (!$endDateParsed) {
+                $errors[] = "invalid end date '{$endDate}'";
+            }
+
+            $statusNorm = strtolower(trim((string) $status));
+            if (!in_array($statusNorm, $validStatuses)) {
+                $errors[] = "invalid status '{$status}'";
+            }
+
+            if (!is_numeric($amount) || $amount < 0) {
+                $errors[] = "invalid amount '{$amount}'";
+            }
+
+            if (!empty($errors)) {
+                $skipped[] = "Row {$lineNum}: " . implode('; ', $errors);
+                continue;
+            }
+
+            $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
+            $endTimeFmt   = $this->parseExcelTime($endTime) ?? '00:00:00';
+
+            $booking = new Booking();
+            $booking->booking_id       = $this->bookingNumber();
+            $booking->vehicle          = $vehicle->id;
+            $booking->driver           = $driver->id;
+            $booking->start_date       = $startDateParsed;
+            $booking->start_time       = $startTimeFmt;
+            $booking->end_date         = $endDateParsed;
+            $booking->end_time         = $endTimeFmt;
+            $booking->pickup_address   = $pickup->id;
+            $booking->drop_off_address = $dropoff->id;
+            $booking->status           = $statusNorm;
+            $booking->amount           = (int) $amount;
+            $booking->payment_status   = 'impaye';
+            $booking->daily_price_final = is_numeric($dailyPrice) ? (float) $dailyPrice : 0;
+            $booking->notes            = $notes ? trim((string) $notes) : null;
+            $booking->vehicle_details  = [
+                'id'            => $vehicle->id,
+                'name'          => $vehicle->name,
+                'license_plate' => $vehicle->license_plate,
+            ];
+            $booking->parent_id = $pid;
+            $booking->save();
+
+            $imported++;
+        }
+
+        $message = __(':count booking(s) imported successfully.', ['count' => $imported]);
+        if (!empty($skipped)) {
+            $message .= ' ' . __('Skipped rows:') . ' ' . implode(' | ', $skipped);
+        }
+
+        return redirect()->route('booking.index')->with('success', $message);
+    }
+
+    private function parseExcelDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        // Numeric: Excel serial date
+        if (is_numeric($value)) {
+            try {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        $value = trim((string) $value);
+
+        // Try common date formats
+        foreach (['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y'] as $fmt) {
+            $parsed = \DateTime::createFromFormat($fmt, $value);
+            if ($parsed && $parsed->format($fmt) === $value) {
+                return $parsed->format('Y-m-d');
+            }
+        }
+
+        return null;
+    }
+
+    private function parseExcelTime($value): ?string
+    {
+        if (empty($value) && $value !== '0') {
+            return null;
+        }
+
+        // Numeric: Excel fractional day (e.g. 0.375 = 09:00)
+        if (is_numeric($value) && $value >= 0 && $value < 1) {
+            $seconds = round((float) $value * 86400);
+            return gmdate('H:i:s', $seconds);
+        }
+
+        $value = trim((string) $value);
+
+        // HH:MM or HH:MM:SS
+        if (preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $value)) {
+            return strlen($value) === 5 ? $value . ':00' : $value;
+        }
+
+        return null;
     }
 
     public function bookingNumber()
