@@ -79,7 +79,7 @@
                     <h6>{{__('License 1:')}}</h6>
                     <p class="mb-20">
                         @if(!empty($driver) && !empty($driver->license))
-                            <a href="{{asset(Storage::url('upload/license'.'/'.$driver->license))}}"
+                            <a href="{{Storage::disk('public')->url("upload/license/{$driver->license}")}}"
                                target="_blank"> {{!empty($driver)?$driver->license:'-'}}</a>
                         @else
                             -
@@ -92,7 +92,7 @@
                     <h6>{{__('License 2:')}}</h6>
                     <p class="mb-20">
                         @if(!empty($driver) && !empty($driver->license_1))
-                            <a href="{{asset(Storage::url('upload/license'.'/'.$driver->license_1))}}"
+                            <a href="{{Storage::disk('public')->url("upload/license/{$driver->license_1}")}}"
                                target="_blank"> {{!empty($driver)?$driver->license_1:'-'}}</a>
                         @else
                             -
@@ -111,7 +111,7 @@
                     <h6>{{__('ID file 1:')}}</h6>
                     <p class="mb-20">
                         @if(!empty($driver) && !empty($driver->document))
-                            <a href="{{asset(Storage::url('upload/document'.'/'.$driver->document))}}"
+                            <a href="{{Storage::disk('public')->url("upload/document/{$driver->document}")}}"
                                target="_blank">{{$driver->document}}</a>
                         @else
                             -
@@ -124,7 +124,7 @@
                     <h6>{{__('ID file 2:')}}</h6>
                     <p class="mb-20">
                         @if(!empty($driver) && !empty($driver->document_1))
-                            <a href="{{asset(Storage::url('upload/document'.'/'.$driver->document_1))}}"
+                            <a href="{{Storage::disk('public')->url("upload/document/{$driver->document_1}")}}"
                                target="_blank">{{$driver->document_1}}</a>
                         @else
                             -

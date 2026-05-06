@@ -182,7 +182,7 @@ class DriverController extends Controller
                     if (!file_exists($directory)) {
                         mkdir($directory, 0777, true);
                     }
-                    $request->file('document')->storeAs('upload/document/', $documentFileName);
+                    $request->file('document')->storeAs('upload/document/', $documentFileName, 'public');
                     $driver->document = $documentFileName;
                 }
 
@@ -192,28 +192,17 @@ class DriverController extends Controller
                     $documentExtension1 = $request->file('document1')->getClientOriginalExtension();
                     $documentFileName1 = $documentFilename1 . '_' . time() . '.' . $documentExtension1;
 
-                    $directory1 = storage_path('upload/document');
-                    $filePath = $directory1 . $documentFilenameWithExt1;
-                    if (!file_exists($directory1)) {
-                        mkdir($directory1, 0777, true);
-                    }
-                    $request->file('document1')->storeAs('upload/document/', $documentFileName1);
+                    $request->file('document1')->storeAs('upload/document/', $documentFileName1, 'public');
                     $driver->document_1 = $documentFileName1;
                 }
-// Save license document 
+// Save license document
                 if (!empty($request->license)) {
                     $licenseFilenameWithExt = $request->file('license')->getClientOriginalName();
                     $licenseFilename = pathinfo($licenseFilenameWithExt, PATHINFO_FILENAME);
                     $licenseExtension = $request->file('license')->getClientOriginalExtension();
                     $licenseFileName = $licenseFilename . '_' . time() . '.' . $licenseExtension;
 
-                    $directory = storage_path('upload/license');
-                    $filePath = $directory . $licenseFilenameWithExt;
-
-                    if (!file_exists($directory)) {
-                        mkdir($directory, 0777, true);
-                    }
-                    $request->file('license')->storeAs('upload/license/', $licenseFileName);
+                    $request->file('license')->storeAs('upload/license/', $licenseFileName, 'public');
                     $driver->license = $licenseFileName;
                 }
                 if (!empty($request->license1)) {
@@ -222,13 +211,7 @@ class DriverController extends Controller
                     $licenseExtension1 = $request->file('license1')->getClientOriginalExtension();
                     $licenseFileName1 = $licenseFilename1 . '_' . time() . '.' . $licenseExtension1;
 
-                    $directory1 = storage_path('upload/license');
-                    $filePath = $directory1 . $licenseFilenameWithExt1;
-
-                    if (!file_exists($directory1)) {
-                        mkdir($directory1, 0777, true);
-                    }
-                    $request->file('license1')->storeAs('upload/license/', $licenseFileName1);
+                    $request->file('license1')->storeAs('upload/license/', $licenseFileName1, 'public');
                     $driver->license_1 = $licenseFileName1;
                 }
 
@@ -352,7 +335,7 @@ class DriverController extends Controller
                     if (!file_exists($directory)) {
                         mkdir($directory, 0777, true);
                     }
-                    $request->file('document')->storeAs('upload/document/', $documentFileName);
+                    $request->file('document')->storeAs('upload/document/', $documentFileName, 'public');
                     $driver->document = $documentFileName;
                 }
                 if (!empty($request->license)) {
@@ -361,13 +344,7 @@ class DriverController extends Controller
                     $licenseExtension = $request->file('license')->getClientOriginalExtension();
                     $licenseFileName = $licenseFilename . '_' . time() . '.' . $licenseExtension;
 
-                    $directory = storage_path('upload/license');
-                    $filePath = $directory . $licenseFilenameWithExt;
-
-                    if (!file_exists($directory)) {
-                        mkdir($directory, 0777, true);
-                    }
-                    $request->file('license')->storeAs('upload/license/', $licenseFileName);
+                    $request->file('license')->storeAs('upload/license/', $licenseFileName, 'public');
                     $driver->license = $licenseFileName;
                 }
                 $driver->save();
