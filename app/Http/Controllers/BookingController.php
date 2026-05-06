@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Spatie\Permission\Models\Role;
 
 class BookingController extends Controller
 {
@@ -501,58 +502,87 @@ class BookingController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Bookings');
 
         $headers = [
-            'Driver Name',
-            'Vehicle License Plate',
-            'Start Date (YYYY-MM-DD)',
-            'Start Time (HH:MM)',
-            'End Date (YYYY-MM-DD)',
-            'End Time (HH:MM)',
-            'Pickup Address',
-            'Drop-off Address',
-            'Status',
-            'Amount',
-            'Daily Price',
-            'Notes',
+            'NOM & PRENOM',
+            'DATE DEBUT (JJ/MM/AAAA)',
+            'HEURE DEBUT (HH:MM)',
+            'LA MARQUE',
+            'IMMATRICULATION',
+            'DATE RETOUR (JJ/MM/AAAA)',
+            'HEURE RETOUR (HH:MM)',
+            'PERIODE',
+            'PRIX',
         ];
 
+        $colWidths = [25, 22, 18, 16, 18, 22, 18, 12, 14];
+
         foreach ($headers as $col => $header) {
-            $sheet->setCellValueByColumnAndRow($col + 1, 1, $header);
-            $sheet->getColumnDimensionByColumn($col + 1)->setWidth(22);
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
+            $sheet->setCellValue($colLetter . '1', $header);
+            $sheet->getColumnDimension($colLetter)->setWidth($colWidths[$col]);
         }
 
         // Style header row
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ];
-        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
 
-        // Example row
+        // Example rows
         $sheet->fromArray([
-            'John Doe',
-            'ABC-1234',
-            date('Y-m-d'),
+            'HASSAN SALEM',
+            date('d/m/Y'),
             '09:00',
-            date('Y-m-d', strtotime('+3 days')),
-            '18:00',
-            'Tetouan Airport',
-            'Tetouan Airport',
-            'yet_to_start',
-            900,
-            300,
-            'Example note',
+            'CLIO V',
+            '69742/A/44',
+            date('d/m/Y', strtotime('+2 days')),
+            '11:00',
+            2,
+            600,
         ], null, 'A2');
 
-        // Add a hints sheet
-        $hints = $spreadsheet->createSheet();
-        $hints->setTitle('Hints');
-        $hints->setCellValue('A1', 'Status values');
-        $hints->setCellValue('A2', 'yet_to_start');
-        $hints->setCellValue('A3', 'on_going');
-        $hints->setCellValue('A4', 'completed');
-        $hints->setCellValue('A5', 'cancelled');
+        $sheet->fromArray([
+            'NIDAL ALAOUI',
+            date('d/m/Y'),
+            '10:00',
+            'CUPRA',
+            '73738/A/44',
+            date('d/m/Y', strtotime('+10 days')),
+            '21:00',
+            10,
+            '',
+        ], null, 'A3');
+
+        // Notes sheet
+        $notes = $spreadsheet->createSheet();
+        $notes->setTitle('Notes');
+        $notes->setCellValue('A1', 'COLONNE');
+        $notes->setCellValue('B1', 'DESCRIPTION');
+        $notesData = [
+            ['NOM & PRENOM',       'Nom complet du conducteur (doit exister dans le système)'],
+            ['DATE DEBUT',         'Format JJ/MM/AAAA  ex: 01/02/2026'],
+            ['HEURE DEBUT',        'Format HH:MM  ex: 09:00'],
+            ['LA MARQUE',          'Marque/modèle du véhicule  ex: IBIZA, CLIO V'],
+            ['IMMATRICULATION',    'Plaque d\'immatriculation (doit exister dans le système)'],
+            ['DATE RETOUR',        'Format JJ/MM/AAAA  ex: 03/02/2026'],
+            ['HEURE RETOUR',       'Format HH:MM  ex: 18:30'],
+            ['PERIODE',            'Nombre de jours de location (informatif)'],
+            ['PRIX',               'Montant total en DH (laisser vide si inconnu)'],
+        ];
+        foreach ($notesData as $i => $nd) {
+            $notes->setCellValue('A' . ($i + 2), $nd[0]);
+            $notes->setCellValue('B' . ($i + 2), $nd[1]);
+        }
+        $notes->getColumnDimension('A')->setWidth(22);
+        $notes->getColumnDimension('B')->setWidth(55);
+        $notes->getStyle('A1:B1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+        ]);
 
         $spreadsheet->setActiveSheetIndex(0);
 
@@ -590,13 +620,13 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('The file has no data rows.'));
         }
 
-        // Pre-load tenant data for quick lookups
-        $pid      = parentId();
-        $drivers  = User::where('parent_id', $pid)->where('type', 'driver')->get()->keyBy(fn($u) => strtolower(trim($u->name)));
-        $vehicles = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => strtolower(trim($v->license_plate)));
-        $places   = Place::where('parent_id', $pid)->get()->keyBy(fn($p) => strtolower(trim($p->name)));
+        $pid         = parentId();
+        $driverRole  = Role::where('name', 'driver')->where('parent_id', $pid)->first();
 
-        $validStatuses = array_keys(Booking::$status);
+        // Cache already-loaded drivers and vehicles to avoid duplicate DB hits per row
+        $driversCache  = User::where('parent_id', $pid)->where('type', 'driver')->get()->keyBy(fn($u) => strtolower(trim($u->name)));
+        $vehiclesCache = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => strtolower(trim($v->license_plate)));
+
         $imported = 0;
         $skipped  = [];
 
@@ -605,109 +635,164 @@ class BookingController extends Controller
                 continue; // skip header
             }
 
+            // Columns: NOM & PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX
             [
                 $driverName,
-                $licensePlate,
                 $startDate,
                 $startTime,
+                $marque,
+                $licensePlate,
                 $endDate,
                 $endTime,
-                $pickupName,
-                $dropoffName,
-                $status,
-                $amount,
-                $dailyPrice,
-                $notes,
-            ] = array_pad($row, 12, null);
+                $periode,
+                $prix,
+            ] = array_pad($row, 9, null);
 
-            $lineNum = $rowIndex + 1;
-            $errors  = [];
+            $driverName  = trim((string) $driverName);
+            $licensePlate = trim((string) $licensePlate);
+            $marque       = trim((string) $marque);
+            $lineNum      = $rowIndex + 1;
+            $errors       = [];
 
             // Skip fully empty rows
             if (empty(array_filter(array_map('trim', array_map('strval', $row))))) {
                 continue;
             }
 
-            $driver = $drivers[strtolower(trim((string) $driverName))] ?? null;
-            if (!$driver) {
-                $errors[] = "driver '{$driverName}' not found";
+            // Validate required fields before auto-creating
+            if (empty($driverName)) {
+                $errors[] = "NOM & PRENOM est vide";
+            }
+            if (empty($licensePlate)) {
+                $errors[] = "IMMATRICULATION est vide";
             }
 
-            $vehicle = $vehicles[strtolower(trim((string) $licensePlate))] ?? null;
-            if (!$vehicle) {
-                $errors[] = "vehicle '{$licensePlate}' not found";
-            }
-
-            $pickup = $places[strtolower(trim((string) $pickupName))] ?? null;
-            if (!$pickup) {
-                $errors[] = "pickup address '{$pickupName}' not found";
-            }
-
-            $dropoff = $places[strtolower(trim((string) $dropoffName))] ?? null;
-            if (!$dropoff) {
-                $errors[] = "drop-off address '{$dropoffName}' not found";
-            }
-
-            // Parse dates (handles Excel serial dates and string dates)
             $startDateParsed = $this->parseExcelDate($startDate);
             $endDateParsed   = $this->parseExcelDate($endDate);
 
             if (!$startDateParsed) {
-                $errors[] = "invalid start date '{$startDate}'";
+                $errors[] = "date début invalide '{$startDate}'";
             }
             if (!$endDateParsed) {
-                $errors[] = "invalid end date '{$endDate}'";
-            }
-
-            $statusNorm = strtolower(trim((string) $status));
-            if (!in_array($statusNorm, $validStatuses)) {
-                $errors[] = "invalid status '{$status}'";
-            }
-
-            if (!is_numeric($amount) || $amount < 0) {
-                $errors[] = "invalid amount '{$amount}'";
+                $errors[] = "date retour invalide '{$endDate}'";
             }
 
             if (!empty($errors)) {
-                $skipped[] = "Row {$lineNum}: " . implode('; ', $errors);
+                $skipped[] = [
+                    'row'    => $lineNum,
+                    'nom'    => $driverName,
+                    'plaque' => $licensePlate,
+                    'debut'  => (string) $startDate,
+                    'retour' => (string) $endDate,
+                    'errors' => $errors,
+                ];
                 continue;
             }
 
+            // Auto-create driver if not found
+            $driverKey = strtolower($driverName);
+            if (!isset($driversCache[$driverKey])) {
+                $emailBase = strtolower(str_replace([' ', "'"], ['.', ''], $driverName));
+                $email     = $emailBase . '@import.local';
+                $suffix    = 1;
+                while (User::where('email', $email)->exists()) {
+                    $email = $emailBase . $suffix . '@import.local';
+                    $suffix++;
+                }
+
+                $newUser           = new User();
+                $newUser->name     = $driverName;
+                $newUser->email    = $email;
+                $newUser->password = \Hash::make('123456');
+                $newUser->type     = 'driver';
+                $newUser->profile  = 'avatar.png';
+                $newUser->lang     = 'english';
+                $newUser->parent_id = $pid;
+                $newUser->save();
+
+                if ($driverRole) {
+                    $newUser->assignRole($driverRole);
+                }
+
+                // Create Driver profile record
+                $latestDriver = \App\Models\Driver::where('parent_id', $pid)->latest()->first();
+                $newDriver           = new \App\Models\Driver();
+                $newDriver->driver_id = $latestDriver ? $latestDriver->driver_id + 1 : 1;
+                $newDriver->user_id  = $newUser->id;
+                $newDriver->parent_id = $pid;
+                $newDriver->save();
+
+                $driversCache[$driverKey] = $newUser;
+            }
+            $driver = $driversCache[$driverKey];
+
+            // Auto-create vehicle if not found
+            $plateKey = strtolower($licensePlate);
+            if (!isset($vehiclesCache[$plateKey])) {
+                $latestVehicle = Vehicle::where('parent_id', $pid)->latest()->first();
+
+                $newVehicle               = new Vehicle();
+                $newVehicle->vehicle_id   = $latestVehicle ? $latestVehicle->vehicle_id + 1 : 1;
+                $newVehicle->name         = $marque ?: $licensePlate;
+                $newVehicle->model        = $marque ?: null;
+                $newVehicle->license_plate = $licensePlate;
+                $newVehicle->parent_id    = $pid;
+                $newVehicle->save();
+
+                $vehiclesCache[$plateKey] = $newVehicle;
+            }
+            $vehicle = $vehiclesCache[$plateKey];
+
             $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
             $endTimeFmt   = $this->parseExcelTime($endTime) ?? '00:00:00';
+            $amount       = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
 
-            $booking = new Booking();
-            $booking->booking_id       = $this->bookingNumber();
-            $booking->vehicle          = $vehicle->id;
-            $booking->driver           = $driver->id;
-            $booking->start_date       = $startDateParsed;
-            $booking->start_time       = $startTimeFmt;
-            $booking->end_date         = $endDateParsed;
-            $booking->end_time         = $endTimeFmt;
-            $booking->pickup_address   = $pickup->id;
-            $booking->drop_off_address = $dropoff->id;
-            $booking->status           = $statusNorm;
-            $booking->amount           = (int) $amount;
-            $booking->payment_status   = 'impaye';
-            $booking->daily_price_final = is_numeric($dailyPrice) ? (float) $dailyPrice : 0;
-            $booking->notes            = $notes ? trim((string) $notes) : null;
-            $booking->vehicle_details  = [
-                'id'            => $vehicle->id,
-                'name'          => $vehicle->name,
-                'license_plate' => $vehicle->license_plate,
-            ];
-            $booking->parent_id = $pid;
-            $booking->save();
-
-            $imported++;
+            try {
+                $booking = new Booking();
+                $booking->booking_id        = $this->bookingNumber();
+                $booking->vehicle           = $vehicle->id;
+                $booking->driver            = $driver->id;
+                $booking->start_date        = $startDateParsed;
+                $booking->start_time        = $startTimeFmt;
+                $booking->end_date          = $endDateParsed;
+                $booking->end_time          = $endTimeFmt;
+                $booking->pickup_address    = 0;
+                $booking->drop_off_address  = 0;
+                $booking->status            = 'yet_to_start';
+                $booking->amount            = $amount;
+                $booking->payment_status    = 'impaye';
+                $booking->daily_price_final = 0;
+                $booking->notes             = null;
+                $booking->vehicle_details   = [
+                    'id'            => $vehicle->id,
+                    'name'          => $vehicle->name,
+                    'license_plate' => $vehicle->license_plate,
+                ];
+                $booking->parent_id = $pid;
+                $booking->save();
+                $imported++;
+            } catch (\Exception $e) {
+                $skipped[] = [
+                    'row'    => $lineNum,
+                    'nom'    => $driverName,
+                    'plaque' => $licensePlate,
+                    'debut'  => (string) $startDate,
+                    'retour' => (string) $endDate,
+                    'errors' => [$e->getMessage()],
+                ];
+            }
         }
 
-        $message = __(':count booking(s) imported successfully.', ['count' => $imported]);
         if (!empty($skipped)) {
-            $message .= ' ' . __('Skipped rows:') . ' ' . implode(' | ', $skipped);
+            session()->flash('import_skipped', $skipped);
+            session()->flash('reopen_import_modal', true);
         }
 
-        return redirect()->route('booking.index')->with('success', $message);
+        $msg = $imported > 0
+            ? "{$imported} réservation(s) importée(s) avec succès."
+            : "Aucune réservation importée.";
+
+        return redirect()->route('booking.index')->with('success', $msg);
     }
 
     private function parseExcelDate($value): ?string
