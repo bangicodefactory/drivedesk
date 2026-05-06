@@ -121,7 +121,7 @@
 {{-- Import Excel Modal --}}
 @can('create booking')
 <div class="modal fade" id="importBookingModal" tabindex="-1" aria-labelledby="importBookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importBookingModalLabel">{{ __('Import Bookings from Excel') }}</h5>
@@ -129,6 +129,40 @@
             </div>
             {!! Form::open(['route' => 'booking.import', 'method' => 'POST', 'enctype' => 'multipart/form-data']) !!}
             <div class="modal-body">
+
+                {{-- Error table shown when rows were skipped --}}
+                @if(session('import_skipped'))
+                <div class="alert alert-warning p-2 mb-3">
+                    <strong>{{ count(session('import_skipped')) }} ligne(s) non importée(s) :</strong>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm table-bordered mb-0" style="font-size:0.8em;">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th>#Ligne</th>
+                                    <th>NOM & PRENOM</th>
+                                    <th>IMMATRICULATION</th>
+                                    <th>DATE DEBUT</th>
+                                    <th>DATE RETOUR</th>
+                                    <th>Erreur(s)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(session('import_skipped') as $s)
+                                <tr>
+                                    <td>{{ $s['row'] }}</td>
+                                    <td>{{ $s['nom'] }}</td>
+                                    <td>{{ $s['plaque'] }}</td>
+                                    <td>{{ $s['debut'] }}</td>
+                                    <td>{{ $s['retour'] }}</td>
+                                    <td class="text-danger">{{ implode(' | ', $s['errors']) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+
                 <p class="text-muted small mb-3">
                     {{ __('Upload an .xlsx or .xls file. Download the') }}
                     <a href="{{ route('booking.template') }}" target="_blank">{{ __('template') }}</a>
@@ -139,12 +173,15 @@
                     <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls,.csv" required>
                 </div>
                 <div class="alert alert-info small mb-0">
-                    <strong>{{ __('Tips:') }}</strong>
+                    <strong>Format attendu (9 colonnes) :</strong>
+                    <code class="d-block mt-1 mb-1" style="font-size:0.78em;">
+                        NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX
+                    </code>
                     <ul class="mb-0 ps-3 mt-1">
-                        <li>{{ __('Driver Name must match an existing driver in the system.') }}</li>
-                        <li>{{ __('Vehicle License Plate must match an existing vehicle.') }}</li>
-                        <li>{{ __('Addresses must match existing place names.') }}</li>
-                        <li>{{ __('Valid statuses: yet_to_start, on_going, completed, cancelled') }}</li>
+                        <li>Dates au format <strong>JJ/MM/AAAA</strong> (ex: 01/02/2026).</li>
+                        <li>Le PRIX peut être laissé vide.</li>
+                        <li>Conducteurs et véhicules inexistants sont créés automatiquement.</li>
+                        <li>Le statut est automatiquement défini à <em>À démarrer</em>.</li>
                     </ul>
                 </div>
             </div>
@@ -163,11 +200,16 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    @if(session('reopen_import_modal'))
+    var importModal = new bootstrap.Modal(document.getElementById('importBookingModal'));
+    importModal.show();
+    @endif
+
     // Destroy existing DataTable if it exists
     if ($.fn.DataTable.isDataTable('#bookingTable')) {
         $('#bookingTable').DataTable().destroy();
     }
-    
+
     // Reinitialize
     $('#bookingTable').DataTable({
         columnDefs: [
