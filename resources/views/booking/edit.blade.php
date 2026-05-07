@@ -107,7 +107,7 @@
                         {{-- Final pric  --}}
                         <div class="form-group col-md-4 col-lg-4">
                             {{ Form::label('daily_price', __('Price a day'), ['class' => 'form-label']) }}
-                            {{ Form::number('daily_price', !empty($booking->daily_price_final) ? $booking->daily_price_final : $booking->vehicleDetails()->daily_rate, [
+                            {{ Form::number('daily_price', !empty($booking->daily_price_final) ? $booking->daily_price_final : optional($booking->vehicleDetails())->daily_rate, [
                                 'class' => 'form-control',
                                 'id' => 'daily_price',
                                 'step' => 'any',
@@ -125,7 +125,7 @@
                             {{ Form::textarea('notes', null, ['class' => 'form-control', 'placeholder' => __('Enter notes'), 'rows' => 2]) }}
                         </div>
                         @php
-                            $details = json_decode($booking->details);
+                            $details = !empty($booking->details) ? json_decode($booking->details) : null;
                         @endphp
                         <div class="col-md-6 col-lg-6 detail_div">
                             <table class="display dataTable cell-border">
@@ -133,8 +133,11 @@
                                     <tr>
                                         <td> {{ __('Duration') }}</td>
                                         <td class="duration">
-                                            {{-- {{ $details->considerDays . ' * ' . $booking->vehicleDetails()->daily_rate . ' = ' . priceFormat($details->totalRate) }} --}}
-                                            {{ $details->considerDays . ' * ' . $booking->daily_price_final . ' = ' . priceFormat($details->totalRate) }}
+                                            @if($details && isset($details->considerDays) && isset($details->totalRate))
+                                                {{ $details->considerDays . ' * ' . ($booking->daily_price_final ?? 0) . ' = ' . priceFormat($details->totalRate) }}
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                     </tr>
                                 </tbody>
