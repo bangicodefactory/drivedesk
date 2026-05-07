@@ -22,6 +22,7 @@ class Booking extends Model
         'status',
         'amount',
         'payment_status',
+        'payment_method',
         'payment_notes',
         'parent_id',
         'addon',

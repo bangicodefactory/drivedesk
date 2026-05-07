@@ -531,9 +531,10 @@ class BookingController extends Controller
             'HEURE RETOUR (HH:MM)',
             'PERIODE',
             'PRIX',
+            'METHOD',
         ];
 
-        $colWidths = [25, 22, 18, 16, 18, 22, 18, 12, 14];
+        $colWidths = [25, 22, 18, 16, 18, 22, 18, 12, 14, 16];
 
         foreach ($headers as $col => $header) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
@@ -547,7 +548,7 @@ class BookingController extends Controller
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ];
-        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
 
         // Example rows
         $sheet->fromArray([
@@ -560,6 +561,7 @@ class BookingController extends Controller
             '11:00',
             2,
             600,
+            'espèce',
         ], null, 'A2');
 
         $sheet->fromArray([
@@ -572,6 +574,7 @@ class BookingController extends Controller
             '21:00',
             10,
             '',
+            'virement',
         ], null, 'A3');
 
         // Notes sheet
@@ -589,6 +592,7 @@ class BookingController extends Controller
             ['HEURE RETOUR',       'Format HH:MM  ex: 18:30'],
             ['PERIODE',            'Nombre de jours de location (informatif)'],
             ['PRIX',               'Montant total en DH (laisser vide si inconnu)'],
+            ['METHOD',             'Mode de paiement  ex: espèce, virement, chèque, carte (laisser vide si inconnu)'],
         ];
         foreach ($notesData as $i => $nd) {
             $notes->setCellValue('A' . ($i + 2), $nd[0]);
@@ -606,12 +610,13 @@ class BookingController extends Controller
         $writer = new Xlsx($spreadsheet);
         $filename = 'bookings_import_template.xlsx';
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
+        $tempFile = tempnam(sys_get_temp_dir(), 'booking_tpl_') . '.xlsx';
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Cache-Control' => 'max-age=0',
-        ]);
+        ])->deleteFileAfterSend(true);
     }
 
     public function importExcel(Request $request)
@@ -652,7 +657,7 @@ class BookingController extends Controller
                 continue; // skip header
             }
 
-            // Columns: NOM & PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX
+            // Columns: NOM & PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
             [
                 $driverName,
                 $startDate,
@@ -663,7 +668,8 @@ class BookingController extends Controller
                 $endTime,
                 $periode,
                 $prix,
-            ] = array_pad($row, 9, null);
+                $method,
+            ] = array_pad($row, 10, null);
 
             $driverName  = trim((string) $driverName);
             $licensePlate = trim((string) $licensePlate);
@@ -760,9 +766,10 @@ class BookingController extends Controller
             }
             $vehicle = $vehiclesCache[$plateKey];
 
-            $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
-            $endTimeFmt   = $this->parseExcelTime($endTime) ?? '00:00:00';
-            $amount       = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
+            $startTimeFmt  = $this->parseExcelTime($startTime) ?? '00:00:00';
+            $endTimeFmt    = $this->parseExcelTime($endTime) ?? '00:00:00';
+            $amount        = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
+            $paymentMethod = !empty($method) ? trim((string) $method) : null;
 
             try {
                 $booking = new Booking();
@@ -778,6 +785,7 @@ class BookingController extends Controller
                 $booking->status            = 'yet_to_start';
                 $booking->amount            = $amount;
                 $booking->payment_status    = 'impaye';
+                $booking->payment_method    = $paymentMethod;
                 $booking->daily_price_final = 0;
                 $booking->notes             = null;
                 $booking->vehicle_details   = [
