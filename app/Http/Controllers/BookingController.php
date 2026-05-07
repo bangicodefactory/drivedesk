@@ -610,7 +610,7 @@ class BookingController extends Controller
         $writer = new Xlsx($spreadsheet);
         $filename = 'bookings_import_template.xlsx';
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'booking_tpl_') . '.xlsx';
+        $tempFile = storage_path('app/booking_tpl_' . uniqid() . '.xlsx');
         $writer->save($tempFile);
 
         return response()->download($tempFile, $filename, [
