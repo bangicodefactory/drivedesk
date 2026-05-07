@@ -115,8 +115,8 @@
                                     <tr>
                                         <td>{{ $idx + 1 }}</td>
                                         <td>{{ $rec['date'] ?? '—' }}</td>
-                                        <td><span class="badge bg-secondary">{{ $rec['old_number'] ?? '—' }}</span></td>
-                                        <td><span class="badge bg-success">{{ $rec['new_number'] }}</span></td>
+                                        <td><span class="badge bg-secondary" style="font-size:1rem;font-weight:700;padding:.45em .75em;letter-spacing:.5px;">{{ $rec['old_number'] ?? '—' }}</span></td>
+                                        <td><span class="badge bg-success" style="font-size:1rem;font-weight:700;padding:.45em .75em;letter-spacing:.5px;">{{ $rec['new_number'] }}</span></td>
                                     </tr>
                                 @empty
                                     <tr id="preview-empty-row">
