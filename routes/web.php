@@ -301,6 +301,7 @@ Route::group(
         Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class, 'paymentDestroy'])->name('booking.payment.destroy');
         Route::post('booking/import', [BookingController::class, 'importExcel'])->name('booking.import');
         Route::get('booking/template/download', [BookingController::class, 'downloadTemplate'])->name('booking.template');
+        Route::post('booking/bulk-destroy', [BookingController::class, 'bulkDestroy'])->name('booking.bulk-destroy');
         Route::resource('booking', BookingController::class);
         Route::post('/booking_requests/{id}/approve', [RequestBookingController::class, 'confirmBooking'])->name('booking_requests.approve');
         Route::post('/booking_requests/{id}/refuse', [RequestBookingController::class, 'refuseBooking'])
