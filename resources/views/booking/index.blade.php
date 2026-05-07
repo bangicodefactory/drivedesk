@@ -29,6 +29,11 @@
             <i class="ti-upload mr-5"></i>{{__('Import Excel')}}
         </button>
     @endcan
+    @can('delete booking')
+        <button class="btn btn-danger btn-sm ml-10" id="bulkDeleteBtn" style="display:none;" onclick="confirmBulkDelete()">
+            <i class="ti-trash mr-5"></i>{{__('Delete Selected')}}
+        </button>
+    @endcan
 @endsection
 @section('content')
     <div class="row">
@@ -39,6 +44,9 @@
                         <thead>
                         <tr>
                             <th hidden>id</th>
+                            @can('delete booking')
+                            <th style="width:30px;"><input type="checkbox" id="selectAll" title="{{__('Select All')}}"></th>
+                            @endcan
                             <th>{{__('ID')}}</th>
                             <th>{{__('Driver')}}</th>
                             <th>{{__('Vehicle')}}</th>
@@ -54,6 +62,9 @@
                         @foreach ($bookings as $booking)
                             <tr>
                                 <td hidden>{{ $booking->id }}</td>
+                                @can('delete booking')
+                                <td><input type="checkbox" class="booking-checkbox" value="{{ $booking->id }}"></td>
+                                @endcan
                                 <td>{{ bookingPrefix().$booking->booking_id }}</td>
                                 <td>{{ !empty($booking->drivers)?$booking->drivers->name:'-' }}</td>
                                 <td>{{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->name:'-' }} - {{ !empty($booking->vehicleDetails())?$booking->vehicleDetails()->license_plate:'-' }}</td>
@@ -119,6 +130,13 @@
 @endsection
 
 {{-- Import Excel Modal --}}
+@can('delete booking')
+<form id="bulkDeleteForm" action="{{ route('booking.bulk-destroy') }}" method="POST" style="display:none;">
+    @csrf
+    <div id="bulkDeleteInputs"></div>
+</form>
+@endcan
+
 @can('create booking')
 <div class="modal fade" id="importBookingModal" tabindex="-1" aria-labelledby="importBookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -217,6 +235,44 @@ $(document).ready(function() {
         ],
         order: [[0, 'desc']]
     });
+
+    // Select all checkbox
+    $('#selectAll').on('change', function() {
+        $('.booking-checkbox').prop('checked', this.checked);
+        updateBulkDeleteBtn();
+    });
+
+    // Individual checkbox change
+    $(document).on('change', '.booking-checkbox', function() {
+        var total = $('.booking-checkbox').length;
+        var checked = $('.booking-checkbox:checked').length;
+        $('#selectAll').prop('indeterminate', checked > 0 && checked < total);
+        $('#selectAll').prop('checked', checked === total);
+        updateBulkDeleteBtn();
+    });
+
+    function updateBulkDeleteBtn() {
+        var checked = $('.booking-checkbox:checked').length;
+        if (checked > 0) {
+            $('#bulkDeleteBtn').show().text('{{ __('Delete Selected') }} (' + checked + ')');
+        } else {
+            $('#bulkDeleteBtn').hide();
+        }
+    }
 });
+
+function confirmBulkDelete() {
+    var ids = $('.booking-checkbox:checked').map(function() { return $(this).val(); }).get();
+    if (ids.length === 0) return;
+
+    if (!confirm('{{ __('Are you sure you want to delete the') }} ' + ids.length + ' {{ __('selected booking(s)?') }}')) return;
+
+    var container = $('#bulkDeleteInputs');
+    container.empty();
+    $.each(ids, function(i, id) {
+        container.append('<input type="hidden" name="ids[]" value="' + id + '">');
+    });
+    $('#bulkDeleteForm').submit();
+}
 </script>
 @endpush
