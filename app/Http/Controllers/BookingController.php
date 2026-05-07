@@ -498,6 +498,23 @@ class BookingController extends Controller
         }
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        if (!\Auth::user()->can('delete booking')) {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return redirect()->back()->with('error', __('No bookings selected.'));
+        }
+
+        Tva::whereIn('booking_id', $ids)->delete();
+        Booking::whereIn('id', $ids)->delete();
+
+        return redirect()->route('booking.index')->with('success', __('Selected bookings successfully deleted.'));
+    }
+
     public function downloadTemplate()
     {
         $spreadsheet = new Spreadsheet();
