@@ -191,13 +191,14 @@
                     <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls,.csv" required>
                 </div>
                 <div class="alert alert-info small mb-0">
-                    <strong>Format attendu (9 colonnes) :</strong>
+                    <strong>Format attendu (10 colonnes) :</strong>
                     <code class="d-block mt-1 mb-1" style="font-size:0.78em;">
-                        NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX
+                        NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
                     </code>
                     <ul class="mb-0 ps-3 mt-1">
                         <li>Dates au format <strong>JJ/MM/AAAA</strong> (ex: 01/02/2026).</li>
                         <li>Le PRIX peut être laissé vide.</li>
+                        <li>La METHOD peut être laissée vide (ex: espèce, virement, chèque, carte).</li>
                         <li>Conducteurs et véhicules inexistants sont créés automatiquement.</li>
                         <li>Le statut est automatiquement défini à <em>À démarrer</em>.</li>
                     </ul>
