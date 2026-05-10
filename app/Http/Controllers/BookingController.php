@@ -652,6 +652,7 @@ class BookingController extends Controller
         $imported = 0;
         $skipped  = [];
 
+        try {
         foreach ($rows as $rowIndex => $row) {
             if ($rowIndex === 0) {
                 continue; // skip header
@@ -682,96 +683,96 @@ class BookingController extends Controller
                 continue;
             }
 
-            // Validate required fields before auto-creating
-            if (empty($driverName)) {
-                $errors[] = "NOM & PRENOM est vide";
-            }
-            if (empty($licensePlate)) {
-                $errors[] = "IMMATRICULATION est vide";
-            }
-
-            $startDateParsed = $this->parseExcelDate($startDate);
-            $endDateParsed   = $this->parseExcelDate($endDate);
-
-            if (!$startDateParsed) {
-                $errors[] = "date début invalide '{$startDate}'";
-            }
-            if (!$endDateParsed) {
-                $errors[] = "date retour invalide '{$endDate}'";
-            }
-
-            if (!empty($errors)) {
-                $skipped[] = [
-                    'row'    => $lineNum,
-                    'nom'    => $driverName,
-                    'plaque' => $licensePlate,
-                    'debut'  => (string) $startDate,
-                    'retour' => (string) $endDate,
-                    'errors' => $errors,
-                ];
-                continue;
-            }
-
-            // Auto-create driver if not found
-            $driverKey = strtolower($driverName);
-            if (!isset($driversCache[$driverKey])) {
-                $emailBase = strtolower(str_replace([' ', "'"], ['.', ''], $driverName));
-                $email     = $emailBase . '@import.local';
-                $suffix    = 1;
-                while (User::where('email', $email)->exists()) {
-                    $email = $emailBase . $suffix . '@import.local';
-                    $suffix++;
-                }
-
-                $newUser           = new User();
-                $newUser->name     = $driverName;
-                $newUser->email    = $email;
-                $newUser->password = \Hash::make('123456');
-                $newUser->type     = 'driver';
-                $newUser->profile  = 'avatar.png';
-                $newUser->lang     = 'english';
-                $newUser->parent_id = $pid;
-                $newUser->save();
-
-                if ($driverRole) {
-                    $newUser->assignRole($driverRole);
-                }
-
-                // Create Driver profile record
-                $latestDriver = \App\Models\Driver::where('parent_id', $pid)->latest()->first();
-                $newDriver           = new \App\Models\Driver();
-                $newDriver->driver_id = $latestDriver ? $latestDriver->driver_id + 1 : 1;
-                $newDriver->user_id  = $newUser->id;
-                $newDriver->parent_id = $pid;
-                $newDriver->save();
-
-                $driversCache[$driverKey] = $newUser;
-            }
-            $driver = $driversCache[$driverKey];
-
-            // Auto-create vehicle if not found
-            $plateKey = strtolower($licensePlate);
-            if (!isset($vehiclesCache[$plateKey])) {
-                $latestVehicle = Vehicle::where('parent_id', $pid)->latest()->first();
-
-                $newVehicle               = new Vehicle();
-                $newVehicle->vehicle_id   = $latestVehicle ? $latestVehicle->vehicle_id + 1 : 1;
-                $newVehicle->name         = $marque ?: $licensePlate;
-                $newVehicle->model        = $marque ?: null;
-                $newVehicle->license_plate = $licensePlate;
-                $newVehicle->parent_id    = $pid;
-                $newVehicle->save();
-
-                $vehiclesCache[$plateKey] = $newVehicle;
-            }
-            $vehicle = $vehiclesCache[$plateKey];
-
-            $startTimeFmt  = $this->parseExcelTime($startTime) ?? '00:00:00';
-            $endTimeFmt    = $this->parseExcelTime($endTime) ?? '00:00:00';
-            $amount        = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
-            $paymentMethod = !empty($method) ? trim((string) $method) : null;
-
             try {
+                // Validate required fields before auto-creating
+                if (empty($driverName)) {
+                    $errors[] = "NOM & PRENOM est vide";
+                }
+                if (empty($licensePlate)) {
+                    $errors[] = "IMMATRICULATION est vide";
+                }
+
+                $startDateParsed = $this->parseExcelDate($startDate);
+                $endDateParsed   = $this->parseExcelDate($endDate);
+
+                if (!$startDateParsed) {
+                    $errors[] = "date début invalide '{$startDate}'";
+                }
+                if (!$endDateParsed) {
+                    $errors[] = "date retour invalide '{$endDate}'";
+                }
+
+                if (!empty($errors)) {
+                    $skipped[] = [
+                        'row'    => $lineNum,
+                        'nom'    => $driverName,
+                        'plaque' => $licensePlate,
+                        'debut'  => (string) $startDate,
+                        'retour' => (string) $endDate,
+                        'errors' => $errors,
+                    ];
+                    continue;
+                }
+
+                // Auto-create driver if not found
+                $driverKey = strtolower($driverName);
+                if (!isset($driversCache[$driverKey])) {
+                    $emailBase = strtolower(str_replace([' ', "'"], ['.', ''], $driverName));
+                    $email     = $emailBase . '@import.local';
+                    $suffix    = 1;
+                    while (User::where('email', $email)->exists()) {
+                        $email = $emailBase . $suffix . '@import.local';
+                        $suffix++;
+                    }
+
+                    $newUser           = new User();
+                    $newUser->name     = $driverName;
+                    $newUser->email    = $email;
+                    $newUser->password = \Hash::make('123456');
+                    $newUser->type     = 'driver';
+                    $newUser->profile  = 'avatar.png';
+                    $newUser->lang     = 'english';
+                    $newUser->parent_id = $pid;
+                    $newUser->save();
+
+                    if ($driverRole) {
+                        $newUser->assignRole($driverRole);
+                    }
+
+                    // Create Driver profile record
+                    $latestDriver = Driver::where('parent_id', $pid)->latest()->first();
+                    $newDriver           = new Driver();
+                    $newDriver->driver_id = $latestDriver ? $latestDriver->driver_id + 1 : 1;
+                    $newDriver->user_id  = $newUser->id;
+                    $newDriver->parent_id = $pid;
+                    $newDriver->save();
+
+                    $driversCache[$driverKey] = $newUser;
+                }
+                $driver = $driversCache[$driverKey];
+
+                // Auto-create vehicle if not found
+                $plateKey = strtolower($licensePlate);
+                if (!isset($vehiclesCache[$plateKey])) {
+                    $latestVehicle = Vehicle::where('parent_id', $pid)->latest()->first();
+
+                    $newVehicle               = new Vehicle();
+                    $newVehicle->vehicle_id   = $latestVehicle ? $latestVehicle->vehicle_id + 1 : 1;
+                    $newVehicle->name         = $marque ?: $licensePlate;
+                    $newVehicle->model        = $marque ?: null;
+                    $newVehicle->license_plate = $licensePlate;
+                    $newVehicle->parent_id    = $pid;
+                    $newVehicle->save();
+
+                    $vehiclesCache[$plateKey] = $newVehicle;
+                }
+                $vehicle = $vehiclesCache[$plateKey];
+
+                $startTimeFmt  = $this->parseExcelTime($startTime) ?? '00:00:00';
+                $endTimeFmt    = $this->parseExcelTime($endTime) ?? '00:00:00';
+                $amount        = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
+                $paymentMethod = !empty($method) ? trim((string) $method) : null;
+
                 $booking = new Booking();
                 $booking->booking_id        = $this->bookingNumber();
                 $booking->vehicle           = $vehicle->id;
@@ -806,6 +807,9 @@ class BookingController extends Controller
                     'errors' => [$e->getMessage()],
                 ];
             }
+        }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', __('Import failed: ') . $e->getMessage());
         }
 
         if (!empty($skipped)) {
