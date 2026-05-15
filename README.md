@@ -1,64 +1,286 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# rentcar
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-client Laravel platform for car rental businesses. Originally
+built for **Direct Onderweg** (operating in Morocco) and now being
+prepared to serve multiple clients from one codebase, one isolated
+deployment per client. Features include vehicle and driver management,
+bookings, rental agreements with digital signatures, inspections,
+expenses, coupons and credits, TVA (VAT) handling, multi-locale
+support, Stripe and PayPal payments, reCAPTCHA, and role/permission
+management.
 
-## About Laravel
+> **Heads up:** the project is in the middle of a Laravel 10 → 12 +
+> Inertia/React modernization. Read `CLAUDE.md` and
+> `docs/migration-plan.md` before opening a PR.
+>
+> The repo is `bangicodefactory/rentcar`. The first onboarded client
+> identifier is `directonderweg` (selected via `APP_CLIENT=directonderweg`
+> in each deployment's environment). See `docs/client-configurability.md`
+> for how the multi-client architecture works.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech stack (current, pre-migration)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP **8.1+** (target during migration: **8.3+**)
+- Laravel **10.48** (target: **12**)
+- MySQL **8.0+** (MariaDB 10.6+ also works)
+- Node **18+** (target during migration: **20+ LTS**)
+- Frontend: Blade + Alpine.js + jQuery + Tailwind, built with Laravel Mix
+  (target: Inertia.js + React 19 + Vite)
 
-## Learning Laravel
+Key packages: `spatie/laravel-permission`, `laravel/sanctum`,
+`barryvdh/laravel-dompdf`, `creagia/laravel-sign-pad`,
+`anhskohbo/no-captcha` (reCAPTCHA v2), `srmklive/paypal`,
+`stripe/stripe-php`, `kkomelin/laravel-translatable-string-exporter`,
+`rachidlaasri/laravel-installer`, `phpoffice/phpspreadsheet`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Local development setup
 
-## Laravel Sponsors
+### 1. Prerequisites
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+Install these first:
 
-### Premium Partners
+- PHP 8.1 (the project still runs on 8.1; 8.3 is required to follow the
+  migration branch)
+- Composer 2.x
+- Node.js 18+ and npm 9+
+- MySQL 8 or MariaDB 10.6+ running locally
+- (optional) Redis if you want cache/queue/session on Redis
+- (optional) [MailHog](https://github.com/mailhog/MailHog) or
+  [Mailpit](https://github.com/axllent/mailpit) for catching dev emails
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+If you're on macOS the easiest path is Homebrew:
 
-## Contributing
+```bash
+brew install php@8.1 composer node@20 mysql mailpit
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+On Windows, [Laragon](https://laragon.org/) or WSL2 + Ubuntu is the
+smoothest setup.
 
-## Code of Conduct
+### 2. Clone and install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+git clone git@github.com:bangicodefactory/rentcar.git
+cd rentcar
 
-## Security Vulnerabilities
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3. Configure your `.env`
+
+At minimum, edit these:
+
+```dotenv
+APP_NAME="Direct Onderweg"
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=rentcar
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Active client for this deployment (default for local dev)
+APP_CLIENT=directonderweg
+
+# Mail (Mailpit defaults)
+MAIL_MAILER=smtp
+MAIL_HOST=127.0.0.1
+MAIL_PORT=1025
+MAIL_FROM_ADDRESS="noreply@directonderweg.local"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Queue — leave as 'sync' for local dev unless you're testing jobs
+QUEUE_CONNECTION=sync
+
+# Cache / Session — 'file' is fine locally
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+```
+
+The app additionally reads these payment / captcha keys from `.env`.
+**Use sandbox/test keys only for local dev.** Never commit real keys.
+
+```dotenv
+# Stripe (test mode)
+STRIPE_KEY=pk_test_xxx
+STRIPE_SECRET=sk_test_xxx
+
+# PayPal (sandbox)
+PAYPAL_MODE=sandbox
+PAYPAL_SANDBOX_CLIENT_ID=
+PAYPAL_SANDBOX_CLIENT_SECRET=
+
+# Google reCAPTCHA v2
+NOCAPTCHA_SITEKEY=
+NOCAPTCHA_SECRET=
+```
+
+Ask the team lead for the shared sandbox credentials if you don't have
+them.
+
+### 4. Create the database and run migrations
+
+```bash
+mysql -u root -e "CREATE DATABASE rentcar;"
+php artisan migrate
+php artisan db:seed     # only if seeders exist for your branch
+```
+
+A storage symlink is required for uploads / generated PDFs / signatures:
+
+```bash
+php artisan storage:link
+```
+
+### 5. Run the app
+
+In separate terminals:
+
+```bash
+php artisan serve            # http://localhost:8000
+npm run watch                # rebuild assets on file change
+mailpit                      # http://localhost:8025 to see outgoing mail
+```
+
+After the Vite migration these become:
+
+```bash
+php artisan serve
+npm run dev                  # Vite dev server with HMR
+```
+
+### 6. (Optional) Sail / Docker
+
+Laravel Sail is available via `composer require --dev laravel/sail` and
+`php artisan sail:install`. If you'd rather skip the local PHP/MySQL
+installs, run:
+
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail npm install
+./vendor/bin/sail npm run watch
+```
+
+---
+
+## Common scripts
+
+| Task                                  | Command                                      |
+| ------------------------------------- | -------------------------------------------- |
+| Run tests                             | `php artisan test`                           |
+| Run a single test file                | `php artisan test --filter=BookingTest`      |
+| Tinker (REPL)                         | `php artisan tinker`                         |
+| Clear all caches                      | `php artisan optimize:clear`                 |
+| Re-run migrations from scratch        | `php artisan migrate:fresh --seed`           |
+| Build assets for production           | `npm run prod` (Mix) / `npm run build` (Vite) |
+| Export translatable strings           | `php artisan translatable:export <locale>`   |
+
+---
+
+## Project structure (high level)
+
+```
+app/
+  Helper/helper.php          # global helper functions (autoloaded)
+  Http/Controllers/          # 30 domain controllers + Auth/
+  Models/                    # 30 Eloquent models
+  Services/                  # currently 1: TvaRenumberService
+  Mail/                      # mailables (EmailVerification, Common, Document, TestMail)
+  Providers/
+config/                      # standard Laravel config + captcha, paypal, dompdf, sign-pad, installer
+database/
+  migrations/                # 57 migrations
+  factories/, seeders/
+lang/                        # 14 locales + matching <locale>.json files
+resources/
+  views/                     # 179 Blade files (being ported to React)
+  js/                        # app.js, bootstrap.js (Alpine.js + jQuery today)
+routes/
+  web.php  (527 lines)       # main user/admin routes
+  api.php                    # API routes (Sanctum)
+  auth.php                   # Breeze auth scaffold
+  channels.php               # broadcasting
+tests/
+  Feature/                   # Breeze defaults today; full coverage in progress (see docs/test-plan.md)
+  Unit/
+```
+
+---
+
+## Locales
+
+The app currently ships with 14 locales: `ar`, `da`, `de`, `en`, `es`,
+`fr`, `it`, `ja`, `nl`, `pl`, `pt`, `ru`, plus the corresponding
+`*.json` sibling files. Both formats are used. **Don't remove or rename
+existing keys** — the migration depends on byte-for-byte locale
+parity. You can use `kkomelin/laravel-translatable-string-exporter` to
+add new strings consistently.
+
+---
+
+## Payments & external integrations
+
+Three integrations need extra care:
+
+1. **Stripe** (`stripe/stripe-php`) — Stripe Checkout for bookings.
+   Local dev uses test-mode keys. Webhooks (if any) point at a Stripe
+   CLI forwarder: `stripe listen --forward-to localhost:8000/stripe/webhook`.
+2. **PayPal** (`srmklive/paypal`) — sandbox-only locally. PayPal's
+   sandbox sometimes returns flaky responses; retry before declaring
+   a bug.
+3. **reCAPTCHA** (`anhskohbo/no-captcha`) — Google's test keys
+   (`6LeIxAcTAAAAA...`) make reCAPTCHA always pass; use them locally.
+
+---
+
+## Signatures and PDFs
+
+Rental agreements are generated with `barryvdh/laravel-dompdf` and
+signed via `creagia/laravel-sign-pad` (which currently uses the
+`jq-signature` jQuery plugin client-side). Generated files land under
+`storage/app/` — confirm `php artisan storage:link` has been run if
+they don't render.
+
+---
+
+## Migration & testing
+
+The repo is mid-modernization. If you're working on the migration:
+
+- Branch off `dev` onto `feat/modernization` (or a sub-branch of it).
+- Read `CLAUDE.md` for the rules-of-engagement.
+- Check `docs/migration-plan.md` for the current phase and what's
+  blocking the next gate.
+- Check `docs/test-plan.md` for what coverage is required before
+  touching a given controller.
+- Run `php artisan test` before pushing, every time.
+
+---
+
+## Troubleshooting
+
+| Symptom                                                | Likely fix                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------ |
+| `Class "App\\Helper\\..." not found`                   | `composer dump-autoload`                                     |
+| Blank page after install                               | `php artisan key:generate`, check `APP_DEBUG=true`           |
+| 419 on POST forms                                      | Session cookie/CSRF — clear browser cookies for `localhost`  |
+| Stored PDFs / signatures not displaying                | `php artisan storage:link`                                   |
+| Mix builds asset paths under `/public/...` not found   | `npm run watch` not running, or wrong `APP_URL`              |
+| reCAPTCHA always fails locally                         | Use Google's test site/secret keys (see above)               |
+| Migrations error on `enum` change                      | Ensure `doctrine/dbal` is installed (it already is)          |
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proprietary. All rights reserved by the project owner.
