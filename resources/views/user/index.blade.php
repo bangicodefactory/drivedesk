@@ -59,8 +59,10 @@
                                 <td>{{ $user->email }} </td>
                                 <td>{{ !empty($user->phone_number)?$user->phone_number:'-' }} </td>
                                 @if(\Auth::user()->type=='super admin')
+                                    @if(feature('subscriptions'))
                                     <td>{{ !empty($user->subscriptions)?$user->subscriptions->title:'-' }} </td>
                                     <td>{{!empty($user->plan_expire_date) ? dateFormat($user->plan_expire_date): __('Unlimited')}} </td>
+                                    @endif
                                 @else
                                     <td>{{ ucfirst($user->type) }} </td>
                                 @endif

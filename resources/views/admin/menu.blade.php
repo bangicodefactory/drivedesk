@@ -2,7 +2,7 @@
     $admin_logo = getSettingsValByName('company_logo');
     $ids = parentId();
     $authUser = \App\Models\User::find($ids);
-    $subscription = \App\Models\Subscription::find($authUser->subscription);
+    $subscription = feature('subscriptions') ? \App\Models\Subscription::find($authUser->subscription) : null;
     $routeName = \Request::route()->getName();
 @endphp
 <aside class="codex-sidebar sidebar-{{ $settings['sidebar_mode'] }}">
@@ -69,7 +69,7 @@
                                 </li>
                             @endif
 
-                            @if (Gate::check('manage logged history') && $subscription->enabled_logged_history == 1)
+                            @if (Gate::check('manage logged history') && (!feature('subscriptions') || ($subscription && $subscription->enabled_logged_history == 1)))
                                 <li class="{{ in_array($routeName, ['logged.history']) ? 'active' : '' }}">
                                     <a href="{{ route('logged.history') }}">{{ __('Logged History') }}</a>
                                 </li>
@@ -303,7 +303,7 @@
                 <li class="cdxmenu-title">
                     <h5>{{ __('System Settings') }}</h5>
                 </li>
-                @if (Gate::check('manage pricing packages') || Gate::check('manage pricing transation'))
+                @if (feature('subscriptions') && (Gate::check('manage pricing packages') || Gate::check('manage pricing transation')))
                     <li
                         class="menu-item {{ in_array($routeName, ['subscriptions.index', 'subscriptions.show', 'subscription.transaction']) ? 'active' : '' }}">
                         <a href="javascript:void(0);">
@@ -326,7 +326,7 @@
                         </ul>
                     </li>
                 @endif
-                @if (Gate::check('manage coupon') || Gate::check('manage coupon history'))
+                @if (feature('subscriptions') && (Gate::check('manage coupon') || Gate::check('manage coupon history')))
                     <li
                         class="menu-item {{ in_array($routeName, ['coupons.index', 'coupons.history']) ? 'active' : '' }}">
                         <a href="javascript:void(0);">

@@ -91,12 +91,12 @@ Route::resource('users', UserController::class)->middleware(
 
 //-------------------------------Subscription-------------------------------------------
 
-
 Route::group(
     [
         'middleware' => [
             'auth',
             'XSS',
+            'feature:subscriptions',
         ],
     ],
     function () {
@@ -117,6 +117,7 @@ Route::group(
         'middleware' => [
             'auth',
             'XSS',
+            'feature:subscriptions',
         ],
     ],
     function () {
@@ -215,6 +216,7 @@ Route::group(
         'middleware' => [
             'auth',
             'XSS',
+            'feature:subscriptions',
         ],
     ],
     function () {

@@ -135,6 +135,7 @@
         chart.render();
 
 
+        @if(feature('subscriptions'))
         var options = {
             series: [{
                 name: "{{__('Total Payment')}}",
@@ -255,6 +256,7 @@
         };
         var chart = new ApexCharts(document.querySelector("#payments_by_month"), options);
         chart.render();
+        @endif
 
 
     </script>
@@ -271,6 +273,7 @@
                 </div>
             </div>
         </div>
+        @if(feature('subscriptions'))
         <div class="col-xxl-3 col-sm-6 cdx-xxl-50">
             <div class="card sale-revenue">
                 <div class="card-header">
@@ -301,6 +304,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <div class="col-xxl-12 cdx-xxl-50">
             <div class="card overall-revenuetbl">
@@ -312,6 +316,7 @@
                 </div>
             </div>
         </div>
+        @if(feature('subscriptions'))
         <div class="col-xxl-12 cdx-xxl-50">
             <div class="card overall-revenuetbl">
                 <div class="card-header">
@@ -322,5 +327,6 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 @endsection
