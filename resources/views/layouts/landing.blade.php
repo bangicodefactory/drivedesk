@@ -2,8 +2,8 @@
 <html lang="en">
 @php
     $settings=settings();
-     $user=\App\Models\User::find(1);
-    \App::setLocale($user->lang);
+    $user=\App\Models\User::whereType('super admin')->first();
+    if($user?->lang) \App::setLocale($user->lang);
 @endphp
 
 <head>
