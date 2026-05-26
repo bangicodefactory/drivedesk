@@ -39,8 +39,10 @@
                             <th>{{__('Email')}}</th>
                             <th>{{__('Phone Number')}}</th>
                             @if(\Auth::user()->type=='super admin')
-                                <th>{{__('Active Package')}}</th>
-                                <th>{{__('Package Due Date')}}</th>
+                                @if(feature('subscriptions'))
+                                    <th>{{__('Active Package')}}</th>
+                                    <th>{{__('Package Due Date')}}</th>
+                                @endif
                             @else
                                 <th>{{__('Assign Role')}}</th>
                             @endif
@@ -59,8 +61,10 @@
                                 <td>{{ $user->email }} </td>
                                 <td>{{ !empty($user->phone_number)?$user->phone_number:'-' }} </td>
                                 @if(\Auth::user()->type=='super admin')
+                                    @if(feature('subscriptions'))
                                     <td>{{ !empty($user->subscriptions)?$user->subscriptions->title:'-' }} </td>
                                     <td>{{!empty($user->plan_expire_date) ? dateFormat($user->plan_expire_date): __('Unlimited')}} </td>
+                                    @endif
                                 @else
                                     <td>{{ ucfirst($user->type) }} </td>
                                 @endif
