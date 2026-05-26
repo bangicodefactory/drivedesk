@@ -39,8 +39,10 @@
                             <th>{{__('Email')}}</th>
                             <th>{{__('Phone Number')}}</th>
                             @if(\Auth::user()->type=='super admin')
-                                <th>{{__('Active Package')}}</th>
-                                <th>{{__('Package Due Date')}}</th>
+                                @if(feature('subscriptions'))
+                                    <th>{{__('Active Package')}}</th>
+                                    <th>{{__('Package Due Date')}}</th>
+                                @endif
                             @else
                                 <th>{{__('Assign Role')}}</th>
                             @endif

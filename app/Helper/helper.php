@@ -273,7 +273,7 @@ if (!function_exists('assignSubscription')) {
     function assignSubscription($id)
     {
         if (!feature('subscriptions')) {
-            return ['is_success' => false, 'error' => 'Subscriptions are disabled for this deployment.'];
+            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
         }
         $subscription = Subscription::find($id);
         if ($subscription) {
@@ -289,7 +289,6 @@ if (!function_exists('assignSubscription')) {
             }
             \Auth::user()->save();
 
-            // User seat limits are only enforced when the subscription feature is active.
             $users = User::where('parent_id', '=', parentId())->whereNotIn('type', ['driver'])->get();
 
             if ($subscription->user_limit == 0) {
@@ -322,7 +321,7 @@ if (!function_exists('assignManuallySubscription')) {
     function assignManuallySubscription($id, $userId)
     {
         if (!feature('subscriptions')) {
-            return ['is_success' => false, 'error' => 'Subscriptions are disabled for this deployment.'];
+            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
         }
         $owner = User::find($userId);
         $subscription = Subscription::find($id);
