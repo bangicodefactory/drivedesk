@@ -73,5 +73,7 @@
 
     <link href="{{ asset('css/custom.css') }}"  rel="stylesheet">
 
+    {{-- BAN-46: Vite smoke-test — temporary, removed when Mix is fully replaced in BAN-47 --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>

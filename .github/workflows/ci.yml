@@ -74,6 +74,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Build Vite assets
+        run: npm run vite:build
+
       - name: Copy .env
         run: cp .env.example .env
 
