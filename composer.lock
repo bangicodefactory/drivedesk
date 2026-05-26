@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2b06a01a908224b60b7a27b8132e96cb",
+    "content-hash": "3dd9763943bc9dc563f1cf74dc743cf7",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -5340,34 +5340,29 @@
         },
         {
             "name": "srmklive/paypal",
-            "version": "3.1.1",
+            "version": "3.0.40",
             "source": {
                 "type": "git",
                 "url": "https://github.com/blendbyte/laravel-paypal.git",
-                "reference": "522834a22fbd10e8fa1be21cb7c84d3d45c3a763"
+                "reference": "1ddc49fd836a4785933ab953452152f3fedbac63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/blendbyte/laravel-paypal/zipball/522834a22fbd10e8fa1be21cb7c84d3d45c3a763",
-                "reference": "522834a22fbd10e8fa1be21cb7c84d3d45c3a763",
+                "url": "https://api.github.com/repos/blendbyte/laravel-paypal/zipball/1ddc49fd836a4785933ab953452152f3fedbac63",
+                "reference": "1ddc49fd836a4785933ab953452152f3fedbac63",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^7.9",
-                "guzzlehttp/psr7": "^2.0",
-                "illuminate/support": "^12.0|^13.0",
-                "nesbot/carbon": "^3.0",
-                "php": "^8.2",
-                "psr/http-client": "^1.0"
+                "ext-curl": "*",
+                "guzzlehttp/guzzle": "~7.0",
+                "illuminate/support": "~6.0|~7.0|~8.0|~9.0|^10.0|^11.0|^12.0",
+                "nesbot/carbon": "~2.0|^3.0",
+                "php": ">=7.2|^8.0"
             },
             "require-dev": {
-                "larastan/larastan": "^3.0",
-                "laravel/framework": "^12.0|^13.0",
-                "laravel/pint": "^1.29",
-                "orchestra/testbench": "^10.0|^11.0",
-                "pestphp/pest": "^3.0|^4.0",
-                "phpunit/phpunit": "^11.0|^12.0",
-                "symfony/var-dumper": "^7.0"
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^8.0|^9.0|^10.0|^11.0",
+                "symfony/var-dumper": "~5.0|^6.0|^7.0"
             },
             "type": "library",
             "extra": {
@@ -5389,18 +5384,25 @@
             "license": [
                 "MIT"
             ],
-            "description": "PayPal REST API client for Laravel and standalone PHP.",
+            "authors": [
+                {
+                    "name": "Raza Mehdi",
+                    "email": "srmk@outlook.com"
+                }
+            ],
+            "description": "Laravel plugin For Processing Payments Through Paypal Express Checkout. Can Be Used Independently With Other Applications.",
             "keywords": [
-                "REST API",
-                "laravel",
-                "payments",
-                "paypal"
+                "http",
+                "laravel paypal",
+                "paypal",
+                "rest",
+                "web service"
             ],
             "support": {
                 "issues": "https://github.com/blendbyte/laravel-paypal/issues",
-                "source": "https://github.com/blendbyte/laravel-paypal/tree/3.1.1"
+                "source": "https://github.com/blendbyte/laravel-paypal/tree/3.0.40"
             },
-            "time": "2026-04-18T05:16:56+00:00"
+            "time": "2025-02-25T21:38:18+00:00"
         },
         {
             "name": "stripe/stripe-php",
