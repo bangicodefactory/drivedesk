@@ -116,8 +116,9 @@ isolation, etc.).
 
 - `php artisan test` is green and `--coverage` reports ≥80%
   line coverage on `app/Http/Controllers/`.
-- Stripe/PayPal flows are smoke-tested in sandbox manually and the
-  result is logged in `docs/migration-log.md`.
+- Payment/subscription routes return 404 for `directonderweg`
+  (verified by `feature:subscriptions` gate tests). Stripe/PayPal
+  sandbox testing is N/A — the feature is disabled for this client.
 
 ---
 
@@ -152,8 +153,9 @@ Goal: cleanly land on Laravel 11 with no behavior change.
 
 - `composer show laravel/framework` → 11.x.
 - `php artisan test` green.
-- Manual smoke test of: login, create booking, take Stripe payment
-  (sandbox), generate rental agreement PDF, sign it.
+- Manual smoke test of: login, create booking, generate rental
+  agreement PDF, sign it. Stripe/PayPal N/A — `feature:subscriptions`
+  disabled for `directonderweg`; routes verified to return 404.
 
 ---
 
@@ -171,12 +173,14 @@ Goal: same idea, one step further.
 
 1. `"laravel/framework": "^12.0"` + matching package bumps.
 2. Follow the [11 → 12 upgrade guide](https://laravel.com/docs/12.x/upgrade).
-3. Re-run the suite. Re-run the manual smoke tests.
+3. Re-run the suite. Re-run manual smoke tests (login, PDF,
+   signature). Stripe/PayPal N/A — see Phase 2 exit gate note.
 
 **Exit gate**
 
 - `composer show laravel/framework` → 12.x.
-- Suite green, smoke tests green.
+- Suite green; login, PDF generation, and signature pad manually
+  verified. Stripe/PayPal N/A for `directonderweg`.
 
 ---
 
@@ -259,13 +263,15 @@ Goal: every Blade view becomes a React page, in priority order.
 1. Auth pages (login, register, password reset, email verify).
 2. Settings & user management (low complexity, high familiarity).
 3. Vehicle / vehicle type / driver / place / option / addon CRUD.
-4. Booking flow (the hairy one — pay extra attention to validation,
-   Stripe/PayPal handoff, rental agreement generation, signature pad).
+4. Booking flow (validation, rental agreement generation, signature
+   pad). Stripe/PayPal checkout pages are deleted in Phase 7 — do
+   not port them.
 5. Inspections, expenses, reminders.
 6. TVA / TVA renumber (complex business rules — re-read the tests).
 7. Rental agreement viewer/signer.
 8. Dashboard widgets.
-9. Customer-facing pages (landing, public booking flow).
+9. Customer-facing pages (public booking flow). The subscription
+   landing/checkout pages are deleted in Phase 7 — do not port them.
 
 For each group, the PR:
 
@@ -298,6 +304,19 @@ Goal: address the audit; tidy up.
 
 **Work**
 
+0. **Delete SaaS payment/subscription dead code** (BAN-NEW-4):
+   - Delete `app/Http/Controllers/PaymentController.php`,
+     `SubscriptionController.php`.
+   - Delete `app/Models/Subscription.php`, `PackageTransaction.php`,
+     `Coupon.php`.
+   - Delete `resources/views/subscription/` and
+     `resources/views/settings/payment.blade.php`.
+   - Delete `config/paypal.php`.
+   - Remove `srmklive/paypal`, `stripe/stripe-php`,
+     `mashape/unirest-php` from `composer.json`.
+   - Remove subscription/coupon permission rows from seeder.
+   - Leave the DB tables in place; drop them in a post-migration
+     schema cleanup PR after Phase 8.
 1. Re-run the perf audit. Compare against the baseline — some issues
    will be fixed for free by Vite + React, others will still be there.
 2. Pick the top 5 findings from `docs/perf-audit.md` and address them
@@ -351,9 +370,12 @@ Goal: ship.
 
 - Every phase commits incrementally and **does not squash**, so
   `git bisect` can localize a regression to a single commit.
-- Money flows have manual sandbox smoke tests at every phase exit
-  gate (Phases 2, 3, 4, 6, 7). If a smoke test fails, the phase
-  rolls back to the previous gate's commit, not forward.
+- Non-payment manual smoke tests (login, booking, PDF, signature)
+  run at every phase exit gate (Phases 2, 3, 4, 6). Stripe/PayPal
+  sandbox tests are N/A for `directonderweg` — the subscription
+  feature is disabled and those routes return 404. If a smoke test
+  fails, the phase rolls back to the previous gate's commit, not
+  forward.
 - Database schema is frozen, so rollback is just `git revert` +
   redeploy — no down-migrations to plan.
 
