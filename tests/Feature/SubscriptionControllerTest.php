@@ -21,6 +21,7 @@ class SubscriptionControllerTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
+        config(['client.features.subscriptions' => true]);
 
         $perms = [
             'manage pricing packages',
@@ -265,6 +266,17 @@ class SubscriptionControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('subscription.transaction'))
             ->assertOk();
+    }
+
+    // ── feature gate ─────────────────────────────────────────────────────────
+
+    public function test_routes_return_404_when_subscriptions_disabled(): void
+    {
+        config(['client.features.subscriptions' => false]);
+
+        $this->actingAs($this->owner)
+            ->get(route('subscriptions.index'))
+            ->assertNotFound();
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
