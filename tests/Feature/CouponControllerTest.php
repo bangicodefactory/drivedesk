@@ -24,6 +24,7 @@ class CouponControllerTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
+        config(['client.features.subscriptions' => true]);
 
         $perms = [
             'manage coupon', 'create coupon', 'edit coupon',
@@ -318,6 +319,17 @@ class CouponControllerTest extends TestCase
                 'coupon'  => $coupon->code,
             ]))
             ->assertJsonFragment(['status' => false]);
+    }
+
+    // ── feature gate ─────────────────────────────────────────────────────────
+
+    public function test_routes_return_404_when_subscriptions_disabled(): void
+    {
+        config(['client.features.subscriptions' => false]);
+
+        $this->actingAs($this->owner)
+            ->get(route('coupons.index'))
+            ->assertNotFound();
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
