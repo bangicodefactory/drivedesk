@@ -77,6 +77,12 @@ jobs:
       - name: Copy .env
         run: cp .env.example .env
 
+      - name: Create storage directories
+        run: |
+          mkdir -p storage/framework/{cache/data,sessions,views}
+          mkdir -p storage/logs
+          chmod -R 755 storage
+
       - name: Generate application key
         run: php artisan key:generate
 
@@ -87,8 +93,7 @@ jobs:
         run: php artisan client:install
 
       - name: Run tests with coverage
-        # --min=0 until Phase 1 test backfill raises coverage to 80%; restore --min=80 then
-        run: php artisan test --coverage --min=0
+        run: php artisan test --coverage --min=50
 
       # post-Phase 5 — uncomment when React/TypeScript port is complete
       # - name: TypeScript type-check
