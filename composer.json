@@ -12,7 +12,7 @@
         "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.2",
         "kkomelin/laravel-translatable-string-exporter": "^1.21",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "laravel/ui": "^4.5",
@@ -21,7 +21,7 @@
         "rachidlaasri/laravel-installer": "^4.1",
         "sentry/sentry-laravel": "^4.10",
         "spatie/laravel-permission": "^6.0",
-        "srmklive/paypal": "~3.0",
+        "srmklive/paypal": "~3.0.0",
         "stripe/stripe-php": "^16.0",
         "whichbrowser/parser": "^2.1"
     },
