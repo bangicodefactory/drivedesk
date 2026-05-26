@@ -7,12 +7,14 @@ return [
     'supported_locales'  => ['nl', 'fr', 'en', 'ar'],
 
     'features' => [
-        'paypal'       => true,
-        'stripe'       => true,
-        'excel_import' => true,
-        'multi_branch' => false,
-        'tva_renumber' => true,
-        'signatures'   => true,
+        'paypal'          => false,
+        'stripe'          => false,
+        'subscriptions'   => false,
+        'booking_payment' => false,
+        'excel_import'    => true,
+        'multi_branch'    => false,
+        'tva_renumber'    => true,
+        'signatures'      => true,
     ],
 
     /*
