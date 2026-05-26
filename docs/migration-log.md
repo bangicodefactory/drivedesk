@@ -72,7 +72,31 @@ Phase 2 changes shipped: `laravelcollective/html` removed (BAN-37), Laravel fram
 
 ## Phase 3 — Laravel 11 → 12
 
-*(To be filled after Phase 3 work completes.)*
+### Automated test suite
+
+| Date | Commit | Tests | Result |
+|------|--------|-------|--------|
+| 2026-05-26 | 23608621 | 462 passed (983 assertions) | Pass |
+
+Phase 3 changes shipped: Laravel `^12.0` + PHPUnit `^11.0` + all compatible deps (BAN-42), `previous_keys` + env-driven `maintenance` config (BAN-43). Suite green with no failures to bisect (BAN-44).
+
+### Stripe sandbox smoke tests
+
+> Stripe/PayPal checkout is gated behind `feature('subscriptions')`, which is **disabled** for `directonderweg` (BAN-NEW-2). All subscription payment routes return 404 for this deployment — N/A for this client.
+
+| Date | Commit | Tester | Flow | Outcome | Notes |
+|------|--------|--------|------|---------|-------|
+| 2026-05-26 | 23608621 | Ahmed CHIOUA | Subscription checkout (Stripe) | N/A | `feature:subscriptions` disabled for directonderweg |
+| 2026-05-26 | 23608621 | Ahmed CHIOUA | Subscription checkout (PayPal) | N/A | `feature:subscriptions` disabled for directonderweg |
+
+### Manual smoke tests (non-payment flows)
+
+| Date | Commit | Tester | Flow | Outcome | Notes |
+|------|--------|--------|------|---------|-------|
+| 2026-05-26 | 5b53ea4c | Ahmed CHIOUA | Login → dashboard | Pass | Logged in as owner@gmail.com, dashboard rendered correctly |
+| 2026-05-26 | 5b53ea4c | Ahmed CHIOUA | Create booking + generate rental-agreement PDF | Pass | Booking #BOK-0001 created; Rental Agreement #RAG-0001 created (Active); Print button triggers browser PDF |
+| 2026-05-26 | 5b53ea4c | Ahmed CHIOUA | Sign rental agreement (signature pad) | Pass | Signature created for driver (Ahmed Benali) via `/signature/create`; embedded as base64 PNG in agreement view |
+| 2026-05-26 | 5b53ea4c | Ahmed CHIOUA | Re-download signed PDF | Pass | Rental Agreement #RAG-0001 show page renders with driver signature embedded; printable as PDF |
 
 ---
 
