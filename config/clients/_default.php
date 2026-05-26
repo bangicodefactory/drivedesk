@@ -8,12 +8,14 @@ return [
      * Set to today's behavior so existing deploys are unchanged.
      */
     'features' => [
-        'paypal'       => true,
-        'stripe'       => true,
-        'excel_import' => true,
-        'multi_branch' => false,
-        'tva_renumber' => true,
-        'signatures'   => true,
+        'paypal'          => true,
+        'stripe'          => true,
+        'subscriptions'   => true,
+        'booking_payment' => true,
+        'excel_import'    => true,
+        'multi_branch'    => false,
+        'tva_renumber'    => true,
+        'signatures'      => true,
     ],
 
     /*
