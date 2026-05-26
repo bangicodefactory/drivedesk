@@ -12,10 +12,12 @@
  * Use feature('name') anywhere; never read this file directly.
  */
 return [
-    'paypal'       => env('FEATURE_PAYPAL', null),
-    'stripe'       => env('FEATURE_STRIPE', null),
-    'excel_import' => env('FEATURE_EXCEL_IMPORT', null),
-    'multi_branch' => env('FEATURE_MULTI_BRANCH', null),
-    'tva_renumber' => env('FEATURE_TVA_RENUMBER', null),
-    'signatures'   => env('FEATURE_SIGNATURES', null),
+    'paypal'           => env('FEATURE_PAYPAL', null),
+    'stripe'           => env('FEATURE_STRIPE', null),
+    'subscriptions'    => env('FEATURE_SUBSCRIPTIONS', null),
+    'booking_payment'  => env('FEATURE_BOOKING_PAYMENT', null),
+    'excel_import'     => env('FEATURE_EXCEL_IMPORT', null),
+    'multi_branch'     => env('FEATURE_MULTI_BRANCH', null),
+    'tva_renumber'     => env('FEATURE_TVA_RENUMBER', null),
+    'signatures'       => env('FEATURE_SIGNATURES', null),
 ];

@@ -25,6 +25,7 @@ class PaymentControllerTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
+        config(['client.features.subscriptions' => true]);
 
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->subscription = Subscription::factory()->create(['package_amount' => 99.00]);
@@ -210,6 +211,18 @@ class PaymentControllerTest extends TestCase
             ->get(route('subscription.paypal.status', [$this->subscription->id, 'cancel']))
             ->assertRedirect()
             ->assertSessionHas('error', __('Transaction failed.'));
+    }
+
+    // ── feature gate ─────────────────────────────────────────────────────────
+
+    public function test_routes_return_404_when_subscriptions_disabled(): void
+    {
+        config(['client.features.subscriptions' => false]);
+
+        $id = Crypt::encrypt($this->subscription->id);
+        $this->actingAs($this->owner)
+            ->post(route('subscription.bank.transfer', $id))
+            ->assertNotFound();
     }
 
     // ── Flutterwave: JSON response (no external API call) ─────────────────────

@@ -123,6 +123,9 @@ if (!function_exists('settings')) {
 if (!function_exists('subscriptionPaymentSettings')) {
     function subscriptionPaymentSettings()
     {
+        if (!feature('subscriptions')) {
+            return [];
+        }
         $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', '=', 1)->get();
         $result = [
             'CURRENCY' => "MAD",
@@ -269,6 +272,9 @@ if (!function_exists('parentId')) {
 if (!function_exists('assignSubscription')) {
     function assignSubscription($id)
     {
+        if (!feature('subscriptions')) {
+            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
+        }
         $subscription = Subscription::find($id);
         if ($subscription) {
             \Auth::user()->subscription = $subscription->id;
@@ -284,7 +290,6 @@ if (!function_exists('assignSubscription')) {
             \Auth::user()->save();
 
             $users = User::where('parent_id', '=', parentId())->whereNotIn('type', ['driver'])->get();
-
 
             if ($subscription->user_limit == 0) {
                 foreach ($users as $user) {
@@ -315,6 +320,9 @@ if (!function_exists('assignSubscription')) {
 if (!function_exists('assignManuallySubscription')) {
     function assignManuallySubscription($id, $userId)
     {
+        if (!feature('subscriptions')) {
+            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
+        }
         $owner = User::find($userId);
         $subscription = Subscription::find($id);
         if ($subscription) {

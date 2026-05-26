@@ -23,12 +23,15 @@ class HomeController extends Controller
         if (\Auth::check()) {
             if (\Auth::user()->type == 'super admin') {
                 $result['totalOrganization'] = User::where('type', 'owner')->count();
-                $result['totalSubscription'] = Subscription::count();
-                $result['totalTransaction'] = PackageTransaction::count();
-                $result['totalIncome'] = PackageTransaction::sum('amount');
+
+                if (feature('subscriptions')) {
+                    $result['totalSubscription'] = Subscription::count();
+                    $result['totalTransaction'] = PackageTransaction::count();
+                    $result['totalIncome'] = PackageTransaction::sum('amount');
+                    $result['paymentByMonth'] = $this->paymentByMonth();
+                }
 
                 $result['organizationByMonth'] = $this->organizationByMonth();
-                $result['paymentByMonth'] = $this->paymentByMonth();
 
                 return view('dashboard.super_admin', compact('result'));
             } else {
