@@ -199,9 +199,14 @@ Goal: modern build pipeline, prerequisite for the React port.
 2. Create `vite.config.js` mirroring the current Mix entry points.
 3. Replace `mix(...)` Blade helpers with `@vite([...])`.
 4. Delete `webpack.mix.js` and `laravel-mix` from `package.json`.
-5. Bump Tailwind to the latest major (3 → 4) **only if** all our
-   Tailwind plugins (`@tailwindcss/forms`, etc.) have v4-compatible
-   releases. Otherwise stay on 3 and bump later.
+5. ~~Bump Tailwind to the latest major (3 → 4)~~ — **deferred to Phase 5** (BAN-49).
+   Evaluation (2026-05-27): plugins are v4-compatible (`@tailwindcss/forms` v0.5.11
+   supports `>=4.0.0-beta.1`; `@tailwindcss/vite` v4.3.0 available; shadcn/ui
+   requires v4). Deferring because: (a) Tailwind v4 is a CSS-first paradigm shift
+   (no `tailwind.config.js`, `@import "tailwindcss"` replaces directives, PostCSS
+   plugin replaced by `@tailwindcss/vite`) that belongs alongside the shadcn/ui
+   setup in Phase 5; (b) default-value changes in shadow/ring/rounded require the
+   BAN-50 smoke test to run against the stable v3 baseline first.
 6. Verify every page loads with the same CSS/JS bundle behavior.
 
 **Exit gate**
@@ -224,15 +229,22 @@ Goal: the app can serve React pages, even though most are still Blade.
 
 **Work**
 
-1. `composer require inertiajs/inertia-laravel`.
-2. `npm install @inertiajs/react react react-dom`.
-3. Publish + edit `app.blade.php` to become the Inertia root view.
-4. Set up `resources/js/app.jsx`, `resources/js/Pages/` directory.
-5. Install `tightenco/ziggy` so `route()` works in JS.
-6. Migrate **one** trivial page (e.g. `/dashboard`) to Inertia/React as
+1. **Bump Tailwind 3 → 4** (deferred from Phase 4, BAN-49):
+   - `npm install tailwindcss@^4 @tailwindcss/vite@^4 @tailwindcss/forms@^0.5`
+   - Remove `tailwindcss` from `postcss.config.js` (or delete it entirely if `autoprefixer` is no longer needed separately — `@tailwindcss/vite` handles prefixing); add `@tailwindcss/vite` to `vite.config.js`
+   - Replace `app.css` directives: `@import "tailwindcss"; @plugin "@tailwindcss/forms";`
+   - Move `tailwind.config.js` theme/content to CSS `@theme`/`@source` blocks; delete `tailwind.config.js`
+   - Run BAN-50 smoke test to confirm no visual regressions after the bump
+2. `composer require inertiajs/inertia-laravel`.
+3. `npm install @inertiajs/react react react-dom`.
+4. Install `shadcn/ui`: `npx shadcn@latest init` (Tailwind v4 + React 19 preset).
+5. Publish + edit `app.blade.php` to become the Inertia root view.
+6. Set up `resources/js/app.jsx`, `resources/js/Pages/` directory.
+7. Install `tightenco/ziggy` so `route()` works in JS.
+8. Migrate **one** trivial page (e.g. `/dashboard`) to Inertia/React as
    the proof-of-concept. Keep the Blade version available behind a
    feature flag (`INERTIA_ENABLED=true`) until the smoke test passes.
-7. Define the shared-props contract (translations, current user,
+9. Define the shared-props contract (translations, current user,
    permissions, **features (from `config('client.features')`)**,
    **client branding** (from `Setting`), flash messages) — document
    it in `docs/inertia-shared-props.md`. See
