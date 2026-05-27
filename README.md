@@ -395,6 +395,26 @@ This throws an intentional exception that should appear in Sentry within a few s
 | Mix builds asset paths under `/public/...` not found   | `npm run watch` not running, or wrong `APP_URL`              |
 | reCAPTCHA always fails locally                         | Use Google's test site/secret keys (see above)               |
 | Migrations error on `enum` change                      | Ensure `doctrine/dbal` is installed (it already is)          |
+| `file_put_contents(…sessions/…): Failed to open stream` | Run the storage-init commands below (missing framework dirs) |
+| `fileperms(): stat failed for …storage/upload/`       | Run the storage-init commands below (missing upload dirs)    |
+
+### Storage directory initialisation (fresh clone)
+
+Because `/storage` is fully gitignored, none of its subdirectories are
+tracked. After every fresh clone run:
+
+```bash
+mkdir -p storage/framework/{sessions,views,testing,cache/data} \
+         storage/logs \
+         storage/app/public \
+         storage/upload/{document,expense,logo,payment_receipt,picture} \
+         storage/uploads/profile
+
+chmod -R 777 storage/
+php artisan storage:link
+```
+
+This is required before the `/install/permissions` wizard step will pass.
 
 ---
 
