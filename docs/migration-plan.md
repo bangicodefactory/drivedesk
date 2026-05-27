@@ -231,7 +231,7 @@ Goal: the app can serve React pages, even though most are still Blade.
 
 1. **Bump Tailwind 3 → 4** (deferred from Phase 4, BAN-49):
    - `npm install tailwindcss@^4 @tailwindcss/vite@^4 @tailwindcss/forms@^0.5`
-   - Remove `tailwindcss`/`autoprefixer` from `postcss.config.js`; add `@tailwindcss/vite` to `vite.config.js`
+   - Remove `tailwindcss` from `postcss.config.js` (or delete it entirely if `autoprefixer` is no longer needed separately — `@tailwindcss/vite` handles prefixing); add `@tailwindcss/vite` to `vite.config.js`
    - Replace `app.css` directives: `@import "tailwindcss"; @plugin "@tailwindcss/forms";`
    - Move `tailwind.config.js` theme/content to CSS `@theme`/`@source` blocks; delete `tailwind.config.js`
    - Run BAN-50 smoke test to confirm no visual regressions after the bump
