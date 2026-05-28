@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import AdminLayout from '@/Layouts/AdminLayout';
 
 /**
  * Dashboard POC — BAN-57
@@ -10,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * Branches on auth.user.type (shared prop) to show the correct layout.
  * Chart areas render a Skeleton placeholder until a charting library is added.
  */
-export default function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth }) {
+function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth }) {
     const { auth } = usePage().props;
     const isSuperAdmin = auth.user?.type === 'super admin';
 
@@ -36,6 +37,12 @@ export default function Dashboard({ stats, reminders, incomeExpenseByMonth, orga
         </div>
     );
 }
+
+Dashboard.layout = (page) => (
+    <AdminLayout breadcrumbs={[{ label: 'Dashboard' }]}>{page}</AdminLayout>
+);
+
+export default Dashboard;
 
 function StatCard({ title, value }) {
     return (

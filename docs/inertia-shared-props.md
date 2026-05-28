@@ -184,7 +184,57 @@ export default function Login() {
 
 ---
 
-## 3. Adding new shared props
+## 3. Layout Selection Convention
+
+Two persistent layouts are available under `resources/js/Layouts/`:
+
+| Layout | File | Use for |
+|--------|------|---------|
+| `AdminLayout` | `AdminLayout.jsx` | All ported admin/dashboard pages |
+| `PublicLayout` | `PublicLayout.jsx` | Landing, login, register, guest pages |
+
+### How to assign a layout (Inertia persistent layout pattern)
+
+Attach a `layout` static property to the page's default export. Inertia reads it and wraps the page in the layout without unmounting on navigation.
+
+```jsx
+import AdminLayout from '@/Layouts/AdminLayout';
+
+function VehicleIndex() {
+    return <div>...</div>;
+}
+
+// Breadcrumbs are optional — omit the prop to show no breadcrumbs
+VehicleIndex.layout = (page) => (
+    <AdminLayout breadcrumbs={[
+        { label: 'Vehicles', href: route('vehicle.index') },
+    ]}>
+        {page}
+    </AdminLayout>
+);
+
+export default VehicleIndex;
+```
+
+### `AdminLayout` props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `breadcrumbs` | `{ label: string, href?: string }[]` | Optional. Rendered in the TopBar. Last item has no href (current page). |
+| `children` | `ReactNode` | The page content. |
+
+### What the layout provides automatically (from shared props)
+
+- **Sidebar** — nav items filtered by `auth.permissions` and `client.features`
+- **Logo** — from `branding.logoUrl` + `branding.appName`
+- **User menu** — avatar from profile, name/email, settings link, logout (Inertia POST)
+- **Flash toasts** — `flash.success` and `flash.error` shown via Sonner on every navigation
+- **Mobile drawer** — Sheet-based sidebar on screens < `lg`
+- **Collapsible desktop sidebar** — icon-only mode (64 px) with tooltips
+
+---
+
+## 5. Adding new shared props
 
 1. Add the value to `HandleInertiaRequests::share()`.
 2. Add a `@typedef` to `resources/js/types/inertia.js` and update `SharedProps`.
