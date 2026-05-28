@@ -125,6 +125,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Inertia SPA flag
+    |--------------------------------------------------------------------------
+    |
+    | When true, controllers that have been ported to React return Inertia
+    | responses instead of Blade views. Set INERTIA_ENABLED=true in your
+    | deployment .env to activate the React SPA. Defaults to false so the
+    | existing Blade app runs unchanged.
+    |
+    */
+
+    'inertia_enabled' => env('INERTIA_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |
