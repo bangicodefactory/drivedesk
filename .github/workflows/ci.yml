@@ -99,4 +99,4 @@ jobs:
         run: php artisan test --coverage --min=50
 
       - name: Frontend tests (Vitest)
-        run: npm test --if-present
+        run: npm test
