@@ -98,8 +98,5 @@ jobs:
       - name: Run tests with coverage
         run: php artisan test --coverage --min=50
 
-      # post-Phase 5 — uncomment when React/TypeScript port is complete
-      # - name: TypeScript type-check
-      #   run: npm run type-check
-      # - name: Frontend tests (Vitest)
-      #   run: npm test --if-present
+      - name: Frontend tests (Vitest)
+        run: npm test
