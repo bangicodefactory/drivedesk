@@ -98,6 +98,5 @@ jobs:
       - name: Run tests with coverage
         run: php artisan test --coverage --min=50
 
-      # post-BAN-178 — uncomment when Vitest is set up
-      # - name: Frontend tests (Vitest)
-      #   run: npm test --if-present
+      - name: Frontend tests (Vitest)
+        run: npm test --if-present
