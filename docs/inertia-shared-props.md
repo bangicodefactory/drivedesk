@@ -8,28 +8,82 @@ This document is the authoritative reference for:
 
 ## 1. Shared Props Contract
 
-> **Status:** partially implemented (BAN-55 / BAN-56).
-> Fields marked ✅ are live; fields marked 🔲 are planned for BAN-56.
-
 Every Inertia response includes the following top-level props, shared via
-`HandleInertiaRequests::share()`:
+`HandleInertiaRequests::share()` (`app/Http/Middleware/HandleInertiaRequests.php`).
 
-| Prop | Type | Status | Description |
-|------|------|--------|-------------|
-| `branding.cssVars` | `Record<string, string>` | ✅ BAN-54 | CSS custom property overrides (`--primary`, `--ring`, …) |
-| `branding.layoutMode` | `'lightmode' \| 'darkmode'` | ✅ BAN-54 | Drives ThemeProvider initial theme |
-| `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | ✅ BAN-54 | Drives `<html dir>` |
-| `auth.user` | `User \| null` | 🔲 BAN-56 | Authenticated user |
-| `auth.permissions` | `string[]` | 🔲 BAN-56 | Spatie permission slugs |
-| `client.name` | `string` | 🔲 BAN-56 | Active APP_CLIENT value |
-| `client.features` | `Record<string, boolean>` | 🔲 BAN-56 | Feature flags |
-| `translations` | `Record<string, string>` | 🔲 BAN-56 | Current locale strings |
-| `flash.success` | `string \| null` | 🔲 BAN-56 | One-time success message |
-| `flash.error` | `string \| null` | 🔲 BAN-56 | One-time error message |
-| `ziggy` | `ZiggyConfig` | ✅ BAN-51 | Route definitions for `route()` helper |
+JSDoc type definitions live in `resources/js/types/inertia.js`.
 
-TypeScript types for the full contract will live in
-`resources/js/types/inertia.d.ts` (added in BAN-56).
+| Prop | Type | Description |
+|------|------|-------------|
+| `auth.user` | `AuthUser \| null` | Authenticated user (id, name, email, type, lang, profile, company_name) |
+| `auth.permissions` | `string[]` | Spatie permission slugs (e.g. `['manage-cars', 'view-bookings']`) |
+| `branding.appName` | `string` | App name from the `Setting` model |
+| `branding.logoUrl` | `string` | Logo filename from the `Setting` model |
+| `branding.faviconUrl` | `string` | Favicon filename from the `Setting` model |
+| `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
+| `branding.layoutMode` | `'lightmode' \| 'darkmode'` | Drives `ThemeProvider` initial theme |
+| `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
+| `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'directonderweg'`) |
+| `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
+| `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
+| `client.features` | `ClientFeatures` | Feature flags resolved by `ClientServiceProvider` |
+| `translations` | `Record<string, string>` | Current locale's `resources/lang/<locale>.json` key→value pairs |
+| `flash.success` | `string \| null` | One-time success message (from `redirect()->with('success', …)`) |
+| `flash.error` | `string \| null` | One-time error message (from `redirect()->with('error', …)`) |
+| `ziggy` | `ZiggyConfig` | Route definitions for the `route()` helper (added by Ziggy in BAN-51) |
+
+### Feature flags (`client.features`)
+
+All flags default to the values in `config/clients/_default.php`. Per-client
+overrides live in `config/clients/<client>.php`.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `paypal` | `true` | PayPal checkout |
+| `stripe` | `true` | Stripe checkout |
+| `subscriptions` | `true` | Subscription billing |
+| `booking_payment` | `true` | Payment step in booking flow |
+| `excel_import` | `true` | Excel bulk-import |
+| `multi_branch` | `false` | Multi-branch fleet management |
+| `tva_renumber` | `true` | TVA invoice renumbering |
+| `signatures` | `true` | Digital signature pad |
+
+### Reading props in a page component
+
+```jsx
+import { usePage } from '@inertiajs/react';
+
+export default function SomePage() {
+    const { auth, branding, client, flash, translations } = usePage().props;
+
+    // Guard a feature-gated section
+    if (!client.features.paypal) return null;
+
+    // Show a flash message
+    if (flash.success) return <p>{flash.success}</p>;
+
+    return <h1>Hello, {auth.user?.name}</h1>;
+}
+```
+
+### Checking permissions
+
+```jsx
+const { auth } = usePage().props;
+
+const canManageCars = auth.permissions.includes('manage-cars');
+```
+
+### Reading translations
+
+```jsx
+const { translations: t } = usePage().props;
+
+<p>{t['Coupon successfully created.']}</p>
+```
+
+> Translations are the current-locale JSON strings only. Blade-side PHP
+> translations use `__()` / `trans()` as before. Do not duplicate keys into JS.
 
 ---
 
@@ -53,17 +107,20 @@ const { form, submit } = useZodForm(schema, rhfOptions);
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `schema` | `ZodSchema` | Zod schema for client-side validation |
-| `rhfOptions` | `UseFormProps` | Passed directly to `useForm()` (e.g. `defaultValues`) |
+| `schema` | `ZodSchema` | Zod schema — must be a **stable module-level constant** (RHF captures the resolver once at mount) |
+| `rhfOptions` | `UseFormProps` | Passed to `useForm()` (e.g. `defaultValues`). A `resolver` key is ignored — zod always wins. |
 | **Returns** `form` | `UseFormReturn` | Full react-hook-form instance |
 | **Returns** `submit` | `(method, url, options?) => FormEventHandler` | Returns an `onSubmit` handler |
 
 ### How it works
 
-1. `useForm({ resolver: zodResolver(schema) })` — RHF validates on submit.
-2. If the data passes client-side validation, `router[method](url, data, …)` sends it via Inertia (preserves session, flash, redirects).
+1. `useForm({ ...options, resolver: zodResolver(schema) })` — RHF validates on submit.
+2. If validation passes, `router[method](url, data, …)` sends it via Inertia.
 3. On a 422 response, Laravel's field errors are mapped to `form.setError(field, { type: 'server', message })`.
-4. The handler returns a `Promise` resolved in Inertia's `onFinish`, so `form.formState.isSubmitting` correctly tracks the in-flight request.
+4. The handler wraps the router call in a Promise resolved in `onFinish`, so
+   `form.formState.isSubmitting` correctly tracks the in-flight request.
+5. `onBefore: () => false` to cancel resolves the Promise immediately (no frozen `isSubmitting`).
+6. `router.delete` is special-cased: data is passed inside `options.data`.
 
 ### Worked example — login form
 
@@ -112,7 +169,6 @@ export default function Login() {
 ### Passing extra Inertia options
 
 ```js
-// Preserve scroll position, handle success explicitly
 <form onSubmit={submit('patch', route('profile.update'), {
     preserveScroll: true,
     onSuccess: () => toast.success('Profile saved'),
@@ -121,18 +177,16 @@ export default function Login() {
 
 ### What the hook does NOT do
 
-- It does not manage a separate loading/error state — use `form.formState`.
-- It does not reset the form on success — add `form.reset()` in `onSuccess` if needed.
+- Does not reset the form on success — add `form.reset()` in `onSuccess` if needed.
+- Does not manage a separate loading/error state — use `form.formState`.
 - The zod schema is client-side UX only; **always** keep the matching Laravel
-  validation rule in the controller. If the two diverge, Laravel wins.
+  validation rule in the controller.
 
 ---
 
 ## 3. Adding new shared props
 
-1. Add the value to `HandleInertiaRequests::share()` in
-   `app/Http/Middleware/HandleInertiaRequests.php`.
-2. Add the TypeScript type to `resources/js/types/inertia.d.ts`
-   (or JSDoc if still pre-BAN-56).
+1. Add the value to `HandleInertiaRequests::share()`.
+2. Add a `@typedef` to `resources/js/types/inertia.js` and update `SharedProps`.
 3. Update the table in §1 of this document.
 4. If the prop drives React behaviour, document it in the relevant section.

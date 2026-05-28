@@ -26,9 +26,49 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'branding' => $this->buildBranding(),
+            'auth'         => $this->buildAuth($request),
+            'branding'     => $this->buildBranding(),
+            'client'       => $this->buildClient(),
+            'translations' => $this->loadTranslations(),
+            'flash'        => [
+                'success' => $request->session()->get('success'),
+                'error'   => $request->session()->get('error'),
+            ],
         ];
     }
+
+    // -------------------------------------------------------------------------
+    // Auth
+    // -------------------------------------------------------------------------
+
+    private function buildAuth(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return ['user' => null, 'permissions' => []];
+        }
+
+        return [
+            'user' => [
+                'id'           => $user->id,
+                'name'         => $user->name,
+                'email'        => $user->email,
+                'type'         => $user->type,
+                'lang'         => $user->lang,
+                'profile'      => $user->profile,
+                'company_name' => $user->company_name,
+            ],
+            'permissions' => $user->getAllPermissions()
+                ->pluck('name')
+                ->values()
+                ->toArray(),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Branding (extends BAN-54 with logo + app name)
+    // -------------------------------------------------------------------------
 
     private function buildBranding(): array
     {
@@ -41,6 +81,9 @@ class HandleInertiaRequests extends Middleware
         [$primary, $primaryFg] = $this->resolvePrimary($s);
 
         return [
+            'appName'         => $s['app_name']         ?? config('app.name', 'RentCar'),
+            'logoUrl'         => $s['company_logo']      ?? 'logo.png',
+            'faviconUrl'      => $s['company_favicon']   ?? 'favicon.png',
             'cssVars' => [
                 '--primary'            => $primary,
                 '--primary-foreground' => $primaryFg,
@@ -50,6 +93,67 @@ class HandleInertiaRequests extends Middleware
             'layoutDirection' => $s['layout_direction'] ?? 'ltrmode',
         ];
     }
+
+    // -------------------------------------------------------------------------
+    // Client / feature flags
+    // -------------------------------------------------------------------------
+
+    private function buildClient(): array
+    {
+        return [
+            'name'              => config('app.client', 'directonderweg'),
+            'default_locale'    => config('app.locale', 'en'),
+            'supported_locales' => $this->supportedLocales(),
+            'features'          => config('client.features', []),
+        ];
+    }
+
+    private function supportedLocales(): array
+    {
+        // Discover from two-char-code directories under resources/lang/
+        // (e.g. en/, fr/, ar/). Full-name folders (danish/, french/, …)
+        // are legacy aliases and are intentionally excluded.
+        $dirs = collect(scandir(resource_path('lang')) ?: [])
+            ->filter(fn ($d) => preg_match('/^[a-z]{2}$/', $d)
+                && is_dir(resource_path("lang/{$d}")))
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // Also include locales that have a top-level .json file but no directory
+        $json = collect(glob(resource_path('lang/*.json')) ?: [])
+            ->map(fn ($p) => basename($p, '.json'))
+            ->filter(fn ($l) => preg_match('/^[a-z]{2}$/', $l))
+            ->toArray();
+
+        return collect(array_merge($dirs, $json))
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+    }
+
+    // -------------------------------------------------------------------------
+    // Translations
+    // -------------------------------------------------------------------------
+
+    private function loadTranslations(): object
+    {
+        $locale   = app()->getLocale();
+        $jsonPath = resource_path("lang/{$locale}.json");
+
+        if (file_exists($jsonPath)) {
+            $decoded = json_decode(file_get_contents($jsonPath), true);
+
+            return (object) ($decoded ?? []);
+        }
+
+        return new \stdClass();
+    }
+
+    // -------------------------------------------------------------------------
+    // Theme helpers (BAN-54, unchanged)
+    // -------------------------------------------------------------------------
 
     private function resolvePrimary(array $s): array
     {
