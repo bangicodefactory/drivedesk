@@ -80,7 +80,7 @@ class HomeController extends Controller
                         'reminders'           => $reminders->map(fn ($r) => [
                             'id'            => $r->id,
                             'reminder_date' => optional($r->reminder_date)->toDateString(),
-                            'description'   => $r->description,
+                            'description'   => $r->note,
                         ])->values()->all(),
                         'incomeExpenseByMonth' => $result['incomeExpenseByMonth'],
                     ]);
