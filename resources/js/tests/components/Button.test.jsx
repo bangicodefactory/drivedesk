@@ -10,8 +10,7 @@ describe('Button', () => {
     it('applies destructive variant classes', () => {
         render(<Button variant="destructive">Delete</Button>);
         const btn = screen.getByRole('button', { name: 'Delete' });
-        expect(btn).toBeInTheDocument();
-        expect(btn.className).toContain('destructive');
+        expect(btn).toHaveClass('bg-destructive');
     });
 
     it('is disabled when the disabled prop is set', () => {
