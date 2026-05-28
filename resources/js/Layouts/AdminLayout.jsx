@@ -24,8 +24,7 @@ import { cn } from '@/lib/utils';
 import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, ChevronLeft, Menu, LogOut,
-    UserCircle, Shield, CreditCard, Wrench, MapPin, BarChart3,
-    DollarSign, BookOpen,
+    UserCircle, Shield, CreditCard, Wrench,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ const NAV_SUPER_ADMIN = [
         { label: 'Users', route: 'users.index', icon: Users, permission: 'manage user' },
     ]},
     { section: 'Subscriptions', feature: 'subscriptions', items: [
-        { label: 'Subscriptions', route: 'subscription.index', icon: CreditCard, feature: 'subscriptions' },
+        { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
 ];
 
@@ -59,17 +58,13 @@ const NAV_OWNER = [
         { label: 'Expenses',  route: 'expense.index',   icon: ReceiptText,   permission: 'manage expense' },
         { label: 'Reminders', route: 'reminder.index',  icon: BellRing,      permission: 'manage reminder' },
         { label: 'Inspections', route: 'inspection.index', icon: Wrench,     permission: 'manage inspection' },
-        { label: 'Agreements', route: 'rental.agreement.index', icon: FileText, permission: 'manage rental agreement' },
+        { label: 'Agreements', route: 'rental-agreement.index', icon: FileText, permission: 'manage rental agreement' },
     ]},
     { section: 'Finance', items: [
-        { label: 'Income',   route: 'income.index',  icon: DollarSign, permission: 'manage income' },
         { label: 'Credits',  route: 'credit.index',  icon: CreditCard, permission: 'manage driver' },
     ]},
-    { section: 'Reports', items: [
-        { label: 'Reports', route: 'report.index', icon: BarChart3, permission: 'manage report' },
-    ]},
     { section: 'System', items: [
-        { label: 'Settings', route: 'settings.index', icon: Settings, permission: 'manage setting' },
+        { label: 'Settings', route: 'setting.general', icon: Settings, permission: 'manage setting' },
     ]},
 ];
 
@@ -105,7 +100,7 @@ function initials(name) {
 
 function NavItem({ item, collapsed }) {
     const { url } = usePage();
-    const isActive = url.startsWith('/' + item.route.replace(/\./g, '/'));
+    const isActive = url.startsWith(route(item.route));
     const Icon = item.icon;
 
     const link = (
@@ -215,7 +210,7 @@ function UserMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                    <Link href={route('profile')}>Profile</Link>
+                    <Link href={route('setting.account')}>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href={route('settings.index')}>Settings</Link>
