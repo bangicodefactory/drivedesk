@@ -60,10 +60,11 @@
 }
 
 @layer base {
-    * {
+    #app * {
         @apply border-border;
     }
-    body {
+    #app {
         @apply bg-background text-foreground;
+        min-height: 100vh;
     }
 }

@@ -1,6 +1,7 @@
 import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
+import { ThemeProvider } from 'next-themes';
 
 createInertiaApp({
     title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'RentCar'}`,
@@ -9,6 +10,10 @@ createInertiaApp({
         return pages[`./Pages/${name}.jsx`];
     },
     setup({ el, App, props }) {
-        createRoot(el).render(<App {...props} />);
+        createRoot(el).render(
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+                <App {...props} />
+            </ThemeProvider>
+        );
     },
 });
