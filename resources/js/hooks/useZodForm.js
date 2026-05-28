@@ -9,14 +9,18 @@ import { router } from '@inertiajs/react';
  * Client-side validation is UX-only — Laravel validation remains authoritative.
  * Server errors from a 422 response are mapped back into RHF field errors via setError().
  *
- * @param {import('zod').ZodSchema} schema
+ * @param {import('zod').ZodSchema} schema  Must be a stable (module-level) constant.
+ *   Passing a schema constructed inline on every render will silently use a stale
+ *   resolver after the first render — RHF captures the resolver once at mount.
  * @param {import('react-hook-form').UseFormProps} [options]
  * @returns {{ form: import('react-hook-form').UseFormReturn, submit: Function }}
  */
 export function useZodForm(schema, options = {}) {
+    // resolver is applied last so a caller-supplied resolver in `options` cannot
+    // silently override the zod resolver and bypass client-side validation.
     const form = useForm({
-        resolver: zodResolver(schema),
         ...options,
+        resolver: zodResolver(schema),
     });
 
     const { handleSubmit, setError } = form;
@@ -31,6 +35,9 @@ export function useZodForm(schema, options = {}) {
      * form.formState.isSubmitting stays true until the Inertia request finishes
      * (success or error) because the handler returns a Promise resolved in onFinish.
      *
+     * NOTE: if you pass onBefore in inertiaOptions and it returns false to cancel
+     * the request, the Promise resolves immediately so isSubmitting resets correctly.
+     *
      * @param {'post'|'put'|'patch'|'delete'} method
      * @param {string} url
      * @param {Object} [inertiaOptions]  Extra Inertia visit options (preserveScroll, onSuccess, …)
@@ -40,19 +47,38 @@ export function useZodForm(schema, options = {}) {
             handleSubmit(
                 (data) =>
                     new Promise((resolve) => {
-                        router[method](url, data, {
+                        // router.delete(url, options) has no data parameter — form data
+                        // must be passed inside options.data to avoid being silently dropped.
+                        const isDelete = method === 'delete';
+
+                        const visitOptions = {
                             ...inertiaOptions,
+                            // Wrap onBefore so that if it cancels the request (returns false),
+                            // we still resolve the Promise and clear isSubmitting.
+                            onBefore(visit) {
+                                const result = inertiaOptions.onBefore?.(visit);
+                                if (result === false) {
+                                    resolve();
+                                    return false;
+                                }
+                            },
                             onError(serverErrors) {
                                 Object.entries(serverErrors).forEach(([field, message]) => {
                                     setError(field, { type: 'server', message });
                                 });
                                 inertiaOptions.onError?.(serverErrors);
                             },
-                            onFinish() {
-                                inertiaOptions.onFinish?.();
+                            onFinish(visit) {
+                                inertiaOptions.onFinish?.(visit);
                                 resolve();
                             },
-                        });
+                        };
+
+                        if (isDelete) {
+                            router.delete(url, { ...visitOptions, data });
+                        } else {
+                            router[method](url, data, visitOptions);
+                        }
                     })
             ),
         [handleSubmit, setError]
