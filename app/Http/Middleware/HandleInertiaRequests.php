@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -81,9 +82,9 @@ class HandleInertiaRequests extends Middleware
         [$primary, $primaryFg] = $this->resolvePrimary($s);
 
         return [
-            'appName'         => $s['app_name']         ?? config('app.name', 'RentCar'),
-            'logoUrl'         => $s['company_logo']      ?? 'logo.png',
-            'faviconUrl'      => $s['company_favicon']   ?? 'favicon.png',
+            'appName'    => $s['app_name'] ?? config('app.name', 'RentCar'),
+            'logoUrl'    => asset(Storage::url('upload/logo/' . ($s['company_logo']    ?? 'logo.png'))),
+            'faviconUrl' => asset(Storage::url('upload/logo/' . ($s['company_favicon'] ?? 'favicon.png'))),
             'cssVars' => [
                 '--primary'            => $primary,
                 '--primary-foreground' => $primaryFg,
@@ -102,35 +103,10 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             'name'              => config('app.client', 'directonderweg'),
-            'default_locale'    => config('app.locale', 'en'),
-            'supported_locales' => $this->supportedLocales(),
+            'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
+            'supported_locales' => config('client.supported_locales', []),
             'features'          => config('client.features', []),
         ];
-    }
-
-    private function supportedLocales(): array
-    {
-        // Discover from two-char-code directories under resources/lang/
-        // (e.g. en/, fr/, ar/). Full-name folders (danish/, french/, …)
-        // are legacy aliases and are intentionally excluded.
-        $dirs = collect(scandir(resource_path('lang')) ?: [])
-            ->filter(fn ($d) => preg_match('/^[a-z]{2}$/', $d)
-                && is_dir(resource_path("lang/{$d}")))
-            ->sort()
-            ->values()
-            ->toArray();
-
-        // Also include locales that have a top-level .json file but no directory
-        $json = collect(glob(resource_path('lang/*.json')) ?: [])
-            ->map(fn ($p) => basename($p, '.json'))
-            ->filter(fn ($l) => preg_match('/^[a-z]{2}$/', $l))
-            ->toArray();
-
-        return collect(array_merge($dirs, $json))
-            ->unique()
-            ->sort()
-            ->values()
-            ->toArray();
     }
 
     // -------------------------------------------------------------------------

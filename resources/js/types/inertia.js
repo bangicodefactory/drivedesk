@@ -45,8 +45,8 @@
 /**
  * @typedef {Object} Branding
  * @property {string}          appName
- * @property {string}          logoUrl          - Filename relative to storage/logos or public/assets
- * @property {string}          faviconUrl
+ * @property {string}          logoUrl          - Full URL (asset(Storage::url('upload/logo/...')))
+ * @property {string}          faviconUrl       - Full URL
  * @property {BrandingCssVars} cssVars          - Applied to :root via applyBranding() in app.jsx
  * @property {'lightmode'|'darkmode'}    layoutMode
  * @property {'ltrmode'|'rtlmode'}       layoutDirection
