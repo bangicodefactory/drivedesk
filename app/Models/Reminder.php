@@ -17,7 +17,11 @@ class Reminder extends Model
         'note',
         'reminder_date',
         'status',
-        'reminder_type_id'
+        'reminder_type_id',
+    ];
+
+    protected $casts = [
+        'reminder_date' => 'date',
     ];
 
     public function reminderType(): BelongsTo

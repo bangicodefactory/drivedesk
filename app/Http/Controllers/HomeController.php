@@ -15,6 +15,7 @@ use App\Models\Support;
 use App\Models\User;
 use App\Models\Reminder;
 use Carbon\Carbon;
+use Inertia\Inertia;
 
 class HomeController extends Controller
 {
@@ -33,6 +34,19 @@ class HomeController extends Controller
 
                 $result['organizationByMonth'] = $this->organizationByMonth();
 
+                if (config('app.inertia_enabled')) {
+                    return Inertia::render('Dashboard', [
+                        'stats' => [
+                            'totalOrganization' => $result['totalOrganization'],
+                            'totalSubscription' => $result['totalSubscription'] ?? null,
+                            'totalTransaction'  => $result['totalTransaction']  ?? null,
+                            'totalIncome'       => $result['totalIncome']       ?? null,
+                        ],
+                        'organizationByMonth' => $result['organizationByMonth'],
+                        'paymentByMonth'      => $result['paymentByMonth'] ?? null,
+                    ]);
+                }
+
                 return view('dashboard.super_admin', compact('result'));
             } else {
                 $result['totalUser'] = User::where('parent_id', parentId())->count();
@@ -47,13 +61,29 @@ class HomeController extends Controller
                 if (\Auth::user()->can('manage reminder')) {
                     $reminders = Reminder::with('vehicles')  // Eager load vehicles
                         ->where('parent_id', '=', parentId())
-                        
-                        // ->where('reminder_date', '>=', now())
                         ->orderBy('reminder_date', 'asc')
                         ->take(5)
                         ->get();
                 } else {
                     $reminders = collect([]);
+                }
+
+                if (config('app.inertia_enabled')) {
+                    return Inertia::render('Dashboard', [
+                        'stats' => [
+                            'totalUser'    => $result['totalUser'],
+                            'totalDriver'  => $result['totalDriver'],
+                            'totalBooking' => $result['totalBooking'],
+                            'totalIncome'  => $result['totalIncome'],
+                            'totalExpense' => $result['totalExpense'],
+                        ],
+                        'reminders'           => $reminders->map(fn ($r) => [
+                            'id'            => $r->id,
+                            'reminder_date' => optional($r->reminder_date)->toDateString(),
+                            'description'   => $r->note,
+                        ])->values()->all(),
+                        'incomeExpenseByMonth' => $result['incomeExpenseByMonth'],
+                    ]);
                 }
 
                 return view('dashboard.index', compact('result', 'reminders'));

@@ -18,7 +18,7 @@ below override anything you might think is "best practice in general".
 | PHP                    | 8.1                                   | 8.3+                                        |
 | Laravel                | 10.48                                 | 12 (latest stable)                          |
 | Frontend               | Blade + Alpine.js + jQuery            | Inertia.js + React 19 (full SPA)            |
-| Language (frontend)    | JavaScript (no types)                 | **TypeScript — mandatory, strict mode**     |
+| Language (frontend)    | JavaScript (no types)                 | **JavaScript (JSX) — no TypeScript**        |
 | Build tool             | Laravel Mix + webpack                 | Vite                                        |
 | CSS                    | Tailwind 3                            | Tailwind 4 (or latest stable)               |
 | UI components          | —                                     | shadcn/ui (Radix UI primitives + Tailwind)  |
@@ -154,8 +154,8 @@ We're rewriting the frontend, not redesigning it. Constraints:
 - **Alpine.js is being removed** once its host views are ported. Do
   not introduce new Alpine code.
 - **No new jQuery, no new Blade-style global window helpers.** New
-  code uses ES modules, React hooks, and TypeScript (preferred) or
-  JSDoc-annotated JS.
+  code uses ES modules and React hooks. All page components are `.jsx`
+  files under `resources/js/Pages/`.
 - **i18n in the SPA**: pass translations through Inertia shared props
   (e.g. via `tightenco/ziggy` for routes, custom translations prop) so
   that the existing `lang/` files remain the single source of truth.
