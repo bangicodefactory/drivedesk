@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 
 /**
  * React replacement for jq-signature (BAN-58).
+ * Uses react-signature-canvas@1.1.0-alpha.2 — the only release that
+ * supports React 19. Upgrade to stable once released (tracked in BAN-210).
  *
  * Produces a `data:image/png;base64,...` string — the exact format
  * SignatureController::store already accepts and validates.

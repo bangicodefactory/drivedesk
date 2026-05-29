@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
 /**
@@ -16,6 +17,13 @@ use Tests\TestCase;
 class InertiaAuthTest extends TestCase
 {
     use RefreshDatabase;
+    use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->asClient('directonderweg');
+    }
 
     public function test_login_renders_inertia_auth_login_component(): void
     {

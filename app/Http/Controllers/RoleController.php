@@ -14,14 +14,17 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roleData = Role::where('parent_id', parentId())->whereNotIn('name',['client','driver'])->get();
+        $roleData = Role::where('parent_id', parentId())
+            ->whereNotIn('name', ['client', 'driver'])
+            ->withCount('permissions')
+            ->get();
 
         if (config('app.inertia_enabled')) {
             return Inertia::render('Roles/Index', [
                 'roles' => $roleData->map(fn ($r) => [
                     'id'                => $r->id,
                     'name'              => $r->name,
-                    'permissions_count' => $r->permissions->count(),
+                    'permissions_count' => $r->permissions_count,
                 ])->values()->all(),
             ]);
         }
