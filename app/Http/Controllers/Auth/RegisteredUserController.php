@@ -9,6 +9,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
 
@@ -26,9 +27,9 @@ class RegisteredUserController extends Controller
         $registerPage=getSettingsValByName('register_page');
 
         if($registerPage =='on'){
-            return view('auth.register');
-        }else{
-            return view('auth.login');
+            return Inertia::render('Auth/Register');
+        } else {
+            return redirect()->route('login');
         }
     }
 
