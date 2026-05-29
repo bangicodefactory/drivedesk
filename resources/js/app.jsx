@@ -22,8 +22,8 @@ function applyBranding(branding) {
 createInertiaApp({
     title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'RentCar'}`,
     resolve: (name) => {
-        const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true });
-        return pages[`./Pages/${name}.jsx`];
+        const pages = import.meta.glob('./Pages/**/*.jsx');
+        return pages[`./Pages/${name}.jsx`]();
     },
     setup({ el, App, props }) {
         const branding = props.initialPage.props.branding;
