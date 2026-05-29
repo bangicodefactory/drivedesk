@@ -1,17 +1,22 @@
 import { usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import AdminLayout from '@/Layouts/AdminLayout';
+import StatCard           from '@/components/dashboard/StatCard';
+import IncomeExpenseChart from '@/components/dashboard/IncomeExpenseChart';
+import MonthlyBarChart    from '@/components/dashboard/MonthlyBarChart';
+import RemindersList      from '@/components/dashboard/RemindersList';
+import {
+    Users, UserCheck, CalendarCheck, DollarSign, ReceiptText,
+    Building2, CreditCard, ArrowRightLeft,
+} from 'lucide-react';
 
 /**
- * Dashboard POC — BAN-57
+ * Dashboard — BAN-66
  *
- * Renders stat cards using shadcn/ui primitives.
- * Branches on auth.user.type (shared prop) to show the correct layout.
- * Chart areas render a Skeleton placeholder until a charting library is added.
+ * Branches on auth.user.type to render the owner or super-admin layout.
+ * All widgets receive props sourced from HomeController::index.
  */
-function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth }) {
+function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth, paymentByMonth }) {
     const { auth } = usePage().props;
     const isSuperAdmin = auth.user?.type === 'super admin';
 
@@ -25,15 +30,17 @@ function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth
             </div>
 
             {isSuperAdmin
-                ? <SuperAdminStats stats={stats} />
-                : <OwnerStats stats={stats} reminders={reminders} />
+                ? <SuperAdminDashboard
+                    stats={stats}
+                    organizationByMonth={organizationByMonth}
+                    paymentByMonth={paymentByMonth}
+                  />
+                : <OwnerDashboard
+                    stats={stats}
+                    reminders={reminders}
+                    incomeExpenseByMonth={incomeExpenseByMonth}
+                  />
             }
-
-            {/* Chart placeholder — replaced by a real chart library in Phase 6 */}
-            <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Monthly chart</p>
-                <Skeleton className="h-64 w-full rounded-lg" />
-            </div>
         </div>
     );
 }
@@ -44,61 +51,55 @@ Dashboard.layout = (page) => (
 
 export default Dashboard;
 
-function StatCard({ title, value }) {
-    return (
-        <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                {value == null
-                    ? <Skeleton className="h-8 w-24" />
-                    : <p className="text-2xl font-bold">{value}</p>
-                }
-            </CardContent>
-        </Card>
-    );
-}
+// ─────────────────────────────────────────────────────────────────────────────
 
-function OwnerStats({ stats, reminders }) {
+function OwnerDashboard({ stats, reminders, incomeExpenseByMonth }) {
     return (
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Users"    value={stats?.totalUser} />
-                <StatCard title="Drivers"  value={stats?.totalDriver} />
-                <StatCard title="Bookings" value={stats?.totalBooking} />
-                <StatCard title="Income"   value={stats?.totalIncome} />
-                <StatCard title="Expenses" value={stats?.totalExpense} />
+                <StatCard title="Total Driver"  value={stats?.totalDriver}  icon={UserCheck} />
+                <StatCard title="Total Booking" value={stats?.totalBooking} icon={CalendarCheck} />
+                <StatCard title="Total Income"  value={stats?.totalIncome}  icon={DollarSign} />
+                <StatCard title="Total Expense" value={stats?.totalExpense} icon={ReceiptText} />
             </div>
 
-            {reminders?.length > 0 && (
-                <div className="space-y-2">
-                    <h2 className="text-lg font-semibold">Upcoming Reminders</h2>
-                    <div className="space-y-2">
-                        {reminders.map((r) => (
-                            <Card key={r.id}>
-                                <CardContent className="flex items-center justify-between py-3">
-                                    <span className="text-sm">{r.description}</span>
-                                    <Badge variant="outline">{r.reminder_date}</Badge>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            )}
+            <RemindersList reminders={reminders ?? []} />
+
+            <IncomeExpenseChart data={incomeExpenseByMonth} />
         </div>
     );
 }
 
-function SuperAdminStats({ stats }) {
+function SuperAdminDashboard({ stats, organizationByMonth, paymentByMonth }) {
+    const hasSubscriptions = stats?.totalSubscription != null;
+
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Organisations"  value={stats?.totalOrganization} />
-            <StatCard title="Subscriptions"  value={stats?.totalSubscription} />
-            <StatCard title="Transactions"   value={stats?.totalTransaction} />
-            <StatCard title="Income"         value={stats?.totalIncome} />
+        <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Organisations" value={stats?.totalOrganization} icon={Building2} />
+                {hasSubscriptions && (
+                    <>
+                        <StatCard title="Subscriptions" value={stats?.totalSubscription} icon={CreditCard} />
+                        <StatCard title="Transactions"  value={stats?.totalTransaction}  icon={ArrowRightLeft} />
+                        <StatCard title="Total Income"  value={stats?.totalIncome}       icon={DollarSign} />
+                    </>
+                )}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+                <MonthlyBarChart
+                    title="Organisations per month"
+                    data={organizationByMonth}
+                    dataKeyName="Organisations"
+                />
+                {hasSubscriptions && paymentByMonth && (
+                    <MonthlyBarChart
+                        title="Payments per month"
+                        data={paymentByMonth}
+                        dataKeyName="Payments"
+                    />
+                )}
+            </div>
         </div>
     );
 }

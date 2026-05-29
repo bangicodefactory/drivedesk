@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -12,6 +13,17 @@ class PermissionController extends Controller
     public function index()
     {
         $permissionData = Permission::all();
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Permissions/Index', [
+                'permissions' => $permissionData->map(fn ($p) => [
+                    'id'         => $p->id,
+                    'name'       => $p->name,
+                    'guard_name' => $p->guard_name,
+                ])->values()->all(),
+            ]);
+        }
+
         return view('user_permission.index', compact('permissionData'));
     }
 
