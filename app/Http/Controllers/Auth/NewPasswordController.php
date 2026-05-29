@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Illuminate\Validation\Rules;
 
 class NewPasswordController extends Controller
@@ -22,7 +23,10 @@ class NewPasswordController extends Controller
     {
         $user=\App\Models\User::find(1);
         if ($user) { \App::setLocale($user->lang); }
-        return view('auth.reset-password', ['request' => $request]);
+        return Inertia::render('Auth/ResetPassword', [
+            'token' => $request->route('token'),
+            'email' => $request->email,
+        ]);
     }
 
     /**
