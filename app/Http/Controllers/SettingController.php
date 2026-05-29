@@ -96,7 +96,13 @@ class SettingController extends Controller
         $loginUser = \Auth::user();
 
         if (config('app.inertia_enabled')) {
-            return Inertia::render('Settings/Password');
+            return Inertia::render('Settings/Password', [
+                'loginUser' => [
+                    'id'    => $loginUser->id,
+                    'name'  => $loginUser->name,
+                    'email' => $loginUser->email,
+                ],
+            ]);
         }
 
         return view('settings.password', compact('loginUser'));
