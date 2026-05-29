@@ -26,10 +26,15 @@ class RegisteredUserController extends Controller
         if ($user) { \App::setLocale($user->lang); }
         $registerPage=getSettingsValByName('register_page');
 
+        // Match the pre-port behavior: when registration is disabled, /register
+        // still responds 200 with the login page rendered (no URL change).
+        // CLAUDE.md §4 requires routes/URL shapes to stay identical.
         if($registerPage =='on'){
             return Inertia::render('Auth/Register');
         } else {
-            return redirect()->route('login');
+            return Inertia::render('Auth/Login', [
+                'status' => session('status'),
+            ]);
         }
     }
 
