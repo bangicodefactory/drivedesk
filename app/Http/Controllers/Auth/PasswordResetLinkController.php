@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Inertia\Inertia;
 
 class PasswordResetLinkController extends Controller
 {
@@ -17,7 +18,9 @@ class PasswordResetLinkController extends Controller
     {
         $user=\App\Models\User::find(1);
         if ($user) { \App::setLocale($user->lang); }
-        return view('auth.forgot-password');
+        return Inertia::render('Auth/ForgotPassword', [
+            'status' => session('status'),
+        ]);
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -21,7 +22,9 @@ class AuthenticatedSessionController extends Controller
     {
         $user=\App\Models\User::find(1);
         if ($user) { \App::setLocale($user->lang); }
-        return view('auth.login');
+        return Inertia::render('Auth/Login', [
+            'status' => session('status'),
+        ]);
     }
 
     /**
@@ -33,11 +36,13 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request)
     {
 
-         $google_recaptcha=getSettingsValByName('google_recaptcha');
-        if($google_recaptcha == 'on')
-        {
-            $validation['g-recaptcha-response'] = 'required|captcha';
-        }else{
+        // BAN-200: Inertia requests skip captcha until the React Login form
+        // renders a reCAPTCHA widget (tracked in BAN-204). Non-Inertia (Blade)
+        // requests continue to enforce it when google_recaptcha=on.
+        $google_recaptcha = getSettingsValByName('google_recaptcha');
+        if (!$request->inertia() && $google_recaptcha === 'on') {
+            $validation = ['g-recaptcha-response' => 'required|captcha'];
+        } else {
             $validation = [];
         }
         $this->validate($request, $validation);

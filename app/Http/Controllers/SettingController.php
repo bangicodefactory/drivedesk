@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class SettingController extends Controller
 {
@@ -16,6 +17,17 @@ class SettingController extends Controller
     public function account()
     {
         $loginUser = \Auth::user();
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Settings/Account', [
+                'loginUser' => [
+                    'id'      => $loginUser->id,
+                    'name'    => $loginUser->name,
+                    'email'   => $loginUser->email,
+                    'profile' => $loginUser->profile,
+                ],
+            ]);
+        }
 
         return view('settings.account', compact('loginUser'));
     }
@@ -82,6 +94,16 @@ class SettingController extends Controller
     public function password()
     {
         $loginUser = \Auth::user();
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Settings/Password', [
+                'loginUser' => [
+                    'id'    => $loginUser->id,
+                    'name'  => $loginUser->name,
+                    'email' => $loginUser->email,
+                ],
+            ]);
+        }
 
         return view('settings.password', compact('loginUser'));
     }

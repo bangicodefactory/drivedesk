@@ -155,6 +155,38 @@ class HomeControllerTest extends TestCase
             );
     }
 
+    public function test_inertia_dashboard_reminders_carry_vehicle_status_and_note(): void
+    {
+        config(['app.inertia_enabled' => true]);
+
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $owner->givePermissionTo('manage reminder');
+
+        $vehicle = \App\Models\Vehicle::factory()->create([
+            'parent_id'     => $owner->id,
+            'name'          => 'BMW X5',
+            'license_plate' => 'XYZ-123',
+        ]);
+
+        \App\Models\Reminder::factory()->create([
+            'parent_id'     => $owner->id,
+            'id_vehicle'    => $vehicle->id,
+            'reminder_date' => now()->addDays(3),
+            'note'          => 'Oil change due',
+            'status'        => 'urgent',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->where('reminders.0.note',   'Oil change due')
+                ->where('reminders.0.status', 'urgent')
+                ->where('reminders.0.vehicle.name',          'BMW X5')
+                ->where('reminders.0.vehicle.license_plate', 'XYZ-123')
+            );
+    }
+
     public function test_inertia_super_admin_dashboard_stats_contain_correct_org_count(): void
     {
         config(['app.inertia_enabled' => true]);

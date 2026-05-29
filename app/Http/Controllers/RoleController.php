@@ -6,6 +6,7 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Inertia\Inertia;
 
 
 class RoleController extends Controller
@@ -13,7 +14,21 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roleData = Role::where('parent_id', parentId())->whereNotIn('name',['client','driver'])->get();
+        $roleData = Role::where('parent_id', parentId())
+            ->whereNotIn('name', ['client', 'driver'])
+            ->withCount('permissions')
+            ->get();
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Roles/Index', [
+                'roles' => $roleData->map(fn ($r) => [
+                    'id'                => $r->id,
+                    'name'              => $r->name,
+                    'permissions_count' => $r->permissions_count,
+                ])->values()->all(),
+            ]);
+        }
+
         return view('role.index', compact('roleData'));
     }
 
@@ -24,6 +39,16 @@ class RoleController extends Controller
         foreach (\Auth::user()->roles as $role) {
             $permissionList = $permissionList->merge($role->permissions);
         }
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Roles/Create', [
+                'permissions' => $permissionList->unique('id')->map(fn ($p) => [
+                    'id'   => $p->id,
+                    'name' => $p->name,
+                ])->values()->all(),
+            ]);
+        }
+
         return view('role.create', compact('permissionList'));
     }
 
@@ -71,6 +96,20 @@ class RoleController extends Controller
 
         $assignPermission = $role->permissions;
         $assignPermission = $assignPermission->pluck('id')->toArray();
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Roles/Edit', [
+                'role' => [
+                    'id'   => $role->id,
+                    'name' => $role->name,
+                ],
+                'permissions' => $permissionList->unique('id')->map(fn ($p) => [
+                    'id'   => $p->id,
+                    'name' => $p->name,
+                ])->values()->all(),
+                'assignedPermissions' => $assignPermission,
+            ]);
+        }
 
         return view('role.edit', compact('role', 'permissionList', 'assignPermission'));
     }
