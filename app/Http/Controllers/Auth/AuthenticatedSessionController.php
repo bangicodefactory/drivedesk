@@ -36,13 +36,12 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request)
     {
 
-         $google_recaptcha=getSettingsValByName('google_recaptcha');
-        if($google_recaptcha == 'on')
-        {
-            $validation['g-recaptcha-response'] = 'required|captcha';
-        }else{
-            $validation = [];
-        }
+        // BAN-200: captcha temporarily disabled on the Inertia path — the React
+        // Login form does not yet render a reCAPTCHA widget. Tracked in BAN-204.
+        // The Blade view still posts g-recaptcha-response, but we no longer
+        // gate on it here because the React form has no field to fill it.
+        // Operators must keep google_recaptcha=off until BAN-204 ships.
+        $validation = [];
         $this->validate($request, $validation);
 
         $request->authenticate();

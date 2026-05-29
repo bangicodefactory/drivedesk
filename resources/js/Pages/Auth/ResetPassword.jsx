@@ -32,8 +32,13 @@ function ResetPassword({ token, email }) {
 
                 <CardContent>
                     <form onSubmit={submit('post', route('password.update'))} className="space-y-4">
-                        {/* Hidden fields forwarded to the controller */}
+                        {/* Hidden field — server errors on token still surface here */}
                         <input type="hidden" {...register('token')} />
+                        {errors.token && (
+                            <p className="text-sm text-destructive" role="alert">
+                                {errors.token.message}
+                            </p>
+                        )}
 
                         <div className="space-y-1.5">
                             <Label htmlFor="email">Email</Label>
