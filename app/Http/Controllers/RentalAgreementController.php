@@ -49,16 +49,14 @@ class RentalAgreementController extends Controller
             $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
 
             $drivers = User::where('parent_id', parentId())
-            ->where('type', 'driver')
-            ->orderBy('created_at', 'desc')
-            ->get();            
-             $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
-
+                ->where('type', 'driver')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
             $defaultTerms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'      => collect($driversDropdown)->filter()->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
+                'drivers'      => $drivers->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values(),
                 'statuses'     => collect(RentalAgreement::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
                 'defaultTerms' => $defaultTerms,
             ]);
@@ -86,8 +84,7 @@ class RentalAgreementController extends Controller
                 ]
             );
             if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+                return back()->withErrors($validator);
             }
 
                     // Combine date and time
@@ -265,12 +262,9 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('edit rental agreement')) {
             $vehicles = Vehicle::where('parent_id', parentId())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
-            $drivers->prepend(__('Select Driver'), '');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get();
 
             $status = RentalAgreement::$status;
-
-            $driver2 = $rentalAgreement->driver2;
 
             return Inertia::render('RentalAgreement/Edit', [
                 'agreement' => [
@@ -286,7 +280,7 @@ class RentalAgreementController extends Controller
                     'description'       => $rentalAgreement->description,
                 ],
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'  => $drivers->map(fn($name, $id) => ['id' => $id, 'name' => $name])->filter()->values(),
+                'drivers'  => $drivers->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values(),
                 'statuses' => collect(RentalAgreement::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
             ]);
         } else {
@@ -311,8 +305,7 @@ class RentalAgreementController extends Controller
                 ]
             );
             if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+                return back()->withErrors($validator);
             }
 
                     // Combine date and time
