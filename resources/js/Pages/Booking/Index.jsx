@@ -60,9 +60,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
     function submitImport(e) {
         e.preventDefault();
         if (!importFile) return;
-        const fd = new FormData();
-        fd.append('file', importFile);
-        router.post(route('booking.import'), fd, {
+        router.post(route('booking.import'), { file: importFile }, {
             onSuccess: () => setImportOpen(false),
         });
     }
