@@ -12,10 +12,8 @@ import AdminLayout from '@/Layouts/AdminLayout';
 
 function splitDateTime(datetime) {
     if (!datetime) return { date: '', time: '' };
-    const d = new Date(datetime);
-    const date = d.toISOString().slice(0, 10);
-    const time = d.toTimeString().slice(0, 5);
-    return { date, time };
+    const [date = '', time = ''] = datetime.split(' ');
+    return { date, time: time.slice(0, 5) };
 }
 
 function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
@@ -27,7 +25,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
     const { register, handleSubmit, setValue, formState: { isSubmitting } } = useForm({
         defaultValues: {
             driver: String(agreement.driver ?? ''),
-            driver2: String(agreement.driver2 ?? ''),
+            driver2: agreement.driver2 ? String(agreement.driver2) : 'none',
             vehicle: String(agreement.vehicle ?? ''),
             rental_start_date: start.date,
             rental_start_time: start.time,
@@ -41,7 +39,10 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
     });
 
     function onSubmit(data) {
-        router.put(route('rental-agreement.update', agreement.id), data);
+        router.put(route('rental-agreement.update', agreement.id), {
+            ...data,
+            driver2: data.driver2 === 'none' ? '' : data.driver2,
+        });
     }
 
     return (
@@ -66,10 +67,10 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
 
                             <div className="space-y-1">
                                 <Label>Driver 2 (optional)</Label>
-                                <Select defaultValue={String(agreement.driver2 ?? '')} onValueChange={(v) => setValue('driver2', v)}>
+                                <Select defaultValue={agreement.driver2 ? String(agreement.driver2) : 'none'} onValueChange={(v) => setValue('driver2', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">— None —</SelectItem>
+                                        <SelectItem value="none">— None —</SelectItem>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                                         ))}

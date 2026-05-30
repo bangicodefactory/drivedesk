@@ -33,6 +33,7 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
     function onSubmit(data) {
         router.post(route('rental-agreement.store'), {
             ...data,
+            driver2: data.driver2 === 'none' ? '' : data.driver2,
             create_booking: data.create_booking ? 1 : 0,
         });
     }
@@ -59,10 +60,10 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
 
                             <div className="space-y-1">
                                 <Label>Driver 2 (optional)</Label>
-                                <Select onValueChange={(v) => setValue('driver2', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Driver 2" /></SelectTrigger>
+                                <Select defaultValue="none" onValueChange={(v) => setValue('driver2', v)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">— None —</SelectItem>
+                                        <SelectItem value="none">— None —</SelectItem>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                                         ))}
