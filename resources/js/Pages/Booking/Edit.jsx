@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,9 +54,10 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
     const pickupId = watch('pickup_address');
     const dropoffId = watch('drop_off_address');
     const discount = watch('discount');
-    const dailyPrice = watch('daily_price');
 
-    const recalculate = useCallback(() => {
+    const apiWriting = useRef(false);
+
+    function recalculate() {
         if (!vehicleId || !startDt || !endDt) return;
         axios.get(route('vehicle.rate.calculation'), {
             params: {
@@ -73,14 +74,21 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
             const total = (parseFloat(res.totalRate) || 0) + (parseFloat(res.addonAmount) || 0) + (parseFloat(res.placeAmount) || 0);
             const disc = parseFloat(getValues('discount')) || 0;
             const finalTotal = total - disc;
+            apiWriting.current = true;
             setValue('amount', finalTotal);
-            setValue('daily_price', res.daily_price || getValues('daily_price'));
+            if (res.daily_price) setValue('daily_price', res.daily_price);
             setValue('details', JSON.stringify(res));
+            apiWriting.current = false;
             setPriceBreakdown({ ...res, finalTotal, discountAmount: disc });
         }).catch(() => {});
-    }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId, dailyPrice, discount]);
+    }
 
-    useEffect(() => { recalculate(); }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId, dailyPrice]);
+    // Recalculate when vehicle/dates/addons/places change — NOT daily_price (API sets that)
+    useEffect(() => {
+        if (apiWriting.current) return;
+        recalculate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId]);
 
     useEffect(() => {
         if (!priceBreakdown) return;
@@ -90,6 +98,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
         const disc = parseFloat(discount) || 0;
         setValue('amount', total - disc);
         setPriceBreakdown((prev) => prev ? { ...prev, finalTotal: total - disc, discountAmount: disc } : null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [discount]);
 
     function toggleAddon(id) {
@@ -196,7 +205,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
                             <div className="space-y-1">
                                 <Label htmlFor="daily_price">Price per day</Label>
-                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} />
+                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} onBlur={() => recalculate()} />
                             </div>
 
                             <div className="space-y-1">
@@ -230,15 +239,17 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                                 <td className="pr-8 py-1 text-muted-foreground">Duration</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
-                                            {priceBreakdown.specificAddonCalculation && (
-                                                <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.specificAddonCalculation }} />
-                                            )}
-                                            {priceBreakdown.pickup_place && (
-                                                <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.pickup_place }} />
-                                            )}
-                                            {priceBreakdown.drop_place && (
-                                                <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.drop_place }} />
-                                            )}
+                                        </tbody>
+                                        {priceBreakdown.specificAddonCalculation && (
+                                            <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.specificAddonCalculation }} />
+                                        )}
+                                        {priceBreakdown.pickup_place && (
+                                            <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.pickup_place }} />
+                                        )}
+                                        {priceBreakdown.drop_place && (
+                                            <tbody dangerouslySetInnerHTML={{ __html: priceBreakdown.drop_place }} />
+                                        )}
+                                        <tbody>
                                             <tr>
                                                 <td className="pr-8 py-1 text-muted-foreground font-medium">Discount</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
