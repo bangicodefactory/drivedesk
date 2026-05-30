@@ -17,6 +17,10 @@ class DefaultDataUsersTableSeeder extends Seeder
     {
         $currentRouteName = Route::currentRouteName();
         if ($currentRouteName != 'LaravelUpdater::database') {
+            if (Role::where('name', 'super admin')->exists()) {
+                return;
+            }
+
             // Default All Permission
             $allPermission = [
                 [
