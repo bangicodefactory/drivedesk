@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Tva;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -86,14 +87,16 @@ class TvaControllerTest extends TestCase
 
     public function test_index_filters_by_from_date(): void
     {
-        config(['app.inertia_enabled' => false]);
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
 
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['from_date' => '2025-03-01']))
             ->assertOk()
-            ->assertViewHas('tvas', fn($tvas) => $tvas->count() === 1);
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
     }
 
     // ── TvaController::update ─────────────────────────────────────────────────
