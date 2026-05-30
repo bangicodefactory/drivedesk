@@ -1,312 +1,250 @@
-import React from 'react';
-import { Head, usePage } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
-import { useTranslations } from '@/hooks/useTranslations';
-import { useZodForm } from '@/hooks/useZodForm';
 import { z } from 'zod';
+import { Controller } from 'react-hook-form';
+import { Link } from '@inertiajs/react';
+import { useZodForm } from '@/hooks/useZodForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/vehicle/edit.blade.php.
-// Field names match the Blade form 1:1. Submits PUT to route('vehicle.update').
-// Because the form carries an optional `document` file, the request is sent as
-// multipart with a spoofed _method=PUT (mirroring @method('PUT') + multipart in
-// the Blade form). Server-side Laravel validation stays authoritative; the zod
-// schema mirrors the controller's `required` rules for update (note: update does
-// NOT require engine_no, registration_expiry_date, picture, or
-// year_of_ﬁrst_immatriculation).
-export default function VehicleEdit() {
-    const { props } = usePage();
-    const t = useTranslations();
+// Submits PUT to route('vehicle.update') via a spoofed _method=PUT (matches the
+// Blade @method('PUT') + multipart form so the optional document file uploads).
+// The zod schema mirrors the controller's update() `required` rules — note that
+// update does NOT require engine_no, registration_expiry_date, picture, or
+// year_of_ﬁrst_immatriculation. Laravel validation stays authoritative.
+const schema = z.object({
+    type: z.string().min(1, 'The type field is required.'),
+    name: z.string().min(1, 'The name field is required.'),
+    model: z.string().min(1, 'The model field is required.'),
+    engine_type: z.string().min(1, 'The engine type field is required.'),
+    license_plate: z.string().min(1, 'The license plate field is required.'),
+    daily_rate: z.string().min(1, 'The daily rate field is required.'),
+    gearbox: z.string().min(1, 'The gearbox field is required.'),
+    fuel_type: z.string().min(1, 'The fuel type field is required.'),
+    number_of_seats: z.string().min(1, 'The number of seats field is required.'),
+    kilometers: z.string().min(1, 'The kilometers field is required.'),
+});
 
-    const vehicle = props.vehicle ?? {};
-    const types = props.types ?? {};
-    const gearbox = props.gearbox ?? {};
-    const fuelType = props.fuelType ?? {};
-    const option = props.option ?? {};
+const str = (v) => (v != null ? String(v) : '');
 
-    const selectedOptions = String(vehicle.option ?? '')
-        .split(',')
-        .filter((v) => v !== '');
+function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, option = {} }) {
+    const selectedOptions = String(vehicle.option ?? '').split(',').filter((v) => v !== '');
 
-    const schema = z.object({
-        type: z.string().min(1, t('The type field is required.')),
-        name: z.string().min(1, t('The name field is required.')),
-        model: z.string().min(1, t('The model field is required.')),
-        engine_type: z.string().min(1, t('The engine type field is required.')),
-        license_plate: z.string().min(1, t('The license plate field is required.')),
-        daily_rate: z.string().min(1, t('The daily rate field is required.')),
-        gearbox: z.string().min(1, t('The gearbox field is required.')),
-        fuel_type: z.string().min(1, t('The fuel type field is required.')),
-        number_of_seats: z.string().min(1, t('The number of seats field is required.')),
-        kilometers: z.string().min(1, t('The kilometers field is required.')),
-    });
-
-    const { data, setData, transform, post, processing, errors, handleSubmit } = useZodForm({
-        schema,
-        defaults: {
-            type: vehicle.type != null ? String(vehicle.type) : '',
+    const { form, submit } = useZodForm(schema, {
+        defaultValues: {
+            type: str(vehicle.type),
             name: vehicle.name ?? '',
             model: vehicle.model ?? '',
             engine_type: vehicle.engine_type ?? '',
             engine_no: vehicle.engine_no ?? '',
             license_plate: vehicle.license_plate ?? '',
             registration_expiry_date: vehicle.registration_expiry_date ?? '',
-            daily_rate: vehicle.daily_rate != null ? String(vehicle.daily_rate) : '',
-            'year_of_ﬁrst_immatriculation':
-                vehicle['year_of_ﬁrst_immatriculation'] != null
-                    ? String(vehicle['year_of_ﬁrst_immatriculation'])
-                    : '',
-            gearbox: vehicle.gearbox != null ? String(vehicle.gearbox) : '',
-            fuel_type: vehicle.fuel_type != null ? String(vehicle.fuel_type) : '',
-            number_of_seats: vehicle.number_of_seats != null ? String(vehicle.number_of_seats) : '',
-            kilometers: vehicle.kilometers != null ? String(vehicle.kilometers) : '',
+            daily_rate: str(vehicle.daily_rate),
+            'year_of_ﬁrst_immatriculation': str(vehicle['year_of_ﬁrst_immatriculation']),
+            gearbox: str(vehicle.gearbox),
+            fuel_type: str(vehicle.fuel_type),
+            number_of_seats: str(vehicle.number_of_seats),
+            kilometers: str(vehicle.kilometers),
             option: selectedOptions,
             notes: vehicle.notes ?? '',
             document: null,
-        },
-        onValid: () => {
-            transform((d) => ({ ...d, _method: 'PUT' }));
-            post(route('vehicle.update', vehicle.id), { forceFormData: true });
+            picture: null,
+            _method: 'PUT',
         },
     });
+    const { register, control, setValue, watch, formState: { errors, isSubmitting } } = form;
+
+    const currentOptions = (watch('option') ?? []).map(String);
 
     return (
-        <AdminLayout>
-            <Head title={t('Edit Vehicle')} />
-            <div className="row">
-                <div className="col-sm-12">
-                    <div className="card">
-                        <div className="card-header">
-                            <h5>{t('Edit Vehicle')}</h5>
+        <div className="space-y-6 p-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Edit Vehicle</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={submit('post', route('vehicle.update', vehicle.id), { forceFormData: true })}>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="name">Vehicle Name</Label>
+                                <Input id="name" placeholder="Enter vehicle name" {...register('name')} />
+                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="type">Type</Label>
+                                <Controller
+                                    name="type"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <SelectTrigger id="type"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(types).filter(([k]) => k !== '').map(([k, label]) => (
+                                                    <SelectItem key={k} value={String(k)}>{label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="model">Model</Label>
+                                <Input id="model" placeholder="Enter model" {...register('model')} />
+                                {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="engine_type">Engine Type</Label>
+                                <Input id="engine_type" placeholder="Enter engine type" {...register('engine_type')} />
+                                {errors.engine_type && <p className="text-sm text-destructive">{errors.engine_type.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="engine_no">Engine Number</Label>
+                                <Input id="engine_no" placeholder="Enter engine number" {...register('engine_no')} />
+                                {errors.engine_no && <p className="text-sm text-destructive">{errors.engine_no.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="license_plate">License Plate</Label>
+                                <Input id="license_plate" placeholder="Enter license plate" {...register('license_plate')} />
+                                {errors.license_plate && <p className="text-sm text-destructive">{errors.license_plate.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="registration_expiry_date">Registration Expiry Date</Label>
+                                <Input id="registration_expiry_date" type="date" {...register('registration_expiry_date')} />
+                                {errors.registration_expiry_date && <p className="text-sm text-destructive">{errors.registration_expiry_date.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="daily_rate">Daily Rate</Label>
+                                <Input id="daily_rate" type="number" step="any" placeholder="Enter daily rate" {...register('daily_rate')} />
+                                {errors.daily_rate && <p className="text-sm text-destructive">{errors.daily_rate.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="year_of_first_immatriculation">Year of First Immatriculation</Label>
+                                <Input
+                                    id="year_of_first_immatriculation"
+                                    type="number"
+                                    placeholder="Enter Year of First Immatriculation"
+                                    {...register('year_of_ﬁrst_immatriculation')}
+                                />
+                                {errors['year_of_ﬁrst_immatriculation'] && (
+                                    <p className="text-sm text-destructive">{errors['year_of_ﬁrst_immatriculation'].message}</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="gearbox">Gearbox</Label>
+                                <Controller
+                                    name="gearbox"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <SelectTrigger id="gearbox"><SelectValue placeholder="Gearbox" /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(gearbox).map(([k, label]) => (
+                                                    <SelectItem key={k} value={String(k)}>{label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.gearbox && <p className="text-sm text-destructive">{errors.gearbox.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="fuel_type">Fuel Type</Label>
+                                <Controller
+                                    name="fuel_type"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <SelectTrigger id="fuel_type"><SelectValue placeholder="Fuel Type" /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(fuelType).map(([k, label]) => (
+                                                    <SelectItem key={k} value={String(k)}>{label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.fuel_type && <p className="text-sm text-destructive">{errors.fuel_type.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="number_of_seats">Number of Seats</Label>
+                                <Input id="number_of_seats" type="number" {...register('number_of_seats')} />
+                                {errors.number_of_seats && <p className="text-sm text-destructive">{errors.number_of_seats.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="kilometers">Kilometer</Label>
+                                <Input id="kilometers" type="number" {...register('kilometers')} />
+                                {errors.kilometers && <p className="text-sm text-destructive">{errors.kilometers.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="option">Options</Label>
+                                <select
+                                    id="option"
+                                    multiple
+                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={currentOptions}
+                                    onChange={(e) =>
+                                        setValue('option', Array.from(e.target.selectedOptions, (o) => o.value))
+                                    }
+                                >
+                                    {Object.entries(option).map(([k, label]) => (
+                                        <option key={k} value={String(k)}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="document">Document</Label>
+                                <Input id="document" type="file" onChange={(e) => setValue('document', e.target.files?.[0] ?? null)} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="picture">Photo de voiture</Label>
+                                <Input id="picture" type="file" onChange={(e) => setValue('picture', e.target.files?.[0] ?? null)} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="notes">Notes</Label>
+                                <Textarea id="notes" placeholder="Enter notes" rows={1} {...register('notes')} />
+                            </div>
                         </div>
-                        <div className="card-body">
-                            <form onSubmit={handleSubmit} encType="multipart/form-data">
-                                <div className="row">
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Type')}</Label>
-                                            <select
-                                                name="type"
-                                                className="form-control"
-                                                value={data.type}
-                                                onChange={(e) => setData('type', e.target.value)}
-                                            >
-                                                {Object.entries(types).map(([key, label]) => (
-                                                    <option key={key} value={key}>{label}</option>
-                                                ))}
-                                            </select>
-                                            {errors.type && <span className="text-danger">{errors.type}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Name')}</Label>
-                                            <Input
-                                                type="text"
-                                                name="name"
-                                                value={data.name}
-                                                onChange={(e) => setData('name', e.target.value)}
-                                            />
-                                            {errors.name && <span className="text-danger">{errors.name}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Model')}</Label>
-                                            <Input
-                                                type="text"
-                                                name="model"
-                                                value={data.model}
-                                                onChange={(e) => setData('model', e.target.value)}
-                                            />
-                                            {errors.model && <span className="text-danger">{errors.model}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Engine Type')}</Label>
-                                            <Input
-                                                type="text"
-                                                name="engine_type"
-                                                value={data.engine_type}
-                                                onChange={(e) => setData('engine_type', e.target.value)}
-                                            />
-                                            {errors.engine_type && <span className="text-danger">{errors.engine_type}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Engine No')}</Label>
-                                            <Input
-                                                type="text"
-                                                name="engine_no"
-                                                value={data.engine_no}
-                                                onChange={(e) => setData('engine_no', e.target.value)}
-                                            />
-                                            {errors.engine_no && <span className="text-danger">{errors.engine_no}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('License Plate')}</Label>
-                                            <Input
-                                                type="text"
-                                                name="license_plate"
-                                                value={data.license_plate}
-                                                onChange={(e) => setData('license_plate', e.target.value)}
-                                            />
-                                            {errors.license_plate && <span className="text-danger">{errors.license_plate}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Registration Expiry Date')}</Label>
-                                            <Input
-                                                type="date"
-                                                name="registration_expiry_date"
-                                                value={data.registration_expiry_date}
-                                                onChange={(e) => setData('registration_expiry_date', e.target.value)}
-                                            />
-                                            {errors.registration_expiry_date && <span className="text-danger">{errors.registration_expiry_date}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Daily Rate')}</Label>
-                                            <Input
-                                                type="number"
-                                                step="any"
-                                                name="daily_rate"
-                                                value={data.daily_rate}
-                                                onChange={(e) => setData('daily_rate', e.target.value)}
-                                            />
-                                            {errors.daily_rate && <span className="text-danger">{errors.daily_rate}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Year Of First Immatriculation')}</Label>
-                                            <Input
-                                                type="number"
-                                                name="year_of_ﬁrst_immatriculation"
-                                                value={data['year_of_ﬁrst_immatriculation']}
-                                                onChange={(e) => setData('year_of_ﬁrst_immatriculation', e.target.value)}
-                                            />
-                                            {errors['year_of_ﬁrst_immatriculation'] && (
-                                                <span className="text-danger">{errors['year_of_ﬁrst_immatriculation']}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Gearbox')}</Label>
-                                            <select
-                                                name="gearbox"
-                                                className="form-control"
-                                                value={data.gearbox}
-                                                onChange={(e) => setData('gearbox', e.target.value)}
-                                            >
-                                                {Object.entries(gearbox).map(([key, label]) => (
-                                                    <option key={key} value={key}>{label}</option>
-                                                ))}
-                                            </select>
-                                            {errors.gearbox && <span className="text-danger">{errors.gearbox}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Fuel Type')}</Label>
-                                            <select
-                                                name="fuel_type"
-                                                className="form-control"
-                                                value={data.fuel_type}
-                                                onChange={(e) => setData('fuel_type', e.target.value)}
-                                            >
-                                                {Object.entries(fuelType).map(([key, label]) => (
-                                                    <option key={key} value={key}>{label}</option>
-                                                ))}
-                                            </select>
-                                            {errors.fuel_type && <span className="text-danger">{errors.fuel_type}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Number Of Seats')}</Label>
-                                            <Input
-                                                type="number"
-                                                name="number_of_seats"
-                                                value={data.number_of_seats}
-                                                onChange={(e) => setData('number_of_seats', e.target.value)}
-                                            />
-                                            {errors.number_of_seats && <span className="text-danger">{errors.number_of_seats}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Kilometers')}</Label>
-                                            <Input
-                                                type="number"
-                                                name="kilometers"
-                                                value={data.kilometers}
-                                                onChange={(e) => setData('kilometers', e.target.value)}
-                                            />
-                                            {errors.kilometers && <span className="text-danger">{errors.kilometers}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Option')}</Label>
-                                            <select
-                                                multiple
-                                                name="option[]"
-                                                className="form-control"
-                                                value={data.option.map(String)}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'option',
-                                                        Array.from(e.target.selectedOptions, (o) => o.value)
-                                                    )
-                                                }
-                                            >
-                                                {Object.entries(option).map(([key, label]) => (
-                                                    <option key={key} value={key}>{label}</option>
-                                                ))}
-                                            </select>
-                                            {errors.option && <span className="text-danger">{errors.option}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="col-md-12">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Notes')}</Label>
-                                            <Textarea
-                                                name="notes"
-                                                value={data.notes}
-                                                onChange={(e) => setData('notes', e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className="form-group">
-                                            <Label className="form-label">{t('Document')}</Label>
-                                            <Input
-                                                type="file"
-                                                name="document"
-                                                onChange={(e) => setData('document', e.target.files[0] ?? null)}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-end">
-                                    <Button type="submit" disabled={processing}>{t('Update')}</Button>
-                                </div>
-                            </form>
+
+                        <div className="flex justify-end gap-2 mt-4">
+                            <Button variant="ghost" type="button" asChild>
+                                <Link href={route('vehicle.index')}>Close</Link>
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>Update</Button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </AdminLayout>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
+
+VehicleEdit.layout = (page) => (
+    <AdminLayout breadcrumbs={[
+        { label: 'Vehicles', href: route('vehicle.index') },
+        { label: 'Edit' },
+    ]}>{page}</AdminLayout>
+);
+export default VehicleEdit;
