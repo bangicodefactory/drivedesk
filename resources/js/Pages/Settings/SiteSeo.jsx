@@ -1,0 +1,80 @@
+import { z } from 'zod';
+import { useZodForm } from '@/hooks/useZodForm';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AdminLayout from '@/Layouts/AdminLayout';
+
+const schema = z.object({
+    meta_seo_title:       z.string().min(1, 'Required'),
+    meta_seo_keyword:     z.string().min(1, 'Required'),
+    meta_seo_description: z.string().min(1, 'Required'),
+    meta_seo_image:       z.any().optional(),
+});
+
+function SiteSeo({ settings }) {
+    const { form, submit } = useZodForm(schema, {
+        defaultValues: {
+            meta_seo_title:       settings?.meta_seo_title       ?? '',
+            meta_seo_keyword:     settings?.meta_seo_keyword     ?? '',
+            meta_seo_description: settings?.meta_seo_description ?? '',
+        },
+    });
+    const { register, formState: { errors, isSubmitting } } = form;
+
+    return (
+        <div className="max-w-2xl space-y-6 p-6">
+            <div>
+                <h1 className="text-2xl font-semibold">Site SEO Settings</h1>
+                <p className="text-sm text-muted-foreground">Meta tags for search engine optimisation.</p>
+            </div>
+
+            <Card>
+                <CardHeader><CardTitle>SEO</CardTitle></CardHeader>
+                <CardContent>
+                    <form
+                        onSubmit={submit('post', route('setting.site.seo'), { forceFormData: true })}
+                        className="space-y-4"
+                    >
+                        <div className="space-y-1">
+                            <Label htmlFor="meta_seo_image">Meta Image</Label>
+                            <Input id="meta_seo_image" type="file" accept="image/*" {...register('meta_seo_image')} />
+                            {settings?.meta_seo_image && (
+                                <img
+                                    src={`/storage/upload/seo/${settings.meta_seo_image}`}
+                                    alt="SEO meta"
+                                    className="mt-2 max-h-24 rounded border"
+                                />
+                            )}
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="meta_seo_title">Meta Title</Label>
+                            <Input id="meta_seo_title" {...register('meta_seo_title')} />
+                            {errors.meta_seo_title && <p className="text-sm text-destructive">{errors.meta_seo_title.message}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="meta_seo_keyword">Meta Keyword</Label>
+                            <Input id="meta_seo_keyword" {...register('meta_seo_keyword')} />
+                            {errors.meta_seo_keyword && <p className="text-sm text-destructive">{errors.meta_seo_keyword.message}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="meta_seo_description">Meta Description</Label>
+                            <Textarea id="meta_seo_description" rows={3} {...register('meta_seo_description')} />
+                            {errors.meta_seo_description && <p className="text-sm text-destructive">{errors.meta_seo_description.message}</p>}
+                        </div>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Saving…' : 'Save'}
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+SiteSeo.layout = (page) => (
+    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Site SEO' }]}>{page}</AdminLayout>
+);
+export default SiteSeo;
