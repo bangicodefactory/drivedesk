@@ -7,6 +7,7 @@ use App\Models\Option;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Psy\Readline\Hoa\Console;
@@ -21,7 +22,12 @@ class VehicleController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        return view('vehicle.index', compact('vehicles'));
+        $vehicles = $vehicles->map(function ($vehicle) {
+            $data = $vehicle->toArray();
+            $data['daily_rate_formatted'] = priceFormat($vehicle->daily_rate);
+            return $data;
+        });
+        return Inertia::render('Vehicle/Index', compact('vehicles'));
     }
 
 
@@ -32,7 +38,7 @@ class VehicleController extends Controller
         $gearbox = Vehicle::$gearbox;
         $fuelType = Vehicle::$fuelType;
         $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
-        return view('vehicle.create', compact('types', 'fuelType', 'gearbox', 'option'));
+        return Inertia::render('Vehicle/Create', compact('types', 'fuelType', 'gearbox', 'option'));
     }
 
 
@@ -121,7 +127,10 @@ class VehicleController extends Controller
 
     public function show(Vehicle $vehicle)
     {
-        return view('vehicle.show', compact('vehicle'));
+        $vehicle = array_merge($vehicle->toArray(), [
+            'daily_rate_formatted' => priceFormat($vehicle->daily_rate),
+        ]);
+        return Inertia::render('Vehicle/Show', compact('vehicle'));
     }
 
 
@@ -132,7 +141,7 @@ class VehicleController extends Controller
         $types = VehicleType::where('parent_id', parentId())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
         $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
-        return view('vehicle.edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
+        return Inertia::render('Vehicle/Edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
     }
 
 
