@@ -143,10 +143,10 @@ function TvaIndex({ tvas, filters }) {
                         </div>
                         <div className="space-y-1">
                             <Label>Month</Label>
-                            <Select value={f.filter_month} onValueChange={(v) => setF({ ...f, filter_month: v })}>
+                            <Select value={f.filter_month || 'all'} onValueChange={(v) => setF({ ...f, filter_month: v === 'all' ? '' : v })}>
                                 <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All</SelectItem>
+                                    <SelectItem value="all">All</SelectItem>
                                     {MONTHS.map((m) => (
                                         <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                                     ))}
@@ -155,10 +155,10 @@ function TvaIndex({ tvas, filters }) {
                         </div>
                         <div className="space-y-1">
                             <Label>Year</Label>
-                            <Select value={f.filter_year} onValueChange={(v) => setF({ ...f, filter_year: v })}>
+                            <Select value={f.filter_year || 'all'} onValueChange={(v) => setF({ ...f, filter_year: v === 'all' ? '' : v })}>
                                 <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All</SelectItem>
+                                    <SelectItem value="all">All</SelectItem>
                                     {YEARS.map((y) => (
                                         <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                                     ))}
