@@ -149,8 +149,12 @@ class SettingController extends Controller
     public function general()
     {
         $loginUser = \Auth::user();
+        $settings  = settings();
 
-        return view('settings.general', compact('loginUser'));
+        return Inertia::render('Settings/General', [
+            'loginUser' => ['type' => $loginUser->type],
+            'settings'  => $settings,
+        ]);
     }
 
     public function generalData(Request $request)
@@ -347,9 +351,9 @@ class SettingController extends Controller
 
     public function smtp()
     {
-        $loginUser = \Auth::user();
-
-        return view('settings.smtp', compact('loginUser'));
+        return Inertia::render('Settings/Smtp', [
+            'settings' => settings(),
+        ]);
     }
 
     public function smtpData(Request $request)
@@ -440,9 +444,9 @@ class SettingController extends Controller
 
     public function payment()
     {
-        $loginUser = \Auth::user();
-
-        return view('settings.payment', compact('loginUser'));
+        return Inertia::render('Settings/Payment', [
+            'settings' => settings(),
+        ]);
     }
 
     public function paymentData(Request $request)
@@ -632,7 +636,10 @@ class SettingController extends Controller
         $settings = settings();
         $timezones = config('timezones');
 
-        return view('settings.company', compact('settings', 'timezones'));
+        return Inertia::render('Settings/Company', [
+            'settings'  => $settings,
+            'timezones' => $timezones ?? [],
+        ]);
     }
 
     public function companyData(Request $request)
@@ -747,7 +754,9 @@ class SettingController extends Controller
     public function siteSEO()
     {
         $settings = settings();
-        return view('settings.site_seo', compact('settings'));
+        return Inertia::render('Settings/SiteSeo', [
+            'settings' => $settings,
+        ]);
     }
 
     public function siteSEOData(Request $request)
@@ -809,7 +818,9 @@ class SettingController extends Controller
     public function googleRecaptcha()
     {
         $settings = settings();
-        return view('settings.recaptcha', compact('settings'));
+        return Inertia::render('Settings/Recaptcha', [
+            'settings' => $settings,
+        ]);
     }
 
     public function googleRecaptchaData(Request $request)
