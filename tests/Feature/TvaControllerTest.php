@@ -86,6 +86,7 @@ class TvaControllerTest extends TestCase
 
     public function test_index_filters_by_from_date(): void
     {
+        config(['app.inertia_enabled' => false]);
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
 

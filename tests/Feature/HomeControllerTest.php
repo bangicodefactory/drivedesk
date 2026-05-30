@@ -38,6 +38,7 @@ class HomeControllerTest extends TestCase
 
     public function test_dashboard_contains_booking_and_driver_totals_for_owner(): void
     {
+        config(['app.inertia_enabled' => false]);
         $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         User::factory()->create(['type' => 'driver', 'parent_id' => $owner->id]);
@@ -53,6 +54,7 @@ class HomeControllerTest extends TestCase
 
     public function test_dashboard_owner_without_manage_reminder_gets_empty_reminders(): void
     {
+        config(['app.inertia_enabled' => false]);
         $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         $response = $this->actingAs($owner)->get(route('dashboard'));
@@ -76,6 +78,7 @@ class HomeControllerTest extends TestCase
 
     public function test_super_admin_dashboard_contains_organization_totals(): void
     {
+        config(['app.inertia_enabled' => false]);
         $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
 
         User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
