@@ -63,7 +63,7 @@ class BookingController extends Controller
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
                 ->get();
-            $driversDropdown = ['' => __('Select Driver')] + $drivers->pluck('name', 'id')->toArray();
+            $driversDropdown = $drivers->pluck('name', 'id')->toArray();
 
 
             $status = Booking::$status;
@@ -407,7 +407,6 @@ class BookingController extends Controller
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
 
             $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
-            $drivers->prepend(__('Select Driver'), '');
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
