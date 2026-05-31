@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { useZodForm } from '@/hooks/useZodForm';
 import { Button } from '@/components/ui/button';
-import { Input }  from '@/components/ui/input';
-import { Label }  from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 
@@ -19,47 +19,56 @@ function Account({ loginUser }) {
             email: loginUser?.email ?? '',
         },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, formState: { errors, isSubmitting } } = form;
 
     return (
-        <div className="max-w-2xl space-y-6 p-6">
+        <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Account</h1>
+                <h1 className="text-2xl font-semibold">Account Settings</h1>
                 <p className="text-sm text-muted-foreground">Update your profile information.</p>
             </div>
 
             <Card>
                 <CardHeader>
                     <CardTitle>Profile</CardTitle>
-                    <CardDescription>This is how you appear to others in the app.</CardDescription>
+                    <CardDescription>Your name, email address and profile picture.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
                         onSubmit={submit('post', route('setting.account'), { forceFormData: true })}
-                        className="space-y-4"
                         encType="multipart/form-data"
+                        className="space-y-4"
                     >
-                        <div className="space-y-1.5">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" autoComplete="name" {...register('name')} />
-                            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="name">Name</Label>
+                                <Input id="name" placeholder="Enter your name" autoComplete="name" {...register('name')} />
+                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="email">Email Address</Label>
+                                <Input id="email" type="email" placeholder="Enter your email" autoComplete="email" {...register('email')} />
+                                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                            </div>
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" autoComplete="email" {...register('email')} />
-                            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="profile">Profile picture</Label>
-                            <Input id="profile" type="file" accept="image/*" {...register('profile')} />
+                            <Label htmlFor="profile">Profile</Label>
+                            <Input
+                                id="profile"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setValue('profile', e.target.files?.[0] ?? null)}
+                            />
                             {errors.profile && <p className="text-sm text-destructive">{errors.profile.message}</p>}
                         </div>
 
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save changes'}
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving…' : 'Save'}
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>
@@ -68,7 +77,7 @@ function Account({ loginUser }) {
 }
 
 Account.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Account' }]}>
+    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Account Settings' }]}>
         {page}
     </AdminLayout>
 );
