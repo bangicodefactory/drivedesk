@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ExpenseType;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ExpenseTypeController extends Controller
 {
@@ -12,15 +13,21 @@ class ExpenseTypeController extends Controller
     {
         if (\Auth::user()->can('manage expense type')) {
             $types = ExpenseType::where('parent_id', parentId())->get();
-            return view('expense_type.index', compact('types'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ExpenseType/Index', compact('types'));
+        }
+        return view('expense_type.index', compact('types'));
     }
 
 
     public function create()
     {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ExpenseType/Create');
+        }
         return view('expense_type.create');
     }
 
@@ -57,7 +64,10 @@ class ExpenseTypeController extends Controller
 
     public function edit(ExpenseType $expenseType)
     {
-        return view('expense_type.edit',compact('expenseType'));
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ExpenseType/Edit', compact('expenseType'));
+        }
+        return view('expense_type.edit', compact('expenseType'));
     }
 
 
