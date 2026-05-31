@@ -54,7 +54,6 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 )}
             </div>
 
-            {/* Stats cards */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Card>
                     <CardContent className="pt-6">
@@ -130,7 +129,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             {reminders.map((reminder) => (
                                 <TableRow key={reminder.id}>
                                     <TableCell className="font-medium">{reminder.name}</TableCell>
-                                    <TableCell>{reminder.reminder_type?.type ?? reminder.reminderType?.type ?? '—'}</TableCell>
+                                    <TableCell>{reminder.reminder_type?.type ?? '—'}</TableCell>
                                     <TableCell>{reminder.vehicles?.name ?? '—'}</TableCell>
                                     <TableCell>{reminder.reminder_date}</TableCell>
                                     <TableCell>
