@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\ExpenseType;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ExpenseController extends Controller
 {
@@ -13,9 +14,12 @@ class ExpenseController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage expense')) {
-            $expenses = Expense::where('parent_id', '=', parentId())->get();
+            $expenses = Expense::with(['vehicles', 'types'])->where('parent_id', '=', parentId())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Expense/Index', compact('expenses'));
         }
         return view('expense.index', compact('expenses'));
     }
@@ -24,11 +28,15 @@ class ExpenseController extends Controller
     public function create()
     {
         $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        $vehicles->prepend(__('Select Vehicle'),'');
+        $vehicles->prepend(__('Select Vehicle'), '');
 
         $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
-        $types->prepend(__('Select Type'),'');
-        return view('expense.create', compact('vehicles','types'));
+        $types->prepend(__('Select Type'), '');
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Expense/Create', compact('vehicles', 'types'));
+        }
+        return view('expense.create', compact('vehicles', 'types'));
     }
 
 
@@ -91,11 +99,15 @@ class ExpenseController extends Controller
     public function edit(Expense $expense)
     {
         $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        $vehicles->prepend(__('Select Vehicle'),'');
+        $vehicles->prepend(__('Select Vehicle'), '');
 
         $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
-        $types->prepend(__('Select Type'),'');
-        return view('expense.edit', compact('vehicles','expense','types'));
+        $types->prepend(__('Select Type'), '');
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Expense/Edit', compact('vehicles', 'expense', 'types'));
+        }
+        return view('expense.edit', compact('vehicles', 'expense', 'types'));
     }
 
 
