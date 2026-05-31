@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class ReminderController extends Controller
 {
@@ -20,10 +21,28 @@ class ReminderController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage reminder')) {
-            $reminders = Reminder::where('parent_id', '=', parentId())->orderBy('reminder_date', 'desc')->get();
+            $reminders = Reminder::with(['vehicles', 'reminderType'])
+                ->where('parent_id', '=', parentId())
+                ->orderBy('reminder_date', 'desc')
+                ->get()
+                ->map(function ($reminder) {
+                    $reminder->days_remaining = Carbon::now()->diffInDays(Carbon::parse($reminder->reminder_date), false);
+                    return $reminder;
+                });
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        if (config('app.inertia_enabled')) {
+            $stats = [
+                'overdue'   => $reminders->where('status', 'overdue')->count(),
+                'urgent'    => $reminders->where('status', 'urgent')->count(),
+                'upcoming'  => $reminders->where('status', 'upcoming')->count(),
+                'completed' => $reminders->where('status', 'completed')->count(),
+            ];
+            return Inertia::render('Reminder/Index', compact('reminders', 'stats'));
+        }
+
         return view('reminder.index', compact('reminders'));
     }
 
@@ -32,13 +51,15 @@ class ReminderController extends Controller
      */
     public function create()
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
-
-        // $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
-        // $vehicles->prepend(__('Select Vehicle'), '');
+        $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
+        $vehicles->prepend(__('Select Vehicle'), '');
 
         $types = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Reminder/Create', compact('vehicles', 'types'));
+        }
         return view('reminder.create', compact('vehicles', 'types'));
     }
 
@@ -166,12 +187,14 @@ class ReminderController extends Controller
      */
     public function edit(Reminder $reminder)
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        $vehicleName = $reminder->id_vehicle ? Vehicle::find($reminder->id_vehicle)->name : '';
-
-
+        $vehicleName = $reminder->id_vehicle ? (Vehicle::find($reminder->id_vehicle)->name ?? '') : '';
         $type = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
-        // $type->prepend(__('Select Type'),'');
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Reminder/Edit', compact('reminder', 'type', 'vehicleName'));
+        }
+
+        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
         return view('reminder.edit', compact('vehicles', 'reminder', 'type', 'vehicleName'));
     }
 
