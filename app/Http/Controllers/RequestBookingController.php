@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class RequestBookingController extends Controller
 {
@@ -22,11 +23,9 @@ class RequestBookingController extends Controller
      */
     public function showSimilarCars($id)
     {
-        // Get the specific car with all relevant details
-        $car = Vehicle::where('id', $id)->firstOrFail();
+        $car = Vehicle::with('types')->where('id', $id)->firstOrFail();
 
-        // Get similar cars (same type or similar features)
-        $similarCars = Vehicle::where('id', '!=', $id)
+        $similarCars = Vehicle::with('types')->where('id', '!=', $id)
             ->where(function ($query) use ($car) {
                 $query->where('type', $car->type)
                     ->orWhere('fuel_type', $car->fuel_type)
@@ -39,7 +38,11 @@ class RequestBookingController extends Controller
             ->limit(3)
             ->get();
 
-        $places = Place::all();
+        $places = Place::all(['id', 'name', 'city']);
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
+        }
 
         return view('client.tests.car-details', compact('car', 'similarCars', 'places'));
     }
