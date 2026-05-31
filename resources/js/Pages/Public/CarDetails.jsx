@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Controller } from 'react-hook-form';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { useZodForm } from '@/hooks/useZodForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Star, Car, Fuel, Settings2, Users, Calendar, MapPin } from 'lucide-react';
+import { Star, Car, Fuel, Settings2, Wrench, Tag, Users, Calendar, MapPin } from 'lucide-react';
 import PublicLayout from '@/Layouts/PublicLayout';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -29,7 +29,9 @@ const schema = z.object({
     start_time:       z.string().min(1, 'Pick-up time is required.'),
     end_date:         z.string().min(1, 'Drop-off date is required.'),
     end_time:         z.string().min(1, 'Drop-off time is required.'),
+    driver:           z.boolean().optional(),
     notes:            z.string().optional(),
+    vehicle_id:       z.string().min(1),
 });
 
 function Stars() {
@@ -48,10 +50,11 @@ function CarDetails({ car, similarCars = [], places = [] }) {
 
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
+            vehicle_id: String(car.id),
             name: '', email: '', phone_number: '', company_name: '',
             city: '', pickup_address: '', drop_off_address: '',
             start_date: '', start_time: '', end_date: '', end_time: '',
-            notes: '',
+            driver: false, notes: '',
         },
     });
     const { register, control, formState: { errors, isSubmitting } } = form;
@@ -59,7 +62,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
     return (
         <div className="space-y-12 py-8">
 
-            {/* Breadcrumb */}
             <div className="border-b pb-4">
                 <nav className="text-sm text-muted-foreground flex items-center gap-2">
                     <Link href={route('home')} className="hover:text-foreground">Home</Link>
@@ -70,13 +72,10 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                 </nav>
             </div>
 
-            {/* Main content */}
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
 
-                {/* Left column */}
                 <div className="space-y-10">
 
-                    {/* Vehicle image + header */}
                     <div className="space-y-4">
                         {car.picture && (
                             <div className="overflow-hidden rounded-xl border">
@@ -98,7 +97,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         {car.notes && <p className="text-muted-foreground">{car.notes}</p>}
                     </div>
 
-                    {/* Key features */}
                     <Card>
                         <CardHeader><CardTitle>Key Features</CardTitle></CardHeader>
                         <CardContent>
@@ -110,8 +108,8 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                     { icon: Fuel,     label: 'Fuel',         value: car.fuel_type ?? 'N/A' },
                                     { icon: Users,    label: 'Passengers',   value: car.number_of_seats ? `${car.number_of_seats} Seats` : 'N/A' },
                                     { icon: MapPin,   label: 'Mileage',      value: car.kilometers ? `${Number(car.kilometers).toLocaleString()} km` : 'N/A' },
-                                    { icon: Settings2,label: 'Engine',       value: car.engine_type ?? 'N/A' },
-                                    { icon: Car,      label: 'Model',        value: car.model ?? 'N/A' },
+                                    { icon: Wrench,   label: 'Engine',       value: car.engine_type ?? 'N/A' },
+                                    { icon: Tag,      label: 'Model',        value: car.model ?? 'N/A' },
                                 ].map(({ icon: Icon, label, value }) => (
                                     <div key={label} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                                         <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
@@ -125,7 +123,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         </CardContent>
                     </Card>
 
-                    {/* Price table */}
                     <Card>
                         <CardHeader>
                             <CardTitle>
@@ -145,7 +142,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         </CardContent>
                     </Card>
 
-                    {/* Booking form */}
                     <Card id="booking-form">
                         <CardHeader>
                             <CardTitle>Request for Booking</CardTitle>
@@ -158,7 +154,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                 onSubmit={submit('post', route('booking.store_request'))}
                                 className="space-y-6"
                             >
-                                <input type="hidden" {...register('vehicle_id')} value={car.id} />
+                                <input type="hidden" {...register('vehicle_id')} />
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
@@ -287,7 +283,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         </CardContent>
                     </Card>
 
-                    {/* Reviews */}
                     <div className="space-y-6">
                         <h3 className="text-xl font-semibold">2 Reviews</h3>
                         {[
@@ -310,7 +305,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                     </div>
                 </div>
 
-                {/* Right sidebar */}
                 <div className="space-y-6">
                     <Card className="sticky top-20">
                         <CardHeader>
@@ -358,7 +352,6 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                 </div>
             </div>
 
-            {/* Similar Cars */}
             {similarCars.length > 0 && (
                 <div className="space-y-6">
                     <div className="text-center space-y-1">
