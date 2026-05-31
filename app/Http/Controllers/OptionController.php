@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Option;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class OptionController extends Controller
 {
@@ -15,12 +16,21 @@ class OptionController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Option/Index', compact('options'));
+        }
+
         return view('option.index', compact('options'));
     }
 
 
     public function create()
     {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Option/Create');
+        }
+
         return view('option.create');
     }
 
@@ -56,6 +66,10 @@ class OptionController extends Controller
 
     public function edit(Option $option)
     {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Option/Edit', compact('option'));
+        }
+
         return view('option.edit',compact('option'));
     }
 
