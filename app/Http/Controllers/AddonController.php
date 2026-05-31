@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Addon;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class AddonController extends Controller
 {
@@ -16,6 +17,15 @@ class AddonController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        if (config('app.inertia_enabled')) {
+            $addons->transform(function ($addon) {
+                $addon->price_formatted = priceFormat($addon->price);
+                return $addon;
+            });
+            return Inertia::render('Addon/Index', compact('addons'));
+        }
+
         return view('addon.index', compact('addons'));
     }
 
@@ -23,6 +33,11 @@ class AddonController extends Controller
     public function create()
     {
         $billingType=Addon::$billingType;
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Addon/Create', compact('billingType'));
+        }
+
         return view('addon.create',compact('billingType'));
     }
 
@@ -63,6 +78,11 @@ class AddonController extends Controller
     public function edit(Addon $addon)
     {
         $billingType=Addon::$billingType;
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Addon/Edit', compact('addon','billingType'));
+        }
+
         return view('addon.edit',compact('addon','billingType'));
     }
 
