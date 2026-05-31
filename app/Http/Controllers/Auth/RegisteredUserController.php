@@ -48,6 +48,10 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
+        if (getSettingsValByName('google_recaptcha') === 'on') {
+            $this->validate($request, ['g-recaptcha-response' => 'required|captcha']);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
