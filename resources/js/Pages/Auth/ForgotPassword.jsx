@@ -40,7 +40,7 @@ function ForgotPassword({ status }) {
                         </div>
                     )}
 
-                    <form onSubmit={submit('post', route('password.email'))} className="space-y-4">
+                    <form onSubmit={submit('post', route('password.email'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="email">Email</Label>
                             <Input

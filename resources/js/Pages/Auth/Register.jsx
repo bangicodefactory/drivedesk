@@ -43,7 +43,7 @@ function Register() {
                 </CardHeader>
 
                 <CardContent>
-                    <form onSubmit={submit('post', route('register'))} className="space-y-4">
+                    <form onSubmit={submit('post', route('register'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="name">Full name</Label>
                             <Input id="name" autoComplete="name" autoFocus {...register('name')} />

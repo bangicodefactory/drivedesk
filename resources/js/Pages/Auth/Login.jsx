@@ -41,7 +41,7 @@ function Login({ status }) {
                         </div>
                     )}
 
-                    <form onSubmit={submit('post', route('login'))} className="space-y-4">
+                    <form onSubmit={submit('post', route('login'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="email">Email</Label>
                             <Input
