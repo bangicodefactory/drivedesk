@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, ChevronLeft, Menu, LogOut,
-    UserCircle, Shield, CreditCard, Wrench, Receipt,
+    UserCircle, Shield, CreditCard, Wrench, Receipt, Tags,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,7 +53,8 @@ const NAV_OWNER = [
     ]},
     { section: 'Business', items: [
         { label: 'Drivers',   route: 'driver.index',    icon: UserCircle, permission: 'manage driver' },
-        { label: 'Vehicles',  route: 'vehicle.index',   icon: Car,        permission: 'manage vehicle' },
+        { label: 'Vehicles',      route: 'vehicle.index',      icon: Car,  permission: 'manage vehicle' },
+        { label: 'Vehicle Types', route: 'vehicle-type.index', icon: Tags, permission: 'manage vehicle type' },
         { label: 'Bookings',  route: 'booking.index',   icon: CalendarCheck, permission: 'manage booking' },
         { label: 'Expenses',  route: 'expense.index',   icon: ReceiptText,   permission: 'manage expense' },
         { label: 'Reminders', route: 'reminder.index',  icon: BellRing,      permission: 'manage reminder' },
