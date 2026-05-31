@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { useRef } from 'react';
 import { Link, usePage } from '@inertiajs/react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useZodForm } from '@/hooks/useZodForm';
 import { Button }   from '@/components/ui/button';
 import { Input }    from '@/components/ui/input';
@@ -9,14 +11,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PublicLayout from '@/Layouts/PublicLayout';
 
 const loginSchema = z.object({
-    email:    z.string().email('Enter a valid email address'),
-    password: z.string().min(1, 'Password is required'),
-    remember: z.boolean().optional(),
+    email:                  z.string().email('Enter a valid email address'),
+    password:               z.string().min(1, 'Password is required'),
+    remember:               z.boolean().optional(),
+    'g-recaptcha-response': z.string().optional(),
 });
 
 function Login({ status }) {
+    const { recaptcha } = usePage().props;
+    const captchaRef = useRef(null);
+
     const { form, submit } = useZodForm(loginSchema, {
-        defaultValues: { email: '', password: '', remember: false },
+        defaultValues: { email: '', password: '', remember: false, 'g-recaptcha-response': '' },
     });
     const { register, setValue, watch, formState: { errors, isSubmitting } } = form;
 
@@ -77,6 +83,20 @@ function Login({ status }) {
                                 Remember me
                             </Label>
                         </div>
+
+                        {recaptcha?.enabled && (
+                            <div>
+                                <ReCAPTCHA
+                                    ref={captchaRef}
+                                    sitekey={recaptcha.siteKey}
+                                    onChange={(token) => setValue('g-recaptcha-response', token ?? '')}
+                                    onExpired={() => setValue('g-recaptcha-response', '')}
+                                />
+                                {errors['g-recaptcha-response'] && (
+                                    <p className="text-sm text-destructive mt-1">{errors['g-recaptcha-response'].message}</p>
+                                )}
+                            </div>
+                        )}
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
                             {isSubmitting ? 'Signing in…' : 'Sign in'}

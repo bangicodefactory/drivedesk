@@ -36,16 +36,9 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request)
     {
 
-        // BAN-200: Inertia requests skip captcha until the React Login form
-        // renders a reCAPTCHA widget (tracked in BAN-204). Non-Inertia (Blade)
-        // requests continue to enforce it when google_recaptcha=on.
-        $google_recaptcha = getSettingsValByName('google_recaptcha');
-        if (!$request->inertia() && $google_recaptcha === 'on') {
-            $validation = ['g-recaptcha-response' => 'required|captcha'];
-        } else {
-            $validation = [];
+        if (getSettingsValByName('google_recaptcha') === 'on') {
+            $this->validate($request, ['g-recaptcha-response' => 'required|captcha']);
         }
-        $this->validate($request, $validation);
 
         $request->authenticate();
         $request->session()->regenerate();
