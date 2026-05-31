@@ -53,7 +53,7 @@ class RentalAgreementController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $defaultTerms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
+            $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
                 'drivers'      => $drivers->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values(),
@@ -206,7 +206,7 @@ class RentalAgreementController extends Controller
             $settings = settings();
 
             // display Terms and conditions 
-            $terms = str_replace('\n', "\n", config('default_terms.rental_agreement'));
+            $terms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
             $terms = nl2br($terms);
 
             //display Signature
