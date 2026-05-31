@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\VehicleType;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class VehicleTypeController extends Controller
 {
@@ -15,13 +16,22 @@ class VehicleTypeController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('VehicleType/Index', compact('types'));
+        }
+
         return view('vehicle_type.index', compact('types'));
     }
 
 
     public function create()
     {
-          return view('vehicle_type.create');
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('VehicleType/Create');
+        }
+
+        return view('vehicle_type.create');
     }
 
 
@@ -58,7 +68,11 @@ class VehicleTypeController extends Controller
 
     public function edit(VehicleType $vehicleType)
     {
-        return view('vehicle_type.edit',compact('vehicleType'));
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('VehicleType/Edit', compact('vehicleType'));
+        }
+
+        return view('vehicle_type.edit', compact('vehicleType'));
     }
 
 
