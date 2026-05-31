@@ -11,29 +11,60 @@ import {
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const schema = z.object({
-    company_name:    z.string().min(1, 'Required'),
-    company_email:   z.string().email('Enter a valid email'),
-    company_phone:   z.string().min(1, 'Required'),
-    company_address: z.string().min(1, 'Required'),
-    patente:         z.string().optional(),
-    rc:              z.string().optional(),
-    if:              z.string().optional(),
-    ice:             z.string().optional(),
-    timezone:        z.string().optional(),
+    company_name:                    z.string().min(1, 'Required'),
+    company_email:                   z.string().email('Enter a valid email'),
+    company_phone:                   z.string().min(1, 'Required'),
+    company_address:                 z.string().min(1, 'Required'),
+    patente:                         z.string().optional(),
+    rc:                              z.string().optional(),
+    if:                              z.string().optional(),
+    ice:                             z.string().optional(),
+    client_number_prefix:            z.string().optional(),
+    driver_number_prefix:            z.string().optional(),
+    vehicle_number_prefix:           z.string().optional(),
+    booking_number_prefix:           z.string().optional(),
+    rental_agreement_number_prefix:  z.string().optional(),
+    CURRENCY_SYMBOL:                 z.string().min(1, 'Required'),
+    CURRENCY:                        z.string().min(1, 'Required'),
+    company_date_format:             z.string().optional(),
+    company_time_format:             z.string().optional(),
+    timezone:                        z.string().optional(),
 });
+
+const DATE_FORMATS = [
+    { value: 'M j, Y',  label: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+    { value: 'y-m-d',   label: new Date().toISOString().slice(2, 10) },
+    { value: 'd-m-y',   label: (() => { const d = new Date(); return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getFullYear()).slice(2)}`; })() },
+    { value: 'm-d-y',   label: (() => { const d = new Date(); return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${String(d.getFullYear()).slice(2)}`; })() },
+];
+
+const TIME_FORMATS = [
+    { value: 'H:i',   label: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) },
+    { value: 'g:i A', label: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase() },
+    { value: 'g:i a', label: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase() },
+];
 
 function Company({ settings, timezones }) {
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
-            company_name:    settings?.company_name    ?? '',
-            company_email:   settings?.company_email   ?? '',
-            company_phone:   settings?.company_phone   ?? '',
-            company_address: settings?.company_address ?? '',
-            patente:         settings?.patente         ?? '',
-            rc:              settings?.rc              ?? '',
-            if:              settings?.if              ?? '',
-            ice:             settings?.ice             ?? '',
-            timezone:        settings?.timezone        ?? '',
+            company_name:                   settings?.company_name                   ?? '',
+            company_email:                  settings?.company_email                  ?? '',
+            company_phone:                  settings?.company_phone                  ?? '',
+            company_address:                settings?.company_address                ?? '',
+            patente:                        settings?.patente                        ?? '',
+            rc:                             settings?.rc                             ?? '',
+            if:                             settings?.if                             ?? '',
+            ice:                            settings?.ice                            ?? '',
+            client_number_prefix:           settings?.client_number_prefix           ?? '',
+            driver_number_prefix:           settings?.driver_number_prefix           ?? '',
+            vehicle_number_prefix:          settings?.vehicle_number_prefix          ?? '',
+            booking_number_prefix:          settings?.booking_number_prefix          ?? '',
+            rental_agreement_number_prefix: settings?.rental_agreement_number_prefix ?? '',
+            CURRENCY_SYMBOL:                settings?.CURRENCY_SYMBOL                ?? '',
+            CURRENCY:                       settings?.CURRENCY                       ?? '',
+            company_date_format:            settings?.company_date_format            ?? 'M j, Y',
+            company_time_format:            settings?.company_time_format            ?? 'H:i',
+            timezone:                       settings?.timezone                       ?? '',
         },
     });
     const { register, setValue, formState: { errors, isSubmitting } } = form;
@@ -41,50 +72,137 @@ function Company({ settings, timezones }) {
     const tzList = timezones ? Object.entries(timezones) : [];
 
     return (
-        <div className="max-w-2xl space-y-6 p-6">
+        <div className="space-y-6 p-6">
             <div>
                 <h1 className="text-2xl font-semibold">Company Settings</h1>
-                <p className="text-sm text-muted-foreground">Company details and legal identifiers.</p>
+                <p className="text-sm text-muted-foreground">Company details, legal identifiers and system preferences.</p>
             </div>
 
             <Card>
                 <CardHeader><CardTitle>Company Info</CardTitle></CardHeader>
                 <CardContent>
-                    <form onSubmit={submit('post', route('setting.company'))} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
+                    <form onSubmit={submit('post', route('setting.company'))} className="space-y-6">
+
+                        {/* Basic info */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
                                 <Label htmlFor="company_name">Name</Label>
-                                <Input id="company_name" {...register('company_name')} />
+                                <Input id="company_name" placeholder="Enter company name" {...register('company_name')} />
                                 {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                                 <Label htmlFor="company_email">Email</Label>
-                                <Input id="company_email" type="email" {...register('company_email')} />
+                                <Input id="company_email" type="email" placeholder="Enter company email" {...register('company_email')} />
                                 {errors.company_email && <p className="text-sm text-destructive">{errors.company_email.message}</p>}
                             </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="company_phone">Phone</Label>
-                                <Input id="company_phone" {...register('company_phone')} />
+                            <div className="space-y-1.5">
+                                <Label htmlFor="company_phone">Phone Number</Label>
+                                <Input id="company_phone" placeholder="Enter company phone" {...register('company_phone')} />
                                 {errors.company_phone && <p className="text-sm text-destructive">{errors.company_phone.message}</p>}
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                                 <Label htmlFor="company_address">Address</Label>
-                                <Textarea id="company_address" rows={2} {...register('company_address')} />
+                                <Textarea id="company_address" rows={2} placeholder="Enter company address" {...register('company_address')} />
                                 {errors.company_address && <p className="text-sm text-destructive">{errors.company_address.message}</p>}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-2">
-                            {[['patente', 'Patente'], ['rc', 'RC'], ['if', 'IF'], ['ice', 'ICE']].map(([key, label]) => (
-                                <div key={key} className="space-y-1">
-                                    <Label htmlFor={key}>{label}</Label>
-                                    <Input id={key} {...register(key)} />
-                                </div>
-                            ))}
+                        {/* Legal identifiers */}
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">Legal Identifiers</p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {[
+                                    ['patente', 'Patente', 'Enter patente'],
+                                    ['rc',      'RC',      'Enter RC'],
+                                    ['if',      'IF',      'Enter IF'],
+                                    ['ice',     'ICE',     'Enter ICE'],
+                                ].map(([key, label, placeholder]) => (
+                                    <div key={key} className="space-y-1.5">
+                                        <Label htmlFor={key}>{label}</Label>
+                                        <Input id={key} placeholder={placeholder} {...register(key)} />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
+                        {/* Number prefixes */}
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">Number Prefixes</p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {[
+                                    ['client_number_prefix',           'Client Number Prefix',            'e.g. CLT-'],
+                                    ['driver_number_prefix',           'Driver Number Prefix',            'e.g. DRV-'],
+                                    ['vehicle_number_prefix',          'Vehicle Number Prefix',           'e.g. VEH-'],
+                                    ['booking_number_prefix',          'Booking Number Prefix',           'e.g. BKG-'],
+                                    ['rental_agreement_number_prefix', 'Rental Agreement Number Prefix',  'e.g. RA-'],
+                                ].map(([key, label, placeholder]) => (
+                                    <div key={key} className="space-y-1.5">
+                                        <Label htmlFor={key}>{label}</Label>
+                                        <Input id={key} placeholder={placeholder} {...register(key)} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Currency */}
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">Currency</p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="CURRENCY_SYMBOL">Currency Icon</Label>
+                                    <Input id="CURRENCY_SYMBOL" placeholder="e.g. €" {...register('CURRENCY_SYMBOL')} />
+                                    {errors.CURRENCY_SYMBOL && <p className="text-sm text-destructive">{errors.CURRENCY_SYMBOL.message}</p>}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="CURRENCY">Currency Code</Label>
+                                    <Input id="CURRENCY" placeholder="e.g. EUR" {...register('CURRENCY')} />
+                                    {errors.CURRENCY && <p className="text-sm text-destructive">{errors.CURRENCY.message}</p>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Date & Time formats */}
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label>System Date Format</Label>
+                                <div className="space-y-1.5">
+                                    {DATE_FORMATS.map(({ value, label }) => (
+                                        <label key={value} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                value={value}
+                                                defaultChecked={settings?.company_date_format === value}
+                                                {...register('company_date_format')}
+                                                className="accent-primary"
+                                            />
+                                            <span className="text-sm">{label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>System Time Format</Label>
+                                <div className="space-y-1.5">
+                                    {TIME_FORMATS.map(({ value, label }) => (
+                                        <label key={value} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                value={value}
+                                                defaultChecked={settings?.company_time_format === value}
+                                                {...register('company_time_format')}
+                                                className="accent-primary"
+                                            />
+                                            <span className="text-sm">{label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Timezone */}
                         {tzList.length > 0 && (
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                                 <Label>Timezone</Label>
                                 <Select
                                     defaultValue={settings?.timezone ?? ''}
@@ -100,9 +218,11 @@ function Company({ settings, timezones }) {
                             </div>
                         )}
 
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving…' : 'Save'}
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>
@@ -111,6 +231,6 @@ function Company({ settings, timezones }) {
 }
 
 Company.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Company' }]}>{page}</AdminLayout>
+    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Company Settings' }]}>{page}</AdminLayout>
 );
 export default Company;
