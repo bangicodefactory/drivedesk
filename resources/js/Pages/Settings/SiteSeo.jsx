@@ -22,7 +22,7 @@ function SiteSeo({ settings }) {
             meta_seo_description: settings?.meta_seo_description ?? '',
         },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, formState: { errors, isSubmitting } } = form;
 
     return (
         <div className="space-y-6 p-6">
@@ -43,7 +43,7 @@ function SiteSeo({ settings }) {
                         <CardContent className="space-y-3">
                             <div className="space-y-1.5">
                                 <Label htmlFor="meta_seo_image">Meta Image</Label>
-                                <Input id="meta_seo_image" type="file" accept="image/*" {...register('meta_seo_image')} />
+                                <Input id="meta_seo_image" type="file" accept="image/*" onChange={(e) => setValue('meta_seo_image', e.target.files?.[0] ?? null)} />
                             </div>
                             {settings?.meta_seo_image && (
                                 <img
