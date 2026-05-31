@@ -23,13 +23,25 @@ import {
 import { cn } from '@/lib/utils';
 import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
-    BellRing, FileText, Settings, ChevronLeft, Menu, LogOut,
+    BellRing, FileText, Settings, ChevronLeft, ChevronDown, Menu, LogOut,
     UserCircle, Shield, CreditCard, Wrench, Receipt, Tags,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Nav definition
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Settings sub-items — each gated by its own granular permission
+const SETTINGS_CHILDREN = [
+    { label: 'Account Setting',   route: 'setting.account',          permission: 'manage account settings' },
+    { label: 'Password Setting',  route: 'setting.password',         permission: 'manage password settings' },
+    { label: 'General Setting',   route: 'setting.general',          permission: 'manage general settings' },
+    { label: 'Company Setting',   route: 'setting.company',          permission: 'manage company settings' },
+    { label: 'Email Setting',     route: 'setting.smtp',             permission: 'manage email settings' },
+    { label: 'Payment Setting',   route: 'setting.payment',          permission: 'manage payment settings' },
+    { label: 'Site SEO Setting',  route: 'setting.site.seo',         permission: 'manage seo settings' },
+    { label: 'ReCaptcha Setting', route: 'setting.google.recaptcha', permission: 'manage google recaptcha settings' },
+];
 
 const NAV_SUPER_ADMIN = [
     { section: 'Home', items: [
@@ -42,7 +54,8 @@ const NAV_SUPER_ADMIN = [
         { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
     { section: 'System', items: [
-        { label: 'Settings', route: 'setting.account', icon: Settings },
+        // Super admin bypasses Gate checks in Blade — no permission guard on children
+        { label: 'Settings', icon: Settings, children: SETTINGS_CHILDREN.map(({ permission: _, ...c }) => c) },
     ]},
 ];
 
@@ -55,30 +68,21 @@ const NAV_OWNER = [
         { label: 'Users',   route: 'users.index',   icon: Users,      permission: 'manage user' },
     ]},
     { section: 'Business', items: [
-        { label: 'Drivers',   route: 'driver.index',    icon: UserCircle, permission: 'manage driver' },
-        { label: 'Vehicles',      route: 'vehicle.index',      icon: Car,  permission: 'manage vehicle' },
-        { label: 'Vehicle Types', route: 'vehicle-type.index', icon: Tags, permission: 'manage vehicle type' },
-        { label: 'Bookings',  route: 'booking.index',   icon: CalendarCheck, permission: 'manage booking' },
-        { label: 'Expenses',  route: 'expense.index',   icon: ReceiptText,   permission: 'manage expense' },
-        { label: 'Reminders', route: 'reminder.index',  icon: BellRing,      permission: 'manage reminder' },
-        { label: 'Inspections', route: 'inspection.index', icon: Wrench,     permission: 'manage inspection' },
-        { label: 'Agreements', route: 'rental-agreement.index', icon: FileText, permission: 'manage rental agreement' },
+        { label: 'Drivers',     route: 'driver.index',           icon: UserCircle,    permission: 'manage driver' },
+        { label: 'Vehicles',    route: 'vehicle.index',          icon: Car,           permission: 'manage vehicle' },
+        { label: 'Vehicle Types', route: 'vehicle-type.index',   icon: Tags,          permission: 'manage vehicle type' },
+        { label: 'Bookings',    route: 'booking.index',          icon: CalendarCheck, permission: 'manage booking' },
+        { label: 'Expenses',    route: 'expense.index',          icon: ReceiptText,   permission: 'manage expense' },
+        { label: 'Reminders',   route: 'reminder.index',         icon: BellRing,      permission: 'manage reminder' },
+        { label: 'Inspections', route: 'inspection.index',       icon: Wrench,        permission: 'manage inspection' },
+        { label: 'Agreements',  route: 'rental-agreement.index', icon: FileText,      permission: 'manage rental agreement' },
     ]},
     { section: 'Finance', items: [
-        { label: 'Credits',  route: 'credit.index',  icon: CreditCard, permission: 'manage driver' },
-        { label: 'TVA',      route: 'tva.index',     icon: Receipt,    permission: 'manage tva' },
+        { label: 'Credits', route: 'credit.index', icon: CreditCard, permission: 'manage driver' },
+        { label: 'TVA',     route: 'tva.index',    icon: Receipt,    permission: 'manage tva' },
     ]},
     { section: 'System', items: [
-        { label: 'Settings', route: 'setting.general', icon: Settings, permission: [
-            'manage general settings',
-            'manage account settings',
-            'manage password settings',
-            'manage company settings',
-            'manage email settings',
-            'manage payment settings',
-            'manage seo settings',
-            'manage google recaptcha settings',
-        ]},
+        { label: 'Settings', icon: Settings, children: SETTINGS_CHILDREN },
     ]},
 ];
 
@@ -98,7 +102,13 @@ function useNavSections() {
         .filter((s) => feat(s.feature ?? null))
         .map((s) => ({
             ...s,
-            items: s.items.filter((i) => can(i.permission ?? null) && feat(i.feature ?? null)),
+            items: s.items
+                .filter((i) => can(i.permission ?? null) && feat(i.feature ?? null))
+                .map((i) => i.children
+                    ? { ...i, children: i.children.filter((c) => can(c.permission ?? null)) }
+                    : i
+                )
+                .filter((i) => !i.children || i.children.length > 0),
         }))
         .filter((s) => s.items.length > 0);
 }
@@ -109,10 +119,10 @@ function initials(name) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NavItem
+// NavItem  (leaf) + NavCollapsible (parent with children)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function NavItem({ item, collapsed }) {
+function NavLeaf({ item, collapsed }) {
     const { url } = usePage();
     const isActive = url.startsWith(route(item.route));
     const Icon = item.icon;
@@ -127,7 +137,7 @@ function NavItem({ item, collapsed }) {
                 collapsed && 'justify-center px-2',
             )}
         >
-            <Icon className="h-4 w-4 shrink-0" />
+            {Icon && <Icon className="h-4 w-4 shrink-0" />}
             {!collapsed && <span>{item.label}</span>}
         </Link>
     );
@@ -140,6 +150,83 @@ function NavItem({ item, collapsed }) {
             <TooltipContent side="right">{item.label}</TooltipContent>
         </Tooltip>
     );
+}
+
+function NavCollapsible({ item, collapsed }) {
+    const { url } = usePage();
+    const Icon = item.icon;
+    const isAnyChildActive = item.children.some((c) => url.startsWith(route(c.route)));
+    const [open, setOpen] = useState(isAnyChildActive);
+
+    // Collapsed sidebar: show icon + tooltip with all children as links
+    if (collapsed) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span
+                        className={cn(
+                            'flex cursor-pointer items-center justify-center rounded-md px-2 py-2 text-sm transition-colors',
+                            'hover:bg-accent hover:text-accent-foreground',
+                            isAnyChildActive && 'bg-accent text-accent-foreground font-medium',
+                        )}
+                    >
+                        <Icon className="h-4 w-4 shrink-0" />
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="p-2 min-w-[160px]">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                    {item.children.map((c) => (
+                        <Link key={c.route} href={route(c.route)} className="block py-0.5 text-sm hover:underline">
+                            {c.label}
+                        </Link>
+                    ))}
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <div>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className={cn(
+                    'w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isAnyChildActive && 'text-accent-foreground font-medium',
+                )}
+            >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 text-left">{item.label}</span>
+                <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', open && 'rotate-180')} />
+            </button>
+            {open && (
+                <div className="ml-4 mt-0.5 space-y-0.5 border-l pl-3">
+                    {item.children.map((child) => {
+                        const isActive = url.startsWith(route(child.route));
+                        return (
+                            <Link
+                                key={child.route}
+                                href={route(child.route)}
+                                className={cn(
+                                    'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                                    'hover:bg-accent hover:text-accent-foreground',
+                                    isActive && 'bg-accent text-accent-foreground font-medium',
+                                )}
+                            >
+                                {child.label}
+                            </Link>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function NavItem({ item, collapsed }) {
+    if (item.children) return <NavCollapsible item={item} collapsed={collapsed} />;
+    return <NavLeaf item={item} collapsed={collapsed} />;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
