@@ -433,6 +433,7 @@ Route::get('email-verification/{token}', [VerifyEmailController::class, 'verifyE
 // Route::get('reminder/days-remaining/{reminder}', [ReminderController::class, 'getDaysRemaining'])->name('reminder.days-remaining');
 
 Route::middleware(['auth'])->group(function () {
+    Route::resource('reminder-type', ReminderTypeController::class);
     // Existing reminder routes...
     Route::resource('reminder', ReminderController::class);
 
