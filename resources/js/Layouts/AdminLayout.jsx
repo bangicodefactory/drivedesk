@@ -42,7 +42,7 @@ const NAV_SUPER_ADMIN = [
         { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
     { section: 'System', items: [
-        { label: 'Settings', route: 'setting.general', icon: Settings },
+        { label: 'Settings', route: 'setting.account', icon: Settings },
     ]},
 ];
 

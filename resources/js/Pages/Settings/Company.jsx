@@ -83,7 +83,6 @@ function Company({ settings, timezones }) {
                 <CardContent>
                     <form onSubmit={submit('post', route('setting.company'))} className="space-y-6">
 
-                        {/* Basic info */}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="company_name">Name</Label>
@@ -107,7 +106,6 @@ function Company({ settings, timezones }) {
                             </div>
                         </div>
 
-                        {/* Legal identifiers */}
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-3">Legal Identifiers</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -125,7 +123,6 @@ function Company({ settings, timezones }) {
                             </div>
                         </div>
 
-                        {/* Number prefixes */}
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-3">Number Prefixes</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -144,7 +141,6 @@ function Company({ settings, timezones }) {
                             </div>
                         </div>
 
-                        {/* Currency */}
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-3">Currency</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -161,7 +157,6 @@ function Company({ settings, timezones }) {
                             </div>
                         </div>
 
-                        {/* Date & Time formats */}
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>System Date Format</Label>
@@ -171,7 +166,6 @@ function Company({ settings, timezones }) {
                                             <input
                                                 type="radio"
                                                 value={value}
-                                                defaultChecked={settings?.company_date_format === value}
                                                 {...register('company_date_format')}
                                                 className="accent-primary"
                                             />
@@ -189,7 +183,6 @@ function Company({ settings, timezones }) {
                                             <input
                                                 type="radio"
                                                 value={value}
-                                                defaultChecked={settings?.company_time_format === value}
                                                 {...register('company_time_format')}
                                                 className="accent-primary"
                                             />
@@ -200,7 +193,6 @@ function Company({ settings, timezones }) {
                             </div>
                         </div>
 
-                        {/* Timezone */}
                         {tzList.length > 0 && (
                             <div className="space-y-1.5">
                                 <Label>Timezone</Label>
