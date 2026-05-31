@@ -28,4 +28,12 @@ return [
      * branding_seed is not defined here because it is always client-specific.
      * Every client config file (config/clients/<client>.php) must define it.
      */
+
+    /*
+     * Client-specific copy for rental agreement terms.
+     * Each client must define terms.rental_agreement. Empty string = no default.
+     */
+    'terms' => [
+        'rental_agreement' => '',
+    ],
 ];

@@ -17,6 +17,13 @@ class ClientServiceProvider extends ServiceProvider
         $resolved = array_replace_recursive($default, $specific);
         config(['client' => $resolved]);
 
+        // Prepend the client overlay view path so client-specific Blade views
+        // shadow core views of the same name (BAN-179).
+        $overlayViews = base_path("app/Clients/{$client}/resources/views");
+        if (is_dir($overlayViews)) {
+            config(['view.paths' => array_merge([$overlayViews], config('view.paths', []))]);
+        }
+
         // Bind client-specific implementations to core interfaces.
         foreach ($resolved['bindings'] ?? [] as $contract => $concrete) {
             $this->app->bind($contract, $concrete);

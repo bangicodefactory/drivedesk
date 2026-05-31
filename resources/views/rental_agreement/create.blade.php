@@ -81,7 +81,7 @@
         </div>
         <div class="form-group col-md-12 col-lg-12">
             <label for="terms_condition" class="form-label">{{ __('Terms & Condition') }}</label>
-            <textarea name="terms_condition" id="terms_condition" class="form-control" placeholder="{{ __('Enter terms & condition') }}" rows="7">{{ old('terms_condition', config('default_terms.rental_agreement')) }}</textarea>
+            <textarea name="terms_condition" id="terms_condition" class="form-control" placeholder="{{ __('Enter terms & condition') }}" rows="7">{{ old('terms_condition', config('client.terms.rental_agreement', '')) }}</textarea>
         </div>
         <div class="form-group col-md-12 col-lg-12">
             <label for="description" class="form-label">{{ __('Description') }}</label>
