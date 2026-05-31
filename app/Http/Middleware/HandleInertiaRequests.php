@@ -10,6 +10,8 @@ class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
 
+    private ?array $cachedSettings = null;
+
     // Precomputed HSL values for each theme color (primary, primary-foreground)
     private const PRIMARY_MAP = [
         'color1' => ['203.7 75.7% 42.0%', '210 40% 98%'],
@@ -74,11 +76,7 @@ class HandleInertiaRequests extends Middleware
 
     private function buildBranding(): array
     {
-        try {
-            $s = settings();
-        } catch (\Throwable) {
-            $s = settingsKeys();
-        }
+        $s = $this->loadSettings();
 
         [$primary, $primaryFg] = $this->resolvePrimary($s);
 
@@ -116,16 +114,25 @@ class HandleInertiaRequests extends Middleware
 
     private function buildRecaptcha(): array
     {
-        try {
-            $s = settings();
-        } catch (\Throwable) {
-            $s = [];
-        }
+        $s = $this->loadSettings();
 
         return [
             'enabled' => ($s['google_recaptcha'] ?? 'off') === 'on',
             'siteKey' => $s['recaptcha_key'] ?? '',
         ];
+    }
+
+    private function loadSettings(): array
+    {
+        if ($this->cachedSettings !== null) {
+            return $this->cachedSettings;
+        }
+        try {
+            $this->cachedSettings = settings();
+        } catch (\Throwable) {
+            $this->cachedSettings = [];
+        }
+        return $this->cachedSettings;
     }
 
     // -------------------------------------------------------------------------
