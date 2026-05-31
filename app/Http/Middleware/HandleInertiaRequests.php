@@ -30,6 +30,7 @@ class HandleInertiaRequests extends Middleware
             'auth'         => $this->buildAuth($request),
             'branding'     => $this->buildBranding(),
             'client'       => $this->buildClient(),
+            'recaptcha'    => $this->buildRecaptcha(),
             'translations' => $this->loadTranslations(),
             'flash'        => [
                 'success' => $request->session()->get('success'),
@@ -106,6 +107,24 @@ class HandleInertiaRequests extends Middleware
             'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
             'supported_locales' => config('client.supported_locales', []),
             'features'          => config('client.features', []),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // reCAPTCHA (BAN-204)
+    // -------------------------------------------------------------------------
+
+    private function buildRecaptcha(): array
+    {
+        try {
+            $s = settings();
+        } catch (\Throwable) {
+            $s = [];
+        }
+
+        return [
+            'enabled' => ($s['google_recaptcha'] ?? 'off') === 'on',
+            'siteKey' => $s['recaptcha_key'] ?? '',
         ];
     }
 

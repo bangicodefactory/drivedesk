@@ -33,6 +33,10 @@ class PasswordResetLinkController extends Controller
      */
     public function store(Request $request)
     {
+        if (getSettingsValByName('google_recaptcha') === 'on') {
+            $this->validate($request, ['g-recaptcha-response' => 'required|captcha']);
+        }
+
         $request->validate([
             'email' => ['required', 'email'],
         ]);
