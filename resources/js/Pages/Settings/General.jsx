@@ -25,7 +25,7 @@ function General({ settings, loginUser }) {
     const { form, submit } = useZodForm(schema, {
         defaultValues: { application_name: settings?.app_name ?? '' },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, formState: { errors, isSubmitting } } = form;
 
     // Admin signature pad
     const sigRef = useRef(null);
@@ -35,10 +35,16 @@ function General({ settings, loginUser }) {
     function saveSig() {
         if (sigRef.current?.isEmpty()) return;
         setSavingSig(true);
-        const data = sigRef.current.toDataURL('image/png');
-        router.post(route('AdminSignature.store'), { signature: data }, {
-            onFinish: () => setSavingSig(false),
-        });
+        sigRef.current.getCanvas().toBlob((blob) => {
+            if (!blob) { setSavingSig(false); return; }
+            // Convert Blob → File so Inertia sends it as a named multipart file.
+            // The controller validates 'required|image|mimes:png' and uses storeAs().
+            const file = new File([blob], 'signature.png', { type: 'image/png' });
+            router.post(route('AdminSignature.store'), { signature: file }, {
+                forceFormData: true,
+                onFinish: () => setSavingSig(false),
+            });
+        }, 'image/png');
     }
 
     return (
@@ -60,24 +66,24 @@ function General({ settings, loginUser }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <Label htmlFor="logo">Logo (.png)</Label>
-                                <Input id="logo" type="file" accept=".png" {...register('logo')} />
+                                <Input id="logo" type="file" accept=".png" onChange={(e) => setValue('logo', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="favicon">Favicon (.png)</Label>
-                                <Input id="favicon" type="file" accept=".png" {...register('favicon')} />
+                                <Input id="favicon" type="file" accept=".png" onChange={(e) => setValue('favicon', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="image_home_1">Première image accueil</Label>
-                                <Input id="image_home_1" type="file" accept=".png" {...register('image_home_1')} />
+                                <Input id="image_home_1" type="file" accept=".png" onChange={(e) => setValue('image_home_1', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="image_home_2">Deuxième image accueil</Label>
-                                <Input id="image_home_2" type="file" accept=".png" {...register('image_home_2')} />
+                                <Input id="image_home_2" type="file" accept=".png" onChange={(e) => setValue('image_home_2', e.target.files?.[0] ?? null)} />
                             </div>
                             {isSuperAdmin && (
                                 <div className="space-y-1 col-span-2">
                                     <Label htmlFor="landing_logo">Landing Page Logo (.png)</Label>
-                                    <Input id="landing_logo" type="file" accept=".png" {...register('landing_logo')} />
+                                    <Input id="landing_logo" type="file" accept=".png" onChange={(e) => setValue('landing_logo', e.target.files?.[0] ?? null)} />
                                 </div>
                             )}
                         </div>

@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -21,9 +23,9 @@ class SettingControllerTest extends TestCase
         $this->asClient('directonderweg');
 
         $this->owner = User::factory()->create([
-            'type'     => 'owner',
+            'type'      => 'owner',
             'parent_id' => 0,
-            'password' => Hash::make('secret123'),
+            'password'  => Hash::make('secret123'),
         ]);
     }
 
@@ -63,6 +65,25 @@ class SettingControllerTest extends TestCase
         ]);
     }
 
+    public function test_account_data_uploads_profile_picture(): void
+    {
+        Storage::fake('public');
+
+        $file = UploadedFile::fake()->image('avatar.jpg');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.account'), [
+                'name'    => $this->owner->name,
+                'email'   => $this->owner->email,
+                'profile' => $file,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // Profile field on the user should be set to the stored filename
+        $this->assertNotNull($this->owner->fresh()->profile);
+    }
+
     public function test_account_data_flashes_error_on_missing_name(): void
     {
         $this->actingAs($this->owner)
@@ -73,7 +94,7 @@ class SettingControllerTest extends TestCase
 
     public function test_account_data_flashes_error_on_duplicate_email(): void
     {
-        $other = User::factory()->create(['email' => 'taken@example.com']);
+        User::factory()->create(['email' => 'taken@example.com']);
 
         $this->actingAs($this->owner)
             ->post(route('setting.account'), [
@@ -122,6 +143,130 @@ class SettingControllerTest extends TestCase
             ])
             ->assertRedirect()
             ->assertSessionHas('error');
+    }
+
+    // ── SettingController::generalData ────────────────────────────────────────
+
+    public function test_general_data_saves_application_name_for_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name' => 'My Rentals',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'app_name',
+            'value'     => 'My Rentals',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    public function test_general_data_uploads_logo_for_owner(): void
+    {
+        Storage::fake();
+
+        $logo = UploadedFile::fake()->image('logo.png')->mimeType('image/png');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name' => 'My Rentals',
+                'logo'             => $logo,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $expectedFilename = $this->owner->id . '_logo.png';
+        Storage::assertExists('upload/logo/' . $expectedFilename);
+    }
+
+    public function test_general_data_uploads_favicon_for_owner(): void
+    {
+        Storage::fake();
+
+        $favicon = UploadedFile::fake()->image('favicon.png')->mimeType('image/png');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name' => 'My Rentals',
+                'favicon'          => $favicon,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $expectedFilename = $this->owner->id . '_favicon.png';
+        Storage::assertExists('upload/logo/' . $expectedFilename);
+    }
+
+    public function test_general_data_rejects_non_png_logo(): void
+    {
+        $logo = UploadedFile::fake()->image('logo.jpg')->mimeType('image/jpeg');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name' => 'My Rentals',
+                'logo'             => $logo,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_general_data_uploads_home_images_for_owner(): void
+    {
+        Storage::fake();
+
+        $img1 = UploadedFile::fake()->image('home1.png')->mimeType('image/png');
+        $img2 = UploadedFile::fake()->image('home2.png')->mimeType('image/png');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name' => 'My Rentals',
+                'image_home_1'     => $img1,
+                'image_home_2'     => $img2,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::assertExists('upload/home/' . $this->owner->id . '_image_home_1.png');
+        Storage::assertExists('upload/home/' . $this->owner->id . '_image_home_2.png');
+    }
+
+    // ── SettingController::storeSignature ─────────────────────────────────────
+
+    public function test_store_signature_saves_file_and_setting(): void
+    {
+        Storage::fake('public');
+
+        $png = UploadedFile::fake()->image('signature.png')->mimeType('image/png');
+
+        $this->actingAs($this->owner)
+            ->post(route('AdminSignature.store'), ['signature' => $png])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        // The DB setting should be created
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'admin_signature',
+            'parent_id' => 2, // hard-coded in controller
+        ]);
+    }
+
+    public function test_store_signature_requires_auth(): void
+    {
+        $png = UploadedFile::fake()->image('sig.png');
+        $this->post(route('AdminSignature.store'), ['signature' => $png])
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_store_signature_rejects_non_image(): void
+    {
+        $pdf = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->post(route('AdminSignature.store'), ['signature' => $pdf])
+            ->assertSessionHasErrors(['signature'])
+            ->assertStatus(302);
     }
 
     // ── SettingController::companyData ────────────────────────────────────────
@@ -189,14 +334,66 @@ class SettingControllerTest extends TestCase
     {
         $this->actingAs($this->owner)
             ->post(route('setting.smtp'), [
-                'sender_name'  => 'Acme',
-                'sender_email' => 'noreply@acme.com',
-                // server_host intentionally omitted
+                'sender_name'       => 'Acme',
+                'sender_email'      => 'noreply@acme.com',
                 'server_driver'     => 'smtp',
                 'server_port'       => '587',
                 'server_username'   => 'user',
                 'server_password'   => 'pass',
                 'server_encryption' => 'tls',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::siteSEOData ────────────────────────────────────────
+
+    public function test_site_seo_data_persists_meta_fields(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.site.seo'), [
+                'meta_seo_title'       => 'Best Car Rentals',
+                'meta_seo_keyword'     => 'car, rental, cheap',
+                'meta_seo_description' => 'Rent cars at the best price.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'meta_seo_title',
+            'value' => 'Best Car Rentals',
+        ]);
+    }
+
+    public function test_site_seo_data_uploads_meta_image(): void
+    {
+        Storage::fake();
+
+        $image = UploadedFile::fake()->image('seo.jpg');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.site.seo'), [
+                'meta_seo_title'       => 'Best Car Rentals',
+                'meta_seo_keyword'     => 'car, rental',
+                'meta_seo_description' => 'Rent cars.',
+                'meta_seo_image'       => $image,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // Controller stores the filename in settings and the file in upload/seo/
+        $this->assertDatabaseHas('settings', [
+            'name' => 'meta_seo_image',
+            'type' => 'SEO',
+        ]);
+    }
+
+    public function test_site_seo_data_flashes_error_on_missing_title(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.site.seo'), [
+                'meta_seo_keyword'     => 'cars',
+                'meta_seo_description' => 'desc',
             ])
             ->assertRedirect()
             ->assertSessionHas('error');
@@ -225,6 +422,35 @@ class SettingControllerTest extends TestCase
     {
         $this->actingAs($this->owner)
             ->post(route('setting.payment'), ['CURRENCY_SYMBOL' => '€'])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::googleRecaptchaData ────────────────────────────────
+
+    public function test_recaptcha_data_persists_keys(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.google.recaptcha'), [
+                'recaptcha_key'    => 'site-key-abc',
+                'recaptcha_secret' => 'secret-key-xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'recaptcha_key',
+            'value' => 'site-key-abc',
+            'type'  => 'recaptcha',
+        ]);
+    }
+
+    public function test_recaptcha_data_flashes_error_on_missing_key(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.google.recaptcha'), [
+                'recaptcha_secret' => 'secret-key-xyz',
+            ])
             ->assertRedirect()
             ->assertSessionHas('error');
     }

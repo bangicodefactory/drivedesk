@@ -166,11 +166,10 @@ Route::group(
         Route::get('settings/google-recaptcha', [SettingController::class, 'googleRecaptcha'])->name('setting.google.recaptcha');
         Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData'])->name('setting.google.recaptcha');
 
-
+        Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
     }
 );
 Route::get('language/{lang}', [SettingController::class, 'languageChange'])->name('language.change');
-Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
 // Route::put('settings/update-signature', [SettingController::class, 'updateSignature']);
 // Route::delete('settings/delete-signature', [SettingController::class, 'deleteSignature']);
 

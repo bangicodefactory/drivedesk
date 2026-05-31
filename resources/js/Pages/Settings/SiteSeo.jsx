@@ -22,59 +22,73 @@ function SiteSeo({ settings }) {
             meta_seo_description: settings?.meta_seo_description ?? '',
         },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, formState: { errors, isSubmitting } } = form;
 
     return (
-        <div className="max-w-2xl space-y-6 p-6">
+        <div className="space-y-6 p-6">
             <div>
                 <h1 className="text-2xl font-semibold">Site SEO Settings</h1>
                 <p className="text-sm text-muted-foreground">Meta tags for search engine optimisation.</p>
             </div>
 
-            <Card>
-                <CardHeader><CardTitle>SEO</CardTitle></CardHeader>
-                <CardContent>
-                    <form
-                        onSubmit={submit('post', route('setting.site.seo'), { forceFormData: true })}
-                        className="space-y-4"
-                    >
-                        <div className="space-y-1">
-                            <Label htmlFor="meta_seo_image">Meta Image</Label>
-                            <Input id="meta_seo_image" type="file" accept="image/*" {...register('meta_seo_image')} />
+            <form
+                onSubmit={submit('post', route('setting.site.seo'), { forceFormData: true })}
+                encType="multipart/form-data"
+            >
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_2fr]">
+
+                    {/* Left: meta image */}
+                    <Card>
+                        <CardHeader><CardTitle>Meta Image</CardTitle></CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="meta_seo_image">Meta Image</Label>
+                                <Input id="meta_seo_image" type="file" accept="image/*" onChange={(e) => setValue('meta_seo_image', e.target.files?.[0] ?? null)} />
+                            </div>
                             {settings?.meta_seo_image && (
                                 <img
                                     src={`/storage/upload/seo/${settings.meta_seo_image}`}
-                                    alt="SEO meta"
-                                    className="mt-2 max-h-24 rounded border"
+                                    alt="Current SEO meta image"
+                                    className="max-h-24 rounded border"
                                 />
                             )}
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="meta_seo_title">Meta Title</Label>
-                            <Input id="meta_seo_title" {...register('meta_seo_title')} />
-                            {errors.meta_seo_title && <p className="text-sm text-destructive">{errors.meta_seo_title.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="meta_seo_keyword">Meta Keyword</Label>
-                            <Input id="meta_seo_keyword" {...register('meta_seo_keyword')} />
-                            {errors.meta_seo_keyword && <p className="text-sm text-destructive">{errors.meta_seo_keyword.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="meta_seo_description">Meta Description</Label>
-                            <Textarea id="meta_seo_description" rows={3} {...register('meta_seo_description')} />
-                            {errors.meta_seo_description && <p className="text-sm text-destructive">{errors.meta_seo_description.message}</p>}
-                        </div>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+
+                    {/* Right: meta text fields */}
+                    <Card>
+                        <CardHeader><CardTitle>SEO Meta Tags</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="meta_seo_title">Meta Title</Label>
+                                <Input id="meta_seo_title" placeholder="Enter meta SEO title" {...register('meta_seo_title')} />
+                                {errors.meta_seo_title && <p className="text-sm text-destructive">{errors.meta_seo_title.message}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="meta_seo_keyword">Meta Keyword</Label>
+                                <Input id="meta_seo_keyword" placeholder="Enter meta SEO keyword" {...register('meta_seo_keyword')} />
+                                {errors.meta_seo_keyword && <p className="text-sm text-destructive">{errors.meta_seo_keyword.message}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="meta_seo_description">Meta Description</Label>
+                                <Textarea id="meta_seo_description" rows={3} placeholder="Enter meta SEO description" {...register('meta_seo_description')} />
+                                {errors.meta_seo_description && <p className="text-sm text-destructive">{errors.meta_seo_description.message}</p>}
+                            </div>
+                            <div className="flex justify-end">
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Saving…' : 'Save'}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                </div>
+            </form>
         </div>
     );
 }
 
 SiteSeo.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Site SEO' }]}>{page}</AdminLayout>
+    <AdminLayout breadcrumbs={[{ label: 'Settings' }, { label: 'Site SEO Settings' }]}>{page}</AdminLayout>
 );
 export default SiteSeo;
