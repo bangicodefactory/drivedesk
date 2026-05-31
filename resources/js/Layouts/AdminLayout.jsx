@@ -41,6 +41,9 @@ const NAV_SUPER_ADMIN = [
     { section: 'Subscriptions', feature: 'subscriptions', items: [
         { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
+    { section: 'System', items: [
+        { label: 'Settings', route: 'setting.general', icon: Settings },
+    ]},
 ];
 
 const NAV_OWNER = [
@@ -66,7 +69,16 @@ const NAV_OWNER = [
         { label: 'TVA',      route: 'tva.index',     icon: Receipt,    permission: 'manage tva' },
     ]},
     { section: 'System', items: [
-        { label: 'Settings', route: 'setting.general', icon: Settings, permission: 'manage setting' },
+        { label: 'Settings', route: 'setting.general', icon: Settings, permission: [
+            'manage general settings',
+            'manage account settings',
+            'manage password settings',
+            'manage company settings',
+            'manage email settings',
+            'manage payment settings',
+            'manage seo settings',
+            'manage google recaptcha settings',
+        ]},
     ]},
 ];
 
@@ -77,7 +89,7 @@ const NAV_OWNER = [
 function useNavSections() {
     const { auth, client } = usePage().props;
     const isSuperAdmin = auth.user?.type === 'super admin';
-    const can = (p) => !p || auth.permissions.includes(p);
+    const can = (p) => !p || (Array.isArray(p) ? p.some((x) => auth.permissions.includes(x)) : auth.permissions.includes(p));
     const feat = (f) => !f || client?.features?.[f];
 
     const sections = isSuperAdmin ? NAV_SUPER_ADMIN : NAV_OWNER;
@@ -185,7 +197,11 @@ function SidebarContent({ collapsed = false }) {
 function UserMenu() {
     const { auth } = usePage().props;
     const user = auth.user;
-    const canManageSettings = auth.permissions.includes('manage setting');
+    const canManageSettings = auth.user?.type === 'super admin' || [
+        'manage general settings', 'manage account settings', 'manage password settings',
+        'manage company settings', 'manage email settings', 'manage payment settings',
+        'manage seo settings', 'manage google recaptcha settings',
+    ].some((p) => auth.permissions.includes(p));
     const profileSrc = user?.profile
         ? `/storage/upload/profile/${user.profile}`
         : null;
