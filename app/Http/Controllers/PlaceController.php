@@ -6,6 +6,7 @@ use App\Models\Addon;
 use App\Models\Place;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PlaceController extends Controller
 {
@@ -14,15 +15,29 @@ class PlaceController extends Controller
     {
         if (\Auth::user()->can('manage place')) {
             $places = Place::where('parent_id', parentId())->get();
-            return view('place.index', compact('places'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        if (config('app.inertia_enabled')) {
+            $payload = $places->map(function ($place) {
+                $data = $place->toArray();
+                $data['price_formatted'] = priceFormat($place->price);
+                return $data;
+            });
+            return Inertia::render('Place/Index', ['places' => $payload]);
+        }
+
+        return view('place.index', compact('places'));
     }
 
 
     public function create()
     {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Place/Create');
+        }
+
         return view('place.create');
     }
 
@@ -66,6 +81,10 @@ class PlaceController extends Controller
 
     public function edit(Place $place)
     {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Place/Edit', compact('place'));
+        }
+
         return view('place.edit',compact('place'));
     }
 
