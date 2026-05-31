@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ReminderType;
+use Inertia\Inertia;
 
 class ReminderTypeController extends Controller
 {
@@ -12,13 +13,15 @@ class ReminderTypeController extends Controller
      */
     public function index()
     {
-        //
         if (\Auth::user()->can('manage reminder')) {
             $types = ReminderType::where('parent_id', parentId())->get();
-            return view('reminder_type.index', compact('types'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ReminderType/Index', compact('types'));
+        }
+        return view('reminder_type.index', compact('types'));
     }
 
     /**
@@ -26,7 +29,9 @@ class ReminderTypeController extends Controller
      */
     public function create()
     {
-        //
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ReminderType/Create');
+        }
         return view('reminder_type.create');
     }
 
@@ -70,7 +75,9 @@ class ReminderTypeController extends Controller
      */
     public function edit(ReminderType $reminderType)
     {
-        //
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('ReminderType/Edit', compact('reminderType'));
+        }
         return view('reminder_type.edit', compact('reminderType'));
     }
 
