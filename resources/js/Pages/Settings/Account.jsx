@@ -19,7 +19,7 @@ function Account({ loginUser }) {
             email: loginUser?.email ?? '',
         },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, formState: { errors, isSubmitting } } = form;
 
     return (
         <div className="space-y-6 p-6">
@@ -55,7 +55,12 @@ function Account({ loginUser }) {
 
                         <div className="space-y-1.5">
                             <Label htmlFor="profile">Profile</Label>
-                            <Input id="profile" type="file" accept="image/*" {...register('profile')} />
+                            <Input
+                                id="profile"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setValue('profile', e.target.files?.[0] ?? null)}
+                            />
                             {errors.profile && <p className="text-sm text-destructive">{errors.profile.message}</p>}
                         </div>
 
