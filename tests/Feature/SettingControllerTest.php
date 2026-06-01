@@ -474,6 +474,57 @@ class SettingControllerTest extends TestCase
         $this->assertLessThanOrEqual(1, $queryCount, 'settings() should query DB at most once per TTL');
     }
 
+    /** @dataProvider settingsFlushRouteProvider */
+    public function test_each_settings_write_flushes_cache(string $routeName, array $payload): void
+    {
+        $this->actingAs($this->owner);
+        settings();
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $this->actingAs($this->owner)
+            ->post(route($routeName), $payload)
+            ->assertRedirect();
+
+        $this->assertFalse(Cache::has($cacheKey), "{$routeName} should flush settings cache");
+    }
+
+    public static function settingsFlushRouteProvider(): array
+    {
+        return [
+            'smtpData' => ['setting.smtp', [
+                'sender_name'       => 'Test',
+                'sender_email'      => 'test@example.com',
+                'server_driver'     => 'smtp',
+                'server_host'       => 'smtp.example.com',
+                'server_port'       => '587',
+                'server_username'   => 'user',
+                'server_password'   => 'pass',
+                'server_encryption' => 'tls',
+            ]],
+            'paymentData' => ['setting.payment', [
+                'CURRENCY'        => 'EUR',
+                'CURRENCY_SYMBOL' => '€',
+            ]],
+            'companyData' => ['setting.company', [
+                'company_name'    => 'Test Co',
+                'company_email'   => 'info@test.com',
+                'company_phone'   => '+1234567890',
+                'company_address' => '1 Main St',
+            ]],
+            'themeSettings' => ['theme.settings', []],
+            'siteSEOData' => ['setting.site.seo', [
+                'meta_seo_title'       => 'Title',
+                'meta_seo_keyword'     => 'kw',
+                'meta_seo_description' => 'desc',
+            ]],
+            'googleRecaptchaData' => ['setting.google.recaptcha', [
+                'recaptcha_key'    => 'site-key',
+                'recaptcha_secret' => 'secret-key',
+            ]],
+        ];
+    }
+
     // ── SettingController::googleRecaptchaData ────────────────────────────────
 
     public function test_recaptcha_data_persists_keys(): void

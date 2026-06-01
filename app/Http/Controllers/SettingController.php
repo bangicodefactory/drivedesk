@@ -627,7 +627,6 @@ class SettingController extends Controller
             }
         }
 
-
         flushSettingsCache();
         return redirect()->back()->with('success', __('Payment successfully saved.'));
     }
@@ -890,6 +889,8 @@ class SettingController extends Controller
             'value' => $path
         ]
     );
+
+    flushSettingsCache();
 
     return response()->json([
         'success' => true,
