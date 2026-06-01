@@ -5,6 +5,60 @@
 **Auditor:** Ahmed (static analysis) + Claude Code (code review)
 **Branch:** `feat/modernization`
 
+---
+
+## Phase 6 Delta — 2026-06-02
+
+**Branch:** `dev` (post Phase 6 merge)
+**Method:** Static code analysis comparing Phase 0 findings against current source.
+
+### Free wins from Phase 6
+
+| Finding | Status | Detail |
+|---------|--------|--------|
+| F-10 | ✅ **Fixed** | `assignSubscription()` / `assignManuallySubscription()` deleted in PR #67. Row-by-row save loop is gone. |
+| F-12 | ✅ **Fixed** | `Subscription::get()` on landing page deleted with the billing layer in PR #67. |
+| F-02 | 🟡 **Partially improved** | `paymentByMonth()` (12 SUM queries on `package_transactions`) removed in PR #67. Super-admin dashboard drops from 48 → 12 queries per load. `organizationByMonth()` (12 COUNT) and `incomeExpenseByMonth()` (24 SUM) still fire in loops. |
+| — | ✅ **New win** | jQuery (~87 KB) and Alpine.js (~14 KB) removed from JS bundle. React SPA means subsequent page navigations are client-side — no server round-trip for HTML. |
+| — | ✅ **New win** | Vite replaces webpack: tree-shaken, split-chunk bundles. `srmklive/paypal`, `stripe/stripe-php`, `mashape/unirest-php` removed from Composer autoloader. |
+
+### New finding since Phase 0
+
+**F-14 (new): `settings()` called in `HandleInertiaRequests` middleware on every request**
+
+- **File:** `app/Http/Middleware/HandleInertiaRequests.php:131`
+- `$this->cachedSettings = settings()` fires once per Inertia request via `share()`, in addition to any controller-level calls. This means the settings SELECT now runs on every page load (not just pages that explicitly call `settings()`). F-01 is therefore more critical than Phase 0 assessed — the middleware call alone adds 1 uncached query to the baseline of every page.
+- **Priority:** P0 (same fix as F-01 — cache `settings()` and both problems are resolved together)
+
+### Status of all Phase 0 findings
+
+| Finding | Phase 0 Priority | Phase 6 Status |
+|---------|-----------------|----------------|
+| F-01 `settings()` uncached | P0 | 🔴 **Open** — compounded by F-14 |
+| F-02 Dashboard aggregate loops | P0 | 🟡 **Partial** — 12 queries remain (was 48) |
+| F-03 Settings redundancy via helper chain | P0 | 🔴 **Open** |
+| F-04 Booking list unbounded `->get()` | P1 | 🔴 **Open** |
+| F-05 Booking planning `->get()` + N+1 | P1 | 🔴 **Open** |
+| F-06 Vehicle list unbounded `->get()` | P1 | 🔴 **Open** |
+| F-07 Expense list unbounded `->get()` | P1 | 🔴 **Open** |
+| F-08 Booking create 4 unbounded `->get()` | P2 | 🔴 **Open** |
+| F-09 Inspection show N+1 | P2 | 🔴 **Open** |
+| F-10 Subscription save loop | P2 | ✅ **Fixed** |
+| F-11 RentalAgreement sequential lookups | P3 | 🔴 **Open** |
+| F-12 Subscription landing `->get()` | P3 | ✅ **Fixed** |
+| F-13 Excel import per-row queries | P1 | 🔴 **Open** |
+| F-14 `settings()` in Inertia middleware | — | 🔴 **New (P0)** |
+
+### Top 5 for Phase 7 tickets
+
+1. **F-01 + F-14** — Cache `settings()` helper — eliminates 2–15 queries per request; biggest single fix.
+2. **F-04 / F-06 / F-07** — Paginate list pages (bookings, vehicles, expenses) — prevents memory exhaustion at scale.
+3. **F-02** — Batch remaining dashboard aggregates (`organizationByMonth`, `incomeExpenseByMonth`) into GROUP BY queries.
+4. **F-13** — Fix Excel import per-row query patterns.
+5. **F-09** — Fix InspectionController N+1 on show page.
+
+---
+
 > **Methodology note:** This audit combines static code analysis (verified
 > against the source at the commit on `feat/modernization`) with a template
 > for live profiling numbers. Columns marked **TBD** must be filled in by
