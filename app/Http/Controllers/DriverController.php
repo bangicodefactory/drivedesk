@@ -127,7 +127,7 @@ class DriverController extends Controller
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     $response['status'] = false;
                     $response['data'] = $messages->first();
                     $responses = json_encode($response);
@@ -142,7 +142,7 @@ class DriverController extends Controller
                 $driver->birth_date = $request->birth_date;
             } else {
                 $errorMessages = __('Driver age should not be 18 years old.');
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     $response['status'] = false;
                     $response['data'] = $errorMessages;
                     $responsee = json_encode($response);
@@ -157,7 +157,7 @@ class DriverController extends Controller
             $subscription = Subscription::find($authUser->subscription);
             if ($totalDriver >= $subscription->driver_limit && $subscription->driver_limit != 0) {
                 $errorMessages = __('Your driver limit is over, please upgrade your subscription.');
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     $response['status'] = false;
                     $response['data'] = $errorMessages;
                     $responsee = json_encode($response);
