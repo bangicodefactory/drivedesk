@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\WithClient;
@@ -424,6 +426,52 @@ class SettingControllerTest extends TestCase
             ->post(route('setting.payment'), ['CURRENCY_SYMBOL' => '€'])
             ->assertRedirect()
             ->assertSessionHas('error');
+    }
+
+    // ── settings() cache ─────────────────────────────────────────────────────
+
+    public function test_settings_result_is_cached_after_first_call(): void
+    {
+        $this->actingAs($this->owner);
+
+        // Prime the cache
+        settings();
+
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey), 'settings() should store result in cache');
+    }
+
+    public function test_saving_general_settings_flushes_cache(): void
+    {
+        $this->actingAs($this->owner);
+
+        // Prime the cache with a real settings() call, then save and verify it's cleared
+        settings();
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), ['application_name' => 'New App'])
+            ->assertRedirect();
+
+        $this->assertFalse(Cache::has($cacheKey), 'generalData should flush settings cache');
+    }
+
+    public function test_settings_queries_db_only_once_per_ttl(): void
+    {
+        $this->actingAs($this->owner);
+
+        $queryCount = 0;
+        DB::listen(function ($query) use (&$queryCount) {
+            if (str_contains($query->sql, 'settings')) {
+                $queryCount++;
+            }
+        });
+
+        settings();
+        settings(); // second call should hit cache, not DB
+
+        $this->assertLessThanOrEqual(1, $queryCount, 'settings() should query DB at most once per TTL');
     }
 
     // ── SettingController::googleRecaptchaData ────────────────────────────────
