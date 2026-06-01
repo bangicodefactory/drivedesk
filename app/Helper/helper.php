@@ -119,39 +119,6 @@ if (!function_exists('settings')) {
     }
 }
 
-if (!function_exists('invoicePaymentSettings')) {
-    function invoicePaymentSettings($id)
-    {
-        $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', $id)->get();
-        $result = [
-            'CURRENCY' => "MAD",
-            'CURRENCY_SYMBOL' => "Dh",
-            'STRIPE_PAYMENT' => "off",
-            'STRIPE_KEY' => "",
-            'STRIPE_SECRET' => "",
-            "paypal_payment" => "off",
-            "paypal_mode" => "",
-            "paypal_client_id" => "",
-            "paypal_secret_key" => "",
-            "bank_transfer_payment" => "off",
-            "bank_name" => "",
-            "bank_holder_name" => "",
-            "bank_account_number" => "",
-            "bank_ifsc_code" => "",
-            "bank_other_details" => "",
-            "flutterwave_payment" => "off",
-            "flutterwave_public_key" => "",
-            "flutterwave_secret_key" => "",
-        ];
-
-        foreach ($settingData as $row) {
-            $result[$row->name] = $row->value;
-        }
-        return $result;
-    }
-}
-
-
 if (!function_exists('getSettingsValByName')) {
     function getSettingsValByName($key)
     {
