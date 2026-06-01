@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "445258c695f83557325b421f284edee4",
+    "content-hash": "5ff3b895f0b6295e8f0fde8595e504c0",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -3238,57 +3238,6 @@
             "time": "2022-12-02T22:17:43+00:00"
         },
         {
-            "name": "mashape/unirest-php",
-            "version": "v3.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Mashape/unirest-php.git",
-                "reference": "842c0f242dfaaf85f16b72e217bf7f7c19ab12cb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Mashape/unirest-php/zipball/842c0f242dfaaf85f16b72e217bf7f7c19ab12cb",
-                "reference": "842c0f242dfaaf85f16b72e217bf7f7c19ab12cb",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "codeclimate/php-test-reporter": "0.1.*",
-                "phpunit/phpunit": "~4.4"
-            },
-            "suggest": {
-                "ext-json": "Allows using JSON Bodies for sending and parsing requests"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Unirest\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Unirest PHP",
-            "homepage": "https://github.com/Mashape/unirest-php",
-            "keywords": [
-                "client",
-                "curl",
-                "http",
-                "https",
-                "rest"
-            ],
-            "support": {
-                "email": "opensource@mashape.com",
-                "issues": "https://github.com/Mashape/unirest-php/issues",
-                "source": "https://github.com/Mashape/unirest-php/tree/master"
-            },
-            "time": "2016-08-11T17:49:21+00:00"
-        },
-        {
             "name": "masterminds/html5",
             "version": "2.10.0",
             "source": {
@@ -5410,131 +5359,6 @@
                 }
             ],
             "time": "2026-03-17T22:46:46+00:00"
-        },
-        {
-            "name": "srmklive/paypal",
-            "version": "3.0.40",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/blendbyte/laravel-paypal.git",
-                "reference": "1ddc49fd836a4785933ab953452152f3fedbac63"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/blendbyte/laravel-paypal/zipball/1ddc49fd836a4785933ab953452152f3fedbac63",
-                "reference": "1ddc49fd836a4785933ab953452152f3fedbac63",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "guzzlehttp/guzzle": "~7.0",
-                "illuminate/support": "~6.0|~7.0|~8.0|~9.0|^10.0|^11.0|^12.0",
-                "nesbot/carbon": "~2.0|^3.0",
-                "php": ">=7.2|^8.0"
-            },
-            "require-dev": {
-                "phpstan/phpstan": "^1.10",
-                "phpunit/phpunit": "^8.0|^9.0|^10.0|^11.0",
-                "symfony/var-dumper": "~5.0|^6.0|^7.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "PayPal": "Srmklive\\PayPal\\Facades\\PayPal"
-                    },
-                    "providers": [
-                        "Srmklive\\PayPal\\Providers\\PayPalServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Srmklive\\PayPal\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Raza Mehdi",
-                    "email": "srmk@outlook.com"
-                }
-            ],
-            "description": "Laravel plugin For Processing Payments Through Paypal Express Checkout. Can Be Used Independently With Other Applications.",
-            "keywords": [
-                "http",
-                "laravel paypal",
-                "paypal",
-                "rest",
-                "web service"
-            ],
-            "support": {
-                "issues": "https://github.com/blendbyte/laravel-paypal/issues",
-                "source": "https://github.com/blendbyte/laravel-paypal/tree/3.0.40"
-            },
-            "time": "2025-02-25T21:38:18+00:00"
-        },
-        {
-            "name": "stripe/stripe-php",
-            "version": "v16.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "d6de0a536f00b5c5c74f36b8f4d0d93b035499ff"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/d6de0a536f00b5c5c74f36b8f4d0d93b035499ff",
-                "reference": "d6de0a536f00b5c5c74f36b8f4d0d93b035499ff",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "ext-json": "*",
-                "ext-mbstring": "*",
-                "php": ">=5.6.0"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "3.5.0",
-                "phpstan/phpstan": "^1.2",
-                "phpunit/phpunit": "^5.7 || ^9.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Stripe\\": "lib/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Stripe and contributors",
-                    "homepage": "https://github.com/stripe/stripe-php/contributors"
-                }
-            ],
-            "description": "Stripe PHP Library",
-            "homepage": "https://stripe.com/",
-            "keywords": [
-                "api",
-                "payment processing",
-                "stripe"
-            ],
-            "support": {
-                "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v16.6.0"
-            },
-            "time": "2025-02-24T22:35:29+00:00"
         },
         {
             "name": "symfony/clock",
@@ -11729,5 +11553,5 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
