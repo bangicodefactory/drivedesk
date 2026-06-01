@@ -99,54 +99,6 @@ class DefaultDataUsersTableSeeder extends Seeder
 
                 ],
                 [
-                    'name' => 'manage pricing packages',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'create pricing packages',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'edit pricing packages',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'delete pricing packages',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'buy pricing packages',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'manage coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'create coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'edit coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'delete coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'manage coupon history',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'delete coupon history',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'manage pricing transation',
-                    'guard_name' => 'web',
-                ],
-                [
                     'name' => 'manage account settings',
                     'guard_name' => 'web',
 
@@ -470,12 +422,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit pricing packages'],
                 ['name' => 'delete pricing packages'],
                 ['name' => 'manage pricing transation'],
-                ['name' => 'manage coupon'],
-                ['name' => 'create coupon'],
-                ['name' => 'edit coupon'],
-                ['name' => 'delete coupon'],
-                ['name' => 'manage coupon history'],
-                ['name' => 'delete coupon history'],
                 ['name' => 'manage account settings'],
                 ['name' => 'manage password settings'],
                 ['name' => 'manage general settings'],
@@ -527,9 +473,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'delete note'],
                 ['name' => 'manage logged history'],
                 ['name' => 'delete logged history'],
-                ['name' => 'manage pricing packages'],
-                ['name' => 'buy pricing packages'],
-                ['name' => 'manage pricing transation'],
                 ['name' => 'manage account settings'],
                 ['name' => 'manage account settings'],
                 ['name' => 'manage password settings'],
@@ -616,7 +559,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                 'email_verified_at' => now(),
                 'lang' => 'english',
                 'profile' => 'avatar.png',
-                'subscription' => 1,
                 'parent_id' => $systemSuperAdmin->id,
             ];
             $systemOwner = User::create($ownerData);
@@ -714,7 +656,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                 'email_verified_at' => now(),
                 'lang' => 'english',
                 'profile' => 'avatar.png',
-                'subscription' => 0,
                 'parent_id' => $systemOwner->id,
             ];
             $systemManager = User::create($managerData);
@@ -727,16 +668,6 @@ class DefaultDataUsersTableSeeder extends Seeder
             // Default Driver
             defaultDriverCreate($systemOwner->id);
 
-            // Subscription default data
-            $subscriptionData = [
-                'title' => 'Basic',
-                'package_amount' => 0,
-                'interval' => 'Unlimited',
-                'user_limit' => 5,
-                'driver_limit' => 5,
-                'enabled_logged_history' => 1,
-            ];
-            \App\Models\Subscription::create($subscriptionData);
         }
     }
 }

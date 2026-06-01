@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\LoggedHistory;
 use App\Models\Notification;
-use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -83,7 +82,6 @@ class UserController extends Controller
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->type = 'owner';
                 $user->lang = 'english';
-                $user->subscription = 1;
                 $user->parent_id = parentId();
                 $user->save();
                 $userRole = Role::findByName('owner');
@@ -126,13 +124,6 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $ids = parentId();
-                $authUser = \App\Models\User::find($ids);
-                $totalUser = $authUser->totalUser();
-                $subscription = Subscription::find($authUser->subscription);
-                if ($totalUser >= $subscription->user_limit && $subscription->user_limit != 0) {
-                    return redirect()->back()->with('error', __('Your user limit is over, please upgrade your subscription.'));
-                }
                 $userRole = Role::findById($request->role);
                 $user = new User();
                 $user->name = $request->name;
@@ -275,11 +266,7 @@ class UserController extends Controller
 
     public function loggedHistory()
     {
-        $ids = parentId();
-        $authUser = \App\Models\User::find($ids);
-        $subscription = \App\Models\Subscription::find($authUser->subscription);
-
-        if (\Auth::user()->can('manage logged history') && $subscription->enabled_logged_history == 1) {
+        if (\Auth::user()->can('manage logged history')) {
             $histories = LoggedHistory::where('parent_id', parentId())->get();
             return view('logged_history.index', compact('histories'));
         } else {

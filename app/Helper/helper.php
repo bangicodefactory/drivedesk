@@ -4,7 +4,6 @@ use App\Mail\Common;
 use App\Mail\EmailVerification;
 use App\Mail\TestMail;
 use App\Models\Custom;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Addon;
 use App\Models\Booking;
@@ -120,75 +119,6 @@ if (!function_exists('settings')) {
     }
 }
 
-if (!function_exists('subscriptionPaymentSettings')) {
-    function subscriptionPaymentSettings()
-    {
-        if (!feature('subscriptions')) {
-            return [];
-        }
-        $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', '=', 1)->get();
-        $result = [
-            'CURRENCY' => "MAD",
-            'CURRENCY_SYMBOL' => "Dh",
-            'STRIPE_PAYMENT' => "off",
-            'STRIPE_KEY' => "",
-            'STRIPE_SECRET' => "",
-            "paypal_payment" => "off",
-            "paypal_mode" => "",
-            "paypal_client_id" => "",
-            "paypal_secret_key" => "",
-            "bank_transfer_payment" => "on",
-            "bank_name" => "Test Bank",
-            "bank_holder_name" => "Bank Holder Name",
-            "bank_account_number" => "123456",
-            "bank_ifsc_code" => "123456",
-            "bank_other_details" => "",
-            "flutterwave_payment" => "off",
-            "flutterwave_public_key" => "",
-            "flutterwave_secret_key" => "",
-        ];
-
-        foreach ($settingData as $setting) {
-            $result[$setting->name] = $setting->value;
-        }
-
-        return $result;
-    }
-}
-
-if (!function_exists('invoicePaymentSettings')) {
-    function invoicePaymentSettings($id)
-    {
-        $settingData = DB::table('settings')->where('type', 'payment')->where('parent_id', $id)->get();
-        $result = [
-            'CURRENCY' => "MAD",
-            'CURRENCY_SYMBOL' => "Dh",
-            'STRIPE_PAYMENT' => "off",
-            'STRIPE_KEY' => "",
-            'STRIPE_SECRET' => "",
-            "paypal_payment" => "off",
-            "paypal_mode" => "",
-            "paypal_client_id" => "",
-            "paypal_secret_key" => "",
-            "bank_transfer_payment" => "off",
-            "bank_name" => "",
-            "bank_holder_name" => "",
-            "bank_account_number" => "",
-            "bank_ifsc_code" => "",
-            "bank_other_details" => "",
-            "flutterwave_payment" => "off",
-            "flutterwave_public_key" => "",
-            "flutterwave_secret_key" => "",
-        ];
-
-        foreach ($settingData as $row) {
-            $result[$row->name] = $row->value;
-        }
-        return $result;
-    }
-}
-
-
 if (!function_exists('getSettingsValByName')) {
     function getSettingsValByName($key)
     {
@@ -267,105 +197,6 @@ if (!function_exists('parentId')) {
             return \Auth::user()->parent_id;
         }
 
-    }
-}
-if (!function_exists('assignSubscription')) {
-    function assignSubscription($id)
-    {
-        if (!feature('subscriptions')) {
-            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
-        }
-        $subscription = Subscription::find($id);
-        if ($subscription) {
-            \Auth::user()->subscription = $subscription->id;
-            if ($subscription->interval == 'Monthly') {
-                \Auth::user()->subscription_expire_date = Carbon::now()->addMonths(1)->isoFormat('YYYY-MM-DD');
-            } elseif ($subscription->interval == 'Quarterly') {
-                \Auth::user()->subscription_expire_date = Carbon::now()->addMonths(3)->isoFormat('YYYY-MM-DD');
-            } elseif ($subscription->interval == 'Yearly') {
-                \Auth::user()->subscription_expire_date = Carbon::now()->addYears(1)->isoFormat('YYYY-MM-DD');
-            } else {
-                \Auth::user()->subscription_expire_date = null;
-            }
-            \Auth::user()->save();
-
-            $users = User::where('parent_id', '=', parentId())->whereNotIn('type', ['driver'])->get();
-
-            if ($subscription->user_limit == 0) {
-                foreach ($users as $user) {
-                    $user->is_active = 1;
-                    $user->save();
-                }
-            } else {
-                $userCount = 0;
-                foreach ($users as $user) {
-                    $userCount++;
-                    if ($userCount <= $subscription->user_limit) {
-                        $user->is_active = 1;
-                        $user->save();
-                    } else {
-                        $user->is_active = 0;
-                        $user->save();
-                    }
-                }
-            }
-        } else {
-            return [
-                'is_success' => false,
-                'error' => 'Subscription is deleted.',
-            ];
-        }
-    }
-}
-if (!function_exists('assignManuallySubscription')) {
-    function assignManuallySubscription($id, $userId)
-    {
-        if (!feature('subscriptions')) {
-            return ['is_success' => false, 'error' => __('Subscriptions are disabled for this deployment.')];
-        }
-        $owner = User::find($userId);
-        $subscription = Subscription::find($id);
-        if ($subscription) {
-            $owner->subscription = $subscription->id;
-            if ($subscription->interval == 'Monthly') {
-                $owner->subscription_expire_date = Carbon::now()->addMonths(1)->isoFormat('YYYY-MM-DD');
-            } elseif ($subscription->interval == 'Quarterly') {
-                $owner->subscription_expire_date = Carbon::now()->addMonths(3)->isoFormat('YYYY-MM-DD');
-            } elseif ($subscription->interval == 'Yearly') {
-                $owner->subscription_expire_date = Carbon::now()->addYears(1)->isoFormat('YYYY-MM-DD');
-            } else {
-                $owner->subscription_expire_date = null;
-            }
-            $owner->save();
-
-
-            $users = User::where('parent_id', '=', parentId())->whereNotIn('type', ['super admin', 'owner'])->get();
-
-
-            if ($subscription->user_limit == 0) {
-                foreach ($users as $user) {
-                    $user->is_active = 1;
-                    $user->save();
-                }
-            } else {
-                $userCount = 0;
-                foreach ($users as $user) {
-                    $userCount++;
-                    if ($userCount <= $subscription->user_limit) {
-                        $user->is_active = 1;
-                        $user->save();
-                    } else {
-                        $user->is_active = 0;
-                        $user->save();
-                    }
-                }
-            }
-        } else {
-            return [
-                'is_success' => false,
-                'error' => 'Subscription is deleted.',
-            ];
-        }
     }
 }
 if (!function_exists('smtpDetail')) {

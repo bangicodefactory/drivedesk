@@ -25,6 +25,7 @@ import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, ChevronLeft, ChevronDown, Menu, LogOut,
     UserCircle, Shield, CreditCard, Wrench, Receipt, Tags,
+    Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,7 +39,6 @@ const SETTINGS_CHILDREN = [
     { label: 'General Setting',   route: 'setting.general',          permission: 'manage general settings' },
     { label: 'Company Setting',   route: 'setting.company',          permission: 'manage company settings' },
     { label: 'Email Setting',     route: 'setting.smtp',             permission: 'manage email settings' },
-    { label: 'Payment Setting',   route: 'setting.payment',          permission: 'manage payment settings' },
     { label: 'Site SEO Setting',  route: 'setting.site.seo',         permission: 'manage seo settings' },
     { label: 'ReCaptcha Setting', route: 'setting.google.recaptcha', permission: 'manage google recaptcha settings' },
 ];
@@ -49,9 +49,6 @@ const NAV_SUPER_ADMIN = [
     ]},
     { section: 'Users', items: [
         { label: 'Users', route: 'users.index', icon: Users, permission: 'manage user' },
-    ]},
-    { section: 'Subscriptions', feature: 'subscriptions', items: [
-        { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
     { section: 'System', items: [
         // Super admin bypasses Gate checks in Blade — no permission guard on children
@@ -64,18 +61,20 @@ const NAV_OWNER = [
         { label: 'Dashboard', route: 'dashboard', icon: LayoutDashboard },
     ]},
     { section: 'Staff', items: [
-        { label: 'Roles',   route: 'role.index',    icon: Shield,     permission: 'manage role' },
-        { label: 'Users',   route: 'users.index',   icon: Users,      permission: 'manage user' },
+        { label: 'Roles', route: 'role.index',  icon: Shield, permission: 'manage role' },
+        { label: 'Users', route: 'users.index', icon: Users,  permission: 'manage user' },
     ]},
     { section: 'Business', items: [
-        { label: 'Drivers',     route: 'driver.index',           icon: UserCircle,    permission: 'manage driver' },
-        { label: 'Vehicles',    route: 'vehicle.index',          icon: Car,           permission: 'manage vehicle' },
-        { label: 'Vehicle Types', route: 'vehicle-type.index',   icon: Tags,          permission: 'manage vehicle type' },
-        { label: 'Bookings',    route: 'booking.index',          icon: CalendarCheck, permission: 'manage booking' },
-        { label: 'Expenses',    route: 'expense.index',          icon: ReceiptText,   permission: 'manage expense' },
-        { label: 'Reminders',   route: 'reminder.index',         icon: BellRing,      permission: 'manage reminder' },
-        { label: 'Inspections', route: 'inspection.index',       icon: Wrench,        permission: 'manage inspection' },
-        { label: 'Agreements',  route: 'rental-agreement.index', icon: FileText,      permission: 'manage rental agreement' },
+        { label: 'Drivers',          route: 'driver.index',           icon: UserCircle,    permission: 'manage driver' },
+        { label: 'Vehicles',         route: 'vehicle.index',          icon: Car,           permission: 'manage vehicle' },
+        { label: 'Bookings',         route: 'booking.index',          icon: CalendarCheck, permission: 'manage booking' },
+        { label: 'Booking Requests', route: 'booking_requests.index', icon: ClipboardList, permission: 'manage booking' },
+        { label: 'Planning',         route: 'planning',               icon: Calendar,      permission: 'manage planning' },
+        { label: 'Expenses',         route: 'expense.index',          icon: ReceiptText,   permission: 'manage expense' },
+        { label: 'Reminders',        route: 'reminder.index',         icon: BellRing,      permission: 'manage reminder' },
+        { label: 'Inspections',      route: 'inspection.index',       icon: Wrench,        permission: 'manage inspection' },
+        { label: 'Agreements',       route: 'rental-agreement.index', icon: FileText,      permission: 'manage rental agreement' },
+        { label: 'Signature',        route: 'signature.index',        icon: PenLine,       permission: 'manage reminder' },
     ]},
     { section: 'Finance', items: [
         { label: 'Credits', route: 'credit.index', icon: CreditCard, permission: 'manage driver' },
@@ -83,6 +82,19 @@ const NAV_OWNER = [
             { label: 'TVA Management', route: 'tva.index',  permission: 'manage tva' },
             { label: 'TVA Report',     route: 'tva.report', permission: 'manage tva report' },
         ]},
+    ]},
+    { section: 'System Setup', items: [
+        { label: 'Types', icon: Layers, permission: ['manage vehicle type', 'manage inspection type', 'manage expense type'], children: [
+            { label: 'Vehicle Type',    route: 'vehicle-type.index',    permission: 'manage vehicle type' },
+            { label: 'Inspection Type', route: 'inspection-type.index', permission: 'manage inspection type' },
+            { label: 'Expense Type',    route: 'expense-type.index',    permission: 'manage expense type' },
+        ]},
+        { label: 'Booking Setup', icon: SlidersHorizontal, permission: ['manage options', 'manage addon', 'manage place'], children: [
+            { label: 'Options', route: 'option.index', permission: 'manage options' },
+            { label: 'Addon',   route: 'addon.index',  permission: 'manage addon' },
+            { label: 'Places',  route: 'place.index',  permission: 'manage place' },
+        ]},
+        { label: 'Email Notification', route: 'notification.index', icon: Bell, permission: 'manage notification' },
     ]},
     { section: 'System', items: [
         { label: 'Settings', icon: Settings, children: SETTINGS_CHILDREN },
@@ -269,7 +281,7 @@ function SidebarContent({ collapsed = false }) {
                         )}
                         <div className="space-y-0.5">
                             {section.items.map((item) => (
-                                <NavItem key={item.route} item={item} collapsed={collapsed} />
+                                <NavItem key={item.route ?? item.label} item={item} collapsed={collapsed} />
                             ))}
                         </div>
                         {!collapsed && <Separator className="mt-3" />}

@@ -11,4 +11,10 @@ node_modules
 /storage_old
 run-tickets.ps1
 /public/build
+/public/hot
 .phpunit.result.cache
+/tmp_itc.php
+/_review_branches.txt
+/_review_done.txt
+/_review_fetch.txt
+/.claude/worktrees/
