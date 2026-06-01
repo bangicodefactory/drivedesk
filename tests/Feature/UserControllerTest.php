@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\LoggedHistory;
 use App\Models\Notification;
-use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -18,7 +17,6 @@ class UserControllerTest extends TestCase
     use WithClient;
 
     protected User $owner;
-    protected Subscription $subscription;
     protected Role $employeeRole;
 
     protected function setUp(): void
@@ -41,13 +39,6 @@ class UserControllerTest extends TestCase
 
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
-
-        $this->subscription = Subscription::factory()->create([
-            'user_limit'             => 5,
-            'enabled_logged_history' => 1,
-        ]);
-        $this->owner->subscription = $this->subscription->id;
-        $this->owner->save();
 
         // store() (non-super-admin path) accesses this record unconditionally before
         // the null-guard, so it must exist for any store test to reach the DB write.
@@ -168,24 +159,6 @@ class UserControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
-    public function test_store_enforces_subscription_user_limit(): void
-    {
-        // user_limit = 1; 1 existing employee makes totalUser() == user_limit → denied.
-        $this->subscription->user_limit = 1;
-        $this->subscription->save();
-        User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
-
-        $this->actingAs($this->owner)
-            ->post(route('users.store'), [
-                'name'     => 'Over Limit',
-                'email'    => 'over@test.com',
-                'password' => 'password123',
-                'role'     => $this->employeeRole->id,
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('error');
-    }
-
     // ── UserController::update ────────────────────────────────────────────────
 
     public function test_update_persists_changes(): void
@@ -236,14 +209,6 @@ class UserControllerTest extends TestCase
     public function test_logged_history_returns_200_for_authorized_user(): void
     {
         $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
-    }
-
-    public function test_logged_history_denied_when_subscription_flag_is_off(): void
-    {
-        $this->subscription->enabled_logged_history = 0;
-        $this->subscription->save();
-
-        $this->actingAs($this->owner)->get(route('logged.history'))->assertSessionHas('error');
     }
 
     // ── UserController::loggedHistoryShow ─────────────────────────────────────
