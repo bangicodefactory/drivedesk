@@ -13,8 +13,12 @@ use App\Models\Service;
 use App\Models\Subscription;
 use App\Models\Support;
 use App\Models\User;
+use App\Models\Place;
 use App\Models\Reminder;
+use App\Models\Vehicle;
+use App\Models\VehicleType;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -101,6 +105,9 @@ class HomeController extends Controller
                 $landingPage = getSettingsValByName('landing_page');
 
                 if ($landingPage == 'on') {
+                    if (config('app.inertia_enabled')) {
+                        return Inertia::render('Public/Landing', $this->landingProps());
+                    }
                     $subscriptions = Subscription::get();
                     return view('layouts.landing', compact('subscriptions'));
                 } else {
@@ -172,5 +179,31 @@ class HomeController extends Controller
         }
 
         return $payment;
+    }
+
+    public function landing()
+    {
+        if (config('app.inertia_enabled')) {
+            return Inertia::render('Public/Landing', $this->landingProps());
+        }
+        return view('client.home');
+    }
+
+    private function landingProps(): array
+    {
+        $s = settings();
+
+        $heroImages = [];
+        foreach (['image_home_1', 'image_home_2'] as $key) {
+            $path = 'upload/home/' . ($s[$key] ?? '');
+            $heroImages[] = Storage::exists($path) ? Storage::url($path) : null;
+        }
+
+        return [
+            'vehicles'     => Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
+            'vehicleTypes' => VehicleType::select('id', 'type')->get(),
+            'places'       => Place::select('id', 'name')->get(),
+            'heroImages'   => $heroImages,
+        ];
     }
 }

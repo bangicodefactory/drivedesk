@@ -52,7 +52,7 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
     ]
 );
 // Public landing (client) home page using new modular Blade layout
-Route::view('/landing', 'client.home')->name('client.home');
+Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
 
 // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
 Route::view('/contact', 'client.pages.contact')->name('contact');
