@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
             'client'       => $this->buildClient(),
             'recaptcha'    => $this->buildRecaptcha(),
             'translations' => $this->loadTranslations(),
+            'locale'       => app()->getLocale(),
             'flash'        => [
                 'success' => $request->session()->get('success'),
                 'error'   => $request->session()->get('error'),
@@ -82,6 +83,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'appName'    => $s['app_name'] ?? config('app.name', 'RentCar'),
+            'phone'      => $s['company_phone'] ?? '',
             'logoUrl'    => asset(Storage::url('upload/logo/' . ($s['company_logo']    ?? 'logo.png'))),
             'faviconUrl' => asset(Storage::url('upload/logo/' . ($s['company_favicon'] ?? 'favicon.png'))),
             'cssVars' => [

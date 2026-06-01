@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import { useTranslations } from '@/hooks/useTranslations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,18 +15,18 @@ import {
 } from 'lucide-react';
 import PublicLayout from '@/Layouts/PublicLayout';
 
-function useTranslations() {
-    const { translations } = usePage().props;
-    return (key, fallback = key) => translations?.[key] ?? fallback;
-}
-
 function Hero({ heroImages }) {
     const t = useTranslations();
     const allSlides = [
         { image: heroImages[0], subtitle: t('subtitle_1', 'Your journey starts here'), title: t('title_1', 'Rent a Car You Love') },
         { image: heroImages[1], subtitle: t('subtitle_2', 'Explore with confidence'), title: t('title_2', 'Premium Fleet, Great Rates') },
     ];
-    const slides = allSlides[0]?.image === allSlides[1]?.image ? allSlides.slice(0, 1) : allSlides;
+    const seen = new Set();
+    const slides = allSlides.filter(s => {
+        if (seen.has(s.image)) return false;
+        seen.add(s.image);
+        return true;
+    });
 
     const [current, setCurrent] = useState(0);
     const next = useCallback(() => setCurrent(c => (c + 1) % slides.length), [slides.length]);
@@ -286,9 +287,9 @@ function FunFact() {
 function PopularCars() {
     const t = useTranslations();
     const types = [
-        { img: '/assets/images/client/popular-car-1.jpg', label: t('popular_car_1', 'SUV') },
-        { img: '/assets/images/client/popular-car-2.jpg', label: t('popular_car_2', 'Sports') },
-        { img: '/assets/images/client/popular-car-3.jpg', label: t('popular_car_3', 'Hatchback') },
+        { bg: 'from-blue-900 to-blue-600',   label: t('popular_car_1', 'SUV') },
+        { bg: 'from-red-900 to-orange-500',  label: t('popular_car_2', 'Sports') },
+        { bg: 'from-slate-800 to-slate-500', label: t('popular_car_3', 'Hatchback') },
     ];
     return (
         <section className="py-16">
@@ -298,14 +299,9 @@ function PopularCars() {
                     <h2 className="text-3xl font-bold">{t('popular_cars_title', 'Browse by Category')}</h2>
                 </div>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                    {types.map(({ img, label }) => (
-                        <div key={label} className="relative overflow-hidden rounded-2xl group cursor-pointer">
-                            <img
-                                src={img} alt={label}
-                                className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-                                onError={e => { e.target.parentElement.style.background = 'hsl(var(--muted))'; e.target.style.display = 'none'; }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    {types.map(({ bg, label }) => (
+                        <div key={label} className={`relative overflow-hidden rounded-2xl group cursor-pointer h-56 bg-gradient-to-br ${bg} hover:brightness-110 transition-all duration-300`}>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <p className="absolute bottom-4 left-4 text-white text-xl font-bold">{label}</p>
                         </div>
                     ))}
