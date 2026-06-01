@@ -157,6 +157,52 @@ php artisan storage:link
 > elevated (Administrator) terminal. If the command fails silently, re-run it
 > as Administrator or enable Developer Mode first.
 
+### 4b. Seed fake data for local testing
+
+`php artisan db:seed` (run in step 4) already includes `DevDataSeeder`, which
+populates every business table with realistic test data scoped to the owner
+account. You don't need to run anything extra — it runs automatically.
+
+If you want to reseed after wiping the database:
+
+```bash
+# Full reset — drops all tables, re-runs migrations, then seeds everything
+php artisan migrate:fresh --seed
+```
+
+To run only the fake-data seeder on top of an existing database (idempotent —
+safe to run multiple times, uses firstOrCreate/exists guards):
+
+```bash
+php artisan db:seed --class=DevDataSeeder
+```
+
+What gets seeded:
+
+| Table | Rows | Details |
+| -------------------- | ---- | ----------------------------------------------- |
+| `vehicle_types`      | 5    | SUV, Berline, Hatchback, Minivan, Cabriolet |
+| `places`             | 5    | Casablanca Airport, Marrakech Centre, Rabat Gare, Agadir Airport, Fès Médina |
+| `vehicles`           | 7    | RAV4, Duster, Clio, GLE, 208, T-Roc, Transit — with plate, engine, km, daily rate |
+| `expense_types`      | 6    | Carburant, Entretien, Assurance, Réparation, Nettoyage, Péage |
+| `inspection_types`   | 4    | Contrôle technique, Révision générale, Freins, Vidange |
+| `reminder_types`     | 4    | Renouvellement assurance, Vidange, CT, Révision |
+| `addons`             | 5    | GPS, Siège bébé, Conducteur additionnel, Assurance Premium, Wi-Fi |
+| `options`            | 5    | Climatisation, Bluetooth, Caméra de recul, Toit ouvrant, CarPlay |
+| `bookings`           | 8    | Mixed statuses (completed/in_progress/approved/cancelled), past and future dates |
+| `expenses`           | 7    | Realistic amounts linked to vehicles |
+| `inspections`        | 5    | Mix of pass/fail with and without repairs |
+| `reminders`          | 6    | Overdue, urgent, and upcoming — all linked to vehicles |
+| `rental_agreements`  | 4    | completed, active, pending |
+| `coupons`            | 4    | Percent and fixed-amount types with promo codes |
+| `credits`            | 3    | Linked to seeded drivers |
+
+All rows are scoped to `parent_id = <owner id>` and will show up when
+logged in as `owner@gmail.com`.
+
+> **Note:** `DevDataSeeder` is a dev-only seeder. It will refuse to run
+> `cleanStaleData()` on a production environment (`APP_ENV=production`).
+
 ### 5. Run the app
 
 In separate terminals:
