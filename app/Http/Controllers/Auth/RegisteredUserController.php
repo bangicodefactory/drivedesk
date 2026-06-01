@@ -66,7 +66,6 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'type' => 'owner',
             'lang' => 'english',
-            'subscription' => 1,
             'parent_id' => 1,
             'company_name' => $request->company_name,
             'city' => $request->city,
