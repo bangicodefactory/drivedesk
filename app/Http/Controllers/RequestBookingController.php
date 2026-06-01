@@ -89,7 +89,6 @@ class RequestBookingController extends Controller
              $guest->password = Hash::make(Str::random(12));
              $guest->is_active = true;
              $guest->lang = app()->getLocale();
-             $guest->subscription = 0;
 
              // Set optional fields if provided
              if ($request->has('company_name')) {
@@ -189,7 +188,6 @@ class RequestBookingController extends Controller
                 'dropoff_place'=> $booking->dropOffPlace?->name,
                 'notes'        => $booking->notes,
             ],
-            'settings' => settings(),
         ]);
     }
 
@@ -242,7 +240,6 @@ class RequestBookingController extends Controller
                     'password' => Hash::make(Str::random(8)),
                     'type' => 'customer',
                     'lang' => app()->getLocale(),
-                    'subscription' => 0,
                     'email_verified_at' => now(),
                 ]
             );

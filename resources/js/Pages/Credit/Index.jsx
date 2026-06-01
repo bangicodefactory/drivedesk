@@ -18,7 +18,8 @@ function CreditIndex({ credits = [], drivers = [] }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    const [driverFilter, setDriverFilter] = useState('');
+    const params = new URLSearchParams(window.location.search);
+    const [driverFilter, setDriverFilter] = useState(params.get('driver_id') ?? '');
 
     function remove(id) {
         if (window.confirm('Delete this credit?')) {

@@ -6,6 +6,7 @@ use App\Models\Signature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -147,6 +148,19 @@ class SignatureControllerTest extends TestCase
         $this->actingAs($noPerms)
             ->get(route('signature.index'))
             ->assertSessionHas('error', __('Permission Denied.'));
+    }
+
+    public function test_index_renders_inertia_component(): void
+    {
+        Signature::factory()->create(['user_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('signature.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Signature/Index')
+                ->has('signatures')
+            );
     }
 
     // ── SignatureController::destroy ──────────────────────────────────────────

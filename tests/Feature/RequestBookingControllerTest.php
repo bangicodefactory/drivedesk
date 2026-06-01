@@ -8,6 +8,8 @@ use App\Models\Place;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -224,6 +226,36 @@ class RequestBookingControllerTest extends TestCase
             ->post(route('booking_requests.refuse', 99999))
             ->assertRedirect()
             ->assertSessionHas('error');
+    }
+
+    // ── Inertia component tests ───────────────────────────────────────────────
+
+    public function test_index_renders_inertia_component(): void
+    {
+        $this->makeRequest();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking_requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('BookingRequest/Index')
+                ->has('bookingRequests')
+            );
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $req = $this->makeRequest();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking_requests.show', Crypt::encrypt($req->id)))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('BookingRequest/Show')
+                ->has('booking')
+                ->where('booking.id', $req->id)
+                ->missing('settings')
+            );
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
