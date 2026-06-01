@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Driver;
-use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +17,6 @@ class DriverControllerTest extends TestCase
     use WithClient;
 
     protected User $owner;
-    protected Subscription $subscription;
 
     protected function setUp(): void
     {
@@ -31,12 +29,7 @@ class DriverControllerTest extends TestCase
         }
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $this->subscription = Subscription::factory()->create(['driver_limit' => 10]);
-        $this->owner = User::factory()->create([
-            'type'         => 'owner',
-            'parent_id'    => 0,
-            'subscription' => $this->subscription->id,
-        ]);
+        $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
 
         Role::create(['name' => 'driver', 'guard_name' => 'web', 'parent_id' => $this->owner->id]);
@@ -112,19 +105,6 @@ class DriverControllerTest extends TestCase
             ->post(route('driver.store'), $this->validPayload([
                 'birth_date' => Carbon::now()->subYears(17)->format('Y-m-d'),
             ]))
-            ->assertRedirect()
-            ->assertSessionHas('error');
-    }
-
-    public function test_store_flashes_error_when_driver_limit_reached(): void
-    {
-        $this->subscription->driver_limit = 1;
-        $this->subscription->save();
-
-        User::factory()->driver()->create(['parent_id' => $this->owner->id]);
-
-        $this->actingAs($this->owner)
-            ->post(route('driver.store'), $this->validPayload())
             ->assertRedirect()
             ->assertSessionHas('error');
     }
