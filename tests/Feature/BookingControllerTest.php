@@ -307,7 +307,7 @@ class BookingControllerTest extends TestCase
                 'payment_method' => 'Espece',
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['amount']);
 
         $this->assertDatabaseMissing('booking_payments', ['booking_id' => $booking->id]);
     }
@@ -323,7 +323,7 @@ class BookingControllerTest extends TestCase
                 'payment_method' => 'Carte',
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['amount']);
     }
 
     public function test_payment_store_requires_create_booking_payment_permission(): void
