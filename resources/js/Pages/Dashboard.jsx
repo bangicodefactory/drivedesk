@@ -16,7 +16,7 @@ import {
  * Branches on auth.user.type to render the owner or super-admin layout.
  * All widgets receive props sourced from HomeController::index.
  */
-function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth, paymentByMonth }) {
+function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth }) {
     const { auth } = usePage().props;
     const isSuperAdmin = auth.user?.type === 'super admin';
 
@@ -33,7 +33,6 @@ function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth
                 ? <SuperAdminDashboard
                     stats={stats}
                     organizationByMonth={organizationByMonth}
-                    paymentByMonth={paymentByMonth}
                   />
                 : <OwnerDashboard
                     stats={stats}
@@ -70,20 +69,11 @@ function OwnerDashboard({ stats, reminders, incomeExpenseByMonth }) {
     );
 }
 
-function SuperAdminDashboard({ stats, organizationByMonth, paymentByMonth }) {
-    const hasSubscriptions = stats?.totalSubscription != null;
-
+function SuperAdminDashboard({ stats, organizationByMonth }) {
     return (
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Organisations" value={stats?.totalOrganization} icon={Building2} />
-                {hasSubscriptions && (
-                    <>
-                        <StatCard title="Subscriptions" value={stats?.totalSubscription} icon={CreditCard} />
-                        <StatCard title="Transactions"  value={stats?.totalTransaction}  icon={ArrowRightLeft} />
-                        <StatCard title="Total Income"  value={stats?.totalIncome}       icon={DollarSign} />
-                    </>
-                )}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -92,13 +82,6 @@ function SuperAdminDashboard({ stats, organizationByMonth, paymentByMonth }) {
                     data={organizationByMonth}
                     dataKeyName="Organisations"
                 />
-                {hasSubscriptions && paymentByMonth && (
-                    <MonthlyBarChart
-                        title="Payments per month"
-                        data={paymentByMonth}
-                        dataKeyName="Payments"
-                    />
-                )}
             </div>
         </div>
     );

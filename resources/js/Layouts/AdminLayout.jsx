@@ -39,7 +39,6 @@ const SETTINGS_CHILDREN = [
     { label: 'General Setting',   route: 'setting.general',          permission: 'manage general settings' },
     { label: 'Company Setting',   route: 'setting.company',          permission: 'manage company settings' },
     { label: 'Email Setting',     route: 'setting.smtp',             permission: 'manage email settings' },
-    { label: 'Payment Setting',   route: 'setting.payment',          permission: 'manage payment settings' },
     { label: 'Site SEO Setting',  route: 'setting.site.seo',         permission: 'manage seo settings' },
     { label: 'ReCaptcha Setting', route: 'setting.google.recaptcha', permission: 'manage google recaptcha settings' },
 ];
@@ -50,9 +49,6 @@ const NAV_SUPER_ADMIN = [
     ]},
     { section: 'Users', items: [
         { label: 'Users', route: 'users.index', icon: Users, permission: 'manage user' },
-    ]},
-    { section: 'Subscriptions', feature: 'subscriptions', items: [
-        { label: 'Subscriptions', route: 'subscriptions.index', icon: CreditCard, feature: 'subscriptions' },
     ]},
     { section: 'System', items: [
         // Super admin bypasses Gate checks in Blade — no permission guard on children

@@ -24,8 +24,6 @@ class User extends Authenticatable
         'phone_number',
         'profile',
         'lang',
-        'subscription',
-        'subscription_expire_date',
         'parent_id',
         'is_active',
         'company_name',
@@ -75,12 +73,6 @@ class User extends Authenticatable
             }
 
         }
-    }
-
-
-    public function subscriptions()
-    {
-        return $this->hasOne('App\Models\Subscription', 'id', 'subscription');
     }
 
 
