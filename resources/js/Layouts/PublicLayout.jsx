@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
+import { useTranslations } from '@/hooks/useTranslations';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -14,7 +15,7 @@ const LOCALE_LABELS = {
 export default function PublicLayout({ children }) {
     const { branding, flash, translations, locale, client } = usePage().props;
     const supportedLocales = client?.supported_locales ?? [];
-    const t = (key, fallback = key) => translations?.[key] ?? fallback;
+    const t = useTranslations();
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
@@ -23,6 +24,14 @@ export default function PublicLayout({ children }) {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error)   toast.error(flash.error);
     }, [flash?.success, flash?.error]);
+
+    // Reset mobile menu when viewport crosses into desktop breakpoint
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 1024px)');
+        const onBreakpoint = (e) => { if (e.matches) setMobileOpen(false); };
+        mq.addEventListener('change', onBreakpoint);
+        return () => mq.removeEventListener('change', onBreakpoint);
+    }, []);
 
     const NAV = [
         { label: t('menu_home',    'Home'),    href: route('client.home') },

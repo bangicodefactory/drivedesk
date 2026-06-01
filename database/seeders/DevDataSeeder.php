@@ -72,7 +72,14 @@ class DevDataSeeder extends Seeder
 
     private function cleanStaleData(): void
     {
-        // Remove anything accidentally seeded with parent_id=1 that isn't the real owner
+        // Only clean up stale test data in non-production environments and only
+        // when the real owner isn't ID 1 (avoids wiping data on fresh installs
+        // where the first owner is assigned ID 1).
+        if (app()->isProduction()) {
+            $this->command->warn('  cleanStaleData() skipped on production.');
+            return;
+        }
+
         if ($this->ownerId !== 1) {
             foreach (['vehicles', 'vehicle_types', 'places', 'options'] as $table) {
                 DB::table($table)->where('parent_id', 1)->delete();
