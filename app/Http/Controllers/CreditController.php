@@ -7,6 +7,7 @@ use App\Models\LoggedHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class CreditController extends Controller
 {
@@ -38,7 +39,16 @@ class CreditController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('credit.index', compact('credits', 'drivers'));
+        return Inertia::render('Credit/Index', [
+            'credits' => $credits->map(fn($c) => [
+                'id'          => $c->id,
+                'driver_name' => $c->driver?->name,
+                'amount'      => $c->amount,
+                'status'      => $c->status,
+                'credit_date' => $c->credit_date?->format('Y-m-d'),
+            ]),
+            'drivers' => $drivers->map(fn($d) => ['id' => $d->id, 'name' => $d->name]),
+        ]);
     }
 
     /**
@@ -91,7 +101,13 @@ class CreditController extends Controller
             'amounts' => $last12->values()->toArray(),
         ];
 
-        return view('credit.show', compact('credit', 'driver', 'credits', 'chartStatus', 'chartByMonth'));
+        return Inertia::render('Credit/Show', [
+            'credit'       => ['id' => $credit->id, 'driver_id' => $credit->driver_id, 'amount' => $credit->amount, 'status' => $credit->status, 'credit_date' => $credit->credit_date?->format('Y-m-d')],
+            'driver'       => $driver ? ['id' => $driver->id, 'name' => $driver->name] : null,
+            'credits'      => $credits->map(fn($c) => ['id' => $c->id, 'amount' => $c->amount, 'status' => $c->status, 'credit_date' => $c->credit_date?->format('Y-m-d')]),
+            'chartStatus'  => $chartStatus,
+            'chartByMonth' => $chartByMonth,
+        ]);
     }
 
     public function create()
@@ -106,7 +122,10 @@ class CreditController extends Controller
             ->get();
         $statuses = Credit::$statuses;
 
-        return view('credit.create', compact('drivers', 'statuses'));
+        return Inertia::render('Credit/Create', [
+            'drivers'  => $drivers->map(fn($d) => ['id' => $d->id, 'name' => $d->name]),
+            'statuses' => $statuses,
+        ]);
     }
 
     public function store(Request $request)
@@ -155,7 +174,11 @@ class CreditController extends Controller
             ->get();
         $statuses = Credit::$statuses;
 
-        return view('credit.edit', compact('credit', 'drivers', 'statuses'));
+        return Inertia::render('Credit/Edit', [
+            'credit'   => ['id' => $credit->id, 'driver_id' => $credit->driver_id, 'amount' => $credit->amount, 'status' => $credit->status, 'credit_date' => $credit->credit_date?->format('Y-m-d')],
+            'drivers'  => $drivers->map(fn($d) => ['id' => $d->id, 'name' => $d->name]),
+            'statuses' => $statuses,
+        ]);
     }
 
     public function update(Request $request, Credit $credit)
