@@ -193,16 +193,25 @@ class HomeController extends Controller
     {
         $s = settings();
 
+        // Scope to the authenticated owner; guests fall back to owner ID 1
+        // (same strategy as the settings() helper for unauthenticated requests).
+        $ownerId = \Auth::check() ? parentId() : 1;
+
         $heroImages = [];
         foreach (['image_home_1', 'image_home_2'] as $key) {
-            $path = 'upload/home/' . ($s[$key] ?? '');
-            $heroImages[] = Storage::exists($path) ? Storage::url($path) : null;
+            $file = $s[$key] ?? null;
+            $heroImages[] = ($file && Storage::exists("upload/home/{$file}"))
+                ? Storage::url("upload/home/{$file}")
+                : null;
         }
 
         return [
-            'vehicles'     => Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
-            'vehicleTypes' => VehicleType::select('id', 'type')->get(),
-            'places'       => Place::select('id', 'name')->get(),
+            'vehicles'     => Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')
+                                ->where('parent_id', $ownerId)->get(),
+            'vehicleTypes' => VehicleType::select('id', 'type')
+                                ->where('parent_id', $ownerId)->get(),
+            'places'       => Place::select('id', 'name')
+                                ->where('parent_id', $ownerId)->get(),
             'heroImages'   => $heroImages,
         ];
     }
