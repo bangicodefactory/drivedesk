@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Credit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -256,6 +257,64 @@ class CreditControllerTest extends TestCase
             'driver_id' => $this->driver->id,
             'parent_id' => $this->owner->id,
         ], $overrides));
+    }
+
+    // ── Inertia component tests ───────────────────────────────────────────────
+
+    public function test_index_renders_inertia_component(): void
+    {
+        Credit::factory()->create(['driver_id' => $this->driver->id, 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('credit.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Credit/Index')
+                ->has('credits')
+                ->has('drivers')
+            );
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('credit.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Credit/Create')
+                ->has('drivers')
+                ->has('statuses')
+            );
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $credit = $this->makeCredit();
+
+        $this->actingAs($this->owner)
+            ->get(route('credit.edit', $credit))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Credit/Edit')
+                ->has('credit')
+                ->has('drivers')
+                ->has('statuses')
+            );
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $credit = $this->makeCredit();
+
+        $this->actingAs($this->owner)
+            ->get(route('credit.show', $credit))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Credit/Show')
+                ->has('credit')
+                ->has('driver')
+                ->has('credits')
+            );
     }
 
     private function validCreditPayload(array $overrides = []): array

@@ -1,0 +1,92 @@
+import { Link, router } from '@inertiajs/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
+import AdminLayout from '@/Layouts/AdminLayout';
+
+const STATUS_VARIANT = { 'payé': 'outline', 'non payé': 'destructive' };
+
+function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth }) {
+    function remove(id) {
+        if (window.confirm('Delete this credit?')) {
+            router.delete(route('credit.destroy', id));
+        }
+    }
+
+    const paidTotal = credits.filter((c) => c.status === 'payé').reduce((s, c) => s + Number(c.amount), 0);
+    const unpaidTotal = credits.filter((c) => c.status === 'non payé').reduce((s, c) => s + Number(c.amount), 0);
+
+    return (
+        <div className="space-y-6 p-6">
+            <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href={route('credit.index')}><ArrowLeft className="h-4 w-4" /></Link>
+                </Button>
+                <h1 className="text-2xl font-semibold">Credits — {driver?.name}</h1>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span className="font-medium">{driver?.name}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total paid</span><span className="font-medium text-green-600">{paidTotal.toFixed(2)} Dh</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total unpaid</span><span className="font-medium text-destructive">{unpaidTotal.toFixed(2)} Dh</span></div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card>
+                <CardHeader><CardTitle>Credit History</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {credits.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No credits</TableCell>
+                                </TableRow>
+                            )}
+                            {credits.map((c) => (
+                                <TableRow key={c.id} className={c.id === credit.id ? 'bg-muted/40' : ''}>
+                                    <TableCell>{c.credit_date ?? '—'}</TableCell>
+                                    <TableCell>{Number(c.amount).toFixed(2)} Dh</TableCell>
+                                    <TableCell>
+                                        <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right space-x-1">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href={route('credit.edit', c.id)} aria-label="Edit"><Pencil className="h-4 w-4" /></Link>
+                                        </Button>
+                                        <Button
+                                            variant="ghost" size="icon"
+                                            className="text-destructive hover:text-destructive"
+                                            onClick={() => remove(c.id)}
+                                            aria-label="Delete"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+CreditShow.layout = (page) => (
+    <AdminLayout breadcrumbs={[{ label: 'Credits', href: route('credit.index') }, { label: 'Details' }]}>{page}</AdminLayout>
+);
+export default CreditShow;

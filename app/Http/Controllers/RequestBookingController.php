@@ -89,7 +89,6 @@ class RequestBookingController extends Controller
              $guest->password = Hash::make(Str::random(12));
              $guest->is_active = true;
              $guest->lang = app()->getLocale();
-             $guest->subscription = 0;
 
              // Set optional fields if provided
              if ($request->has('company_name')) {
@@ -152,20 +151,44 @@ class RequestBookingController extends Controller
      */
     public function index()
     {
-        // Fetch all booking requests with their related guest and vehicle
         $bookingRequests = BookingRequest::with(['guest', 'car'])->latest()->get();
 
-        return view('booking_requests.index', compact('bookingRequests'));
+        return Inertia::render('BookingRequest/Index', [
+            'bookingRequests' => $bookingRequests->map(fn($br) => [
+                'id'           => $br->id,
+                'encrypted_id' => Crypt::encrypt($br->id),
+                'guest_name'   => $br->guest?->name,
+                'car_name'     => $br->car?->name,
+                'start_date'   => $br->start_date,
+                'end_date'     => $br->end_date,
+                'status'       => $br->status ?? 'pending',
+            ]),
+        ]);
     }
+
     public function show($id)
     {
-        // Find the booking by ID (use decrypt if IDs are encrypted in route)
-        $bookingId = is_string($id) ? \Crypt::decrypt($id) : $id;
-
+        $bookingId = is_string($id) ? Crypt::decrypt($id) : $id;
         $booking = BookingRequest::with(['guest', 'car', 'pickupPlace', 'dropOffPlace'])->findOrFail($bookingId);
 
-        $settings = settings();
-        return view('booking_requests.show', compact('booking', 'settings'));
+        return Inertia::render('BookingRequest/Show', [
+            'booking' => [
+                'id'           => $booking->id,
+                'status'       => $booking->status ?? 'pending',
+                'guest_name'   => $booking->guest?->name,
+                'guest_email'  => $booking->guest?->email,
+                'guest_phone'  => $booking->guest?->phone_number,
+                'car_name'     => $booking->car?->name,
+                'daily_rate'   => $booking->car?->daily_rate,
+                'start_date'   => $booking->start_date,
+                'start_time'   => $booking->start_time,
+                'end_date'     => $booking->end_date,
+                'end_time'     => $booking->end_time,
+                'pickup_place' => $booking->pickupPlace?->name,
+                'dropoff_place'=> $booking->dropOffPlace?->name,
+                'notes'        => $booking->notes,
+            ],
+        ]);
     }
 
     public function bookingNumber()
@@ -217,7 +240,6 @@ class RequestBookingController extends Controller
                     'password' => Hash::make(Str::random(8)),
                     'type' => 'customer',
                     'lang' => app()->getLocale(),
-                    'subscription' => 0,
                     'email_verified_at' => now(),
                 ]
             );
