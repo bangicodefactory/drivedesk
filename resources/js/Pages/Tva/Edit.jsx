@@ -1,0 +1,195 @@
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { router, usePage } from '@inertiajs/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Pencil } from 'lucide-react';
+import AdminLayout from '@/Layouts/AdminLayout';
+
+const schema = z.object({
+    facture_number: z.string().min(1, 'Required'),
+    facture_date:   z.string().min(1, 'Required'),
+    unit_price_ht:  z.coerce.number().min(0),
+    total_ht:       z.coerce.number().min(0),
+    tva:            z.coerce.number().min(0),
+    montant_ttc:    z.coerce.number().min(0),
+});
+
+const TVA_RATE = 0.2;
+
+function TvaEdit({ tva }) {
+    const { errors: serverErrors } = usePage().props;
+
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        setError,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            facture_number: tva.facture_number ?? '',
+            facture_date:   tva.facture_date   ?? '',
+            unit_price_ht:  tva.unit_price_ht  ?? 0,
+            total_ht:       tva.total_ht       ?? 0,
+            tva:            tva.tva            ?? 0,
+            montant_ttc:    tva.montant_ttc    ?? 0,
+        },
+    });
+
+    // Wire server-side validation errors into react-hook-form
+    useEffect(() => {
+        if (!serverErrors) return;
+        Object.entries(serverErrors).forEach(([field, msg]) => {
+            setError(field, { message: Array.isArray(msg) ? msg[0] : msg });
+        });
+    }, [serverErrors]);
+
+    // Auto-calculate HT / TVA / TTC from unit_price_ht × quantity
+    const unitPriceHt = watch('unit_price_ht');
+    useEffect(() => {
+        const puht = parseFloat(unitPriceHt) || 0;
+        const qty  = parseFloat(tva.quantity) || 0;
+        const ht   = parseFloat((puht * qty).toFixed(2));
+        const tvaAmt = parseFloat((ht * TVA_RATE).toFixed(2));
+        const ttc  = parseFloat((ht + tvaAmt).toFixed(2));
+        setValue('total_ht',    ht,      { shouldValidate: false });
+        setValue('tva',         tvaAmt,  { shouldValidate: false });
+        setValue('montant_ttc', ttc,     { shouldValidate: false });
+    }, [unitPriceHt, tva.quantity]);
+
+    function onSubmit(data) {
+        router.put(route('tva.update', tva.id), data);
+    }
+
+    return (
+        <div className="p-6 max-w-3xl mx-auto">
+            <h1 className="text-2xl font-semibold flex items-center gap-2 mb-6">
+                <Pencil className="h-6 w-6" /> Edit TVA
+            </h1>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Invoice #{tva.facture_number}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+                        {/* Booking — read-only display */}
+                        <div className="space-y-1">
+                            <Label>Booking</Label>
+                            <Input value={tva.booking_id ?? 'N/A'} readOnly className="bg-muted" />
+                        </div>
+
+                        {/* Vehicle / Designation — read-only */}
+                        <div className="space-y-1">
+                            <Label>Vehicle</Label>
+                            <Input value={tva.designation ?? ''} readOnly className="bg-muted" />
+                        </div>
+
+                        {/* Facture Number */}
+                        <div className="space-y-1">
+                            <Label htmlFor="facture_number">Facture Number</Label>
+                            <Input id="facture_number" {...register('facture_number')} />
+                            {errors.facture_number && (
+                                <p className="text-sm text-destructive">{errors.facture_number.message}</p>
+                            )}
+                        </div>
+
+                        {/* Facture Date */}
+                        <div className="space-y-1">
+                            <Label htmlFor="facture_date">Facture Date</Label>
+                            <Input id="facture_date" type="date" {...register('facture_date')} />
+                            {errors.facture_date && (
+                                <p className="text-sm text-destructive">{errors.facture_date.message}</p>
+                            )}
+                        </div>
+
+                        {/* Quantity — read-only */}
+                        <div className="space-y-1">
+                            <Label>Quantity (Days)</Label>
+                            <Input value={tva.quantity ?? ''} readOnly className="bg-muted" />
+                        </div>
+
+                        {/* Unit Price HT — triggers auto-calc */}
+                        <div className="space-y-1">
+                            <Label htmlFor="unit_price_ht">Unit Price HT (P.U.H.T)</Label>
+                            <Input
+                                id="unit_price_ht"
+                                type="number"
+                                step="0.01"
+                                {...register('unit_price_ht')}
+                            />
+                            {errors.unit_price_ht && (
+                                <p className="text-sm text-destructive">{errors.unit_price_ht.message}</p>
+                            )}
+                        </div>
+
+                        {/* Total HT — auto-calculated, read-only */}
+                        <div className="space-y-1">
+                            <Label htmlFor="total_ht">Total HT</Label>
+                            <Input
+                                id="total_ht"
+                                type="number"
+                                step="0.01"
+                                {...register('total_ht')}
+                                readOnly
+                                className="bg-muted"
+                            />
+                        </div>
+
+                        {/* TVA — auto-calculated, read-only */}
+                        <div className="space-y-1">
+                            <Label htmlFor="tva">TVA (20%)</Label>
+                            <Input
+                                id="tva"
+                                type="number"
+                                step="0.01"
+                                {...register('tva')}
+                                readOnly
+                                className="bg-muted"
+                            />
+                        </div>
+
+                        {/* Montant TTC — auto-calculated */}
+                        <div className="space-y-1">
+                            <Label htmlFor="montant_ttc">Montant TTC</Label>
+                            <Input
+                                id="montant_ttc"
+                                type="number"
+                                step="0.01"
+                                {...register('montant_ttc')}
+                            />
+                            {errors.montant_ttc && (
+                                <p className="text-sm text-destructive">{errors.montant_ttc.message}</p>
+                            )}
+                        </div>
+
+                        <div className="md:col-span-2 flex justify-end gap-2 pt-2">
+                            <Button type="button" variant="outline" onClick={() => router.get(route('tva.index'))}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                Update TVA
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+TvaEdit.layout = (page) => (
+    <AdminLayout breadcrumbs={[
+        { label: 'TVA', href: route('tva.index') },
+        { label: 'Edit' },
+    ]}>{page}</AdminLayout>
+);
+export default TvaEdit;
