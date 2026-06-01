@@ -31,8 +31,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-            Schema::defaultStringLength(191);
-            config(['default_terms' => require config_path('default_terms.php')]);
-
+        Schema::defaultStringLength(191);
     }
 }
