@@ -25,7 +25,7 @@ import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, ChevronLeft, ChevronDown, Menu, LogOut,
     UserCircle, Shield, CreditCard, Wrench, Receipt, Tags,
-    Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell, Gift,
+    Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,12 +99,6 @@ const NAV_OWNER = [
             { label: 'Places',  route: 'place.index',  permission: 'manage place' },
         ]},
         { label: 'Email Notification', route: 'notification.index', icon: Bell, permission: 'manage notification' },
-    ]},
-    { section: 'Subscriptions', feature: 'subscriptions', items: [
-        { label: 'Coupons', icon: Gift, feature: 'subscriptions', permission: ['manage coupon', 'manage coupon history'], children: [
-            { label: 'All Coupons',    route: 'coupons.index',   permission: 'manage coupon' },
-            { label: 'Coupon History', route: 'coupons.history', permission: 'manage coupon history' },
-        ]},
     ]},
     { section: 'System', items: [
         { label: 'Settings', icon: Settings, children: SETTINGS_CHILDREN },
