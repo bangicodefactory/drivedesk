@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Driver;
 use App\Models\Notification;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Vehicle;
 use Carbon\Carbon;
@@ -30,7 +29,14 @@ class SignatureController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        return view('signature.index', compact('signatures'));
+        return Inertia::render('Signature/Index', [
+            'signatures' => $signatures->map(fn($s) => [
+                'id'            => $s->id,
+                'driver_name'   => $s->user?->name,
+                'signature_url' => $s->signature_url ?? null,
+                'created_at'    => $s->created_at?->format('Y-m-d'),
+            ]),
+        ]);
     }
     public function create(){    
         
