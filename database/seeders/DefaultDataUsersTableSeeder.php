@@ -119,30 +119,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                     'guard_name' => 'web',
                 ],
                 [
-                    'name' => 'manage coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'create coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'edit coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'delete coupon',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'manage coupon history',
-                    'guard_name' => 'web',
-                ],
-                [
-                    'name' => 'delete coupon history',
-                    'guard_name' => 'web',
-                ],
-                [
                     'name' => 'manage pricing transation',
                     'guard_name' => 'web',
                 ],
@@ -470,12 +446,6 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit pricing packages'],
                 ['name' => 'delete pricing packages'],
                 ['name' => 'manage pricing transation'],
-                ['name' => 'manage coupon'],
-                ['name' => 'create coupon'],
-                ['name' => 'edit coupon'],
-                ['name' => 'delete coupon'],
-                ['name' => 'manage coupon history'],
-                ['name' => 'delete coupon history'],
                 ['name' => 'manage account settings'],
                 ['name' => 'manage password settings'],
                 ['name' => 'manage general settings'],

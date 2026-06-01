@@ -8,7 +8,6 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\CouponController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\VehicleTypeController;
@@ -103,10 +102,6 @@ Route::group(
     function () {
 
         Route::resource('subscriptions', SubscriptionController::class);
-        Route::get('coupons/history', [CouponController::class, 'history'])->name('coupons.history');
-        Route::delete('coupons/history/{id}/destroy', [CouponController::class, 'historyDestroy'])->name('coupons.history.destroy');
-        Route::get('coupons/apply', [CouponController::class, 'apply'])->name('coupons.apply');
-        Route::resource('coupons', CouponController::class);
         Route::get('subscription/transaction', [SubscriptionController::class, 'transaction'])->name('subscription.transaction');
     }
 );
