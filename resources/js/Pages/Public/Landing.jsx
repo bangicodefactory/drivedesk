@@ -19,14 +19,13 @@ function useTranslations() {
     return (key, fallback = key) => translations?.[key] ?? fallback;
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero({ heroImages }) {
     const t = useTranslations();
-    const slides = [
-        { image: heroImages[0], subtitle: t('subtitle_1', 'Your journey starts here'), title: t('title_1', 'Rent a Car You Love') },
+    const allSlides = [
         { image: heroImages[0], subtitle: t('subtitle_1', 'Your journey starts here'), title: t('title_1', 'Rent a Car You Love') },
         { image: heroImages[1], subtitle: t('subtitle_2', 'Explore with confidence'), title: t('title_2', 'Premium Fleet, Great Rates') },
-    ].filter((s, i, a) => a.findIndex(x => x.image === s.image && x.title === s.title) === i);
+    ];
+    const slides = allSlides[0]?.image === allSlides[1]?.image ? allSlides.slice(0, 1) : allSlides;
 
     const [current, setCurrent] = useState(0);
     const next = useCallback(() => setCurrent(c => (c + 1) % slides.length), [slides.length]);
@@ -86,7 +85,6 @@ function Hero({ heroImages }) {
     );
 }
 
-// ─── Pickup / Search ──────────────────────────────────────────────────────────
 function Pickup({ places, vehicleTypes }) {
     const t = useTranslations();
     return (
@@ -128,7 +126,6 @@ function Pickup({ places, vehicleTypes }) {
     );
 }
 
-// ─── Feature Benefit ─────────────────────────────────────────────────────────
 function FeatureBenefit() {
     const t = useTranslations();
     const features = [
@@ -157,7 +154,6 @@ function FeatureBenefit() {
     );
 }
 
-// ─── About ───────────────────────────────────────────────────────────────────
 function About() {
     const t = useTranslations();
     return (
@@ -195,7 +191,6 @@ function About() {
     );
 }
 
-// ─── Car Rentals ──────────────────────────────────────────────────────────────
 function CarRentals({ vehicles }) {
     const t = useTranslations();
     return (
@@ -249,7 +244,6 @@ function CarRentals({ vehicles }) {
     );
 }
 
-// ─── Car Service ──────────────────────────────────────────────────────────────
 function CarService() {
     const t = useTranslations();
     return (
@@ -266,7 +260,6 @@ function CarService() {
     );
 }
 
-// ─── Fun Facts ────────────────────────────────────────────────────────────────
 function FunFact() {
     const t = useTranslations();
     const stats = [
@@ -290,7 +283,6 @@ function FunFact() {
     );
 }
 
-// ─── Popular Cars ─────────────────────────────────────────────────────────────
 function PopularCars() {
     const t = useTranslations();
     const types = [
@@ -323,7 +315,6 @@ function PopularCars() {
     );
 }
 
-// ─── Testimonials ─────────────────────────────────────────────────────────────
 function Testimonials() {
     const t = useTranslations();
     const reviews = [
@@ -359,7 +350,6 @@ function Testimonials() {
     );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 function Landing({ vehicles = [], vehicleTypes = [], places = [], heroImages = [] }) {
     return (
         <>
