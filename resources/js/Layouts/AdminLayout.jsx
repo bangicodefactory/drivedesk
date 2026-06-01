@@ -79,7 +79,10 @@ const NAV_OWNER = [
     ]},
     { section: 'Finance', items: [
         { label: 'Credits', route: 'credit.index', icon: CreditCard, permission: 'manage driver' },
-        { label: 'TVA',     route: 'tva.index',    icon: Receipt,    permission: 'manage tva' },
+        { label: 'TVA', icon: Receipt, permission: ['manage tva', 'manage tva report'], children: [
+            { label: 'TVA Management', route: 'tva.index',  permission: 'manage tva' },
+            { label: 'TVA Report',     route: 'tva.report', permission: 'manage tva report' },
+        ]},
     ]},
     { section: 'System', items: [
         { label: 'Settings', icon: Settings, children: SETTINGS_CHILDREN },
