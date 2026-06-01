@@ -1008,10 +1008,10 @@ class BookingController extends Controller
             );
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     return response()->json(['status' => 'error', 'message' => $messages->first()], 422);
                 }
-                return redirect()->back()->with('error', $messages->first());
+                return redirect()->back()->withErrors($messages->toArray())->withInput();
             }
             // Amount must be > 0
             $rawAmount = $request->amount;
@@ -1022,19 +1022,19 @@ class BookingController extends Controller
             $numericAmount = (float)$rawAmount;
             if ($numericAmount <= 0) {
                 $msg = __('Amount 0');
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     return response()->json(['status' => 'error', 'message' => $msg], 422);
                 }
-                return redirect()->back()->with('error', $msg)->withInput();
+                return redirect()->back()->withErrors(['amount' => $msg])->withInput();
             }
             // Business rule: Cash (Espece) payments cannot exceed 5000
             $paymentMethodNormalized = strtolower($request->payment_method);
             if ($paymentMethodNormalized === 'espece' && $request->amount > 5000) {
                 $msg = __('Cash payments over 5000 are not allowed. Please choose another method.');
-                if ($request->ajax()) {
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                     return response()->json(['status' => 'error', 'message' => $msg], 422);
                 }
-                return redirect()->back()->with('error', $msg);
+                return redirect()->back()->withErrors(['amount' => $msg]);
             }
             $payment = new BookingPayment();
             $payment->booking_id = $id;
@@ -1123,7 +1123,7 @@ class BookingController extends Controller
 
 
             Booking::statusChange($booking->id, $status);
-            if ($request->ajax()) {
+            if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                 return response()->json(['status' => 'success', 'message' => __('Booking payment successfully created.')]);
             }
             return redirect()->back()->with('success', __('Booking payment successfully created.'));

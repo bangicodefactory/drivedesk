@@ -307,7 +307,7 @@ class BookingControllerTest extends TestCase
                 'payment_method' => 'Espece',
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['amount']);
 
         $this->assertDatabaseMissing('booking_payments', ['booking_id' => $booking->id]);
     }
@@ -323,7 +323,7 @@ class BookingControllerTest extends TestCase
                 'payment_method' => 'Carte',
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['amount']);
     }
 
     public function test_payment_store_requires_create_booking_payment_permission(): void
@@ -338,6 +338,40 @@ class BookingControllerTest extends TestCase
                 'payment_method' => 'Carte',
             ])
             ->assertSessionHas('error', __('Permission Denied.'));
+    }
+
+    // ── BookingController::paymentStore — Inertia requests ───────────────────
+
+    public function test_payment_store_inertia_error_returns_redirect_not_json(): void
+    {
+        $booking = $this->makeBooking(['amount' => 10000]);
+
+        $this->actingAs($this->owner)
+            ->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 5001,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['amount']);
+
+        $this->assertDatabaseMissing('booking_payments', ['booking_id' => $booking->id]);
+    }
+
+    public function test_payment_store_inertia_success_returns_redirect_not_json(): void
+    {
+        $booking = $this->makeBooking(['amount' => 300]);
+
+        $this->actingAs($this->owner)
+            ->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 100,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Carte',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
     }
 
     // ── BookingController::paymentDestroy ─────────────────────────────────────
