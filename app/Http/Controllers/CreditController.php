@@ -132,7 +132,7 @@ class CreditController extends Controller
 
         $this->logCreditAction('credit_create', $credit->id, __('Credit #:id created', ['id' => $credit->id]));
 
-        if ($request->ajax() || $request->wantsJson()) {
+        if (!$request->hasHeader('X-Inertia') && ($request->ajax() || $request->wantsJson())) {
             return response()->json(['success' => true, 'message' => __('Credit created successfully.')]);
         }
 
