@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import { useTranslations } from '@/hooks/useTranslations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,18 +15,18 @@ import {
 } from 'lucide-react';
 import PublicLayout from '@/Layouts/PublicLayout';
 
-function useTranslations() {
-    const { translations } = usePage().props;
-    return (key, fallback = key) => translations?.[key] ?? fallback;
-}
-
 function Hero({ heroImages }) {
     const t = useTranslations();
     const allSlides = [
         { image: heroImages[0], subtitle: t('subtitle_1', 'Your journey starts here'), title: t('title_1', 'Rent a Car You Love') },
         { image: heroImages[1], subtitle: t('subtitle_2', 'Explore with confidence'), title: t('title_2', 'Premium Fleet, Great Rates') },
     ];
-    const slides = allSlides[0]?.image === allSlides[1]?.image ? allSlides.slice(0, 1) : allSlides;
+    const seen = new Set();
+    const slides = allSlides.filter(s => {
+        if (seen.has(s.image)) return false;
+        seen.add(s.image);
+        return true;
+    });
 
     const [current, setCurrent] = useState(0);
     const next = useCallback(() => setCurrent(c => (c + 1) % slides.length), [slides.length]);
