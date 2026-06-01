@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Addon;
 use App\Models\Booking;
 use App\Models\BookingPayment;
-use App\Models\Coupon;
 use App\Models\Credit;
 use App\Models\Driver;
 use App\Models\Expense;
@@ -60,7 +59,6 @@ class DevDataSeeder extends Seeder
                           $this->seedInspections($vehicleIds, $inspTypeIds);
                           $this->seedReminders($vehicleIds, $remTypeIds);
                           $this->seedRentalAgreements($vehicleIds, $driverUserIds);
-                          $this->seedCoupons();
                           $this->seedCredits($driverUserIds);
 
         $this->command->info('Dev data seeding complete.');
@@ -540,35 +538,6 @@ class DevDataSeeder extends Seeder
             ]);
         }
         $this->command->info('  Rental agreements: ' . count($agreements));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Coupons
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private function seedCoupons(): void
-    {
-        $coupons = [
-            ['name' => 'Bienvenue 10%',    'type' => 'percent', 'rate' => 10, 'code' => 'WELCOME10', 'limit' => 100],
-            ['name' => 'Été 2026 — 20%',   'type' => 'percent', 'rate' => 20, 'code' => 'ETE2026',   'limit' => 50],
-            ['name' => '-200 Dh fixe',     'type' => 'fixed',   'rate' => 200,'code' => 'FIXED200',  'limit' => 30],
-            ['name' => 'Fidélité 15%',     'type' => 'percent', 'rate' => 15, 'code' => 'FIDELITE15','limit' => 200],
-        ];
-
-        foreach ($coupons as $data) {
-            Coupon::firstOrCreate(
-                ['code' => $data['code']],
-                [
-                    'name'      => $data['name'],
-                    'type'      => $data['type'],
-                    'rate'      => $data['rate'],
-                    'use_limit' => $data['limit'],
-                    'status'    => 1,
-                    'valid_for' => now()->addYear()->toDateString(),
-                ]
-            );
-        }
-        $this->command->info('  Coupons: ' . count($coupons));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

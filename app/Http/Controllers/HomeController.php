@@ -8,9 +8,7 @@ use App\Models\Custom;
 use App\Models\Expense;
 use App\Models\Fuel;
 use App\Models\NoticeBoard;
-use App\Models\PackageTransaction;
 use App\Models\Service;
-use App\Models\Subscription;
 use App\Models\Support;
 use App\Models\User;
 use App\Models\Place;
@@ -29,25 +27,14 @@ class HomeController extends Controller
             if (\Auth::user()->type == 'super admin') {
                 $result['totalOrganization'] = User::where('type', 'owner')->count();
 
-                if (feature('subscriptions')) {
-                    $result['totalSubscription'] = Subscription::count();
-                    $result['totalTransaction'] = PackageTransaction::count();
-                    $result['totalIncome'] = PackageTransaction::sum('amount');
-                    $result['paymentByMonth'] = $this->paymentByMonth();
-                }
-
                 $result['organizationByMonth'] = $this->organizationByMonth();
 
                 if (config('app.inertia_enabled')) {
                     return Inertia::render('Dashboard', [
                         'stats' => [
                             'totalOrganization' => $result['totalOrganization'],
-                            'totalSubscription' => $result['totalSubscription'] ?? null,
-                            'totalTransaction'  => $result['totalTransaction']  ?? null,
-                            'totalIncome'       => $result['totalIncome']       ?? null,
                         ],
                         'organizationByMonth' => $result['organizationByMonth'],
-                        'paymentByMonth'      => $result['paymentByMonth'] ?? null,
                     ]);
                 }
 
@@ -108,8 +95,7 @@ class HomeController extends Controller
                     if (config('app.inertia_enabled')) {
                         return Inertia::render('Public/Landing', $this->landingProps());
                     }
-                    $subscriptions = Subscription::get();
-                    return view('layouts.landing', compact('subscriptions'));
+                    return view('layouts.landing');
                 } else {
                     return redirect()->route('login');
                 }
@@ -137,27 +123,6 @@ class HomeController extends Controller
 
         return $organization;
     }
-
-    public function paymentByMonth()
-    {
-        $start = strtotime(date('Y-01'));
-        $end = strtotime(date('Y-12'));
-
-        $currentdate = $start;
-
-        $payment = [];
-        while ($currentdate <= $end) {
-            $payment['label'][] = date('M-Y', $currentdate);
-
-            $month = date('m', $currentdate);
-            $year = date('Y', $currentdate);
-            $payment['data'][] = PackageTransaction::whereMonth('created_at', $month)->whereYear('created_at', $year)->sum('amount');
-            $currentdate = strtotime('+1 month', $currentdate);
-        }
-
-        return $payment;
-    }
-
 
     public function incomeExpenseByMonth()
     {

@@ -4,12 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\CouponController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\VehicleController;
@@ -90,42 +87,6 @@ Route::resource('users', UserController::class)->middleware(
 );
 
 
-//-------------------------------Subscription-------------------------------------------
-
-Route::group(
-    [
-        'middleware' => [
-            'auth',
-            'XSS',
-            'feature:subscriptions',
-        ],
-    ],
-    function () {
-
-        Route::resource('subscriptions', SubscriptionController::class);
-        Route::get('coupons/history', [CouponController::class, 'history'])->name('coupons.history');
-        Route::delete('coupons/history/{id}/destroy', [CouponController::class, 'historyDestroy'])->name('coupons.history.destroy');
-        Route::get('coupons/apply', [CouponController::class, 'apply'])->name('coupons.apply');
-        Route::resource('coupons', CouponController::class);
-        Route::get('subscription/transaction', [SubscriptionController::class, 'transaction'])->name('subscription.transaction');
-    }
-);
-
-//-------------------------------Subscription Payment-------------------------------------------
-
-Route::group(
-    [
-        'middleware' => [
-            'auth',
-            'XSS',
-            'feature:subscriptions',
-        ],
-    ],
-    function () {
-
-        Route::post('subscription/{id}/stripe/payment', [SubscriptionController::class, 'stripePayment'])->name('subscription.stripe.payment');
-    }
-);
 //-------------------------------Settings-------------------------------------------
 Route::group(
     [
@@ -208,27 +169,6 @@ Route::group(
     }
 );
 
-
-//-------------------------------Plan Payment-------------------------------------------
-
-Route::group(
-    [
-        'middleware' => [
-            'auth',
-            'XSS',
-            'feature:subscriptions',
-        ],
-    ],
-    function () {
-
-        Route::post('subscription/{id}/bank-transfer', [PaymentController::class, 'subscriptionBankTransfer'])->name('subscription.bank.transfer');
-        Route::get('subscription/{id}/bank-transfer/action/{status}', [PaymentController::class, 'subscriptionBankTransferAction'])->name('subscription.bank.transfer.action');
-        Route::post('subscription/{id}/paypal', [PaymentController::class, 'subscriptionPaypal'])->name('subscription.paypal');
-        Route::get('subscription/{id}/paypal/{status}', [PaymentController::class, 'subscriptionPaypalStatus'])->name('subscription.paypal.status');
-        Route::post('subscription/{id}/flutterwave', [PaymentController::class, 'subscriptionFlutterwave'])->name('subscription.flutterwave')->middleware(['XSS']);
-        Route::get('subscription/flutterwave/{id}/{txref}', [PaymentController::class, 'subscriptionFlutterwaveStatus'])->name('subscription.flutterwave.status');
-    }
-);
 
 
 //-------------------------------driver-------------------------------------------

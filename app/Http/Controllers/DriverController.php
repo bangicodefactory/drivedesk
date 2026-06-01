@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Driver;
 use App\Models\Notification;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Vehicle;
 use Carbon\Carbon;
@@ -151,22 +150,6 @@ class DriverController extends Controller
                     return redirect()->back()->with('error', $errorMessages);
                 }
             }
-            $ids = parentId();
-            $authUser = \App\Models\User::find($ids);
-            $totalDriver = $authUser->totalDriver();
-            $subscription = Subscription::find($authUser->subscription);
-            if ($totalDriver >= $subscription->driver_limit && $subscription->driver_limit != 0) {
-                $errorMessages = __('Your driver limit is over, please upgrade your subscription.');
-                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
-                    $response['status'] = false;
-                    $response['data'] = $errorMessages;
-                    $responsee = json_encode($response);
-                    return $responsee;
-                } else {
-                    return redirect()->back()->with('error', $errorMessages);
-                }
-            }
-
             $userRole = Role::where('name', 'driver')->where('parent_id', parentId())->first();
             $user = new User();
             $user->name = $request->first_name . ' ' . $request->last_name;
