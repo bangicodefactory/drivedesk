@@ -60,7 +60,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
     const { register, control, formState: { errors, isSubmitting } } = form;
 
     return (
-        <div className="mx-auto max-w-7xl px-4 space-y-12 py-8">
+        <div className="space-y-12 py-8">
 
             <div className="border-b pb-4">
                 <nav className="text-sm text-muted-foreground flex items-center gap-2">
