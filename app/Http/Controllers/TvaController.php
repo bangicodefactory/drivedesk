@@ -234,13 +234,21 @@ class TvaController extends Controller
     public function edit($id)
     {
         $tva = Tva::findOrFail($id);
-        $books = Booking::where('parent_id', parentId())->pluck('booking_id', 'id'); // id => booking_id
 
-        $vehicles = Vehicle::all(); // or however you're getting the vehicle list
-
-        $booking = Booking::find($tva->booking_id); // to get the selected booking
-
-        return view('tva.edit', compact('tva', 'books', 'vehicles', 'booking'));
+        return Inertia::render('Tva/Edit', [
+            'tva' => [
+                'id'            => $tva->id,
+                'booking_id'    => $tva->booking_id,
+                'designation'   => $tva->designation,
+                'facture_number'=> $tva->facture_number,
+                'facture_date'  => $tva->facture_date?->format('Y-m-d'),
+                'quantity'      => $tva->quantity,
+                'unit_price_ht' => $tva->unit_price_ht,
+                'total_ht'      => $tva->total_ht,
+                'tva'           => $tva->tva,
+                'montant_ttc'   => $tva->montant_ttc,
+            ],
+        ]);
     }
 
 
@@ -273,7 +281,22 @@ class TvaController extends Controller
     public function show($id)
     {
         $tva = Tva::findOrFail($id);
-        return view('tva.show', compact('tva'));
+
+        return Inertia::render('Tva/Show', [
+            'tva' => [
+                'id'             => $tva->id,
+                'facture_number' => $tva->facture_number,
+                'facture_date'   => $tva->facture_date?->format('Y-m-d'),
+                'client_name'    => $tva->client_name,
+                'quantity'       => $tva->quantity,
+                'unit_price_ht'  => $tva->unit_price_ht,
+                'total_ht'       => $tva->total_ht,
+                'tva'            => $tva->tva,
+                'montant_ttc'    => $tva->montant_ttc,
+                'designation'    => $tva->designation,
+                'payment_method' => $tva->payment_method,
+            ],
+        ]);
     }
     public function destroy($id)
     {
@@ -647,17 +670,16 @@ class TvaController extends Controller
             ->orderByDesc('year')
             ->pluck('year');
 
-        return view('tva.report', compact(
-            'monthlyStats',
-            'yearlyStats',
-            'topClients',
-            'chartData',
-            'selectedYear',
-            'availableYears',
-            'topRentedCars',
-            'topProfitableCars',
-            'carPerformanceStats',
-            'carStats'
-        ));
+        return Inertia::render('Tva/Report', [
+            'monthlyStats'       => array_values($monthlyStats),
+            'yearlyStats'        => $yearlyStats,
+            'topClients'         => $topClients->values()->toArray(),
+            'chartData'          => $chartData,
+            'selectedYear'       => (int) $selectedYear,
+            'availableYears'     => $availableYears->toArray(),
+            'topRentedCars'      => $topRentedCars->values()->toArray(),
+            'topProfitableCars'  => $topProfitableCars->values()->toArray(),
+            'carPerformanceStats'=> $carPerformanceStats,
+        ]);
     }
 }
