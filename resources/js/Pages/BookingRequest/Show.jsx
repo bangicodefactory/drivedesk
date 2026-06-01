@@ -11,7 +11,7 @@ const STATUS_VARIANT = {
     refused:   'destructive',
 };
 
-function BookingRequestShow({ booking, settings }) {
+function BookingRequestShow({ booking }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 

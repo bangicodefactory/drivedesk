@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Driver;
 use App\Models\Notification;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Vehicle;
 use Carbon\Carbon;
