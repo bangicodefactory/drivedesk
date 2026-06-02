@@ -32,7 +32,9 @@ const schema = z.object({
     issue_date: z.string().optional(),
     expiration_date: z.string().optional(),
     document: z.any().optional(),
+    document1: z.any().optional(),
     license: z.any().optional(),
+    license1: z.any().optional(),
     reference: z.string().optional(),
     notes: z.string().optional(),
     _method: z.string().optional(),
@@ -55,7 +57,9 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
             issue_date: driver.issue_date ?? '',
             expiration_date: driver.expiration_date ?? '',
             document: null,
+            document1: null,
             license: null,
+            license1: null,
             reference: driver.reference ?? '',
             notes: driver.notes ?? '',
             _method: 'PUT',
@@ -144,13 +148,27 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="document">Document</Label>
-                                <Input id="document" type="file" onChange={(e) => setValue('document', e.target.files?.[0] ?? null)} />
+                                <Label htmlFor="license">License 1:</Label>
+                                <Input id="license" type="file" onChange={(e) => setValue('license', e.target.files?.[0] ?? null)} />
+                                {driver.license && <p className="text-xs text-muted-foreground">Current: {driver.license}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="license">License</Label>
-                                <Input id="license" type="file" onChange={(e) => setValue('license', e.target.files?.[0] ?? null)} />
+                                <Label htmlFor="license1">License 2:</Label>
+                                <Input id="license1" type="file" onChange={(e) => setValue('license1', e.target.files?.[0] ?? null)} />
+                                {driver.license_1 && <p className="text-xs text-muted-foreground">Current: {driver.license_1}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="document">ID file 1:</Label>
+                                <Input id="document" type="file" onChange={(e) => setValue('document', e.target.files?.[0] ?? null)} />
+                                {driver.document && <p className="text-xs text-muted-foreground">Current: {driver.document}</p>}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="document1">ID file 2:</Label>
+                                <Input id="document1" type="file" onChange={(e) => setValue('document1', e.target.files?.[0] ?? null)} />
+                                {driver.document_1 && <p className="text-xs text-muted-foreground">Current: {driver.document_1}</p>}
                             </div>
 
                             <div className="space-y-1.5">

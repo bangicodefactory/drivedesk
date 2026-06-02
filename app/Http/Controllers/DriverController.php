@@ -359,6 +359,24 @@ class DriverController extends Controller
                     $request->file('license')->storeAs('upload/license/', $licenseFileName, 'public');
                     $driver->license = $licenseFileName;
                 }
+                if (!empty($request->license1)) {
+                    $licenseFilenameWithExt1 = $request->file('license1')->getClientOriginalName();
+                    $licenseFilename1 = pathinfo($licenseFilenameWithExt1, PATHINFO_FILENAME);
+                    $licenseExtension1 = $request->file('license1')->getClientOriginalExtension();
+                    $licenseFileName1 = $licenseFilename1 . '_' . time() . '.' . $licenseExtension1;
+
+                    $request->file('license1')->storeAs('upload/license/', $licenseFileName1, 'public');
+                    $driver->license_1 = $licenseFileName1;
+                }
+                if (!empty($request->document1)) {
+                    $documentFilenameWithExt1 = $request->file('document1')->getClientOriginalName();
+                    $documentFilename1 = pathinfo($documentFilenameWithExt1, PATHINFO_FILENAME);
+                    $documentExtension1 = $request->file('document1')->getClientOriginalExtension();
+                    $documentFileName1 = $documentFilename1 . '_' . time() . '.' . $documentExtension1;
+
+                    $request->file('document1')->storeAs('upload/document/', $documentFileName1, 'public');
+                    $driver->document_1 = $documentFileName1;
+                }
                 $driver->save();
             }
             return redirect()->route('driver.index')->with('success', __('Driver successfully updated.'));
