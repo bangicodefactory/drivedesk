@@ -7,6 +7,48 @@
 
 ---
 
+## Phase 7 Delta — 2026-06-02
+
+**Branch:** `dev` (all PRs merged)
+**Tickets:** BAN-233 · BAN-234 · BAN-235 · BAN-236 · BAN-237
+
+### Fixes shipped
+
+| Ticket | Finding(s) | Fix | PR | Impact |
+|--------|-----------|-----|----|--------|
+| BAN-233 | F-01 + F-14 | `settings()` wrapped in `Cache::remember("settings_{userId}", 300)`. `flushSettingsCache()` called in all 7 `SettingController` write methods + `storeSignature`. | #69 | 2–15 fewer queries per request; captcha side-effect kept outside cache so it runs every request from cached data. |
+| BAN-234 | F-04, F-06, F-07 | `->get()` → `->paginate(25)` in `BookingController::index()`, `VehicleController::index()`, `ExpenseController::index()`. `->map()` → `->through()` to preserve paginator metadata. New shared `Pagination.jsx` component with Inertia prev/next links. | #70 | Memory O(table) → O(25). List pages safe at any dataset size. |
+| BAN-235 | F-02 | `organizationByMonth()` (12 × COUNT) and `incomeExpenseByMonth()` (24 × SUM) both replaced with single `GROUP BY MONTH(...)` queries. 12-slot arrays filled in PHP from sparse result. | #71 | 36 queries → 3 per dashboard load. |
+| BAN-236 | F-13 | Pre-fetch before import loop: `$nextDriverId = max('driver_id') + 1`, `$nextVehicleId = max('vehicle_id') + 1`, `$existingEmails = User::pluck('email')` as in-memory set. Email while-loop and two `->latest()->first()` calls eliminated. | #72 | 200–300 fewer queries on 500-row import with new drivers/vehicles. Unbounded email-uniqueness loop eliminated. |
+| BAN-237 | F-09 | `InspectionType::find($k)` inside checklist foreach replaced with `findMany(array_keys(...))->keyBy('id')` before the loop. Null-safe `?->type ?? ''` also fixes latent crash on deleted types. | #73 | N queries → 1 per inspection show page. |
+
+### Updated finding status
+
+| Finding | Phase 0 Priority | Phase 6 Status | Phase 7 Status |
+|---------|-----------------|----------------|----------------|
+| F-01 `settings()` uncached | P0 | 🔴 Open | ✅ **Fixed** (BAN-233 / PR #69) |
+| F-02 Dashboard aggregate loops | P0 | 🟡 Partial (12 remain) | ✅ **Fixed** (BAN-235 / PR #71) |
+| F-03 Settings redundancy via helper chain | P0 | 🔴 Open | ✅ **Fixed** (free fix from BAN-233) |
+| F-04 Booking list unbounded `->get()` | P1 | 🔴 Open | ✅ **Fixed** (BAN-234 / PR #70) |
+| F-05 Booking planning `->get()` + N+1 | P1 | 🔴 Open | 🔴 **Open** (not in Phase 7 scope) |
+| F-06 Vehicle list unbounded `->get()` | P1 | 🔴 Open | ✅ **Fixed** (BAN-234 / PR #70) |
+| F-07 Expense list unbounded `->get()` | P1 | 🔴 Open | ✅ **Fixed** (BAN-234 / PR #70) |
+| F-08 Booking create 4 unbounded `->get()` | P2 | 🔴 Open | 🔴 **Open** (not in Phase 7 scope) |
+| F-09 Inspection show N+1 | P2 | 🔴 Open | ✅ **Fixed** (BAN-237 / PR #73) |
+| F-10 Subscription save loop | P2 | ✅ Fixed | ✅ Fixed |
+| F-11 RentalAgreement sequential lookups | P3 | 🔴 Open | 🔴 **Open** (not in Phase 7 scope) |
+| F-12 Subscription landing `->get()` | P3 | ✅ Fixed | ✅ Fixed |
+| F-13 Excel import per-row queries | P1 | 🔴 Open | ✅ **Fixed** (BAN-236 / PR #72) |
+| F-14 `settings()` in Inertia middleware | P0 (new) | 🔴 Open | ✅ **Fixed** (BAN-233 / PR #69) |
+
+### Remaining open findings
+
+- **F-05** — `BookingController::planning()` N+1 on `$booking->drivers` (one `with('drivers')` line — schedule as BAN-238)
+- **F-08** — `BookingController::create()` 4 unbounded `->get()` on form load (schedule as BAN-239)
+- **F-11** — `RentalAgreementController::show()` sequential User/Driver lookups (schedule as BAN-240)
+
+---
+
 ## Phase 6 Delta — 2026-06-02
 
 **Branch:** `dev` (post Phase 6 merge)
@@ -485,23 +527,21 @@ review are pre-ticked.
 
 ## 5. Re-measurement section
 
-Fill in after Phase 7 fixes are applied.
+Phase 7 query counts are from static analysis / test assertions. p50 requires live profiling with production-shaped data (see `docs/perf-audit-plan.md`).
 
-| Finding | Pre-fix query count | Post-fix query count | Pre-fix p50 | Post-fix p50 |
-| ------- | ------------------- | -------------------- | ----------- | ------------ |
-| F-01    | TBD                 | TBD                  | TBD         | TBD          |
-| F-02    | TBD                 | TBD                  | TBD         | TBD          |
-| F-04    | TBD                 | TBD                  | TBD         | TBD          |
-| F-05    | TBD                 | TBD                  | TBD         | TBD          |
-| F-06    | TBD                 | TBD                  | TBD         | TBD          |
-| F-07    | TBD                 | TBD                  | TBD         | TBD          |
-| F-08    | TBD                 | TBD                  | TBD         | TBD          |
-| F-09    | TBD                 | TBD                  | TBD         | TBD          |
-| F-10    | TBD                 | TBD                  | TBD         | TBD          |
-| F-13    | TBD                 | TBD                  | TBD         | TBD          |
+| Finding | Pre-fix queries | Post-fix queries | Notes | Pre-fix p50 | Post-fix p50 |
+| ------- | --------------- | ---------------- | ----- | ----------- | ------------ |
+| F-01 + F-14 | 2–15 per request | 1 (cached, 5-min TTL) | Flushed on settings save | TBD | TBD |
+| F-02    | 36 (12 COUNT + 24 SUM) | 3 (3 GROUP BY) | Owner: 2, super-admin: 3 | TBD | TBD |
+| F-04    | O(n bookings)   | O(25)            | paginate(25) | TBD | TBD |
+| F-05    | N+2 (N = booking count) | Open | Not fixed in Phase 7 | TBD | TBD |
+| F-06    | O(n vehicles)   | O(25)            | paginate(25) | TBD | TBD |
+| F-07    | O(n expenses)   | O(25)            | paginate(25) | TBD | TBD |
+| F-08    | 4 unbounded get() | Open           | Not fixed in Phase 7 | TBD | TBD |
+| F-09    | N (N = checklist items) | 1         | findMany() batch load | TBD | TBD |
+| F-10    | Fixed Phase 6   | Fixed Phase 6    | — | — | — |
+| F-13    | 2–3 per new driver/vehicle row | 0 per row | Pre-fetched counters + email set | TBD | TBD |
 
 ---
 
-_This document is the output of the Phase 0 audit. It is intentionally
-report-only. Fixes are scheduled for Phase 7, one bottleneck per PR,
-each approved individually._
+_Phase 7 complete as of 2026-06-02. Open findings (F-05, F-08, F-11) to be scheduled as BAN-238/239/240 in the next planning cycle. Live p50/p95 measurements require a Telescope-enabled run against production-shaped data — see `docs/perf-audit-plan.md`._
