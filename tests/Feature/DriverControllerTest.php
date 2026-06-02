@@ -165,6 +165,222 @@ class DriverControllerTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $driverUser->id]);
     }
 
+    // ── DriverController::show ────────────────────────────────────────────────
+
+    public function test_show_requires_auth(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('driver.show', $driverUser->id))->assertRedirect(route('login'));
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.show', $driverUser->id))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Show')
+                ->has('driver')
+                ->has('user')
+            );
+    }
+
+    // ── DriverController::edit ────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('driver.edit', $driverUser->id))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.edit', $driverUser->id))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Edit')
+                ->has('gender')
+                ->has('user')
+            );
+    }
+
+    // ── DriverController::create ──────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('driver.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('driver.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Create')
+                ->has('gender')
+            );
+    }
+
+    // ── DriverController::store — with explicit email ─────────────────────────
+
+    public function test_store_creates_driver_with_explicit_email(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'first_name' => 'Maria',
+                'last_name'  => 'Silva',
+                'email'      => 'maria.silva@test.com',
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['email' => 'maria.silva@test.com', 'type' => 'driver']);
+    }
+
+    // ── DriverController::update — with document upload ───────────────────────
+
+    public function test_update_with_document_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $driverUser = User::factory()->driver()->create([
+            'name'      => 'Old Name',
+            'email'     => 'old@example.com',
+            'parent_id' => $this->owner->id,
+        ]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $document = \Illuminate\Http\UploadedFile::fake()->create('id_card.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $driverUser->id), [
+                'first_name' => 'New',
+                'last_name'  => 'Name',
+                'email'      => 'new@example.com',
+                'document'   => $document,
+            ])
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+    }
+
+    // ── DriverController::store — without email (auto-generated) ─────────────
+
+    public function test_store_creates_driver_without_email_auto_generates_one(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'first_name' => 'Auto',
+                'last_name'  => 'Email',
+                'email'      => '', // empty email triggers auto-generation
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        // The user should have been created with an auto-generated email
+        $this->assertDatabaseHas('users', [
+            'name' => 'Auto Email',
+            'type' => 'driver',
+        ]);
+    }
+
+    public function test_store_flashes_error_on_missing_phone_without_email(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'email'        => '',
+                'phone_number' => '',
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── DriverController::store — with license upload ─────────────────────────
+
+    public function test_store_creates_driver_with_license_upload(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $license = \Illuminate\Http\UploadedFile::fake()->create('license.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), array_merge($this->validPayload([
+                'first_name' => 'Licensed',
+                'last_name'  => 'Driver',
+            ]), [
+                'license' => $license,
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['name' => 'Licensed Driver', 'type' => 'driver']);
+    }
+
+    // ── DriverController::update — permission denied ──────────────────────────
+
+    public function test_update_denied_without_edit_driver(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->put(route('driver.update', $driverUser->id), $this->validPayload())
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── DriverController::update — with license upload ────────────────────────
+
+    public function test_update_with_license_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $driverUser = User::factory()->driver()->create([
+            'name'      => 'Old Name',
+            'email'     => 'driver@example.com',
+            'parent_id' => $this->owner->id,
+        ]);
+        Driver::create([
+            'driver_id' => $driverUser->id,
+            'user_id'   => $driverUser->id,
+            'gender'    => 'Male',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        $license = \Illuminate\Http\UploadedFile::fake()->create('license.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $driverUser->id), [
+                'first_name' => 'Updated',
+                'last_name'  => 'Driver',
+                'email'      => 'driver@example.com',
+                'license'    => $license,
+            ])
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+    }
+
+    // ── DriverController::store — duplicate email validation ─────────────────
+
+    public function test_store_flashes_error_on_duplicate_email(): void
+    {
+        User::factory()->create(['email' => 'dup@test.com']);
+
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'email' => 'dup@test.com',
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array
