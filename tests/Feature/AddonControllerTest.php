@@ -140,6 +140,138 @@ class AddonControllerTest extends TestCase
         $this->assertDatabaseMissing('addons', ['id' => $addon->id]);
     }
 
+    // ── AddonController::create ───────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('addon.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('addon.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Addon/Create')
+                ->has('billingType')
+            );
+    }
+
+    // ── AddonController::edit ─────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $addon = Addon::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('addon.edit', $addon))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $addon = Addon::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('addon.edit', $addon))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Addon/Edit')
+                ->has('addon')
+                ->has('billingType')
+            );
+    }
+
+    // ── AddonController::update — permission denied ───────────────────────────
+
+    public function test_update_denied_without_edit_addon(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $addon = Addon::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($noPerms)
+            ->put(route('addon.update', $addon), $this->validPayload())
+            ->assertSessionHas('error');
+    }
+
+    // ── AddonController::store — additional validation ────────────────────────
+
+    public function test_store_flashes_error_on_missing_price(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('addon.store'), $this->validPayload(['price' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_store_flashes_error_on_missing_billing_type(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('addon.store'), $this->validPayload(['billing_type' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── AddonController::update — additional validation ───────────────────────
+
+    public function test_update_flashes_error_on_missing_price(): void
+    {
+        $addon = Addon::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($this->owner)
+            ->put(route('addon.update', $addon), $this->validPayload(['price' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_update_flashes_error_on_missing_billing_type(): void
+    {
+        $addon = Addon::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($this->owner)
+            ->put(route('addon.update', $addon), $this->validPayload(['billing_type' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── AddonController::getAddonRateCalculation ──────────────────────────────
+
+    public function test_rate_calculation_requires_auth(): void
+    {
+        $this->get(route('addon.rate.calculation'))->assertRedirect(route('login'));
+    }
+
+    public function test_rate_calculation_returns_json_with_totals(): void
+    {
+        $vehicle = \App\Models\Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 50]);
+        $addon   = Addon::factory()->daily()->create(['parent_id' => $this->owner->id, 'price' => 10]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('addon.rate.calculation', [
+                'vahicle_id'     => $vehicle->id,
+                'start_date_time' => now()->addDay()->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(3)->format('Y/m/d') . ' 09:00',
+                'addons'          => [$addon->id],
+                'daychange'       => 0,
+            ]))
+            ->assertOk();
+    }
+
+    // ── AddonController::getReductionRateCalculation ──────────────────────────
+
+    public function test_reduction_rate_calculation_requires_auth(): void
+    {
+        $this->get(route('addon.rate.reduction'))->assertRedirect(route('login'));
+    }
+
+    public function test_reduction_rate_calculation_returns_json(): void
+    {
+        $vehicle = \App\Models\Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 60]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('addon.rate.reduction', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => now()->addDay()->format('Y/m/d') . ' 10:00',
+                'end_date_time'   => now()->addDays(3)->format('Y/m/d') . ' 10:00',
+            ]))
+            ->assertOk();
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

@@ -140,6 +140,74 @@ class PlaceControllerTest extends TestCase
         $this->assertDatabaseMissing('places', ['id' => $place->id]);
     }
 
+    // ── PlaceController::create ───────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('place.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('place.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Place/Create')
+            );
+    }
+
+    // ── PlaceController::edit ─────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $place = Place::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('place.edit', $place))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $place = Place::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('place.edit', $place))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Place/Edit')
+                ->has('place')
+            );
+    }
+
+    // ── PlaceController::update — denied without edit place ───────────────────
+
+    public function test_update_denied_without_edit_place(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $place = Place::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($noPerms)
+            ->put(route('place.update', $place), $this->validPayload())
+            ->assertSessionHas('error');
+    }
+
+    // ── PlaceController::getPlaceRateCalculation ──────────────────────────────
+
+    public function test_place_rate_calculation_requires_auth(): void
+    {
+        $this->get(route('place.rate.calculation'))->assertRedirect(route('login'));
+    }
+
+    public function test_place_rate_calculation_returns_json(): void
+    {
+        $place = Place::factory()->create(['parent_id' => $this->owner->id, 'price' => 50]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('place.rate.calculation', [
+                'pickup_place'  => $place->id,
+                'drop_off_place' => $place->id,
+            ]))
+            ->assertOk();
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

@@ -250,4 +250,221 @@ class UserControllerTest extends TestCase
 
         $this->assertDatabaseMissing('logged_histories', ['id' => $history->id]);
     }
+
+    // ── UserController::create ────────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('users.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('users.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Users/Create')
+                ->has('userRoles')
+            );
+    }
+
+    // ── UserController::edit ──────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('users.edit', $target))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('users.edit', $target))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Users/Edit')
+                ->has('user.id')
+                ->has('userRoles')
+            );
+    }
+
+    // ── UserController::store — validation: duplicate email ───────────────────
+
+    public function test_store_flashes_error_on_duplicate_email(): void
+    {
+        User::factory()->create(['email' => 'existing@test.com', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Duplicate User',
+                'email'    => 'existing@test.com',
+                'password' => 'password123',
+                'role'     => $this->employeeRole->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── UserController::update — sets role ───────────────────────────────────
+
+    public function test_update_assigns_new_role(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+        $newRole = Role::create(['name' => 'manager', 'guard_name' => 'web', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->put(route('users.update', $target), [
+                'name'  => $target->name,
+                'email' => $target->email,
+                'role'  => $newRole->id,
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($target->fresh()->hasRole('manager'));
+    }
+
+    // ── UserController::loggedHistory (Blade) ─────────────────────────────────
+    // NOTE: loggedHistory renders a Blade view. This test confirms the 200 status.
+    public function test_logged_history_returns_view_for_authorized_user(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('logged.history'))
+            ->assertOk();
+    }
+
+    // ── UserController::index — super admin lists owners ─────────────────────
+
+    public function test_index_lists_owners_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('manage user');
+
+        User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('users.index'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Users/Index')
+                ->has('users')
+            );
+    }
+
+    // ── UserController::store — super admin creates owner ────────────────────
+
+    public function test_store_creates_owner_as_super_admin_and_redirects(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('create user');
+
+        // Ensure the 'owner' role exists
+        Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('users.store'), [
+                'name'     => 'New Owner',
+                'email'    => 'newowner@test.com',
+                'password' => 'password123',
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'newowner@test.com',
+            'type'  => 'owner',
+        ]);
+    }
+
+    public function test_store_flashes_error_on_missing_name_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('create user');
+
+        $this->actingAs($superAdmin)
+            ->post(route('users.store'), [
+                'email'    => 'owner@test.com',
+                'password' => 'password123',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_store_flashes_error_on_duplicate_email_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('create user');
+
+        User::factory()->create(['email' => 'taken@test.com']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('users.store'), [
+                'name'     => 'Owner',
+                'email'    => 'taken@test.com',
+                'password' => 'password123',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── UserController::update — super admin path ────────────────────────────
+
+    public function test_update_persists_changes_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $target = User::factory()->create([
+            'name'      => 'Old Name',
+            'parent_id' => 0,
+            'type'      => 'owner',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->put(route('users.update', $target), [
+                'name'  => 'Updated Name',
+                'email' => $target->email,
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Updated Name']);
+    }
+
+    public function test_update_flashes_error_on_missing_name_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $target = User::factory()->create(['parent_id' => 0, 'type' => 'owner']);
+
+        $this->actingAs($superAdmin)
+            ->put(route('users.update', $target), [
+                'email' => $target->email,
+                // name missing
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
 }

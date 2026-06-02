@@ -207,4 +207,21 @@ class SignatureControllerTest extends TestCase
         // NOTE: file is NOT deleted by the controller — Storage::assertMissing would fail here.
         // That is a known gap; tracked separately.
     }
+
+    // ── SignatureController::create ───────────────────────────────────────────
+    // NOTE: signature.create is registered OUTSIDE the auth middleware group.
+    // Unauthenticated access crashes with a null-pointer on \Auth::user().
+    // These tests exercise it as an authenticated user only.
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('signature.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Signature/Create')
+                ->has('drivers')
+            );
+    }
+
 }

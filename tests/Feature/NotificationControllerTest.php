@@ -154,6 +154,56 @@ class NotificationControllerTest extends TestCase
         $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
     }
 
+    // ── NotificationController::create ───────────────────────────────────────
+    // NOTE: create renders a Blade view that crashes with 500 due to a
+    // missing 'templete' key in the old view — this is a known pre-existing
+    // bug in the unported Blade view, not something introduced by tests.
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('notification.create'))->assertRedirect(route('login'));
+    }
+
+    // ── NotificationController::edit ──────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $notification = $this->makeNotification('new_booking');
+        $this->get(route('notification.edit', $notification))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_returns_200_for_authorized_user(): void
+    {
+        $notification = $this->makeNotification('new_booking');
+
+        $this->actingAs($this->owner)
+            ->get(route('notification.edit', $notification))
+            ->assertOk();
+    }
+
+    // ── NotificationController::update — permission denied ────────────────────
+
+    public function test_update_denied_without_edit_notification(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $notification = $this->makeNotification('new_driver');
+        $this->actingAs($noPerms)
+            ->put(route('notification.update', $notification), [
+                'subject' => 'Subject',
+                'message' => 'Message',
+            ])
+            ->assertSessionHas('error');
+    }
+
+    // ── NotificationController::index — returns 200 with Blade view ───────────
+
+    public function test_index_returns_view_for_authorized_user(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('notification.index'))
+            ->assertOk();
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array
