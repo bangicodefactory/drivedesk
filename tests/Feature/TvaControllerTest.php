@@ -240,4 +240,223 @@ class TvaControllerTest extends TestCase
             ->post(route('tva.bulk.download'), [])
             ->assertSessionHasErrors(['invoice_ids']);
     }
+
+    // ── TvaController::edit ───────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create();
+        $this->get(route('tva.edit', $tva))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.edit', $tva))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Edit')
+                ->has('tva.id')
+                ->has('tva.facture_number')
+            );
+    }
+
+    public function test_edit_returns_404_for_non_existent_id(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('tva.edit', 99999))
+            ->assertNotFound();
+    }
+
+    // ── TvaController::show ───────────────────────────────────────────────────
+
+    public function test_show_requires_auth(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create();
+        $this->get(route('tva.show', $tva))->assertRedirect(route('login'));
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.show', $tva))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Show')
+                ->has('tva.id')
+                ->has('tva.facture_number')
+                ->has('tva.montant_ttc')
+            );
+    }
+
+    public function test_show_returns_404_for_non_existent_id(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('tva.show', 99999))
+            ->assertNotFound();
+    }
+
+    // ── TvaController::index — additional filters ─────────────────────────────
+
+    public function test_index_filters_by_to_date(): void
+    {
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['to_date' => '2025-03-01']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
+    }
+
+    public function test_index_filters_by_filter_month(): void
+    {
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-15', 'parent_id' => $this->owner->id]);
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_month' => '1']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
+    }
+
+    public function test_index_filters_by_filter_year(): void
+    {
+        Tva::factory()->withInvoice()->create(['facture_date' => '2024-05-01', 'parent_id' => $this->owner->id]);
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_year' => '2024']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
+    }
+
+    public function test_index_filters_by_filter_day(): void
+    {
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-01', 'parent_id' => $this->owner->id]);
+        Tva::factory()->withInvoice()->create(['facture_date' => '2025-06-15', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_day' => '2025-06-01']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
+    }
+
+    public function test_index_filters_by_driver_name(): void
+    {
+        Tva::factory()->withInvoice()->create([
+            'client_name' => 'Alice Dupont',
+            'parent_id'   => $this->owner->id,
+        ]);
+        Tva::factory()->withInvoice()->create([
+            'client_name' => 'Bob Martin',
+            'parent_id'   => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['driver_name' => 'Alice']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas', 1)
+            );
+    }
+
+    // ── TvaController::generateMonthlyTva ─────────────────────────────────────
+    // NOTE: tva.generate is registered OUTSIDE the auth middleware group.
+    // Unauthenticated requests hit validation, not a login redirect.
+
+    public function test_generate_monthly_tva_validates_when_unauthenticated(): void
+    {
+        // Outside auth middleware — no login redirect, just validation
+        $this->post(route('tva.generate'), [])
+            ->assertSessionHasErrors(['month']);
+    }
+
+    public function test_generate_monthly_tva_validates_month_format(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => 'not-a-month'])
+            ->assertSessionHasErrors(['month']);
+    }
+
+    public function test_generate_monthly_tva_with_valid_month_redirects_back(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), [
+                'month'      => now()->format('Y-m'),
+                'tva_number' => 0,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    public function test_generate_monthly_tva_deletes_existing_records_for_month(): void
+    {
+        $monthStart = now()->startOfMonth();
+        Tva::factory()->withInvoice()->create([
+            'facture_date' => $monthStart->format('Y-m-d'),
+            'parent_id'    => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), [
+                'month'      => $monthStart->format('Y-m'),
+                'tva_number' => 10,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // After generation, the old record (without a booking payment) should be gone
+        $this->assertDatabaseMissing('tvas', [
+            'parent_id' => $this->owner->id,
+            'year'      => $monthStart->year,
+            'month'     => $monthStart->month,
+        ]);
+    }
+
+    // ── TvaController::report — additional ───────────────────────────────────
+
+    public function test_report_renders_inertia_component_with_expected_props(): void
+    {
+        Tva::factory()->withInvoice()->create([
+            'facture_date' => now()->format('Y-m-d'),
+            'parent_id'    => $this->owner->id,
+            'tva_amount'   => 100,
+            'total_ht'     => 500,
+            'montant_ttc'  => 600,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.report'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Report')
+                ->has('monthlyStats')
+                ->has('yearlyStats')
+                ->has('topClients')
+                ->has('chartData')
+                ->has('selectedYear')
+                ->has('availableYears')
+                ->has('topRentedCars')
+                ->has('topProfitableCars')
+                ->has('carPerformanceStats')
+            );
+    }
 }

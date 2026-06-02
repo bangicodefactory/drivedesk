@@ -98,4 +98,45 @@ class EmailVerificationTest extends TestCase
 
         Notification::assertNothingSent();
     }
+
+    // ── VerifyEmailController::verifyEmail (token-based path) ─────────────────
+
+    public function test_verify_email_with_valid_token_marks_email_verified(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at'        => null,
+            'email_verification_token' => 'valid-token-abc',
+        ]);
+
+        $this->get(route('email-verification', 'valid-token-abc'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('success');
+
+        $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertNull($user->fresh()->email_verification_token);
+    }
+
+    public function test_verify_email_with_invalid_token_returns_404_json(): void
+    {
+        $this->get(route('email-verification', 'non-existent-token'))
+            ->assertStatus(404)
+            ->assertJson(['message' => 'Invalid or expired token.']);
+    }
+
+    public function test_already_verified_user_hitting_invoke_is_redirected(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->actingAs($user)->get($verificationUrl);
+
+        $response->assertRedirect(RouteServiceProvider::HOME . '?verified=1');
+    }
 }

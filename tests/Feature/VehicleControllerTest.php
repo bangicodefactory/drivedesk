@@ -359,6 +359,88 @@ class VehicleControllerTest extends TestCase
         $this->assertArrayNotHasKey($vehicle->id, $decoded);
     }
 
+    // ── VehicleController::store — with picture upload ────────────────────────
+
+    public function test_store_with_picture_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake();
+
+        $picture = \Illuminate\Http\UploadedFile::fake()->image('car.jpg');
+
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['picture' => $picture]))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Renault Clio',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    // ── VehicleController::update — with document upload ─────────────────────
+
+    public function test_update_with_document_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake();
+
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $document = \Illuminate\Http\UploadedFile::fake()->create('reg.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload(['document' => $document]))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+    }
+
+    // ── VehicleController::getAvailableVehicle — with booking_id exclusion ───
+
+    public function test_available_vehicle_with_booking_id_exclusion_returns_json(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $booking = Booking::factory()->create([
+            'vehicle'    => $vehicle->id,
+            'start_date' => now()->addDays(10)->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_date'   => now()->addDays(13)->format('Y-m-d'),
+            'end_time'   => '18:00',
+            'status'     => 'yet_to_start',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        // When booking_id is passed, that booking is excluded from the block check
+        $response = $this->actingAs($this->owner)
+            ->getJson(route('available.vehicle', [
+                'start_date_time' => now()->addDays(10)->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(13)->format('Y/m/d') . ' 18:00',
+                'booking_id'      => $booking->id,
+            ]));
+
+        $response->assertOk();
+        // Vehicle should appear because the conflicting booking is excluded
+        $decoded = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey($vehicle->id, $decoded);
+    }
+
+    // ── VehicleController::getVehicleRateCalculation — with addons ───────────
+
+    public function test_vehicle_rate_calculation_with_addons_returns_json(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 80]);
+        $addon   = \App\Models\Addon::factory()->create(['parent_id' => $this->owner->id, 'price' => 10]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('vehicle.rate.calculation', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => now()->addDay()->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(4)->format('Y/m/d') . ' 09:00',
+                'daychange'       => 0,
+                'addons'          => [$addon->id],
+            ]))
+            ->assertOk();
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array
