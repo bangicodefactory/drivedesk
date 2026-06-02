@@ -37,6 +37,7 @@ const schema = z.object({
     license1: z.any().optional(),
     reference: z.string().optional(),
     notes: z.string().optional(),
+    ICE_company: z.string().optional(),
     _method: z.string().optional(),
 });
 
@@ -62,6 +63,7 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
             license1: null,
             reference: driver.reference ?? '',
             notes: driver.notes ?? '',
+            ICE_company: driver.ICE_company ?? '',
             _method: 'PUT',
         },
     });
@@ -179,6 +181,11 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
                             <div className="space-y-1.5 md:col-span-2">
                                 <Label htmlFor="notes">Notes</Label>
                                 <Textarea id="notes" placeholder="Enter notes" rows={1} {...register('notes')} />
+                            </div>
+
+                            <div className="space-y-1.5 md:col-span-2">
+                                <Label htmlFor="ICE_company">ICE_company</Label>
+                                <Input id="ICE_company" placeholder="Enter ICE if client company" {...register('ICE_company')} />
                             </div>
                         </div>
 
