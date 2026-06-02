@@ -32,7 +32,7 @@ function FileDetail({ label, name, dir, className = '' }) {
         <div className={className}>
             <h6 className="text-sm font-semibold text-muted-foreground mb-1">{label}</h6>
             {isImage ? (
-                <div className="mb-4 inline-flex flex-col gap-1">
+                <div className="mb-4 inline-flex items-start gap-2">
                     <a href={url} target="_blank" rel="noreferrer">
                         <img
                             src={url}
@@ -43,10 +43,10 @@ function FileDetail({ label, name, dir, className = '' }) {
                     <a
                         href={url}
                         download={name}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors self-start"
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="Download"
                     >
-                        <Download className="h-3.5 w-3.5" />
-                        Download
+                        <Download className="h-4 w-4" />
                     </a>
                 </div>
             ) : (
