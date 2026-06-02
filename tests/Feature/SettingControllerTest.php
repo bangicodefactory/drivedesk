@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\WithClient;
@@ -424,6 +426,103 @@ class SettingControllerTest extends TestCase
             ->post(route('setting.payment'), ['CURRENCY_SYMBOL' => '€'])
             ->assertRedirect()
             ->assertSessionHas('error');
+    }
+
+    // ── settings() cache ─────────────────────────────────────────────────────
+
+    public function test_settings_result_is_cached_after_first_call(): void
+    {
+        $this->actingAs($this->owner);
+
+        // Prime the cache
+        settings();
+
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey), 'settings() should store result in cache');
+    }
+
+    public function test_saving_general_settings_flushes_cache(): void
+    {
+        $this->actingAs($this->owner);
+
+        // Prime the cache with a real settings() call, then save and verify it's cleared
+        settings();
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), ['application_name' => 'New App'])
+            ->assertRedirect();
+
+        $this->assertFalse(Cache::has($cacheKey), 'generalData should flush settings cache');
+    }
+
+    public function test_settings_queries_db_only_once_per_ttl(): void
+    {
+        $this->actingAs($this->owner);
+
+        $queryCount = 0;
+        DB::listen(function ($query) use (&$queryCount) {
+            if (str_contains($query->sql, 'settings')) {
+                $queryCount++;
+            }
+        });
+
+        settings();
+        settings(); // second call should hit cache, not DB
+
+        $this->assertLessThanOrEqual(1, $queryCount, 'settings() should query DB at most once per TTL');
+    }
+
+    /** @dataProvider settingsFlushRouteProvider */
+    public function test_each_settings_write_flushes_cache(string $routeName, array $payload): void
+    {
+        $this->actingAs($this->owner);
+        settings();
+        $cacheKey = 'settings_' . parentId();
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $this->actingAs($this->owner)
+            ->post(route($routeName), $payload)
+            ->assertRedirect();
+
+        $this->assertFalse(Cache::has($cacheKey), "{$routeName} should flush settings cache");
+    }
+
+    public static function settingsFlushRouteProvider(): array
+    {
+        return [
+            'smtpData' => ['setting.smtp', [
+                'sender_name'       => 'Test',
+                'sender_email'      => 'test@example.com',
+                'server_driver'     => 'smtp',
+                'server_host'       => 'smtp.example.com',
+                'server_port'       => '587',
+                'server_username'   => 'user',
+                'server_password'   => 'pass',
+                'server_encryption' => 'tls',
+            ]],
+            'paymentData' => ['setting.payment', [
+                'CURRENCY'        => 'EUR',
+                'CURRENCY_SYMBOL' => '€',
+            ]],
+            'companyData' => ['setting.company', [
+                'company_name'    => 'Test Co',
+                'company_email'   => 'info@test.com',
+                'company_phone'   => '+1234567890',
+                'company_address' => '1 Main St',
+            ]],
+            'themeSettings' => ['theme.settings', []],
+            'siteSEOData' => ['setting.site.seo', [
+                'meta_seo_title'       => 'Title',
+                'meta_seo_keyword'     => 'kw',
+                'meta_seo_description' => 'desc',
+            ]],
+            'googleRecaptchaData' => ['setting.google.recaptcha', [
+                'recaptcha_key'    => 'site-key',
+                'recaptcha_secret' => 'secret-key',
+            ]],
+        ];
     }
 
     // ── SettingController::googleRecaptchaData ────────────────────────────────
