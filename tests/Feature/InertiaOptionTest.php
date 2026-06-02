@@ -31,7 +31,6 @@ class InertiaOptionTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage options', 'create options', 'edit options', 'delete options'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

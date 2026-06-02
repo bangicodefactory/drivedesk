@@ -18,15 +18,11 @@ class AddonController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            $addons->transform(function ($addon) {
-                $addon->price_formatted = priceFormat($addon->price);
-                return $addon;
-            });
-            return Inertia::render('Addon/Index', compact('addons'));
-        }
-
-        return view('addon.index', compact('addons'));
+        $addons->transform(function ($addon) {
+            $addon->price_formatted = priceFormat($addon->price);
+            return $addon;
+        });
+        return Inertia::render('Addon/Index', compact('addons'));
     }
 
 
@@ -34,11 +30,7 @@ class AddonController extends Controller
     {
         $billingType=Addon::$billingType;
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Addon/Create', compact('billingType'));
-        }
-
-        return view('addon.create',compact('billingType'));
+        return Inertia::render('Addon/Create', compact('billingType'));
     }
 
 
@@ -79,11 +71,7 @@ class AddonController extends Controller
     {
         $billingType=Addon::$billingType;
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Addon/Edit', compact('addon','billingType'));
-        }
-
-        return view('addon.edit',compact('addon','billingType'));
+        return Inertia::render('Addon/Edit', compact('addon','billingType'));
     }
 
 

@@ -14,17 +14,13 @@ class PermissionController extends Controller
     {
         $permissionData = Permission::all();
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Permissions/Index', [
-                'permissions' => $permissionData->map(fn ($p) => [
-                    'id'         => $p->id,
-                    'name'       => $p->name,
-                    'guard_name' => $p->guard_name,
-                ])->values()->all(),
-            ]);
-        }
-
-        return view('user_permission.index', compact('permissionData'));
+        return Inertia::render('Permissions/Index', [
+            'permissions' => $permissionData->map(fn ($p) => [
+                'id'         => $p->id,
+                'name'       => $p->name,
+                'guard_name' => $p->guard_name,
+            ])->values()->all(),
+        ]);
     }
 
 

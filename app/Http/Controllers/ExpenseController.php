@@ -18,10 +18,7 @@ class ExpenseController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Expense/Index', compact('expenses'));
-        }
-        return view('expense.index', compact('expenses'));
+        return Inertia::render('Expense/Index', compact('expenses'));
     }
 
 
@@ -33,10 +30,7 @@ class ExpenseController extends Controller
         $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
         $types->prepend(__('Select Type'), '');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Expense/Create', compact('vehicles', 'types'));
-        }
-        return view('expense.create', compact('vehicles', 'types'));
+        return Inertia::render('Expense/Create', compact('vehicles', 'types'));
     }
 
 
@@ -104,10 +98,7 @@ class ExpenseController extends Controller
         $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
         $types->prepend(__('Select Type'), '');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Expense/Edit', compact('vehicles', 'expense', 'types'));
-        }
-        return view('expense.edit', compact('vehicles', 'expense', 'types'));
+        return Inertia::render('Expense/Edit', compact('vehicles', 'expense', 'types'));
     }
 
 

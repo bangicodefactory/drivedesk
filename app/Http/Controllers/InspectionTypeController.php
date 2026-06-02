@@ -16,19 +16,13 @@ class InspectionTypeController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('InspectionType/Index', compact('types'));
-        }
-        return view('inspection_type.index', compact('types'));
+        return Inertia::render('InspectionType/Index', compact('types'));
     }
 
 
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('InspectionType/Create');
-        }
-        return view('inspection_type.create');
+        return Inertia::render('InspectionType/Create');
     }
 
 
@@ -64,10 +58,7 @@ class InspectionTypeController extends Controller
 
     public function edit(InspectionType $inspectionType)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('InspectionType/Edit', compact('inspectionType'));
-        }
-        return view('inspection_type.edit', compact('inspectionType'));
+        return Inertia::render('InspectionType/Edit', compact('inspectionType'));
     }
 
 

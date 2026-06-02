@@ -18,18 +18,14 @@ class SettingController extends Controller
     {
         $loginUser = \Auth::user();
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Settings/Account', [
-                'loginUser' => [
-                    'id'      => $loginUser->id,
-                    'name'    => $loginUser->name,
-                    'email'   => $loginUser->email,
-                    'profile' => $loginUser->profile,
-                ],
-            ]);
-        }
-
-        return view('settings.account', compact('loginUser'));
+        return Inertia::render('Settings/Account', [
+            'loginUser' => [
+                'id'      => $loginUser->id,
+                'name'    => $loginUser->name,
+                'email'   => $loginUser->email,
+                'profile' => $loginUser->profile,
+            ],
+        ]);
     }
 
     public function accountData(Request $request)
@@ -95,17 +91,13 @@ class SettingController extends Controller
     {
         $loginUser = \Auth::user();
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Settings/Password', [
-                'loginUser' => [
-                    'id'    => $loginUser->id,
-                    'name'  => $loginUser->name,
-                    'email' => $loginUser->email,
-                ],
-            ]);
-        }
-
-        return view('settings.password', compact('loginUser'));
+        return Inertia::render('Settings/Password', [
+            'loginUser' => [
+                'id'    => $loginUser->id,
+                'name'  => $loginUser->name,
+                'email' => $loginUser->email,
+            ],
+        ]);
     }
 
     public function passwordData(Request $request)

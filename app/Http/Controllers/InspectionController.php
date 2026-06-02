@@ -20,16 +20,13 @@ class InspectionController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        if (config('app.inertia_enabled')) {
-            $inspections = $inspections->map(function ($inspection) {
-                $data = $inspection->toArray();
-                $data['vehicles'] = $inspection->vehicles ? $inspection->vehicles->toArray() : null;
-                $data['id_encrypted'] = Crypt::encrypt($inspection->id);
-                return $data;
-            });
-            return Inertia::render('Inspection/Index', compact('inspections'));
-        }
-        return view('inspection.index', compact('inspections'));
+        $inspections = $inspections->map(function ($inspection) {
+            $data = $inspection->toArray();
+            $data['vehicles'] = $inspection->vehicles ? $inspection->vehicles->toArray() : null;
+            $data['id_encrypted'] = Crypt::encrypt($inspection->id);
+            return $data;
+        });
+        return Inertia::render('Inspection/Index', compact('inspections'));
     }
 
 
@@ -44,10 +41,7 @@ class InspectionController extends Controller
             $fuelLevel=Inspection::$fuelLevel;
 
             $types = InspectionType::where('parent_id', parentId())->get();
-            if (config('app.inertia_enabled')) {
-                return Inertia::render('Inspection/Create', compact('vehicles','status','repairStatus','fuelLevel','types'));
-            }
-            return view('inspection.create', compact('vehicles','status','repairStatus','fuelLevel','types'));
+            return Inertia::render('Inspection/Create', compact('vehicles','status','repairStatus','fuelLevel','types'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -124,11 +118,8 @@ class InspectionController extends Controller
             $details[$k]['note']=isset($checklist->note)?$checklist->note:'';
         }
 
-        if (config('app.inertia_enabled')) {
-            $inspection->setRelation('vehicles', $inspection->vehicles);
-            return Inertia::render('Inspection/Show', compact('inspection','details'));
-        }
-        return view('inspection.show', compact('inspection','details'));
+        $inspection->setRelation('vehicles', $inspection->vehicles);
+        return Inertia::render('Inspection/Show', compact('inspection','details'));
     }
 
 
@@ -151,10 +142,7 @@ class InspectionController extends Controller
                 $details[$k]['note']=isset($checklist->note)?$checklist->note:'';
             }
 
-            if (config('app.inertia_enabled')) {
-                return Inertia::render('Inspection/Edit', compact('inspection', 'vehicles','status','repairStatus','fuelLevel','types','details'));
-            }
-            return view('inspection.edit', compact('inspection', 'vehicles','status','repairStatus','fuelLevel','types','details'));
+            return Inertia::render('Inspection/Edit', compact('inspection', 'vehicles','status','repairStatus','fuelLevel','types','details'));
 
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));

@@ -25,7 +25,6 @@ class InertiaInspectionTypeTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage inspection type', 'create inspection type', 'edit inspection type', 'delete inspection type'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

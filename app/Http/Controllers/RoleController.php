@@ -19,17 +19,13 @@ class RoleController extends Controller
             ->withCount('permissions')
             ->get();
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Roles/Index', [
-                'roles' => $roleData->map(fn ($r) => [
-                    'id'                => $r->id,
-                    'name'              => $r->name,
-                    'permissions_count' => $r->permissions_count,
-                ])->values()->all(),
-            ]);
-        }
-
-        return view('role.index', compact('roleData'));
+        return Inertia::render('Roles/Index', [
+            'roles' => $roleData->map(fn ($r) => [
+                'id'                => $r->id,
+                'name'              => $r->name,
+                'permissions_count' => $r->permissions_count,
+            ])->values()->all(),
+        ]);
     }
 
 
@@ -40,16 +36,12 @@ class RoleController extends Controller
             $permissionList = $permissionList->merge($role->permissions);
         }
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Roles/Create', [
-                'permissions' => $permissionList->unique('id')->map(fn ($p) => [
-                    'id'   => $p->id,
-                    'name' => $p->name,
-                ])->values()->all(),
-            ]);
-        }
-
-        return view('role.create', compact('permissionList'));
+        return Inertia::render('Roles/Create', [
+            'permissions' => $permissionList->unique('id')->map(fn ($p) => [
+                'id'   => $p->id,
+                'name' => $p->name,
+            ])->values()->all(),
+        ]);
     }
 
 
@@ -97,21 +89,17 @@ class RoleController extends Controller
         $assignPermission = $role->permissions;
         $assignPermission = $assignPermission->pluck('id')->toArray();
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Roles/Edit', [
-                'role' => [
-                    'id'   => $role->id,
-                    'name' => $role->name,
-                ],
-                'permissions' => $permissionList->unique('id')->map(fn ($p) => [
-                    'id'   => $p->id,
-                    'name' => $p->name,
-                ])->values()->all(),
-                'assignedPermissions' => $assignPermission,
-            ]);
-        }
-
-        return view('role.edit', compact('role', 'permissionList', 'assignPermission'));
+        return Inertia::render('Roles/Edit', [
+            'role' => [
+                'id'   => $role->id,
+                'name' => $role->name,
+            ],
+            'permissions' => $permissionList->unique('id')->map(fn ($p) => [
+                'id'   => $p->id,
+                'name' => $p->name,
+            ])->values()->all(),
+            'assignedPermissions' => $assignPermission,
+        ]);
     }
 
 

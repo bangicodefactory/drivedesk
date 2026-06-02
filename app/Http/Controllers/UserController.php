@@ -23,21 +23,17 @@ class UserController extends Controller
                 $users = User::where('parent_id', '=', parentId())->whereNotIn('type', ['driver'])->get();
             }
 
-            if (config('app.inertia_enabled')) {
-                return Inertia::render('Users/Index', [
-                    'users' => $users->map(fn ($u) => [
-                        'id'           => $u->id,
-                        'name'         => $u->name,
-                        'email'        => $u->email,
-                        'type'         => $u->type,
-                        'is_active'    => (bool) $u->is_active,
-                        'company_name' => $u->company_name,
-                        'created_at'   => optional($u->created_at)->toDateString(),
-                    ])->values()->all(),
-                ]);
-            }
-
-            return view('user.index', compact('users'));
+            return Inertia::render('Users/Index', [
+                'users' => $users->map(fn ($u) => [
+                    'id'           => $u->id,
+                    'name'         => $u->name,
+                    'email'        => $u->email,
+                    'type'         => $u->type,
+                    'is_active'    => (bool) $u->is_active,
+                    'company_name' => $u->company_name,
+                    'created_at'   => optional($u->created_at)->toDateString(),
+                ])->values()->all(),
+            ]);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -48,13 +44,9 @@ class UserController extends Controller
     {
         $userRoles = Role::where('parent_id', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Users/Create', [
-                'userRoles' => $userRoles->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values()->all(),
-            ]);
-        }
-
-        return view('user.create', compact('userRoles'));
+        return Inertia::render('Users/Create', [
+            'userRoles' => $userRoles->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values()->all(),
+        ]);
     }
 
 
@@ -178,21 +170,17 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $userRoles = Role::where('parent_id', '=', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Users/Edit', [
-                'user' => [
-                    'id'           => $user->id,
-                    'name'         => $user->name,
-                    'email'        => $user->email,
-                    'type'         => $user->type,
-                    'is_active'    => (bool) $user->is_active,
-                    'company_name' => $user->company_name,
-                ],
-                'userRoles' => $userRoles->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values()->all(),
-            ]);
-        }
-
-        return view('user.edit', compact('user', 'userRoles'));
+        return Inertia::render('Users/Edit', [
+            'user' => [
+                'id'           => $user->id,
+                'name'         => $user->name,
+                'email'        => $user->email,
+                'type'         => $user->type,
+                'is_active'    => (bool) $user->is_active,
+                'company_name' => $user->company_name,
+            ],
+            'userRoles' => $userRoles->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values()->all(),
+        ]);
     }
 
 
