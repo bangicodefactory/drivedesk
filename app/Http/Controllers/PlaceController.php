@@ -19,26 +19,18 @@ class PlaceController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            $payload = $places->map(function ($place) {
-                $data = $place->toArray();
-                $data['price_formatted'] = priceFormat($place->price);
-                return $data;
-            });
-            return Inertia::render('Place/Index', ['places' => $payload]);
-        }
-
-        return view('place.index', compact('places'));
+        $payload = $places->map(function ($place) {
+            $data = $place->toArray();
+            $data['price_formatted'] = priceFormat($place->price);
+            return $data;
+        });
+        return Inertia::render('Place/Index', ['places' => $payload]);
     }
 
 
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Place/Create');
-        }
-
-        return view('place.create');
+        return Inertia::render('Place/Create');
     }
 
 
@@ -81,11 +73,7 @@ class PlaceController extends Controller
 
     public function edit(Place $place)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Place/Edit', compact('place'));
-        }
-
-        return view('place.edit',compact('place'));
+        return Inertia::render('Place/Edit', compact('place'));
     }
 
 

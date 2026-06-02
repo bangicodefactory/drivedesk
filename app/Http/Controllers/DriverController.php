@@ -29,20 +29,16 @@ class DriverController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            $payload = $drivers->map(function ($user) {
-                $data = $user->toArray();
-                $driver = $user->drivers;
-                $data['driver_id_display'] = !empty($driver) ? driverPrefix() . $driver->driver_id : null;
-                $data['license_number'] = !empty($driver) && !empty($driver->license_number) ? $driver->license_number : null;
-                $data['issue_date_display'] = !empty($driver) && !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
-                $data['expiration_date_display'] = !empty($driver) && !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
-                return $data;
-            });
-            return Inertia::render('Driver/Index', ['drivers' => $payload]);
-        }
-
-        return view('driver.index', compact('drivers'));
+        $payload = $drivers->map(function ($user) {
+            $data = $user->toArray();
+            $driver = $user->drivers;
+            $data['driver_id_display'] = !empty($driver) ? driverPrefix() . $driver->driver_id : null;
+            $data['license_number'] = !empty($driver) && !empty($driver->license_number) ? $driver->license_number : null;
+            $data['issue_date_display'] = !empty($driver) && !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
+            $data['expiration_date_display'] = !empty($driver) && !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
+            return $data;
+        });
+        return Inertia::render('Driver/Index', ['drivers' => $payload]);
     }
 
 
@@ -50,22 +46,14 @@ class DriverController extends Controller
     {
         $gender = User::$gender;
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Driver/Create', compact('gender'));
-        }
-
-        return view('driver.create', compact('gender'));
+        return Inertia::render('Driver/Create', compact('gender'));
     }
 
     public function create()
     {
         $gender = User::$gender;
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Driver/Create', compact('gender'));
-        }
-
-        return view('driver.create', compact('gender'));
+        return Inertia::render('Driver/Create', compact('gender'));
     }
 
 
@@ -279,22 +267,18 @@ class DriverController extends Controller
         $user->last_name = isset($name[1]) ? $name[1] : null;
         $driver = $user->drivers;
 
-        if (config('app.inertia_enabled')) {
-            $driverPayload = null;
-            if (!empty($driver)) {
-                $driverPayload = $driver->toArray();
-                $driverPayload['driver_id_display'] = driverPrefix() . $driver->driver_id;
-                $driverPayload['birth_date_display'] = !empty($driver->birth_date) ? dateFormat($driver->birth_date) : null;
-                $driverPayload['issue_date_display'] = !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
-                $driverPayload['expiration_date_display'] = !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
-            }
-            return Inertia::render('Driver/Show', [
-                'driver' => $driverPayload,
-                'user' => $user->toArray(),
-            ]);
+        $driverPayload = null;
+        if (!empty($driver)) {
+            $driverPayload = $driver->toArray();
+            $driverPayload['driver_id_display'] = driverPrefix() . $driver->driver_id;
+            $driverPayload['birth_date_display'] = !empty($driver->birth_date) ? dateFormat($driver->birth_date) : null;
+            $driverPayload['issue_date_display'] = !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
+            $driverPayload['expiration_date_display'] = !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
         }
-
-        return view('driver.show', compact('driver', 'user'));
+        return Inertia::render('Driver/Show', [
+            'driver' => $driverPayload,
+            'user' => $user->toArray(),
+        ]);
     }
 
 
@@ -307,15 +291,11 @@ class DriverController extends Controller
         $driver = $user->drivers;
         $gender = User::$gender;
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Driver/Edit', [
-                'driver' => !empty($driver) ? $driver->toArray() : null,
-                'user' => $user->toArray(),
-                'gender' => $gender,
-            ]);
-        }
-
-        return view('driver.edit', compact('driver', 'user', 'gender'));
+        return Inertia::render('Driver/Edit', [
+            'driver' => !empty($driver) ? $driver->toArray() : null,
+            'user' => $user->toArray(),
+            'gender' => $gender,
+        ]);
     }
 
 

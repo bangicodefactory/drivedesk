@@ -25,7 +25,6 @@ class InertiaSettingsAndUsersTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage user', 'manage role', 'manage setting'] as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);

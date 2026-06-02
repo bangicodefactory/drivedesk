@@ -23,16 +23,12 @@ class VehicleController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            $payload = $vehicles->through(function ($vehicle) {
-                $data = $vehicle->toArray();
-                $data['daily_rate_formatted'] = priceFormat($vehicle->daily_rate);
-                return $data;
-            });
-            return Inertia::render('Vehicle/Index', ['vehicles' => $payload]);
-        }
-
-        return view('vehicle.index', compact('vehicles'));
+        $payload = $vehicles->through(function ($vehicle) {
+            $data = $vehicle->toArray();
+            $data['daily_rate_formatted'] = priceFormat($vehicle->daily_rate);
+            return $data;
+        });
+        return Inertia::render('Vehicle/Index', ['vehicles' => $payload]);
     }
 
 
@@ -44,11 +40,7 @@ class VehicleController extends Controller
         $fuelType = Vehicle::$fuelType;
         $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Vehicle/Create', compact('types', 'fuelType', 'gearbox', 'option'));
-        }
-
-        return view('vehicle.create', compact('types', 'fuelType', 'gearbox', 'option'));
+        return Inertia::render('Vehicle/Create', compact('types', 'fuelType', 'gearbox', 'option'));
     }
 
 
@@ -137,14 +129,10 @@ class VehicleController extends Controller
 
     public function show(Vehicle $vehicle)
     {
-        if (config('app.inertia_enabled')) {
-            $payload = array_merge($vehicle->toArray(), [
-                'daily_rate_formatted' => priceFormat($vehicle->daily_rate),
-            ]);
-            return Inertia::render('Vehicle/Show', ['vehicle' => $payload]);
-        }
-
-        return view('vehicle.show', compact('vehicle'));
+        $payload = array_merge($vehicle->toArray(), [
+            'daily_rate_formatted' => priceFormat($vehicle->daily_rate),
+        ]);
+        return Inertia::render('Vehicle/Show', ['vehicle' => $payload]);
     }
 
 
@@ -156,11 +144,7 @@ class VehicleController extends Controller
         $types->prepend(__('Select Type'), '');
         $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Vehicle/Edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
-        }
-
-        return view('vehicle.edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
+        return Inertia::render('Vehicle/Edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
     }
 
 

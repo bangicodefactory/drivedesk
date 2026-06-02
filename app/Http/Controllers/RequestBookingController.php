@@ -40,11 +40,7 @@ class RequestBookingController extends Controller
 
         $places = Place::all(['id', 'name', 'city']);
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
-        }
-
-        return view('client.tests.car-details', compact('car', 'similarCars', 'places'));
+        return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
     }
 
     /**

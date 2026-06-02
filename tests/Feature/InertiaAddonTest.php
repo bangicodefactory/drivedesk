@@ -33,7 +33,6 @@ class InertiaAddonTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage addon', 'create addon', 'edit addon', 'delete addon'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
