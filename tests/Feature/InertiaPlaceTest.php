@@ -25,7 +25,6 @@ class InertiaPlaceTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage place', 'create place', 'edit place', 'delete place'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

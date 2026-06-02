@@ -17,21 +17,13 @@ class VehicleTypeController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('VehicleType/Index', compact('types'));
-        }
-
-        return view('vehicle_type.index', compact('types'));
+        return Inertia::render('VehicleType/Index', compact('types'));
     }
 
 
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('VehicleType/Create');
-        }
-
-        return view('vehicle_type.create');
+        return Inertia::render('VehicleType/Create');
     }
 
 
@@ -68,11 +60,7 @@ class VehicleTypeController extends Controller
 
     public function edit(VehicleType $vehicleType)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('VehicleType/Edit', compact('vehicleType'));
-        }
-
-        return view('vehicle_type.edit', compact('vehicleType'));
+        return Inertia::render('VehicleType/Edit', compact('vehicleType'));
     }
 
 

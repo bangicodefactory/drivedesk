@@ -31,7 +31,6 @@ class InertiaDriverTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage driver', 'create driver', 'edit driver', 'delete driver', 'show driver'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
