@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ThemePalette;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
@@ -78,17 +79,28 @@ class HandleInertiaRequests extends Middleware
     {
         $s = $this->loadSettings();
 
-        [$primary, $primaryFg] = $this->resolvePrimary($s);
+        // BAN-243: if brand_color is set, derive the full light+dark palette.
+        // Otherwise fall back to the legacy 3-var format (back-compat, spec §8).
+        $brandHex = $s['brand_color'] ?? null;
+
+        if ($brandHex) {
+            $accentHex = $s['accent_color'] ?? null;
+            $neutral   = $s['brand_neutral'] ?? 'cool';
+            $cssVars   = ThemePalette::derive($brandHex, $accentHex ?: null, $neutral);
+        } else {
+            [$primary, $primaryFg] = $this->resolvePrimary($s);
+            $cssVars = [
+                '--primary'            => $primary,
+                '--primary-foreground' => $primaryFg,
+                '--ring'               => $primary,
+            ];
+        }
 
         return [
             'appName'    => $s['app_name'] ?? config('app.name', 'RentCar'),
             'logoUrl'    => asset(Storage::url('upload/logo/' . ($s['company_logo']    ?? 'logo.png'))),
             'faviconUrl' => asset(Storage::url('upload/logo/' . ($s['company_favicon'] ?? 'favicon.png'))),
-            'cssVars' => [
-                '--primary'            => $primary,
-                '--primary-foreground' => $primaryFg,
-                '--ring'               => $primary,
-            ],
+            'cssVars'         => $cssVars,
             'layoutMode'      => $s['layout_mode']      ?? 'lightmode',
             'layoutDirection' => $s['layout_direction'] ?? 'ltrmode',
         ];
@@ -165,8 +177,13 @@ class HandleInertiaRequests extends Middleware
             return ["{$h} {$sat}% {$l}%", $fg];
         }
 
-        return self::PRIMARY_MAP[$s['theme_color'] ?? 'color1']
-            ?? self::PRIMARY_MAP['color1'];
+        // If theme_color is explicitly set, honour it (preserves existing agency choices).
+        // When no theme_color is set at all, use the Velocity Drive default (#a13a00).
+        if (!empty($s['theme_color'])) {
+            return self::PRIMARY_MAP[$s['theme_color']] ?? self::PRIMARY_MAP['color1'];
+        }
+
+        return ['22 100% 32%', '0 0% 100%']; // Velocity Drive primary #a13a00
     }
 
     private function hexToHsl(string $hex): array
