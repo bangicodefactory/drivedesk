@@ -25,9 +25,22 @@ const baseVehicle = {
     engine_type: 'V8',
 };
 
+function makePaginator(items) {
+    return {
+        data: items,
+        current_page: 1,
+        last_page: 1,
+        from: 1,
+        to: items.length,
+        total: items.length,
+        prev_page_url: null,
+        next_page_url: null,
+    };
+}
+
 function renderWith(permissions) {
     usePage.mockReturnValue({ props: { auth: { permissions } } });
-    return render(<VehicleIndex vehicles={[baseVehicle]} />);
+    return render(<VehicleIndex vehicles={makePaginator([baseVehicle])} />);
 }
 
 describe('Vehicle/Index permission gating', () => {
