@@ -737,4 +737,311 @@ class SettingControllerTest extends TestCase
             'type'  => 'payment',
         ]);
     }
+
+    // ── SettingController::paymentData — bank transfer validation fail ─────────
+
+    public function test_payment_data_bank_transfer_flashes_error_on_missing_bank_name(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'              => 'MAD',
+                'CURRENCY_SYMBOL'       => 'DH',
+                'bank_transfer_payment' => 'on',
+                // bank_name missing
+                'bank_holder_name'      => 'Acme',
+                'bank_account_number'   => '123',
+                'bank_ifsc_code'        => 'X001',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::paymentData — stripe branch ────────────────────────
+
+    public function test_payment_data_with_stripe_persists_stripe_settings(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'        => 'EUR',
+                'CURRENCY_SYMBOL' => '€',
+                'stripe_payment'  => 'on',
+                'stripe_key'      => 'pk_test_abc',
+                'stripe_secret'   => 'sk_test_xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'STRIPE_KEY',
+            'value' => 'pk_test_abc',
+            'type'  => 'payment',
+        ]);
+    }
+
+    public function test_payment_data_stripe_flashes_error_on_missing_stripe_key(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'        => 'EUR',
+                'CURRENCY_SYMBOL' => '€',
+                'stripe_payment'  => 'on',
+                // stripe_key missing
+                'stripe_secret'   => 'sk_test_xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::paymentData — paypal branch ────────────────────────
+
+    public function test_payment_data_with_paypal_persists_paypal_settings(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'          => 'USD',
+                'CURRENCY_SYMBOL'   => '$',
+                'paypal_payment'    => 'on',
+                'paypal_mode'       => 'sandbox',
+                'paypal_client_id'  => 'client-id-abc',
+                'paypal_secret_key' => 'secret-key-xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'paypal_client_id',
+            'value' => 'client-id-abc',
+            'type'  => 'payment',
+        ]);
+    }
+
+    public function test_payment_data_paypal_flashes_error_on_missing_paypal_mode(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'          => 'USD',
+                'CURRENCY_SYMBOL'   => '$',
+                'paypal_payment'    => 'on',
+                // paypal_mode missing
+                'paypal_client_id'  => 'client-id',
+                'paypal_secret_key' => 'secret',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::paymentData — flutterwave branch ───────────────────
+
+    public function test_payment_data_with_flutterwave_persists_flutterwave_settings(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'                => 'NGN',
+                'CURRENCY_SYMBOL'         => '₦',
+                'flutterwave_payment'     => 'on',
+                'flutterwave_public_key'  => 'FLWPUBK_test_abc',
+                'flutterwave_secret_key'  => 'FLWSECK_test_xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'flutterwave_public_key',
+            'value' => 'FLWPUBK_test_abc',
+            'type'  => 'payment',
+        ]);
+    }
+
+    public function test_payment_data_flutterwave_flashes_error_on_missing_public_key(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'                => 'NGN',
+                'CURRENCY_SYMBOL'         => '₦',
+                'flutterwave_payment'     => 'on',
+                // flutterwave_public_key missing
+                'flutterwave_secret_key'  => 'FLWSECK_test_xyz',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::generalData — super admin path ────────────────────
+
+    public function test_general_data_saves_application_name_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name' => 'Super App Name',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    public function test_general_data_rejects_non_png_logo_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $logo = UploadedFile::fake()->image('logo.jpg')->mimeType('image/jpeg');
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name' => 'Super App',
+                'logo'             => $logo,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_general_data_uploads_logo_for_super_admin(): void
+    {
+        Storage::fake();
+
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $logo = UploadedFile::fake()->image('logo.png')->mimeType('image/png');
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name' => 'Super App',
+                'logo'             => $logo,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::assertExists('upload/logo/logo.png');
+    }
+
+    public function test_general_data_uploads_favicon_for_super_admin(): void
+    {
+        Storage::fake();
+
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $favicon = UploadedFile::fake()->image('fav.png')->mimeType('image/png');
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name' => 'Super App',
+                'favicon'          => $favicon,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::assertExists('upload/logo/favicon.png');
+    }
+
+    public function test_general_data_uploads_home_images_for_super_admin(): void
+    {
+        Storage::fake();
+
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $img1 = UploadedFile::fake()->image('home1.png')->mimeType('image/png');
+        $img2 = UploadedFile::fake()->image('home2.png')->mimeType('image/png');
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name' => 'Super App',
+                'image_home_1'     => $img1,
+                'image_home_2'     => $img2,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::assertExists('upload/home/image_home_1.png');
+        Storage::assertExists('upload/home/image_home_2.png');
+    }
+
+    public function test_general_data_rejects_missing_application_name_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_general_data_denies_non_owner_non_super_admin(): void
+    {
+        $employee = User::factory()->create([
+            'type'      => 'employee',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        $this->actingAs($employee)
+            ->post(route('setting.general'), ['application_name' => 'Test'])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── SettingController::themeSettings ─────────────────────────────────────
+
+    public function test_theme_settings_persists_values_for_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('theme.settings'), [
+                'dark_mode' => 'on',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    public function test_theme_settings_persists_landing_page_toggle_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->post(route('theme.settings'), [
+                'landing_page'             => 'on',
+                'register_page'            => 'on',
+                'owner_email_verification' => 'on',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'landing_page',
+            'value' => 'on',
+            'type'  => 'common',
+        ]);
+    }
+
+    public function test_theme_settings_defaults_landing_page_to_off_when_not_set_for_super_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        // Submit without landing_page, register_page, or owner_email_verification
+        $this->actingAs($superAdmin)
+            ->post(route('theme.settings'), [])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
 }

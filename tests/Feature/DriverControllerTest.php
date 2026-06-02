@@ -271,6 +271,116 @@ class DriverControllerTest extends TestCase
             ->assertSessionHas('success');
     }
 
+    // ── DriverController::store — without email (auto-generated) ─────────────
+
+    public function test_store_creates_driver_without_email_auto_generates_one(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'first_name' => 'Auto',
+                'last_name'  => 'Email',
+                'email'      => '', // empty email triggers auto-generation
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        // The user should have been created with an auto-generated email
+        $this->assertDatabaseHas('users', [
+            'name' => 'Auto Email',
+            'type' => 'driver',
+        ]);
+    }
+
+    public function test_store_flashes_error_on_missing_phone_without_email(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'email'        => '',
+                'phone_number' => '',
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── DriverController::store — with license upload ─────────────────────────
+
+    public function test_store_creates_driver_with_license_upload(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $license = \Illuminate\Http\UploadedFile::fake()->create('license.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), array_merge($this->validPayload([
+                'first_name' => 'Licensed',
+                'last_name'  => 'Driver',
+            ]), [
+                'license' => $license,
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['name' => 'Licensed Driver', 'type' => 'driver']);
+    }
+
+    // ── DriverController::update — permission denied ──────────────────────────
+
+    public function test_update_denied_without_edit_driver(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->put(route('driver.update', $driverUser->id), $this->validPayload())
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── DriverController::update — with license upload ────────────────────────
+
+    public function test_update_with_license_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $driverUser = User::factory()->driver()->create([
+            'name'      => 'Old Name',
+            'email'     => 'driver@example.com',
+            'parent_id' => $this->owner->id,
+        ]);
+        Driver::create([
+            'driver_id' => $driverUser->id,
+            'user_id'   => $driverUser->id,
+            'gender'    => 'Male',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        $license = \Illuminate\Http\UploadedFile::fake()->create('license.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $driverUser->id), [
+                'first_name' => 'Updated',
+                'last_name'  => 'Driver',
+                'email'      => 'driver@example.com',
+                'license'    => $license,
+            ])
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+    }
+
+    // ── DriverController::store — duplicate email validation ─────────────────
+
+    public function test_store_flashes_error_on_duplicate_email(): void
+    {
+        User::factory()->create(['email' => 'dup@test.com']);
+
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'email' => 'dup@test.com',
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

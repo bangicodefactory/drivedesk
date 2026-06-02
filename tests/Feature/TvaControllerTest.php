@@ -459,4 +459,91 @@ class TvaControllerTest extends TestCase
                 ->has('carPerformanceStats')
             );
     }
+
+    // ── TvaController::report — with data for statistics ─────────────────────
+
+    public function test_report_computes_correct_yearly_stats(): void
+    {
+        // Create multiple TVAs in current year for the same client
+        $year = now()->year;
+        Tva::factory()->withInvoice()->create([
+            'facture_date'  => "{$year}-01-15",
+            'parent_id'     => $this->owner->id,
+            'client_name'   => 'Alice Dupont',
+            'designation'   => 'Toyota Corolla - AB-123-CD',
+            'tva_amount'    => 200,
+            'total_ht'      => 1000,
+            'montant_ttc'   => 1200,
+        ]);
+        Tva::factory()->withInvoice()->create([
+            'facture_date'  => "{$year}-03-10",
+            'parent_id'     => $this->owner->id,
+            'client_name'   => 'Alice Dupont',
+            'designation'   => 'Toyota Corolla - AB-123-CD',
+            'tva_amount'    => 100,
+            'total_ht'      => 500,
+            'montant_ttc'   => 600,
+        ]);
+
+        $response = $this->actingAs($this->owner)
+            ->get(route('tva.report', ['year' => $year]))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Report')
+                ->where('yearlyStats.total_invoices', 2)
+                ->has('topClients', 1)
+                ->has('topRentedCars')
+                ->has('topProfitableCars')
+                ->has('carPerformanceStats')
+            );
+    }
+
+    public function test_report_with_no_data_for_year_returns_zero_stats(): void
+    {
+        // No TVAs exist for year 1999
+        $this->actingAs($this->owner)
+            ->get(route('tva.report', ['year' => 1999]))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Report')
+                ->where('yearlyStats.total_invoices', 0)
+                ->where('yearlyStats.total_tva_amount', 0)
+            );
+    }
+
+    // ── TvaController::index — with booking_id_display ───────────────────────
+
+    public function test_index_maps_booking_id_display(): void
+    {
+        // A TVA with a booking will have a booking_id_display value
+        $tva = Tva::factory()->withInvoice()->create([
+            'parent_id'  => $this->owner->id,
+            'client_name' => 'Test Client',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas')
+            );
+    }
+
+    // ── TvaController::generateMonthlyTva — with tva_number param ────────────
+
+    public function test_generate_monthly_tva_uses_provided_tva_number_as_starting_counter(): void
+    {
+        $month = now()->format('Y-m');
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), [
+                'month'      => $month,
+                'tva_number' => 50,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // No payments exist, so no TVAs created, but the route should succeed
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\ReminderType;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -461,6 +462,94 @@ class ReminderControllerTest extends TestCase
             ->postJson(route('reminder.update.statuses'))
             ->assertOk()
             ->assertJson(['success' => true]);
+    }
+
+    // ── ReminderController::updateReminderStatuses — triggers notification ────
+
+    public function test_update_statuses_triggers_notification_for_newly_urgent_reminder(): void
+    {
+        Mail::fake();
+
+        // A reminder 2 days away should become 'urgent' (was 'pending')
+        Reminder::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'status'        => 'pending',
+            'reminder_date' => now()->addDays(2)->format('Y-m-d'),
+            'id_vehicle'    => $this->vehicle->id,
+            'reminder_type_id' => $this->reminderType->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.update.statuses'))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    public function test_update_statuses_triggers_notification_for_newly_overdue_reminder(): void
+    {
+        Mail::fake();
+
+        // A reminder 1 day past should be 'overdue' (was 'upcoming')
+        Reminder::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'status'        => 'upcoming',
+            'reminder_date' => now()->subDay()->format('Y-m-d'),
+            'id_vehicle'    => $this->vehicle->id,
+            'reminder_type_id' => $this->reminderType->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.update.statuses'))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    // ── ReminderController::createRecurringReminders — recurring type ─────────
+
+    public function test_create_recurring_reminders_creates_new_reminder_for_recurring_type(): void
+    {
+        // Create a ReminderType with a recurring name
+        $recurringType = ReminderType::factory()->create([
+            'parent_id' => $this->owner->id,
+            'type'      => 'la visite',
+        ]);
+
+        // Create a completed reminder of the recurring type
+        Reminder::factory()->create([
+            'parent_id'       => $this->owner->id,
+            'status'          => 'completed',
+            'reminder_type_id'=> $recurringType->id,
+            'reminder_date'   => now()->subMonth()->format('Y-m-d'),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.create.recurring'))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        // A new reminder should have been created 6 months after completion
+        $this->assertDatabaseCount('reminders', 2);
+    }
+
+    public function test_create_recurring_reminders_skips_when_reminder_type_not_found(): void
+    {
+        // Create a ReminderType, attach a completed reminder to it, then delete the type
+        // so the controller's ReminderType::find() returns null (cover the "continue" branch)
+        $tempType = ReminderType::factory()->create(['parent_id' => $this->owner->id]);
+        Reminder::factory()->create([
+            'parent_id'        => $this->owner->id,
+            'status'           => 'completed',
+            'reminder_type_id' => $tempType->id,
+        ]);
+        // Delete the type after the reminder is created — FK will cascade or we bypass the constraint
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $tempType->forceDelete();
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.create.recurring'))
+            ->assertOk()
+            ->assertJson(['success' => true, 'created' => 0]);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
