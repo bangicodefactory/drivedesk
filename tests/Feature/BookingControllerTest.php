@@ -138,6 +138,40 @@ class BookingControllerTest extends TestCase
             ->assertSessionHas('error', __('Permission Denied.'));
     }
 
+    // ── BookingController::create / edit form loaders (BAN-239) ──────────────
+
+    public function test_create_renders_inertia_component_with_dropdown_props(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('booking.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Create')
+                ->has('vehicles')
+                ->has('drivers')
+                ->has('places')
+                ->has('addons')
+                ->has('statuses')
+            );
+    }
+
+    public function test_edit_renders_inertia_component_with_dropdown_props(): void
+    {
+        $booking = $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.edit', Crypt::encrypt($booking->id)))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Edit')
+                ->has('booking')
+                ->has('vehicles')
+                ->has('drivers')
+                ->has('places')
+                ->has('addons')
+            );
+    }
+
     // ── BookingController::store ──────────────────────────────────────────────
 
     public function test_store_flashes_error_on_invalid_dates(): void
