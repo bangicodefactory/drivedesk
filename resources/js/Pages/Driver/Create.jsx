@@ -24,13 +24,23 @@ import AdminLayout from '@/Layouts/AdminLayout';
 const schema = z.object({
     first_name: z.string().min(1, 'The first name field is required.'),
     last_name: z.string().min(1, 'The last name field is required.'),
+    email: z.string().optional(),
     phone_number: z.string().min(1, 'The phone number field is required.'),
     gender: z.string().min(1, 'The gender field is required.'),
+    age: z.any().optional(),
     birth_date: z.string().min(1, 'The birth date field is required.'),
     address: z.string().min(1, 'The address field is required.'),
     license_number: z.string().min(1, 'The license number field is required.'),
     issue_date: z.string().min(1, 'The issue date field is required.'),
     expiration_date: z.string().min(1, 'The expiration date field is required.'),
+    // File fields — z.any() prevents zodResolver from stripping them before submission
+    license: z.any().optional(),
+    license1: z.any().optional(),
+    reference: z.string().optional(),
+    document: z.any().optional(),
+    document1: z.any().optional(),
+    notes: z.string().optional(),
+    ICE_company: z.string().optional(),
 });
 
 function DriverCreate({ gender = {} }) {
