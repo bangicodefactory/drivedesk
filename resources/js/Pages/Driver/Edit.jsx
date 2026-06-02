@@ -22,6 +22,20 @@ const schema = z.object({
     first_name: z.string().min(1, 'The first name field is required.'),
     last_name: z.string().min(1, 'The last name field is required.'),
     email: z.string().min(1, 'The email field is required.'),
+    // Non-validated fields — z.any() prevents zodResolver from stripping them
+    phone_number: z.string().optional(),
+    gender: z.any().optional(),
+    age: z.any().optional(),
+    birth_date: z.string().optional(),
+    address: z.string().optional(),
+    license_number: z.string().optional(),
+    issue_date: z.string().optional(),
+    expiration_date: z.string().optional(),
+    document: z.any().optional(),
+    license: z.any().optional(),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+    _method: z.string().optional(),
 });
 
 const str = (v) => (v != null ? String(v) : '');
