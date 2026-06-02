@@ -12,6 +12,7 @@ use App\Models\Place;
 use App\Models\RentalAgreement;
 use App\Models\Vehicle;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Auth;
@@ -91,31 +92,34 @@ if (!function_exists('settingsKeys')) {
 if (!function_exists('settings')) {
     function settings()
     {
-        $settingData = DB::table('settings');
-        if (\Auth::check()) {
-            $userId = parentId();
-            $settingData = $settingData->where('parent_id', $userId);
-        } else {
-            $settingData = $settingData->where('parent_id', 1);
-        }
-        $settingData = $settingData->get();
-        $details = settingsKeys();
+        $userId = \Auth::check() ? parentId() : 1;
+        $cacheKey = "settings_{$userId}";
 
-        foreach ($settingData as $row) {
-            $details[$row->name] = $row->value;
-        }
+        $details = Cache::remember($cacheKey, 300, function () use ($userId) {
+            $rows = DB::table('settings')->where('parent_id', $userId)->get();
+            $details = settingsKeys();
+            foreach ($rows as $row) {
+                $details[$row->name] = $row->value;
+            }
+            return $details;
+        });
 
-        config(
-            [
-                'captcha.secret' => $details['recaptcha_secret'],
-                'captcha.sitekey' => $details['recaptcha_key'],
-                'options' => [
-                    'timeout' => 30,
-                ],
-            ]
-        );
+        // config() side-effect must run each request — not stored in cache
+        config([
+            'captcha.secret'  => $details['recaptcha_secret'] ?? '',
+            'captcha.sitekey' => $details['recaptcha_key'] ?? '',
+            'options'         => ['timeout' => 30],
+        ]);
 
         return $details;
+    }
+}
+
+if (!function_exists('flushSettingsCache')) {
+    function flushSettingsCache(): void
+    {
+        $userId = \Auth::check() ? parentId() : 1;
+        Cache::forget("settings_{$userId}");
     }
 }
 

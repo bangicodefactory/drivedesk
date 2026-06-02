@@ -345,6 +345,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', __('Permission denied.'));
         }
 
+        flushSettingsCache();
         return redirect()->back()->with('success', __('General setting successfully saved.'));
     }
     //    ---------------------- SMTP --------------------------------------------------------
@@ -400,6 +401,7 @@ class SettingController extends Controller
                 );
             }
 
+            flushSettingsCache();
             return redirect()->back()->with('success', __('SMTP settings successfully saved.'));
         } else {
             return redirect()->back()->with('error', __('Invalid user.'));
@@ -625,7 +627,7 @@ class SettingController extends Controller
             }
         }
 
-
+        flushSettingsCache();
         return redirect()->back()->with('success', __('Payment successfully saved.'));
     }
 
@@ -679,6 +681,7 @@ class SettingController extends Controller
         }
 
 
+        flushSettingsCache();
         return redirect()->back()->with('success', __('Company setting successfully saved.'));
     }
 
@@ -746,6 +749,7 @@ class SettingController extends Controller
             }
         }
 
+        flushSettingsCache();
         return redirect()->back()->with('success', __('Theme settings save successfully.'));
     }
 
@@ -810,6 +814,7 @@ class SettingController extends Controller
             );
         }
 
+        flushSettingsCache();
         return redirect()->back()->with('success', __('Site SEO settings save successfully.'));
     }
 
@@ -859,6 +864,7 @@ class SettingController extends Controller
             );
         }
 
+        flushSettingsCache();
         return redirect()->back()->with('success', __('Google Recaptcha settings save successfully.'));
     }
     //=============Store Admin Signature========================
@@ -883,6 +889,8 @@ class SettingController extends Controller
             'value' => $path
         ]
     );
+
+    flushSettingsCache();
 
     return response()->json([
         'success' => true,
