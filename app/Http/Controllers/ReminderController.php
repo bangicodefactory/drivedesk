@@ -33,17 +33,13 @@ class ReminderController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            $stats = [
-                'overdue'   => $reminders->where('status', 'overdue')->count(),
-                'urgent'    => $reminders->where('status', 'urgent')->count(),
-                'upcoming'  => $reminders->where('status', 'upcoming')->count(),
-                'completed' => $reminders->where('status', 'completed')->count(),
-            ];
-            return Inertia::render('Reminder/Index', compact('reminders', 'stats'));
-        }
-
-        return view('reminder.index', compact('reminders'));
+        $stats = [
+            'overdue'   => $reminders->where('status', 'overdue')->count(),
+            'urgent'    => $reminders->where('status', 'urgent')->count(),
+            'upcoming'  => $reminders->where('status', 'upcoming')->count(),
+            'completed' => $reminders->where('status', 'completed')->count(),
+        ];
+        return Inertia::render('Reminder/Index', compact('reminders', 'stats'));
     }
 
     /**
@@ -57,10 +53,7 @@ class ReminderController extends Controller
         $types = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Reminder/Create', compact('vehicles', 'types'));
-        }
-        return view('reminder.create', compact('vehicles', 'types'));
+        return Inertia::render('Reminder/Create', compact('vehicles', 'types'));
     }
 
     /**
@@ -190,12 +183,7 @@ class ReminderController extends Controller
         $vehicleName = $reminder->id_vehicle ? (Vehicle::find($reminder->id_vehicle)->name ?? '') : '';
         $type = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Reminder/Edit', compact('reminder', 'type', 'vehicleName'));
-        }
-
-        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
-        return view('reminder.edit', compact('vehicles', 'reminder', 'type', 'vehicleName'));
+        return Inertia::render('Reminder/Edit', compact('reminder', 'type', 'vehicleName'));
     }
 
     /**

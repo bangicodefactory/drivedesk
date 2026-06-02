@@ -30,16 +30,12 @@ class HomeController extends Controller
 
                 $result['organizationByMonth'] = $this->organizationByMonth();
 
-                if (config('app.inertia_enabled')) {
-                    return Inertia::render('Dashboard', [
-                        'stats' => [
-                            'totalOrganization' => $result['totalOrganization'],
-                        ],
-                        'organizationByMonth' => $result['organizationByMonth'],
-                    ]);
-                }
-
-                return view('dashboard.super_admin', compact('result'));
+                return Inertia::render('Dashboard', [
+                    'stats' => [
+                        'totalOrganization' => $result['totalOrganization'],
+                    ],
+                    'organizationByMonth' => $result['organizationByMonth'],
+                ]);
             } else {
                 $result['totalUser'] = User::where('parent_id', parentId())->count();
                 $result['totalDriver'] = User::where('type', 'driver')->where('parent_id', parentId())->count();
@@ -60,30 +56,26 @@ class HomeController extends Controller
                     $reminders = collect([]);
                 }
 
-                if (config('app.inertia_enabled')) {
-                    return Inertia::render('Dashboard', [
-                        'stats' => [
-                            'totalUser'    => $result['totalUser'],
-                            'totalDriver'  => $result['totalDriver'],
-                            'totalBooking' => $result['totalBooking'],
-                            'totalIncome'  => $result['totalIncome'],
-                            'totalExpense' => $result['totalExpense'],
-                        ],
-                        'reminders'           => $reminders->map(fn ($r) => [
-                            'id'            => $r->id,
-                            'reminder_date' => optional($r->reminder_date)->toDateString(),
-                            'note'          => $r->note,
-                            'status'        => $r->status,
-                            'vehicle'       => $r->vehicles ? [
-                                'name'          => $r->vehicles->name,
-                                'license_plate' => $r->vehicles->license_plate,
-                            ] : null,
-                        ])->values()->all(),
-                        'incomeExpenseByMonth' => $result['incomeExpenseByMonth'],
-                    ]);
-                }
-
-                return view('dashboard.index', compact('result', 'reminders'));
+                return Inertia::render('Dashboard', [
+                    'stats' => [
+                        'totalUser'    => $result['totalUser'],
+                        'totalDriver'  => $result['totalDriver'],
+                        'totalBooking' => $result['totalBooking'],
+                        'totalIncome'  => $result['totalIncome'],
+                        'totalExpense' => $result['totalExpense'],
+                    ],
+                    'reminders'           => $reminders->map(fn ($r) => [
+                        'id'            => $r->id,
+                        'reminder_date' => optional($r->reminder_date)->toDateString(),
+                        'note'          => $r->note,
+                        'status'        => $r->status,
+                        'vehicle'       => $r->vehicles ? [
+                            'name'          => $r->vehicles->name,
+                            'license_plate' => $r->vehicles->license_plate,
+                        ] : null,
+                    ])->values()->all(),
+                    'incomeExpenseByMonth' => $result['incomeExpenseByMonth'],
+                ]);
             }
         } else {
             if (!file_exists(setup())) {
@@ -93,10 +85,7 @@ class HomeController extends Controller
                 $landingPage = getSettingsValByName('landing_page');
 
                 if ($landingPage == 'on') {
-                    if (config('app.inertia_enabled')) {
-                        return Inertia::render('Public/Landing', $this->landingProps());
-                    }
-                    return view('layouts.landing');
+                    return Inertia::render('Public/Landing', $this->landingProps());
                 } else {
                     return redirect()->route('login');
                 }
@@ -155,10 +144,7 @@ class HomeController extends Controller
 
     public function landing()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Public/Landing', $this->landingProps());
-        }
-        return view('client.home');
+        return Inertia::render('Public/Landing', $this->landingProps());
     }
 
     private function landingProps(): array

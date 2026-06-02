@@ -16,19 +16,13 @@ class ExpenseTypeController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ExpenseType/Index', compact('types'));
-        }
-        return view('expense_type.index', compact('types'));
+        return Inertia::render('ExpenseType/Index', compact('types'));
     }
 
 
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ExpenseType/Create');
-        }
-        return view('expense_type.create');
+        return Inertia::render('ExpenseType/Create');
     }
 
 
@@ -64,10 +58,7 @@ class ExpenseTypeController extends Controller
 
     public function edit(ExpenseType $expenseType)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ExpenseType/Edit', compact('expenseType'));
-        }
-        return view('expense_type.edit', compact('expenseType'));
+        return Inertia::render('ExpenseType/Edit', compact('expenseType'));
     }
 
 

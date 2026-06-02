@@ -18,10 +18,7 @@ class ReminderTypeController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ReminderType/Index', compact('types'));
-        }
-        return view('reminder_type.index', compact('types'));
+        return Inertia::render('ReminderType/Index', compact('types'));
     }
 
     /**
@@ -29,10 +26,7 @@ class ReminderTypeController extends Controller
      */
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ReminderType/Create');
-        }
-        return view('reminder_type.create');
+        return Inertia::render('ReminderType/Create');
     }
 
     /**
@@ -75,10 +69,7 @@ class ReminderTypeController extends Controller
      */
     public function edit(ReminderType $reminderType)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('ReminderType/Edit', compact('reminderType'));
-        }
-        return view('reminder_type.edit', compact('reminderType'));
+        return Inertia::render('ReminderType/Edit', compact('reminderType'));
     }
 
     /**

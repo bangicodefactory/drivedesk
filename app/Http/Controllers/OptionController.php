@@ -17,21 +17,13 @@ class OptionController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Option/Index', compact('options'));
-        }
-
-        return view('option.index', compact('options'));
+        return Inertia::render('Option/Index', compact('options'));
     }
 
 
     public function create()
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Option/Create');
-        }
-
-        return view('option.create');
+        return Inertia::render('Option/Create');
     }
 
 
@@ -66,11 +58,7 @@ class OptionController extends Controller
 
     public function edit(Option $option)
     {
-        if (config('app.inertia_enabled')) {
-            return Inertia::render('Option/Edit', compact('option'));
-        }
-
-        return view('option.edit',compact('option'));
+        return Inertia::render('Option/Edit', compact('option'));
     }
 
 

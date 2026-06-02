@@ -38,35 +38,6 @@ class HomeControllerTest extends TestCase
             ->assertOk();
     }
 
-    public function test_dashboard_contains_booking_and_driver_totals_for_owner(): void
-    {
-        config(['app.inertia_enabled' => false]);
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-
-        User::factory()->create(['type' => 'driver', 'parent_id' => $owner->id]);
-        Booking::factory()->create(['parent_id' => $owner->id, 'amount' => 150]);
-
-        $response = $this->actingAs($owner)->get(route('dashboard'));
-
-        $response->assertOk();
-        $response->assertViewHas('result', function ($result) {
-            return $result['totalDriver'] >= 1 && $result['totalBooking'] >= 1;
-        });
-    }
-
-    public function test_dashboard_owner_without_manage_reminder_gets_empty_reminders(): void
-    {
-        config(['app.inertia_enabled' => false]);
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-
-        $response = $this->actingAs($owner)->get(route('dashboard'));
-
-        $response->assertOk();
-        $response->assertViewHas('reminders', function ($reminders) {
-            return $reminders->isEmpty();
-        });
-    }
-
     // ── HomeController::index — super admin ───────────────────────────────────
 
     public function test_dashboard_returns_200_for_super_admin(): void
@@ -78,27 +49,10 @@ class HomeControllerTest extends TestCase
             ->assertOk();
     }
 
-    public function test_super_admin_dashboard_contains_organization_totals(): void
-    {
-        config(['app.inertia_enabled' => false]);
-        $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
-
-        User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-        User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-
-        $response = $this->actingAs($superAdmin)->get(route('dashboard'));
-
-        $response->assertOk();
-        $response->assertViewHas('result', function ($result) {
-            return $result['totalOrganization'] >= 2;
-        });
-    }
-
-    // ── Inertia path (INERTIA_ENABLED=true) ───────────────────────────────────
+    // ── Inertia path ──────────────────────────────────────────────────────────
 
     public function test_inertia_dashboard_renders_correct_component_for_owner(): void
     {
-        config(['app.inertia_enabled' => true]);
 
         $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
@@ -114,9 +68,7 @@ class HomeControllerTest extends TestCase
 
     public function test_inertia_dashboard_owner_stats_contain_correct_counts(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         User::factory()->create(['type' => 'driver', 'parent_id' => $owner->id]);
         Booking::factory()->create(['parent_id' => $owner->id, 'amount' => 250]);
 
@@ -132,9 +84,7 @@ class HomeControllerTest extends TestCase
 
     public function test_inertia_dashboard_owner_without_manage_reminder_has_empty_reminders(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         $this->actingAs($owner)
             ->get(route('dashboard'))
@@ -146,9 +96,7 @@ class HomeControllerTest extends TestCase
 
     public function test_inertia_dashboard_renders_correct_component_for_super_admin(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
+$superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
 
         $this->actingAs($superAdmin)
             ->get(route('dashboard'))
@@ -162,9 +110,7 @@ class HomeControllerTest extends TestCase
 
     public function test_inertia_dashboard_reminders_carry_vehicle_status_and_note(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $owner->givePermissionTo('manage reminder');
 
         $vehicle = \App\Models\Vehicle::factory()->create([
@@ -194,9 +140,7 @@ class HomeControllerTest extends TestCase
 
     public function test_inertia_super_admin_dashboard_stats_contain_correct_org_count(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
+$superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
         User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
@@ -212,9 +156,7 @@ class HomeControllerTest extends TestCase
 
     public function test_organization_by_month_returns_12_labels_and_data_points(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
+$superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
 
         $this->actingAs($superAdmin)
             ->get(route('dashboard'))
@@ -227,9 +169,7 @@ class HomeControllerTest extends TestCase
 
     public function test_income_expense_by_month_returns_12_labels_and_series(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         $this->actingAs($owner)
             ->get(route('dashboard'))
@@ -243,9 +183,7 @@ class HomeControllerTest extends TestCase
 
     public function test_income_expense_by_month_sums_are_correct(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         Booking::factory()->create(['parent_id' => $owner->id, 'amount' => 500, 'start_date' => now()->startOfMonth()]);
         Expense::factory()->create(['parent_id' => $owner->id, 'amount' => 200, 'date' => now()->startOfMonth()]);
 
@@ -260,9 +198,7 @@ class HomeControllerTest extends TestCase
 
     public function test_dashboard_fires_at_most_3_monthly_queries(): void
     {
-        config(['app.inertia_enabled' => true]);
-
-        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         $monthlyQueries = 0;
         DB::listen(function ($query) use (&$monthlyQueries) {

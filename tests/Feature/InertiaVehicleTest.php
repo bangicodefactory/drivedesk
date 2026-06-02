@@ -27,7 +27,6 @@ class InertiaVehicleTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
-        config(['app.inertia_enabled' => true]);
 
         foreach (['manage vehicle', 'create vehicle', 'edit vehicle', 'delete vehicle'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
