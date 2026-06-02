@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Inspection;
+use App\Models\InspectionType;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -131,6 +134,52 @@ class InspectionControllerTest extends TestCase
             ->put(route('inspection.update', $inspection), [])
             ->assertRedirect()
             ->assertSessionHas('error');
+    }
+
+    // ── InspectionController::show ───────────────────────────────────────────
+
+    public function test_show_returns_checklist_details(): void
+    {
+        $type1 = InspectionType::factory()->create(['parent_id' => $this->owner->id]);
+        $type2 = InspectionType::factory()->create(['parent_id' => $this->owner->id]);
+
+        $inspection = $this->makeInspection([
+            'details' => json_encode([
+                $type1->id => ['type' => 'ok',      'note' => 'fine'],
+                $type2->id => ['type' => 'damaged',  'note' => 'scratch'],
+            ]),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('inspection.show', Crypt::encrypt($inspection->id)))
+            ->assertOk();
+    }
+
+    public function test_show_fires_one_inspection_type_query_regardless_of_checklist_size(): void
+    {
+        $types = InspectionType::factory()->count(5)->create(['parent_id' => $this->owner->id]);
+
+        $details = [];
+        foreach ($types as $type) {
+            $details[$type->id] = ['type' => 'ok', 'note' => ''];
+        }
+
+        $inspection = $this->makeInspection(['details' => json_encode($details)]);
+
+        $typeQueries = 0;
+        DB::listen(function ($query) use (&$typeQueries) {
+            if (str_contains($query->sql, 'inspection_types')) {
+                $typeQueries++;
+            }
+        });
+
+        $this->actingAs($this->owner)
+            ->get(route('inspection.show', Crypt::encrypt($inspection->id)))
+            ->assertOk();
+
+        $this->assertLessThanOrEqual(1, $typeQueries,
+            "show() should fire at most 1 query on inspection_types (fired {$typeQueries})"
+        );
     }
 
     // ── InspectionController::destroy ─────────────────────────────────────────
