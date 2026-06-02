@@ -200,21 +200,26 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('show rental agreement')) {
             $id = Crypt::decrypt($ids);
             $rentalAgreement = RentalAgreement::find($id);
-            $user_1 = User::find($rentalAgreement->driver);
-            $driver_2 = $rentalAgreement->driver2 ? Driver::where('user_id', $rentalAgreement->driver2)->first() : null;
-            $user_2 = $rentalAgreement->driver2 ? User::where('id', $rentalAgreement->driver2)->first() : null;
+
+            // Batch-load both drivers' user records and Driver profiles in 2 queries
+            $driverIds    = array_values(array_filter([$rentalAgreement->driver, $rentalAgreement->driver2]));
+            $users        = User::whereIn('id', $driverIds)->get()->keyBy('id');
+            $driverProfiles = Driver::whereIn('user_id', $driverIds)->get()->keyBy('user_id');
+
+            $user_1        = $users->get($rentalAgreement->driver);
+            $user_2        = $rentalAgreement->driver2 ? $users->get($rentalAgreement->driver2) : null;
+            $driver1Profile = $driverProfiles->get($rentalAgreement->driver);
+            $driver_2      = $rentalAgreement->driver2 ? $driverProfiles->get($rentalAgreement->driver2) : null;
+
             $settings = settings();
 
-            // display Terms and conditions 
+            // display Terms and conditions
             $terms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
             $terms = nl2br($terms);
 
             //display Signature
             $driver1Signature = $this->getUserSignature($rentalAgreement->driver);
             $driver2Signature = $this->getUserSignature($rentalAgreement->driver2);
-
-
-            $driver1Profile = $user_1 ? Driver::where('user_id', $user_1->id)->first() : null;
 
             return Inertia::render('RentalAgreement/Show', [
                 'agreement' => [
