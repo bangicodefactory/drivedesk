@@ -81,15 +81,9 @@ class HomeController extends Controller
             if (!file_exists(setup())) {
                 header('location:install');
                 die;
-            } else {
-                $landingPage = getSettingsValByName('landing_page');
-
-                if ($landingPage == 'on') {
-                    return Inertia::render('Public/Landing', $this->landingProps());
-                } else {
-                    return redirect()->route('login');
-                }
             }
+            // App is internal-only — no public marketing landing page (BAN-241).
+            return redirect()->route('login');
         }
     }
 
