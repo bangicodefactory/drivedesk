@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { useZodForm } from '@/hooks/useZodForm';
 import { Button }   from '@/components/ui/button';
@@ -7,7 +7,6 @@ import { Label }    from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch }   from '@/components/ui/switch';
 import { Badge }    from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, Paintbrush, Sun, Moon, Monitor } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
@@ -83,9 +82,6 @@ function nudgedMutedFg(bgH, bgS, bgL) {
     return hslFmt(bgH, 16.3, 30);
 }
 
-const NEUTRAL_HUE = { cool: 210, neutral: 240, warm: 30 };
-const NEUTRAL_SAT = { cool: 20, neutral: 10, warm: 15 };
-
 function derivePalette(brandHex) {
     if (!brandHex || !/^#[0-9A-Fa-f]{6}$/.test(brandHex)) return null;
     const [h, s, l] = hexToHsl(brandHex);
@@ -136,10 +132,9 @@ function Branding({ settings }) {
     });
     const { register, setValue, watch, formState: { errors, isSubmitting } } = form;
 
-    const watchedBrand      = watch('brand_color');
-    const watchedNeutral    = watch('brand_neutral');
-    const watchedMode       = watch('layout_mode');
-    const watchedAccentAuto = !watch('accent_color');
+    const watchedBrand   = watch('brand_color');
+    const watchedNeutral = watch('brand_neutral');
+    const watchedMode    = watch('layout_mode');
 
     const [autoAccent, setAutoAccent] = useState(!accentColor);
 

@@ -973,6 +973,11 @@ class SettingController extends Controller
 
     public function branding()
     {
+        $user = \Auth::user();
+        if ($user->type !== 'owner' && $user->type !== 'super admin' && !\Gate::allows('manage general settings')) {
+            abort(403);
+        }
+
         return Inertia::render('Settings/Branding', [
             'settings' => settings(),
         ]);
@@ -980,6 +985,11 @@ class SettingController extends Controller
 
     public function brandingData(Request $request)
     {
+        $user = \Auth::user();
+        if ($user->type !== 'owner' && $user->type !== 'super admin' && !\Gate::allows('manage general settings')) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'brand_color'  => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'accent_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],

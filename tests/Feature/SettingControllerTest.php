@@ -1044,4 +1044,95 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
     }
+
+    // ── SettingController::branding (GET) ─────────────────────────────────────
+
+    public function test_branding_page_requires_auth(): void
+    {
+        $this->get(route('setting.branding'))->assertRedirect(route('login'));
+    }
+
+    public function test_branding_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.branding'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Branding')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::brandingData (POST) ────────────────────────────────
+
+    public function test_branding_data_saves_brand_color_for_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.branding'), ['brand_color' => '#a13a00'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'brand_color',
+            'value'     => '#a13a00',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    public function test_branding_data_saves_all_fields(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.branding'), [
+                'brand_color'   => '#e85c13',
+                'accent_color'  => '#10b981',
+                'brand_neutral' => 'warm',
+                'layout_mode'   => 'darkmode',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        foreach (['brand_color' => '#e85c13', 'accent_color' => '#10b981', 'brand_neutral' => 'warm', 'layout_mode' => 'darkmode'] as $name => $value) {
+            $this->assertDatabaseHas('settings', ['name' => $name, 'value' => $value, 'parent_id' => $this->owner->id]);
+        }
+    }
+
+    public function test_branding_data_rejects_invalid_hex(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.branding'), ['brand_color' => 'notahex'])
+            ->assertSessionHasErrors('brand_color');
+    }
+
+    public function test_branding_data_rejects_invalid_neutral(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.branding'), ['brand_neutral' => 'hot'])
+            ->assertSessionHasErrors('brand_neutral');
+    }
+
+    public function test_branding_data_allows_empty_brand_color(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.branding'), ['brand_color' => null])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    public function test_branding_page_denies_unauthenticated_employee(): void
+    {
+        $employee = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($employee)
+            ->get(route('setting.branding'))
+            ->assertForbidden();
+    }
+
+    public function test_branding_data_denies_unauthenticated_employee(): void
+    {
+        $employee = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($employee)
+            ->post(route('setting.branding'), ['brand_color' => '#a13a00'])
+            ->assertForbidden();
+    }
 }
