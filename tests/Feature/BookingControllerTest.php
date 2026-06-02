@@ -472,10 +472,11 @@ class BookingControllerTest extends TestCase
 
     public function test_import_two_new_drivers_with_colliding_emails_get_unique_emails(): void
     {
-        // Both names normalise to the same email base — second must get a suffix
+        // "Ali O'Brien" and "Ali O Brien" both normalise to ali.o.brien@import.local
+        // (space → '.' and apostrophe → '.' via str_replace) — second must get a suffix
         $file = $this->makeImportFile([
             ["Ali O'Brien", '2026-06-01', '09:00', 'Ford', 'XX-001-YY', '2026-06-03', '18:00', '2', '200', 'cash'],
-            ["Ali O'Brien Twin", '2026-06-04', '09:00', 'Ford', 'XX-002-YY', '2026-06-06', '18:00', '2', '200', 'cash'],
+            ['Ali O Brien',  '2026-06-04', '09:00', 'Ford', 'XX-002-YY', '2026-06-06', '18:00', '2', '200', 'cash'],
         ]);
 
         $this->actingAs($this->owner)
