@@ -21,9 +21,9 @@ import Login from '@/Pages/Auth/Login';
 describe('Login page', () => {
     it('renders the form fields and submit button', () => {
         render(<Login />);
-        expect(screen.getByLabelText('Email')).toBeInTheDocument();
+        expect(screen.getByLabelText('Work email')).toBeInTheDocument();
         expect(screen.getByLabelText('Password')).toBeInTheDocument();
-        expect(screen.getByLabelText(/remember me/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/keep me signed in/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
     });
 
@@ -32,7 +32,7 @@ describe('Login page', () => {
         fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
         // react-hook-form runs validation async on submit
-        const error = await screen.findByText(/enter a valid email/i);
+        const error = await screen.findByText(/enter a valid work email/i);
         expect(error).toBeInTheDocument();
     });
 
