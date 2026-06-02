@@ -1208,81 +1208,38 @@ class BookingController extends Controller
 
     public function planning()
     {
-        // Use the authenticated tenant/owner id so production loads correct data
-        // You can re-enable the permission check if needed
-        // if (\Auth::user()->can('manage planning')) {
+        if (!\Auth::user()->can('manage booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $parentId = parentId();
         $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
         $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
         $vehicleData = [];
         foreach ($vehicles as $vehicle) {
-            $vehicleArr = [
-                'id' => (string)$vehicle->id, // Ensure string type
+            $vehicleData[] = [
+                'id'    => (string) $vehicle->id,
                 'title' => $vehicle->name . ' - ' . $vehicle->license_plate,
             ];
-            $vehicleData[] = $vehicleArr;
         }
 
         $bookingData = [];
         foreach ($bookings as $booking) {
-            $driver = !empty($booking->drivers) ? $booking->drivers->name : '';
-            $booked = [
-                'id' => $booking->id,
-                'resourceId' => (string)$booking->vehicle, // Ensure string type to match vehicle ID
-                'title' => 'BOK-' . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
-                'start' => $booking->start_date . 'T' . $booking->start_time,
-                'end'   => $booking->end_date . 'T' . $booking->end_time,
-                'url' => route('booking.show', Crypt::encrypt($booking->id)),
+            $driver       = !empty($booking->drivers) ? $booking->drivers->name : '';
+            $bookingData[] = [
+                'id'         => $booking->id,
+                'resourceId' => (string) $booking->vehicle,
+                'title'      => 'BOK-' . sprintf('%04d', $booking->booking_id) . ' - ' . $driver,
+                'start'      => $booking->start_date . 'T' . $booking->start_time,
+                'end'        => $booking->end_date . 'T' . $booking->end_time,
+                'url'        => route('booking.show', Crypt::encrypt($booking->id)),
             ];
-            $bookingData[] = $booked;
         }
 
         return Inertia::render('Booking/Planning', [
             'bookingData' => $bookingData,
             'vehicleData' => $vehicleData,
         ]);
-        // } else {
-        //     return redirect()->back()->with('error', __('Permission Denied.'));
-        // }
-    }
-    public function testPlanning()
-    {
-        try {
-            // Test planning method without forcing authentication
-            // Accept ?parent=ID for quick debugging, otherwise use logged-in parent if available, else fallback to 2
-            $parentId = request('parent');
-            if (!$parentId) {
-                $parentId = Auth::check() ? parentId() : 2;
-            }
-            $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
-            $vehicles = Vehicle::where('parent_id', $parentId)->get();
-
-            // Debug: Check what we got
-            $debug = [
-                'bookings_count' => $bookings->count(),
-                'vehicles_count' => $vehicles->count(),
-                'bookings_sample' => $bookings->take(2)->map(function ($b) {
-                    return [
-                        'id' => $b->id,
-                        'booking_id' => $b->booking_id,
-                        'vehicle' => $b->vehicle,
-                        'start_date' => $b->start_date,
-                        'end_date' => $b->end_date
-                    ];
-                }),
-                'vehicles_sample' => $vehicles->take(2)->map(function ($v) {
-                    return [
-                        'id' => $v->id,
-                        'name' => $v->name,
-                        'license_plate' => $v->license_plate
-                    ];
-                })
-            ];
-
-            return response()->json($debug);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     }
 }
