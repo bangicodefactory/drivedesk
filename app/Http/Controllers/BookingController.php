@@ -1212,7 +1212,7 @@ class BookingController extends Controller
         // You can re-enable the permission check if needed
         // if (\Auth::user()->can('manage planning')) {
         $parentId = parentId();
-        $bookings = Booking::where('parent_id', $parentId)->get();
+        $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
         $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
         $vehicleData = [];
@@ -1255,7 +1255,7 @@ class BookingController extends Controller
             if (!$parentId) {
                 $parentId = Auth::check() ? parentId() : 2;
             }
-            $bookings = Booking::where('parent_id', $parentId)->get();
+            $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
             $vehicles = Vehicle::where('parent_id', $parentId)->get();
 
             // Debug: Check what we got
