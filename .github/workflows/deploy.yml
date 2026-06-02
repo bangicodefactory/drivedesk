@@ -15,13 +15,17 @@ on:
           - staging-directonderweg
           - production-directonderweg
 
+env:
+  # Resolve once; reused in job name, environment, and SSH script.
+  TARGET_ENV: ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
+
 jobs:
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
+    name: Deploy to ${{ env.TARGET_ENV }}
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
+      name: ${{ env.TARGET_ENV }}
 
     steps:
       - name: Checkout
@@ -50,7 +54,7 @@ jobs:
 
       - name: Write .env from secrets
         run: |
-          cat > .env <<EOF
+          cat > .env <<'ENVEOF'
           APP_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
           APP_CLIENT=${{ vars.APP_CLIENT || 'directonderweg' }}
           APP_ENV=${{ vars.APP_ENV || 'production' }}
@@ -89,10 +93,20 @@ jobs:
 
           TELESCOPE_ENABLED=false
           DEBUGBAR_ENABLED=false
-          EOF
+          ENVEOF
+
+      - name: Copy .env and built assets to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT || '22' }}
+          source: ".env,public/build"
+          target: ${{ vars.DEPLOY_PATH }}
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -102,19 +116,20 @@ jobs:
             set -e
             cd ${{ vars.DEPLOY_PATH }}
 
+            echo "==> Previous commit: $(git rev-parse HEAD)"
+
             echo "==> Pulling latest code"
             git fetch origin
             git checkout ${{ github.sha }}
 
-            echo "==> Installing dependencies"
+            echo "==> Installing PHP dependencies"
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
-            echo "==> Copying built assets"
-            # Assets are built in CI; copy them to public/build
-            # If using artifact upload, adjust this step accordingly
+            echo "==> Enabling maintenance mode"
+            php artisan down --retry=5
 
             echo "==> Running migrations"
-            php artisan migrate --force
+            php artisan migrate --force || { php artisan up; exit 1; }
 
             echo "==> Seeding client branding (idempotent)"
             php artisan client:install
@@ -127,4 +142,7 @@ jobs:
             echo "==> Restarting queue workers"
             php artisan queue:restart
 
-            echo "==> Done ✓"
+            echo "==> Disabling maintenance mode"
+            php artisan up
+
+            echo "==> Done ✓ (${{ github.sha }})"
