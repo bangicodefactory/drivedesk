@@ -456,6 +456,16 @@ class BookingControllerTest extends TestCase
             );
     }
 
+    public function test_planning_denied_without_manage_booking_permission(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->get(route('planning'))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
     public function test_planning_fires_at_most_2_booking_related_queries(): void
     {
         // Create 5 bookings — before the fix each triggered a lazy driver load
