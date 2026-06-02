@@ -16,6 +16,7 @@ use App\Models\Reminder;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -103,44 +104,50 @@ class HomeController extends Controller
         }
     }
 
-    public function organizationByMonth()
+    public function organizationByMonth(): array
     {
-        $start = strtotime(date('Y-01'));
-        $end = strtotime(date('Y-12'));
+        $year = (int) date('Y');
 
-        $currentdate = $start;
+        $counts = DB::table('users')
+            ->selectRaw('MONTH(created_at) as mo, COUNT(*) as cnt')
+            ->where('type', 'owner')
+            ->whereYear('created_at', $year)
+            ->groupByRaw('MONTH(created_at)')
+            ->pluck('cnt', 'mo');
 
-        $organization = [];
-        while ($currentdate <= $end) {
-            $organization['label'][] = date('M-Y', $currentdate);
-
-            $month = date('m', $currentdate);
-            $year = date('Y', $currentdate);
-            $organization['data'][] = User::where('type', 'owner')->whereMonth('created_at', $month)->whereYear('created_at', $year)->count();
-            $currentdate = strtotime('+1 month', $currentdate);
+        $organization = ['label' => [], 'data' => []];
+        for ($m = 1; $m <= 12; $m++) {
+            $organization['label'][] = date('M-Y', mktime(0, 0, 0, $m, 1, $year));
+            $organization['data'][]  = (int) ($counts[$m] ?? 0);
         }
-
 
         return $organization;
     }
 
-    public function incomeExpenseByMonth()
+    public function incomeExpenseByMonth(): array
     {
-        $start = strtotime(date('Y-01'));
-        $end = strtotime(date('Y-12'));
+        $year = (int) date('Y');
+        $pid  = parentId();
 
-        $currentdate = $start;
+        $income = DB::table('bookings')
+            ->selectRaw('MONTH(start_date) as mo, SUM(amount) as total')
+            ->where('parent_id', $pid)
+            ->whereYear('start_date', $year)
+            ->groupByRaw('MONTH(start_date)')
+            ->pluck('total', 'mo');
 
-        $payment = [];
-        while ($currentdate <= $end) {
-            $payment['label'][] = date('M-Y', $currentdate);
-            $month = date('m', $currentdate);
-            $year = date('Y', $currentdate);
-            $payment['income'][] = Booking::where('parent_id', parentId())->whereMonth('start_date', $month)->whereYear('start_date', $year)->sum('amount');
+        $expense = DB::table('expenses')
+            ->selectRaw('MONTH(date) as mo, SUM(amount) as total')
+            ->where('parent_id', $pid)
+            ->whereYear('date', $year)
+            ->groupByRaw('MONTH(date)')
+            ->pluck('total', 'mo');
 
-            $totalExpense = Expense::where('parent_id', parentId())->whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-            $payment['expense'][] = $totalExpense;
-            $currentdate = strtotime('+1 month', $currentdate);
+        $payment = ['label' => [], 'income' => [], 'expense' => []];
+        for ($m = 1; $m <= 12; $m++) {
+            $payment['label'][]   = date('M-Y', mktime(0, 0, 0, $m, 1, $year));
+            $payment['income'][]  = (float) ($income[$m] ?? 0);
+            $payment['expense'][] = (float) ($expense[$m] ?? 0);
         }
 
         return $payment;

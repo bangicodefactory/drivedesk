@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\Expense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
@@ -204,5 +206,75 @@ class HomeControllerTest extends TestCase
                 ->component('Dashboard')
                 ->where('stats.totalOrganization', fn ($v) => $v >= 2)
             );
+    }
+
+    // ── GROUP BY query optimisation (BAN-235) ─────────────────────────────────
+
+    public function test_organization_by_month_returns_12_labels_and_data_points(): void
+    {
+        config(['app.inertia_enabled' => true]);
+
+        $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->where('organizationByMonth.label', fn ($v) => count($v) === 12)
+                ->where('organizationByMonth.data',  fn ($v) => count($v) === 12)
+            );
+    }
+
+    public function test_income_expense_by_month_returns_12_labels_and_series(): void
+    {
+        config(['app.inertia_enabled' => true]);
+
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->where('incomeExpenseByMonth.label',   fn ($v) => count($v) === 12)
+                ->where('incomeExpenseByMonth.income',  fn ($v) => count($v) === 12)
+                ->where('incomeExpenseByMonth.expense', fn ($v) => count($v) === 12)
+            );
+    }
+
+    public function test_income_expense_by_month_sums_are_correct(): void
+    {
+        config(['app.inertia_enabled' => true]);
+
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        Booking::factory()->create(['parent_id' => $owner->id, 'amount' => 500, 'start_date' => now()->startOfMonth()]);
+        Expense::factory()->create(['parent_id' => $owner->id, 'amount' => 200, 'date' => now()->startOfMonth()]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->where('incomeExpenseByMonth.income',  fn ($v) => (float) $v[now()->month - 1] >= 500)
+                ->where('incomeExpenseByMonth.expense', fn ($v) => (float) $v[now()->month - 1] >= 200)
+            );
+    }
+
+    public function test_dashboard_fires_at_most_3_monthly_queries(): void
+    {
+        config(['app.inertia_enabled' => true]);
+
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $monthlyQueries = 0;
+        DB::listen(function ($query) use (&$monthlyQueries) {
+            if (preg_match('/GROUP BY|groupby/i', $query->sql)) {
+                $monthlyQueries++;
+            }
+        });
+
+        $this->actingAs($owner)->get(route('dashboard'));
+
+        $this->assertLessThanOrEqual(3, $monthlyQueries,
+            "Dashboard should fire at most 3 GROUP BY queries (was {$monthlyQueries})"
+        );
     }
 }
