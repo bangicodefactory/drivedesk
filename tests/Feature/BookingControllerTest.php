@@ -4,13 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\BookingPayment;
+use App\Models\Driver;
 use App\Models\Place;
 use App\Models\Tva;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
 use Inertia\Testing\AssertableInertia as Assert;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -433,5 +437,97 @@ class BookingControllerTest extends TestCase
             ->assertRedirect();
 
         $this->assertSoftDeleted('tvas', ['id' => $tva->id]);
+    }
+
+    // ── BookingController::importExcel (BAN-236) ─────────────────────────────
+
+    private function makeImportFile(array $dataRows): UploadedFile
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([
+            ['NOM & PRENOM', 'DATE DEBUT', 'HEURE', 'LA MARQUE', 'IMMATRICULATION', 'DATE RETOUR', 'HEURE RETOUR', 'PERIODE', 'PRIX', 'METHOD'],
+            ...$dataRows,
+        ]);
+        $path = tempnam(sys_get_temp_dir(), 'import_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($path);
+        return new UploadedFile($path, 'import.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+    }
+
+    public function test_import_creates_booking_for_new_driver_and_vehicle(): void
+    {
+        $file = $this->makeImportFile([
+            ['John Doe', '2026-06-01', '09:00', 'Toyota', 'AA-123-BB', '2026-06-05', '18:00', '4', '500', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('bookings', ['parent_id' => $this->owner->id, 'amount' => 500]);
+        $this->assertDatabaseHas('users', ['name' => 'John Doe', 'type' => 'driver', 'parent_id' => $this->owner->id]);
+        $this->assertDatabaseHas('vehicles', ['license_plate' => 'AA-123-BB', 'parent_id' => $this->owner->id]);
+    }
+
+    public function test_import_two_new_drivers_with_colliding_emails_get_unique_emails(): void
+    {
+        // Both names normalise to the same email base — second must get a suffix
+        $file = $this->makeImportFile([
+            ["Ali O'Brien", '2026-06-01', '09:00', 'Ford', 'XX-001-YY', '2026-06-03', '18:00', '2', '200', 'cash'],
+            ["Ali O'Brien Twin", '2026-06-04', '09:00', 'Ford', 'XX-002-YY', '2026-06-06', '18:00', '2', '200', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $emails = User::where('type', 'driver')->where('parent_id', $this->owner->id)
+            ->pluck('email')->toArray();
+
+        $this->assertCount(count(array_unique($emails)), $emails, 'All imported driver emails must be unique');
+    }
+
+    public function test_import_driver_ids_increment_correctly_across_rows(): void
+    {
+        $file = $this->makeImportFile([
+            ['Alpha Driver', '2026-06-01', '09:00', 'BMW', 'ZZ-001-AA', '2026-06-02', '18:00', '1', '100', 'cash'],
+            ['Beta Driver',  '2026-06-03', '09:00', 'BMW', 'ZZ-002-AA', '2026-06-04', '18:00', '1', '100', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $driverIds = Driver::where('parent_id', $this->owner->id)->pluck('driver_id')->sort()->values()->toArray();
+        $this->assertCount(count(array_unique($driverIds)), $driverIds, 'driver_id must be unique across imported drivers');
+    }
+
+    public function test_import_reuses_existing_driver_and_vehicle_across_rows(): void
+    {
+        $file = $this->makeImportFile([
+            ['John Doe', '2026-06-01', '09:00', 'Toyota', 'AA-123-BB', '2026-06-03', '18:00', '2', '300', 'cash'],
+            ['John Doe', '2026-06-05', '09:00', 'Toyota', 'AA-123-BB', '2026-06-07', '18:00', '2', '300', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $this->assertSame(1, User::where('name', 'John Doe')->where('type', 'driver')->count(), 'Same driver name must not create a duplicate user');
+        $this->assertSame(1, Vehicle::where('license_plate', 'AA-123-BB')->where('parent_id', $this->owner->id)->count(), 'Same plate must not create a duplicate vehicle');
+        $this->assertSame(2, Booking::where('parent_id', $this->owner->id)->count(), 'Both rows should produce a booking');
+    }
+
+    public function test_import_denied_without_create_booking_permission(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $file = $this->makeImportFile([
+            ['Jane Doe', '2026-06-01', '09:00', 'Fiat', 'BB-999-CC', '2026-06-02', '18:00', '1', '100', 'cash'],
+        ]);
+
+        $this->actingAs($noPerms)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertSessionHas('error');
     }
 }
