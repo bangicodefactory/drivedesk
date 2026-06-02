@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\Driver;
 use App\Models\RentalAgreement;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -216,6 +219,43 @@ class RentalAgreementControllerTest extends TestCase
         $this->actingAs($noPerms)
             ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
             ->assertSessionHas('error', __('Permission Denied.'));
+    }
+
+    public function test_show_renders_inertia_component_with_driver_data(): void
+    {
+        $agreement = $this->makeAgreement();
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Show')
+                ->has('agreement.driver1')
+                ->has('agreement.vehicle_name')
+            );
+    }
+
+    public function test_show_fires_at_most_2_driver_lookup_queries(): void
+    {
+        $driver2 = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        Driver::factory()->create(['user_id' => $driver2->id, 'parent_id' => $this->owner->id, 'driver_id' => 99]);
+
+        $agreement = $this->makeAgreement(['driver2' => $driver2->id]);
+
+        $driverQueries = 0;
+        DB::listen(function ($query) use (&$driverQueries) {
+            if (preg_match('/\busers\b|\bdrivers\b/i', $query->sql)) {
+                $driverQueries++;
+            }
+        });
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
+            ->assertOk();
+
+        $this->assertLessThanOrEqual(2, $driverQueries,
+            "show() should fire at most 2 queries for users+drivers (fired {$driverQueries})"
+        );
     }
 
     // ── RentalAgreementController::update ─────────────────────────────────────
