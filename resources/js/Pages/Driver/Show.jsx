@@ -15,23 +15,36 @@ function Detail({ label, value, className = '' }) {
 }
 
 function FileDetail({ label, name, dir, className = '' }) {
+    if (!name) {
+        return (
+            <div className={className}>
+                <h6 className="text-sm font-semibold text-muted-foreground">{label}</h6>
+                <p className="mb-4 text-muted-foreground">-</p>
+            </div>
+        );
+    }
+
+    const url = `/storage/upload/${dir}/${name}`;
+    const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(name);
+
     return (
         <div className={className}>
-            <h6 className="text-sm font-semibold text-muted-foreground">{label}</h6>
-            <p className="mb-4">
-                {name
-                    ? (
-                        <a
-                            href={`/storage/upload/${dir}/${name}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline"
-                        >
-                            {name}
-                        </a>
-                    )
-                    : '-'}
-            </p>
+            <h6 className="text-sm font-semibold text-muted-foreground mb-1">{label}</h6>
+            {isImage ? (
+                <a href={url} target="_blank" rel="noreferrer" className="inline-block mb-4">
+                    <img
+                        src={url}
+                        alt={label}
+                        className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
+                    />
+                </a>
+            ) : (
+                <p className="mb-4">
+                    <a href={url} target="_blank" rel="noreferrer" className="text-primary underline hover:opacity-80">
+                        {name}
+                    </a>
+                </p>
+            )}
         </div>
     );
 }
