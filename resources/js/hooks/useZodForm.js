@@ -19,6 +19,7 @@ export function useZodForm(schema, options = {}) {
     // resolver is applied last so a caller-supplied resolver in `options` cannot
     // silently override the zod resolver and bypass client-side validation.
     const form = useForm({
+        mode: 'onTouched',
         ...options,
         resolver: zodResolver(schema),
     });
