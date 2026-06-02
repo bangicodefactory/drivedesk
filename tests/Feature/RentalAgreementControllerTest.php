@@ -253,8 +253,11 @@ class RentalAgreementControllerTest extends TestCase
             ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
             ->assertOk();
 
-        $this->assertLessThanOrEqual(2, $driverQueries,
-            "show() should fire at most 2 queries for users+drivers (fired {$driverQueries})"
+        // ≤ 4 allows for up to 2 Spatie permission-check queries that also touch
+        // the users table within the listener window, while still catching any
+        // regression that re-introduces per-driver lazy loads (which would be ≥ 6).
+        $this->assertLessThanOrEqual(4, $driverQueries,
+            "show() should fire at most 4 queries for users+drivers (fired {$driverQueries})"
         );
     }
 
