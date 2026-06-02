@@ -302,6 +302,83 @@ class RentalAgreementControllerTest extends TestCase
         $this->assertDatabaseMissing('rental_agreements', ['id' => $agreement->id]);
     }
 
+    // ── RentalAgreementController::create ────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('rental-agreement.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Create')
+                ->has('vehicles')
+                ->has('drivers')
+                ->has('statuses')
+            );
+    }
+
+    public function test_create_denied_without_create_rental_agreement(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->get(route('rental-agreement.create'))
+            ->assertSessionHas('error');
+    }
+
+    // ── RentalAgreementController::edit ──────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $agreement = $this->makeAgreement();
+        $this->get(route('rental-agreement.edit', $agreement))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $agreement = $this->makeAgreement();
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.edit', $agreement))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Edit')
+                ->has('agreement.id')
+                ->has('vehicles')
+                ->has('drivers')
+                ->has('statuses')
+            );
+    }
+
+    public function test_edit_denied_without_edit_rental_agreement(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $agreement = $this->makeAgreement();
+
+        $this->actingAs($noPerms)
+            ->get(route('rental-agreement.edit', $agreement))
+            ->assertSessionHas('error');
+    }
+
+    // ── RentalAgreementController::update — status change notification ────────
+
+    public function test_update_with_status_change_succeeds(): void
+    {
+        $agreement = $this->makeAgreement(['status' => 'draft']);
+
+        $this->actingAs($this->owner)
+            ->put(route('rental-agreement.update', $agreement), $this->validPayload(['status' => 'confirmed']))
+            ->assertRedirect(route('rental-agreement.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('rental_agreements', ['id' => $agreement->id, 'status' => 'confirmed']);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function makeAgreement(array $overrides = []): RentalAgreement

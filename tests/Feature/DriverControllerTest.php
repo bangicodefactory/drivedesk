@@ -165,6 +165,112 @@ class DriverControllerTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $driverUser->id]);
     }
 
+    // ── DriverController::show ────────────────────────────────────────────────
+
+    public function test_show_requires_auth(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('driver.show', $driverUser->id))->assertRedirect(route('login'));
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.show', $driverUser->id))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Show')
+                ->has('driver')
+                ->has('user')
+            );
+    }
+
+    // ── DriverController::edit ────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('driver.edit', $driverUser->id))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $driverUser = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.edit', $driverUser->id))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Edit')
+                ->has('gender')
+                ->has('user')
+            );
+    }
+
+    // ── DriverController::create ──────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('driver.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('driver.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Driver/Create')
+                ->has('gender')
+            );
+    }
+
+    // ── DriverController::store — with explicit email ─────────────────────────
+
+    public function test_store_creates_driver_with_explicit_email(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('driver.store'), $this->validPayload([
+                'first_name' => 'Maria',
+                'last_name'  => 'Silva',
+                'email'      => 'maria.silva@test.com',
+            ]))
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['email' => 'maria.silva@test.com', 'type' => 'driver']);
+    }
+
+    // ── DriverController::update — with document upload ───────────────────────
+
+    public function test_update_with_document_upload_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $driverUser = User::factory()->driver()->create([
+            'name'      => 'Old Name',
+            'email'     => 'old@example.com',
+            'parent_id' => $this->owner->id,
+        ]);
+        Driver::create(['driver_id' => $driverUser->id, 'user_id' => $driverUser->id, 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $document = \Illuminate\Http\UploadedFile::fake()->create('id_card.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $driverUser->id), [
+                'first_name' => 'New',
+                'last_name'  => 'Name',
+                'email'      => 'new@example.com',
+                'document'   => $document,
+            ])
+            ->assertRedirect(route('driver.index'))
+            ->assertSessionHas('success');
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

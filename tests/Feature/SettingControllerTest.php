@@ -553,4 +553,188 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('error');
     }
+
+    // ── SettingController::account (GET) ──────────────────────────────────────
+
+    public function test_account_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.account'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Account')
+                ->has('loginUser.id')
+                ->has('loginUser.name')
+            );
+    }
+
+    // ── SettingController::password (GET) ─────────────────────────────────────
+
+    public function test_password_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.password'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Password')
+                ->has('loginUser.id')
+            );
+    }
+
+    // ── SettingController::company (GET) ──────────────────────────────────────
+
+    public function test_company_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.company'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Company')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::general (GET) ──────────────────────────────────────
+
+    public function test_general_page_requires_auth(): void
+    {
+        $this->get(route('setting.general'))->assertRedirect(route('login'));
+    }
+
+    public function test_general_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.general'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/General')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::smtp (GET) ─────────────────────────────────────────
+
+    public function test_smtp_page_requires_auth(): void
+    {
+        $this->get(route('setting.smtp'))->assertRedirect(route('login'));
+    }
+
+    public function test_smtp_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.smtp'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Smtp')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::payment (GET) ──────────────────────────────────────
+
+    public function test_payment_page_requires_auth(): void
+    {
+        $this->get(route('setting.payment'))->assertRedirect(route('login'));
+    }
+
+    public function test_payment_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.payment'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Payment')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::googleRecaptcha (GET) ──────────────────────────────
+
+    public function test_recaptcha_page_requires_auth(): void
+    {
+        $this->get(route('setting.google.recaptcha'))->assertRedirect(route('login'));
+    }
+
+    public function test_recaptcha_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.google.recaptcha'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/Recaptcha')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::siteSEO (GET) ──────────────────────────────────────
+
+    public function test_site_seo_page_requires_auth(): void
+    {
+        $this->get(route('setting.site.seo'))->assertRedirect(route('login'));
+    }
+
+    public function test_site_seo_page_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('setting.site.seo'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Settings/SiteSeo')
+                ->has('settings')
+            );
+    }
+
+    // ── SettingController::accountDelete ──────────────────────────────────────
+
+    public function test_account_delete_requires_auth(): void
+    {
+        $this->delete(route('setting.account.delete'))->assertRedirect(route('login'));
+    }
+
+    public function test_account_delete_removes_authenticated_user(): void
+    {
+        $userToDelete = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($userToDelete)
+            ->delete(route('setting.account.delete'))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
+    }
+
+    // ── SettingController::languageChange ─────────────────────────────────────
+
+    public function test_language_change_updates_user_lang(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('language.change', 'fr'))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['id' => $this->owner->id, 'lang' => 'fr']);
+    }
+
+    // ── SettingController::paymentData — bank transfer branch ─────────────────
+
+    public function test_payment_data_with_bank_transfer_persists_bank_settings(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'            => 'MAD',
+                'CURRENCY_SYMBOL'     => 'DH',
+                'bank_transfer_payment' => 'on',
+                'bank_name'           => 'CIH Bank',
+                'bank_holder_name'    => 'Acme Rentals',
+                'bank_account_number' => '123456789',
+                'bank_ifsc_code'      => 'CIHM0001',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'  => 'bank_name',
+            'value' => 'CIH Bank',
+            'type'  => 'payment',
+        ]);
+    }
 }

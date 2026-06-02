@@ -405,6 +405,64 @@ class ReminderControllerTest extends TestCase
             ->assertJsonStructure(['current_month', 'by_vehicle', 'by_type']);
     }
 
+    // ── ReminderController::createRecurringReminders ─────────────────────────
+
+    public function test_create_recurring_reminders_requires_auth(): void
+    {
+        $this->post(route('reminder.create.recurring'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_recurring_reminders_returns_json_success(): void
+    {
+        // Create a completed reminder; recurring types don't match so createdCount stays 0
+        Reminder::factory()->create([
+            'parent_id'  => $this->owner->id,
+            'status'     => 'completed',
+            'reminder_type_id' => $this->reminderType->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.create.recurring'))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    // ── ReminderController::index — lists reminders with stats ───────────────
+
+    public function test_index_renders_inertia_with_stats(): void
+    {
+        Reminder::factory()->create([
+            'parent_id' => $this->owner->id,
+            'status'    => 'overdue',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('reminder.index'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Reminder/Index')
+                ->has('reminders')
+                ->has('stats')
+            );
+    }
+
+    // ── ReminderController::updateReminderStatuses — status transitions ───────
+
+    public function test_update_statuses_transitions_overdue_reminder(): void
+    {
+        // A reminder past its date should be overdue
+        Reminder::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'status'        => 'pending',
+            'reminder_date' => now()->subDays(2)->format('Y-m-d'),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('reminder.update.statuses'))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

@@ -250,4 +250,89 @@ class UserControllerTest extends TestCase
 
         $this->assertDatabaseMissing('logged_histories', ['id' => $history->id]);
     }
+
+    // ── UserController::create ────────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('users.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('users.create'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Users/Create')
+                ->has('userRoles')
+            );
+    }
+
+    // ── UserController::edit ──────────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('users.edit', $target))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('users.edit', $target))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('Users/Edit')
+                ->has('user.id')
+                ->has('userRoles')
+            );
+    }
+
+    // ── UserController::store — validation: duplicate email ───────────────────
+
+    public function test_store_flashes_error_on_duplicate_email(): void
+    {
+        User::factory()->create(['email' => 'existing@test.com', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Duplicate User',
+                'email'    => 'existing@test.com',
+                'password' => 'password123',
+                'role'     => $this->employeeRole->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── UserController::update — sets role ───────────────────────────────────
+
+    public function test_update_assigns_new_role(): void
+    {
+        $target = User::factory()->create(['parent_id' => $this->owner->id]);
+        $newRole = Role::create(['name' => 'manager', 'guard_name' => 'web', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->put(route('users.update', $target), [
+                'name'  => $target->name,
+                'email' => $target->email,
+                'role'  => $newRole->id,
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($target->fresh()->hasRole('manager'));
+    }
+
+    // ── UserController::loggedHistory (Blade) ─────────────────────────────────
+    // NOTE: loggedHistory renders a Blade view. This test confirms the 200 status.
+    public function test_logged_history_returns_view_for_authorized_user(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('logged.history'))
+            ->assertOk();
+    }
 }

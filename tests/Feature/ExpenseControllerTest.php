@@ -164,6 +164,93 @@ class ExpenseControllerTest extends TestCase
         $this->assertDatabaseMissing('expenses', ['id' => $expense->id]);
     }
 
+    // ── ExpenseController::create ─────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('expense.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('expense.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Expense/Create')
+                ->has('vehicles')
+                ->has('types')
+            );
+    }
+
+    // ── ExpenseController::edit ───────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $expense = Expense::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('expense.edit', $expense))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $expense = Expense::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('expense.edit', $expense))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Expense/Edit')
+                ->has('expense')
+                ->has('vehicles')
+                ->has('types')
+            );
+    }
+
+    // ── ExpenseController::update — permission denied ─────────────────────────
+
+    public function test_update_denied_without_edit_expense(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $expense = Expense::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($noPerms)
+            ->put(route('expense.update', $expense), $this->validPayload())
+            ->assertSessionHas('error');
+    }
+
+    // ── ExpenseController::store — with receipt upload ────────────────────────
+
+    public function test_store_with_receipt_file_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake();
+
+        $receipt = \Illuminate\Http\UploadedFile::fake()->create('receipt.pdf', 50, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->post(route('expense.store'), $this->validPayload(['receipt' => $receipt]))
+            ->assertRedirect(route('expense.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('expenses', [
+            'title'     => 'Tyre Replacement',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    // ── ExpenseController::update — with receipt upload ───────────────────────
+
+    public function test_update_with_receipt_file_saves_successfully(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake();
+
+        $expense = Expense::factory()->create(['parent_id' => $this->owner->id]);
+        $receipt = \Illuminate\Http\UploadedFile::fake()->create('new_receipt.pdf', 50, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->put(route('expense.update', $expense), $this->validPayload(['receipt' => $receipt]))
+            ->assertRedirect(route('expense.index'))
+            ->assertSessionHas('success');
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array
