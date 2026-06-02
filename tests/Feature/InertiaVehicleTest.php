@@ -49,8 +49,9 @@ class InertiaVehicleTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Vehicle/Index')
-                ->has('vehicles', 1)
-                ->has('vehicles.0.daily_rate_formatted')
+                ->where('vehicles.current_page', 1)
+                ->has('vehicles.data', 1)
+                ->has('vehicles.data.0.daily_rate_formatted')
             );
     }
 
