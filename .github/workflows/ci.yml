@@ -97,7 +97,7 @@ jobs:
         run: php artisan client:install
 
       - name: Run tests with coverage
-        run: php artisan test --coverage --min=50
+        run: php artisan test --coverage --min=80
 
       - name: Frontend tests (Vitest)
         run: npm test

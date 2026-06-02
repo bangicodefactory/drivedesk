@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
@@ -159,6 +160,203 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('vehicles', ['id' => $vehicle->id]);
+    }
+
+    // ── VehicleController::create ─────────────────────────────────────────────
+
+    public function test_create_requires_auth(): void
+    {
+        $this->get(route('vehicle.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_component(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Vehicle/Create')
+                ->has('types')
+                ->has('gearbox')
+                ->has('fuelType')
+                ->has('option')
+            );
+    }
+
+    // ── VehicleController::show ───────────────────────────────────────────────
+
+    public function test_show_requires_auth(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('vehicle.show', $vehicle))->assertRedirect(route('login'));
+    }
+
+    public function test_show_renders_inertia_component(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.show', $vehicle))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Vehicle/Show')
+                ->has('vehicle')
+            );
+    }
+
+    // ── VehicleController::edit ───────────────────────────────────────────────
+
+    public function test_edit_requires_auth(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $this->get(route('vehicle.edit', $vehicle))->assertRedirect(route('login'));
+    }
+
+    public function test_edit_renders_inertia_component(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.edit', $vehicle))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Vehicle/Edit')
+                ->has('vehicle')
+                ->has('types')
+                ->has('gearbox')
+                ->has('fuelType')
+                ->has('option')
+            );
+    }
+
+    // ── VehicleController::update — permission denied ─────────────────────────
+
+    public function test_update_denied_without_edit_vehicle(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($noPerms)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload())
+            ->assertSessionHas('error');
+    }
+
+    // ── VehicleController::store — additional validations ────────────────────
+
+    public function test_store_flashes_error_on_missing_daily_rate(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['daily_rate' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_store_flashes_error_on_missing_license_plate(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['license_plate' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── VehicleController::update — additional validations ───────────────────
+
+    public function test_update_flashes_error_on_missing_daily_rate(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload(['daily_rate' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_update_flashes_error_on_missing_license_plate(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload(['license_plate' => '']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    // ── VehicleController::getVehicleRateCalculation ──────────────────────────
+
+    public function test_vehicle_rate_calculation_requires_auth(): void
+    {
+        $this->get(route('vehicle.rate.calculation'))->assertRedirect(route('login'));
+    }
+
+    public function test_vehicle_rate_calculation_returns_json(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 80]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('vehicle.rate.calculation', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => now()->addDay()->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(4)->format('Y/m/d') . ' 09:00',
+                'daychange'       => 0,
+            ]))
+            ->assertOk();
+    }
+
+    public function test_vehicle_rate_calculation_with_daychange_returns_json(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 80]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('vehicle.rate.calculation', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => now()->addDay()->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(4)->format('Y/m/d') . ' 09:00',
+                'daychange'       => 1,
+                'daily_price'     => 100,
+            ]))
+            ->assertOk();
+    }
+
+    // ── VehicleController::getAvailableVehicle ────────────────────────────────
+
+    public function test_available_vehicle_requires_auth(): void
+    {
+        $this->get(route('available.vehicle'))->assertRedirect(route('login'));
+    }
+
+    public function test_available_vehicle_returns_json(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('available.vehicle', [
+                'start_date_time' => now()->addDays(10)->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(13)->format('Y/m/d') . ' 09:00',
+            ]))
+            ->assertOk();
+    }
+
+    public function test_available_vehicle_excludes_booked_vehicles(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        // Create an overlapping active booking for that vehicle.
+        Booking::factory()->create([
+            'vehicle'    => $vehicle->id,
+            'start_date' => now()->addDays(10)->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_date'   => now()->addDays(13)->format('Y-m-d'),
+            'end_time'   => '18:00',
+            'status'     => 'yet_to_start',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $response = $this->actingAs($this->owner)
+            ->getJson(route('available.vehicle', [
+                'start_date_time' => now()->addDays(10)->format('Y/m/d') . ' 09:00',
+                'end_date_time'   => now()->addDays(13)->format('Y/m/d') . ' 18:00',
+            ]));
+
+        $response->assertOk();
+        $decoded = json_decode($response->getContent(), true);
+        $this->assertArrayNotHasKey($vehicle->id, $decoded);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
