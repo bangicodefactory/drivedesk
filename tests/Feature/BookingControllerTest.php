@@ -160,7 +160,7 @@ class BookingControllerTest extends TestCase
         $booking = $this->makeBooking();
 
         $this->actingAs($this->owner)
-            ->get(route('booking.edit', \Illuminate\Support\Facades\Crypt::encrypt($booking->id)))
+            ->get(route('booking.edit', Crypt::encrypt($booking->id)))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Booking/Edit')
