@@ -145,17 +145,18 @@ class ThemePalette
         $secondaryHsl = self::fmt($h, $secS, $secL);
         $secondaryFg  = '210 40% 98%';
 
-        // Neutral ramp (dark)
-        $nH = self::NEUTRAL_HUE[$neutral]  ?? 210;
-        $bgHsl       = self::fmt($nH, 20.0, 5.0);
+        // Neutral ramp (dark) — use temperature-specific saturation like light mode
+        $nH = self::NEUTRAL_HUE[$neutral] ?? 210;
+        $nS = self::NEUTRAL_SAT[$neutral] ?? 20;
+        $bgHsl       = self::fmt($nH, $nS, 5.0);
         $fgHsl       = '210 40% 98%';
         $cardHsl     = $bgHsl;
         $cardFg      = $fgHsl;
         $popoverHsl  = $bgHsl;
         $popoverFg   = $fgHsl;
-        $mutedHsl    = self::fmt($nH, 20.0, 17.5);
+        $mutedHsl    = self::fmt($nH, $nS, 17.5);
         $mutedFg     = self::fmt($nH, 15.0, 65.1);
-        $borderHsl   = self::fmt($nH, 20.0, 17.5);
+        $borderHsl   = self::fmt($nH, $nS, 17.5);
         $inputHsl    = $borderHsl;
 
         // Accent dark
@@ -219,9 +220,9 @@ class ThemePalette
         }
 
         if ($dark) {
-            $aL = isset($accentHex) ? max(55.0, min(75.0, $aL + 20)) : 17.5;
+            $aL = $accentHex !== null ? max(55.0, min(75.0, $aL + 20)) : 17.5;
         } else {
-            $aL = isset($accentHex) ? max(30.0, min(60.0, $aL)) : 96.1;
+            $aL = $accentHex !== null ? max(30.0, min(60.0, $aL)) : 96.1;
         }
 
         $accentHsl = self::fmt($aH, $aS, $aL);
@@ -233,7 +234,7 @@ class ThemePalette
     private static function chartTokens(float $h, float $s, bool $light): array
     {
         $sat = max(60.0, $s);
-        $lit = $light ? 55.0 : 55.0;
+        $lit = $light ? 50.0 : 60.0; // light: slightly dark for contrast on white; dark: brighter on dark bg
         $tokens = [];
         for ($i = 0; $i < 5; $i++) {
             $tokens[] = self::fmt(fmod($h + $i * 72, 360), $sat, $lit);

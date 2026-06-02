@@ -14,9 +14,8 @@ class HandleInertiaRequests extends Middleware
     private ?array $cachedSettings = null;
 
     // Precomputed HSL values for each theme color (primary, primary-foreground)
-    // color1 updated to Velocity Drive primary #a13a00 (22 100% 32%)
     private const PRIMARY_MAP = [
-        'color1' => ['22 100% 32%', '0 0% 100%'],
+        'color1' => ['203.7 75.7% 42.0%', '210 40% 98%'],
         'color2' => ['262.8 89.7% 50.6%', '210 40% 98%'],
         'color3' => ['201.7 100.0% 50.2%', '210 40% 98%'],
         'color4' => ['354.3 70.5% 53.5%', '210 40% 98%'],
@@ -178,8 +177,13 @@ class HandleInertiaRequests extends Middleware
             return ["{$h} {$sat}% {$l}%", $fg];
         }
 
-        return self::PRIMARY_MAP[$s['theme_color'] ?? 'color1']
-            ?? self::PRIMARY_MAP['color1'];
+        // If theme_color is explicitly set, honour it (preserves existing agency choices).
+        // When no theme_color is set at all, use the Velocity Drive default (#a13a00).
+        if (!empty($s['theme_color'])) {
+            return self::PRIMARY_MAP[$s['theme_color']] ?? self::PRIMARY_MAP['color1'];
+        }
+
+        return ['22 100% 32%', '0 0% 100%']; // Velocity Drive primary #a13a00
     }
 
     private function hexToHsl(string $hex): array

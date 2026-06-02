@@ -201,15 +201,20 @@ class ThemePaletteTest extends TestCase
         $this->assertNotSame($withAccent, $withoutAccent);
     }
 
-    public function test_neutral_temperature_affects_background(): void
+    public function test_neutral_temperature_affects_surface_tokens(): void
     {
-        $cool    = ThemePalette::derive('#3B82F6', null, 'cool')['light']['--background'];
-        $warm    = ThemePalette::derive('#3B82F6', null, 'warm')['light']['--background'];
-        $neutral = ThemePalette::derive('#3B82F6', null, 'neutral')['light']['--background'];
+        // --muted uses both the neutral hue AND saturation, so it varies visually.
+        $coolMuted    = ThemePalette::derive('#3B82F6', null, 'cool')['light']['--muted'];
+        $warmMuted    = ThemePalette::derive('#3B82F6', null, 'warm')['light']['--muted'];
+        $neutralMuted = ThemePalette::derive('#3B82F6', null, 'neutral')['light']['--muted'];
 
-        // Backgrounds differ by temperature (different hue base)
-        $this->assertNotSame($cool, $warm);
-        $this->assertNotSame($cool, $neutral);
+        $this->assertNotSame($coolMuted, $warmMuted);
+        $this->assertNotSame($coolMuted, $neutralMuted);
+
+        // Dark mode neutral ramp also varies by temperature
+        $coolDarkBg = ThemePalette::derive('#3B82F6', null, 'cool')['dark']['--background'];
+        $warmDarkBg = ThemePalette::derive('#3B82F6', null, 'warm')['dark']['--background'];
+        $this->assertNotSame($coolDarkBg, $warmDarkBg);
     }
 
     // ── WCAG math helpers ─────────────────────────────────────────────────────
