@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, Car } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/components/Pagination';
 
 // Port of resources/views/vehicle/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -56,14 +57,14 @@ function VehicleIndex({ vehicles = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {vehicles.length === 0 && (
+                            {vehicles.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                         No vehicles yet
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {vehicles.map((v) => (
+                            {vehicles.data.map((v) => (
                                 <TableRow key={v.id}>
                                     <TableCell className="font-mono text-sm">{v.vehicle_id_display ?? v.vehicle_id}</TableCell>
                                     <TableCell>{v.name}</TableCell>
@@ -105,6 +106,7 @@ function VehicleIndex({ vehicles = [] }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination paginator={vehicles} />
                 </CardContent>
             </Card>
         </div>

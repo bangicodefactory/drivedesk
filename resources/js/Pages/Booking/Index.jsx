@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/components/Pagination';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -36,7 +37,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
     const [importFile, setImportFile] = useState(null);
 
     function toggleAll(e) {
-        setSelected(e.target.checked ? bookings.map((b) => b.id) : []);
+        setSelected(e.target.checked ? bookings.data.map((b) => b.id) : []);
     }
 
     function toggleOne(id) {
@@ -156,7 +157,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
                                         <input
                                             type="checkbox"
                                             onChange={toggleAll}
-                                            checked={selected.length === bookings.length && bookings.length > 0}
+                                            checked={selected.length === bookings.data.length && bookings.data.length > 0}
                                         />
                                     </TableHead>
                                 )}
@@ -172,14 +173,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {bookings.length === 0 && (
+                            {bookings.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                         No bookings yet
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {bookings.map((b) => (
+                            {bookings.data.map((b) => (
                                 <TableRow key={b.id}>
                                     {can('delete booking') && (
                                         <TableCell>
@@ -240,6 +241,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination paginator={bookings} />
                 </CardContent>
             </Card>
         </div>
