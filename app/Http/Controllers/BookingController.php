@@ -745,6 +745,11 @@ class BookingController extends Controller
         $driversCache  = User::where('parent_id', $pid)->where('type', 'driver')->get()->keyBy(fn($u) => strtolower(trim($u->name)));
         $vehiclesCache = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => strtolower(trim($v->license_plate)));
 
+        // Pre-fetch counters and email set to eliminate per-row queries
+        $nextDriverId   = (Driver::where('parent_id', $pid)->max('driver_id') ?? 0) + 1;
+        $nextVehicleId  = (Vehicle::where('parent_id', $pid)->max('vehicle_id') ?? 0) + 1;
+        $existingEmails = User::pluck('email')->mapWithKeys(fn($e) => [$e => true])->all();
+
         $imported = 0;
         $skipped  = [];
 
@@ -816,10 +821,11 @@ class BookingController extends Controller
                     $emailBase = strtolower(str_replace([' ', "'"], ['.', ''], $driverName));
                     $email     = $emailBase . '@import.local';
                     $suffix    = 1;
-                    while (User::where('email', $email)->exists()) {
+                    while (isset($existingEmails[$email])) {
                         $email = $emailBase . $suffix . '@import.local';
                         $suffix++;
                     }
+                    $existingEmails[$email] = true; // reserve for this import session
 
                     $newUser           = new User();
                     $newUser->name     = $driverName;
@@ -836,9 +842,8 @@ class BookingController extends Controller
                     }
 
                     // Create Driver profile record
-                    $latestDriver = Driver::where('parent_id', $pid)->latest()->first();
-                    $newDriver           = new Driver();
-                    $newDriver->driver_id = $latestDriver ? $latestDriver->driver_id + 1 : 1;
+                    $newDriver            = new Driver();
+                    $newDriver->driver_id = $nextDriverId++;
                     $newDriver->user_id  = $newUser->id;
                     $newDriver->parent_id = $pid;
                     $newDriver->save();
@@ -850,10 +855,8 @@ class BookingController extends Controller
                 // Auto-create vehicle if not found
                 $plateKey = strtolower($licensePlate);
                 if (!isset($vehiclesCache[$plateKey])) {
-                    $latestVehicle = Vehicle::where('parent_id', $pid)->latest()->first();
-
-                    $newVehicle               = new Vehicle();
-                    $newVehicle->vehicle_id   = $latestVehicle ? $latestVehicle->vehicle_id + 1 : 1;
+                    $newVehicle             = new Vehicle();
+                    $newVehicle->vehicle_id = $nextVehicleId++;
                     $newVehicle->name         = $marque ?: $licensePlate;
                     $newVehicle->model        = $marque ?: null;
                     $newVehicle->license_plate = $licensePlate;
