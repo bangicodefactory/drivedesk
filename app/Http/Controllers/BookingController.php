@@ -57,20 +57,20 @@ class BookingController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create booking')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', parentId())->limit(500)->get();
 
             $drivers = User::where('parent_id', parentId())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->limit(500)->get();
             $driversDropdown = $drivers->pluck('name', 'id')->toArray();
 
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
 
-            $places = Place::where('parent_id', parentId())->get();
-            $addon = Addon::where('parent_id', parentId())->get()->pluck('name', 'id');
+            $places = Place::where('parent_id', parentId())->limit(500)->get();
+            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
 
             return Inertia::render('Booking/Create', [
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
@@ -406,13 +406,13 @@ class BookingController extends Controller
             $booking->start_date_time = date('Y/m/d H:i', strtotime($booking->start_date . ' ' . $booking->start_time));
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->limit(500)->get()->pluck('name', 'id');
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
-            $places = Place::where('parent_id', parentId())->get();
+            $places = Place::where('parent_id', parentId())->limit(500)->get();
 
-            $addon = Addon::where('parent_id', parentId())->get()->pluck('name', 'id');
+            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
 
             $startDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->start_date_time)));
             $endDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->end_date_time)));
@@ -431,7 +431,7 @@ class BookingController extends Controller
                     });
                 })->distinct()->pluck('vehicle')->toArray();
 
-            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->get();
+            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->limit(500)->get();
 
             return Inertia::render('Booking/Edit', [
                 'booking'  => [
