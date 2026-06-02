@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write .env from secrets
-        # Must run before composer install — package:discover calls artisan which needs .env
         run: |
           cat > .env <<'ENVEOF'
           APP_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
@@ -75,20 +74,11 @@ jobs:
           DEBUGBAR_ENABLED=false
           ENVEOF
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
-
-      - name: Install Composer dependencies (production)
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
       - name: Install npm dependencies
         run: npm ci
