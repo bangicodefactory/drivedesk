@@ -1,0 +1,130 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging-directonderweg'
+        type: choice
+        options:
+          - staging-directonderweg
+          - production-directonderweg
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          APP_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
+          APP_CLIENT=${{ vars.APP_CLIENT || 'directonderweg' }}
+          APP_ENV=${{ vars.APP_ENV || 'production' }}
+          APP_DEBUG=false
+          APP_URL=${{ vars.APP_URL }}
+          APP_KEY=${{ secrets.APP_KEY }}
+
+          DB_CONNECTION=mysql
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+          CACHE_STORE=${{ vars.CACHE_STORE || 'redis' }}
+          SESSION_DRIVER=${{ vars.SESSION_DRIVER || 'redis' }}
+          QUEUE_CONNECTION=${{ vars.QUEUE_CONNECTION || 'redis' }}
+          REDIS_HOST=${{ vars.REDIS_HOST || '127.0.0.1' }}
+          REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}
+
+          MAIL_MAILER=smtp
+          MAIL_HOST=${{ secrets.MAIL_HOST }}
+          MAIL_PORT=${{ vars.MAIL_PORT || '587' }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          MAIL_ENCRYPTION=tls
+          MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}
+          MAIL_FROM_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
+
+          NOCAPTCHA_SITEKEY=${{ secrets.NOCAPTCHA_SITEKEY }}
+          NOCAPTCHA_SECRET=${{ secrets.NOCAPTCHA_SECRET }}
+
+          SENTRY_LARAVEL_DSN=${{ secrets.SENTRY_LARAVEL_DSN }}
+          SENTRY_ENVIRONMENT=${{ vars.SENTRY_ENVIRONMENT }}
+          SENTRY_RELEASE=${{ github.sha }}
+
+          TELESCOPE_ENABLED=false
+          DEBUGBAR_ENABLED=false
+          EOF
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT || '22' }}
+          script: |
+            set -e
+            cd ${{ vars.DEPLOY_PATH }}
+
+            echo "==> Pulling latest code"
+            git fetch origin
+            git checkout ${{ github.sha }}
+
+            echo "==> Installing dependencies"
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+            echo "==> Copying built assets"
+            # Assets are built in CI; copy them to public/build
+            # If using artifact upload, adjust this step accordingly
+
+            echo "==> Running migrations"
+            php artisan migrate --force
+
+            echo "==> Seeding client branding (idempotent)"
+            php artisan client:install
+
+            echo "==> Caching config + routes + views"
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "==> Restarting queue workers"
+            php artisan queue:restart
+
+            echo "==> Done ✓"
