@@ -32,7 +32,7 @@ function FileDetail({ label, name, dir, className = '' }) {
         <div className={className}>
             <h6 className="text-sm font-semibold text-muted-foreground mb-1">{label}</h6>
             {isImage ? (
-                <div className="mb-4 inline-flex items-start gap-2">
+                <div className="mb-4 inline-flex items-center gap-2">
                     <a href={url} target="_blank" rel="noreferrer">
                         <img
                             src={url}
