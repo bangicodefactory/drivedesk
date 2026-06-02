@@ -3,14 +3,35 @@ import { createInertiaApp, router } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';
 
+// Injects or updates a <style id="brand-dark"> element with .dark-scoped vars.
+function injectDarkVars(darkMap) {
+    const id = 'brand-dark';
+    let el = document.getElementById(id);
+    if (!el) {
+        el = document.createElement('style');
+        el.id = id;
+        document.head.appendChild(el);
+    }
+    const rules = Object.entries(darkMap)
+        .map(([k, v]) => `  ${k}: ${v};`)
+        .join('\n');
+    el.textContent = `.dark {\n${rules}\n}`;
+}
+
 function applyBranding(branding) {
     if (!branding) return;
 
     if (branding.cssVars) {
         const root = document.documentElement;
-        Object.entries(branding.cssVars).forEach(([key, value]) => {
-            root.style.setProperty(key, value);
-        });
+
+        if (branding.cssVars.light) {
+            // BAN-243: full derived palette { light: {...}, dark: {...} }
+            Object.entries(branding.cssVars.light).forEach(([k, v]) => root.style.setProperty(k, v));
+            injectDarkVars(branding.cssVars.dark ?? {});
+        } else {
+            // Legacy: flat 3-var object (no brand_color set)
+            Object.entries(branding.cssVars).forEach(([k, v]) => root.style.setProperty(k, v));
+        }
     }
 
     if (branding.layoutDirection) {

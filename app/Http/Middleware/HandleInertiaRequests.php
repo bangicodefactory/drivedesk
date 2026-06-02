@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ThemePalette;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
@@ -78,17 +79,28 @@ class HandleInertiaRequests extends Middleware
     {
         $s = $this->loadSettings();
 
-        [$primary, $primaryFg] = $this->resolvePrimary($s);
+        // BAN-243: if brand_color is set, derive the full light+dark palette.
+        // Otherwise fall back to the legacy 3-var format (back-compat, spec §8).
+        $brandHex = $s['brand_color'] ?? null;
+
+        if ($brandHex) {
+            $accentHex = $s['accent_color'] ?? null;
+            $neutral   = $s['brand_neutral'] ?? 'cool';
+            $cssVars   = ThemePalette::derive($brandHex, $accentHex ?: null, $neutral);
+        } else {
+            [$primary, $primaryFg] = $this->resolvePrimary($s);
+            $cssVars = [
+                '--primary'            => $primary,
+                '--primary-foreground' => $primaryFg,
+                '--ring'               => $primary,
+            ];
+        }
 
         return [
             'appName'    => $s['app_name'] ?? config('app.name', 'RentCar'),
             'logoUrl'    => asset(Storage::url('upload/logo/' . ($s['company_logo']    ?? 'logo.png'))),
             'faviconUrl' => asset(Storage::url('upload/logo/' . ($s['company_favicon'] ?? 'favicon.png'))),
-            'cssVars' => [
-                '--primary'            => $primary,
-                '--primary-foreground' => $primaryFg,
-                '--ring'               => $primary,
-            ],
+            'cssVars'         => $cssVars,
             'layoutMode'      => $s['layout_mode']      ?? 'lightmode',
             'layoutDirection' => $s['layout_direction'] ?? 'ltrmode',
         ];
