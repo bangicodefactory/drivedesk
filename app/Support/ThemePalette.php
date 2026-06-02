@@ -17,7 +17,7 @@ class ThemePalette
     // Fixed semantic hues — NOT derived from brand (CLAUDE.md §6 / spec §6)
     // All semantic bg tokens are kept dark enough (lum ≤ 0.18) so white fg achieves WCAG AA ≥4.5:1.
     private const SEMANTIC_LIGHT = [
-        '--destructive'            => '0 84.2% 45%',
+        '--destructive'            => '0 75% 42%',   // #ba1a1a — Velocity Drive error color
         '--destructive-foreground' => '210 40% 98%',
         '--success'                => '142 76% 27%',
         '--success-foreground'     => '0 0% 100%',

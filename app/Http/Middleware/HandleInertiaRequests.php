@@ -14,8 +14,9 @@ class HandleInertiaRequests extends Middleware
     private ?array $cachedSettings = null;
 
     // Precomputed HSL values for each theme color (primary, primary-foreground)
+    // color1 updated to Velocity Drive primary #a13a00 (22 100% 32%)
     private const PRIMARY_MAP = [
-        'color1' => ['203.7 75.7% 42.0%', '210 40% 98%'],
+        'color1' => ['22 100% 32%', '0 0% 100%'],
         'color2' => ['262.8 89.7% 50.6%', '210 40% 98%'],
         'color3' => ['201.7 100.0% 50.2%', '210 40% 98%'],
         'color4' => ['354.3 70.5% 53.5%', '210 40% 98%'],
