@@ -12,6 +12,7 @@ use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -437,6 +438,53 @@ class BookingControllerTest extends TestCase
             ->assertRedirect();
 
         $this->assertSoftDeleted('tvas', ['id' => $tva->id]);
+    }
+
+    // ── BookingController::planning (BAN-238) ────────────────────────────────
+
+    public function test_planning_returns_200_with_booking_and_vehicle_data(): void
+    {
+        $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->get(route('planning'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Planning')
+                ->has('bookingData')
+                ->has('vehicleData')
+            );
+    }
+
+    public function test_planning_denied_without_manage_booking_permission(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->get(route('planning'))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_planning_fires_at_most_2_booking_related_queries(): void
+    {
+        // Create 5 bookings — before the fix each triggered a lazy driver load
+        foreach (range(1, 5) as $_) {
+            $this->makeBooking();
+        }
+
+        $bookingQueries = 0;
+        DB::listen(function ($query) use (&$bookingQueries) {
+            if (preg_match('/\bbookings\b|\busers\b/i', $query->sql)) {
+                $bookingQueries++;
+            }
+        });
+
+        $this->actingAs($this->owner)->get(route('planning'))->assertOk();
+
+        $this->assertLessThanOrEqual(2, $bookingQueries,
+            "planning() should fire at most 2 queries for bookings+drivers (fired {$bookingQueries})"
+        );
     }
 
     // ── BookingController::importExcel (BAN-236) ─────────────────────────────
