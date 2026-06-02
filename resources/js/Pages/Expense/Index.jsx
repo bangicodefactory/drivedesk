@@ -8,7 +8,7 @@ import { Pencil, Trash2, Plus, Receipt } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 
-function ExpenseIndex({ expenses = [] }) {
+function ExpenseIndex({ expenses = { data: [] } }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 

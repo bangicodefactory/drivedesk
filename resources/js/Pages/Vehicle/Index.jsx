@@ -11,7 +11,7 @@ import Pagination from '@/components/Pagination';
 // Port of resources/views/vehicle/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete vehicle') / Gate::check('manage vehicle') guards.
-function VehicleIndex({ vehicles = [] }) {
+function VehicleIndex({ vehicles = { data: [] } }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
