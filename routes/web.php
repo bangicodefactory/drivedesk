@@ -127,6 +127,9 @@ Route::group(
         Route::get('settings/google-recaptcha', [SettingController::class, 'googleRecaptcha'])->name('setting.google.recaptcha');
         Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData'])->name('setting.google.recaptcha');
 
+        Route::get('settings/branding', [SettingController::class, 'branding'])->name('setting.branding');
+        Route::post('settings/branding', [SettingController::class, 'brandingData'])->name('setting.branding');
+
         Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
     }
 );

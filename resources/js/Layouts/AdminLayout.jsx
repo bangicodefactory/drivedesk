@@ -38,6 +38,7 @@ const SETTINGS_CHILDREN = [
     { label: 'Password Setting',  route: 'setting.password',         permission: 'manage password settings' },
     { label: 'General Setting',   route: 'setting.general',          permission: 'manage general settings' },
     { label: 'Company Setting',   route: 'setting.company',          permission: 'manage company settings' },
+    { label: 'Branding & Theme',  route: 'setting.branding',         permission: 'manage general settings' },
     { label: 'Email Setting',     route: 'setting.smtp',             permission: 'manage email settings' },
     { label: 'Site SEO Setting',  route: 'setting.site.seo',         permission: 'manage seo settings' },
     { label: 'ReCaptcha Setting', route: 'setting.google.recaptcha', permission: 'manage google recaptcha settings' },

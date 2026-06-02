@@ -969,4 +969,49 @@ class SettingController extends Controller
     //     return redirect()->back()->with('success', 'Signature deleted successfully.');
     // }
 
+    // ── BAN-244: Branding & Theme settings ──────────────────────────────────
+
+    public function branding()
+    {
+        $user = \Auth::user();
+        if ($user->type !== 'owner' && $user->type !== 'super admin' && !\Gate::allows('manage general settings')) {
+            abort(403);
+        }
+
+        return Inertia::render('Settings/Branding', [
+            'settings' => settings(),
+        ]);
+    }
+
+    public function brandingData(Request $request)
+    {
+        $user = \Auth::user();
+        if ($user->type !== 'owner' && $user->type !== 'super admin' && !\Gate::allows('manage general settings')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'brand_color'  => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'brand_neutral' => ['nullable', 'in:cool,neutral,warm'],
+            'layout_mode'  => ['nullable', 'in:lightmode,darkmode,systemmode'],
+        ]);
+
+        $owner = \Auth::user();
+        $parentId = ($owner->type === 'owner') ? $owner->id : ($owner->parent_id ?? $owner->id);
+
+        $fields = ['brand_color', 'accent_color', 'brand_neutral', 'layout_mode'];
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $validated)) {
+                Setting::updateOrCreate(
+                    ['name' => $field, 'parent_id' => $parentId],
+                    ['value' => $validated[$field] ?? '']
+                );
+            }
+        }
+
+        flushSettingsCache();
+
+        return redirect()->back()->with('success', __('Branding settings saved successfully.'));
+    }
 }
