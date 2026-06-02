@@ -7,6 +7,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -61,5 +62,40 @@ class EmailVerificationTest extends TestCase
         $this->actingAs($user)->get($verificationUrl);
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
+
+    // ── EmailVerificationNotificationController ───────────────────────────────
+
+    public function test_verification_notification_store_requires_auth(): void
+    {
+        $this->post(route('verification.send'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_unverified_user_receives_verification_link(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['email_verified_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('verification.send'))
+            ->assertRedirect()
+            ->assertSessionHas('status', 'verification-link-sent');
+
+        Notification::assertSentTo($user, \Illuminate\Auth\Notifications\VerifyEmail::class);
+    }
+
+    public function test_already_verified_user_is_redirected_to_home_without_sending_notification(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($user)
+            ->post(route('verification.send'))
+            ->assertRedirect(RouteServiceProvider::HOME);
+
+        Notification::assertNothingSent();
     }
 }
