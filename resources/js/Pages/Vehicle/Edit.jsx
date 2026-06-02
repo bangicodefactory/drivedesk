@@ -29,6 +29,15 @@ const schema = z.object({
     fuel_type: z.string().min(1, 'The fuel type field is required.'),
     number_of_seats: z.string().min(1, 'The number of seats field is required.'),
     kilometers: z.string().min(1, 'The kilometers field is required.'),
+    // Non-validated fields — z.any()/optional() prevents zodResolver from stripping them
+    engine_no: z.string().optional(),
+    registration_expiry_date: z.string().optional(),
+    'year_of_ﬁrst_immatriculation': z.string().optional(),
+    option: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    picture: z.any().optional(),
+    document: z.any().optional(),
+    _method: z.string().optional(),
 });
 
 const str = (v) => (v != null ? String(v) : '');

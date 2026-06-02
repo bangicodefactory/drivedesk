@@ -34,6 +34,11 @@ const schema = z.object({
     fuel_type: z.string().min(1, 'The fuel type field is required.'),
     number_of_seats: z.string().min(1, 'The number of seats field is required.'),
     kilometers: z.string().min(1, 'The kilometers field is required.'),
+    // Non-validated fields — z.any()/optional() prevents zodResolver from stripping them
+    option: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    picture: z.any().optional(),
+    document: z.any().optional(),
 });
 
 function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} }) {
