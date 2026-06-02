@@ -115,10 +115,11 @@ class InspectionController extends Controller
         $inspection=Inspection::find(Crypt::decrypt($id));
         $checklists=!empty($inspection->details)?json_decode($inspection->details):[];
 
+        $types = InspectionType::findMany(array_keys((array) $checklists))->keyBy('id');
+
         $details=[];
         foreach ($checklists as $k=>$checklist){
-            $type=InspectionType::find($k);
-            $details[$k]['type']=$type->type;
+            $details[$k]['type']=$types->get($k)?->type ?? '';
             $details[$k]['status']=isset($checklist->type)?$checklist->type:'';
             $details[$k]['note']=isset($checklist->note)?$checklist->note:'';
         }
