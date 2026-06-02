@@ -14,7 +14,7 @@ class ExpenseController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage expense')) {
-            $expenses = Expense::with(['vehicles', 'types'])->where('parent_id', '=', parentId())->get();
+            $expenses = Expense::with(['vehicles', 'types'])->where('parent_id', '=', parentId())->paginate(25);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }

@@ -18,13 +18,13 @@ class VehicleController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage vehicle')) {
-            $vehicles = Vehicle::where('parent_id', '=', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', '=', parentId())->paginate(25);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
         if (config('app.inertia_enabled')) {
-            $payload = $vehicles->map(function ($vehicle) {
+            $payload = $vehicles->through(function ($vehicle) {
                 $data = $vehicle->toArray();
                 $data['daily_rate_formatted'] = priceFormat($vehicle->daily_rate);
                 return $data;

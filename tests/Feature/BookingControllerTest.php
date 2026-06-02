@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -67,6 +68,22 @@ class BookingControllerTest extends TestCase
     public function test_index_requires_auth(): void
     {
         $this->get(route('booking.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_index_renders_paginated_inertia_component(): void
+    {
+        $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Index')
+                ->where('bookings.current_page', 1)
+                ->has('bookings.data')
+                ->has('bookings.last_page')
+                ->has('bookings.total')
+            );
     }
 
     public function test_store_requires_auth(): void
