@@ -6,8 +6,9 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Receipt } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/components/Pagination';
 
-function ExpenseIndex({ expenses = [] }) {
+function ExpenseIndex({ expenses = { data: [] } }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -52,14 +53,14 @@ function ExpenseIndex({ expenses = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {expenses.length === 0 && (
+                            {expenses.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 7 : 6} className="text-center text-muted-foreground py-8">
                                         No expenses yet
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {expenses.map((expense) => (
+                            {expenses.data.map((expense) => (
                                 <TableRow key={expense.id}>
                                     <TableCell className="font-medium">{expense.title}</TableCell>
                                     <TableCell>{expense.types?.title ?? '—'}</TableCell>
@@ -104,6 +105,7 @@ function ExpenseIndex({ expenses = [] }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination paginator={expenses} />
                 </CardContent>
             </Card>
         </div>

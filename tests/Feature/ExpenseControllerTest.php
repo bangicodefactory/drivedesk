@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\ExpenseType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -85,6 +86,22 @@ class ExpenseControllerTest extends TestCase
     public function test_index_returns_200_for_authorized_user(): void
     {
         $this->actingAs($this->owner)->get(route('expense.index'))->assertOk();
+    }
+
+    public function test_index_renders_paginated_inertia_component(): void
+    {
+        Expense::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('expense.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Expense/Index')
+                ->where('expenses.current_page', 1)
+                ->has('expenses.data')
+                ->has('expenses.last_page')
+                ->has('expenses.total')
+            );
     }
 
     // ── ExpenseController::store ──────────────────────────────────────────────

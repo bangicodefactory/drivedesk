@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -85,6 +86,22 @@ class VehicleControllerTest extends TestCase
     public function test_index_returns_200_for_authorized_user(): void
     {
         $this->actingAs($this->owner)->get(route('vehicle.index'))->assertOk();
+    }
+
+    public function test_index_renders_paginated_inertia_component(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Vehicle/Index')
+                ->where('vehicles.current_page', 1)
+                ->has('vehicles.data')
+                ->has('vehicles.last_page')
+                ->has('vehicles.total')
+            );
     }
 
     // ── VehicleController::store ──────────────────────────────────────────────
