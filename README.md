@@ -1,38 +1,37 @@
 # rentcar
 
-Multi-client Laravel platform for car rental businesses. Originally
-built for **Direct Onderweg** (operating in Morocco) and now being
-prepared to serve multiple clients from one codebase, one isolated
-deployment per client. Features include vehicle and driver management,
-bookings, rental agreements with digital signatures, inspections,
-expenses, coupons and credits, TVA (VAT) handling, multi-locale
-support, Stripe and PayPal payments, reCAPTCHA, and role/permission
-management.
+Multi-client Laravel platform for car rental businesses. Built for
+**Direct Onderweg** (operating in Morocco) and designed to serve multiple
+agencies from one codebase with one isolated deployment per client.
+Features include vehicle and driver management, bookings, rental agreements
+with digital signatures, inspections, expenses, credits, TVA (VAT) handling,
+multi-locale support, reCAPTCHA, and role/permission management.
 
-> **Heads up:** the project is in the middle of a Laravel 10 → 12 +
-> Inertia/React modernization. Read `CLAUDE.md` and
-> `docs/migration-plan.md` before opening a PR.
->
-> The repo is `bangicodefactory/rentcar`. The first onboarded client
-> identifier is `directonderweg` (selected via `APP_CLIENT=directonderweg`
-> in each deployment's environment). See `docs/client-configurability.md`
-> for how the multi-client architecture works.
+The repo is `bangicodefactory/rentcar`. The active client is selected at
+deploy time via `APP_CLIENT=directonderweg`. See
+`docs/client-configurability.md` for the multi-client architecture.
 
 ---
 
-## Tech stack (current, pre-migration)
+## Tech stack
 
-- PHP **8.3+** (CI runs **8.4**; 8.4 recommended locally)
-- Laravel **10.48** (target: **12**)
-- MySQL **8.0+** (MariaDB 10.6+ also works)
-- Node **20+ LTS**
-- Frontend: Blade + Alpine.js + jQuery + Tailwind, built with Laravel Mix
-  (target: Inertia.js + React 19 + Vite)
+| Layer | Technology |
+| --- | --- |
+| PHP | **8.3+** (CI runs 8.4) |
+| Laravel | **12** |
+| Database | MySQL **8.0+** (MariaDB 10.6+ also works) |
+| Node | **20+ LTS** |
+| Frontend | Inertia.js + **React 19** (JSX, no TypeScript) |
+| Build | **Vite** |
+| CSS | **Tailwind 4** |
+| UI components | **shadcn/ui** (Radix UI primitives — live in `resources/js/components/ui/`) |
+| Forms | react-hook-form + zod |
+| Auth | Laravel Sanctum + Breeze (Inertia/React stack) |
 
 Key packages: `spatie/laravel-permission`, `laravel/sanctum`,
 `barryvdh/laravel-dompdf`, `creagia/laravel-sign-pad`,
-`anhskohbo/no-captcha` (reCAPTCHA v2), `srmklive/paypal`,
-`stripe/stripe-php`, `kkomelin/laravel-translatable-string-exporter`,
+`anhskohbo/no-captcha` (reCAPTCHA v2),
+`kkomelin/laravel-translatable-string-exporter`,
 `rachidlaasri/laravel-installer`, `phpoffice/phpspreadsheet`.
 
 ---
@@ -41,24 +40,20 @@ Key packages: `spatie/laravel-permission`, `laravel/sanctum`,
 
 ### 1. Prerequisites
 
-Install these first:
-
-- PHP 8.3+ (8.4 recommended; CI tests against 8.4)
+- PHP 8.3+ (8.4 recommended)
 - Composer 2.x
-- Node.js 18+ and npm 9+
-- MySQL 8 or MariaDB 10.6+ running locally
-- (optional) Redis if you want cache/queue/session on Redis
-- (optional) [MailHog](https://github.com/mailhog/MailHog) or
-  [Mailpit](https://github.com/axllent/mailpit) for catching dev emails
+- Node.js 20+ and npm 9+
+- MySQL 8 or MariaDB 10.6+
+- (optional) Redis — for cache/queue/session
+- (optional) [Mailpit](https://github.com/axllent/mailpit) — catches dev email
 
-If you're on macOS the easiest path is Homebrew:
+On macOS (Homebrew):
 
 ```bash
 brew install php@8.3 composer node@20 mysql mailpit
 ```
 
-On Windows, [Laragon](https://laragon.org/) or WSL2 + Ubuntu is the
-smoothest setup.
+On Windows: [Laragon](https://laragon.org/) or WSL2 + Ubuntu.
 
 ### 2. Clone and install
 
@@ -72,9 +67,9 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### 3. Configure your `.env`
+### 3. Configure `.env`
 
-At minimum, edit these:
+Minimum required:
 
 ```dotenv
 APP_NAME="Direct Onderweg"
@@ -87,7 +82,7 @@ DB_DATABASE=rentcar
 DB_USERNAME=root
 DB_PASSWORD=
 
-# Active client for this deployment (default for local dev)
+# Active client for this deployment
 APP_CLIENT=directonderweg
 
 # Mail (Mailpit defaults)
@@ -97,35 +92,17 @@ MAIL_PORT=1025
 MAIL_FROM_ADDRESS="noreply@directonderweg.local"
 MAIL_FROM_NAME="${APP_NAME}"
 
-# Queue — leave as 'sync' for local dev unless you're testing jobs
+# Queue — 'sync' is fine locally
 QUEUE_CONNECTION=sync
 
 # Cache / Session — 'file' is fine locally
-CACHE_DRIVER=file
+CACHE_STORE=file
 SESSION_DRIVER=file
-```
 
-The app additionally reads these payment / captcha keys from `.env`.
-**Use sandbox/test keys only for local dev.** Never commit real keys.
-
-```dotenv
-# Stripe (test mode)
-STRIPE_KEY=pk_test_xxx
-STRIPE_SECRET=sk_test_xxx
-
-# PayPal (sandbox)
-PAYPAL_MODE=sandbox
-PAYPAL_SANDBOX_CLIENT_ID=
-PAYPAL_SANDBOX_CLIENT_SECRET=
-
-# Google reCAPTCHA v2 — the always-pass test keys below work for local dev
+# Google reCAPTCHA v2 — these test keys always pass locally
 NOCAPTCHA_SITEKEY=6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
 NOCAPTCHA_SECRET=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
 ```
-
-These reCAPTCHA values are Google's public test keys — safe to use locally,
-they always pass. Ask the team lead for Stripe and PayPal sandbox credentials
-if you don't have them.
 
 ### 4. Create the database, migrate, and seed
 
@@ -135,193 +112,178 @@ php artisan migrate
 php artisan db:seed
 ```
 
-**Seeding is required.** It creates the roles, permissions, default subscription
-tier, and the three built-in accounts you need to log in:
+**Seeding is required.** It creates roles, permissions, and the built-in
+accounts:
 
-| Role        | Email                   | Password |
-| ----------- | ----------------------- | -------- |
-| Super admin | superadmin@gmail.com    | 123456   |
-| Owner       | owner@gmail.com         | 123456   |
-| Manager     | manager@gmail.com       | 123456   |
+| Role        | Email                | Password |
+| ----------- | -------------------- | -------- |
+| Super admin | superadmin@gmail.com | 123456   |
+| Owner       | owner@gmail.com      | 123456   |
+| Manager     | manager@gmail.com    | 123456   |
 
-Change these passwords immediately on any non-local environment.
+Change passwords immediately on any non-local environment.
 
-A storage symlink is required for uploads, generated PDFs, and signatures:
+Create the storage symlink:
 
 ```bash
 php artisan storage:link
 ```
 
-> **Windows users:** `storage:link` creates a directory junction that requires
-> either Developer Mode enabled (Settings → System → Developer Mode) or an
-> elevated (Administrator) terminal. If the command fails silently, re-run it
-> as Administrator or enable Developer Mode first.
+> **Windows:** `storage:link` requires Developer Mode enabled or an elevated
+> terminal. Re-run as Administrator if it fails silently.
 
-### 4b. Seed fake data for local testing
+### 4b. Fake data for local testing
 
-`php artisan db:seed` (run in step 4) already includes `DevDataSeeder`, which
-populates every business table with realistic test data scoped to the owner
-account. You don't need to run anything extra — it runs automatically.
+`db:seed` already runs `DevDataSeeder`, which seeds every business table
+with realistic test data scoped to the owner account. Nothing extra needed.
 
-If you want to reseed after wiping the database:
+To reseed after wiping:
 
 ```bash
-# Full reset — drops all tables, re-runs migrations, then seeds everything
 php artisan migrate:fresh --seed
 ```
 
-To run only the fake-data seeder on top of an existing database (idempotent —
-safe to run multiple times, uses firstOrCreate/exists guards):
+To run only the fake-data seeder on an existing database (idempotent):
 
 ```bash
 php artisan db:seed --class=DevDataSeeder
 ```
 
-What gets seeded:
+Seeded rows:
 
 | Table | Rows | Details |
-| -------------------- | ---- | ----------------------------------------------- |
-| `vehicle_types`      | 5    | SUV, Berline, Hatchback, Minivan, Cabriolet |
-| `places`             | 5    | Casablanca Airport, Marrakech Centre, Rabat Gare, Agadir Airport, Fès Médina |
-| `vehicles`           | 7    | RAV4, Duster, Clio, GLE, 208, T-Roc, Transit — with plate, engine, km, daily rate |
-| `expense_types`      | 6    | Carburant, Entretien, Assurance, Réparation, Nettoyage, Péage |
-| `inspection_types`   | 4    | Contrôle technique, Révision générale, Freins, Vidange |
-| `reminder_types`     | 4    | Renouvellement assurance, Vidange, CT, Révision |
-| `addons`             | 5    | GPS, Siège bébé, Conducteur additionnel, Assurance Premium, Wi-Fi |
-| `options`            | 5    | Climatisation, Bluetooth, Caméra de recul, Toit ouvrant, CarPlay |
-| `bookings`           | 8    | Mixed statuses (completed/in_progress/approved/cancelled), past and future dates |
-| `expenses`           | 7    | Realistic amounts linked to vehicles |
-| `inspections`        | 5    | Mix of pass/fail with and without repairs |
-| `reminders`          | 6    | Overdue, urgent, and upcoming — all linked to vehicles |
-| `rental_agreements`  | 4    | completed, active, pending |
-| `coupons`            | 4    | Percent and fixed-amount types with promo codes |
-| `credits`            | 3    | Linked to seeded drivers |
+| --- | --- | --- |
+| `vehicle_types` | 5 | SUV, Berline, Hatchback, Minivan, Cabriolet |
+| `places` | 5 | Casablanca Airport, Marrakech Centre, Rabat Gare, Agadir Airport, Fès Médina |
+| `vehicles` | 7 | RAV4, Duster, Clio, GLE, 208, T-Roc, Transit |
+| `expense_types` | 6 | Carburant, Entretien, Assurance, Réparation, Nettoyage, Péage |
+| `inspection_types` | 4 | Contrôle technique, Révision générale, Freins, Vidange |
+| `reminder_types` | 4 | Renouvellement assurance, Vidange, CT, Révision |
+| `addons` | 5 | GPS, Siège bébé, Conducteur additionnel, Assurance Premium, Wi-Fi |
+| `options` | 5 | Climatisation, Bluetooth, Caméra de recul, Toit ouvrant, CarPlay |
+| `bookings` | 8 | Mixed statuses, past and future dates |
+| `expenses` | 7 | Realistic amounts linked to vehicles |
+| `inspections` | 5 | Mix of pass/fail |
+| `reminders` | 6 | Overdue, urgent, and upcoming |
+| `rental_agreements` | 4 | completed, active, pending |
+| `credits` | 3 | Linked to seeded drivers |
 
-All rows are scoped to `parent_id = <owner id>` and will show up when
-logged in as `owner@gmail.com`.
+All rows are scoped to `parent_id = <owner id>` — visible when logged in as
+`owner@gmail.com`.
 
-> **Note:** `DevDataSeeder` is a dev-only seeder. It will refuse to run
-> `cleanStaleData()` on a production environment (`APP_ENV=production`).
+> `DevDataSeeder` is dev-only and refuses to run `cleanStaleData()` in
+> production (`APP_ENV=production`).
 
 ### 5. Run the app
 
 In separate terminals:
 
 ```bash
-php artisan serve            # http://localhost:8000
-npm run watch                # rebuild assets on file change
-mailpit                      # http://localhost:8025 to see outgoing mail
-```
-
-After the Vite migration these become:
-
-```bash
-php artisan serve
-npm run dev                  # Vite dev server with HMR
+php artisan serve        # http://localhost:8000
+npm run dev              # Vite dev server with HMR
+mailpit                  # http://localhost:8025 — catches outgoing mail
 ```
 
 ### 6. (Optional) Sail / Docker
-
-Laravel Sail is available via `composer require --dev laravel/sail` and
-`php artisan sail:install`. If you'd rather skip the local PHP/MySQL
-installs, run:
 
 ```bash
 ./vendor/bin/sail up -d
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail npm install
-./vendor/bin/sail npm run watch
+./vendor/bin/sail npm run dev
 ```
 
 ---
 
 ## Common scripts
 
-| Task                                  | Command                                      |
-| ------------------------------------- | -------------------------------------------- |
-| Run tests                             | `php artisan test`                           |
-| Run a single test file                | `php artisan test --filter=BookingTest`      |
-| Tinker (REPL)                         | `php artisan tinker`                         |
-| Clear all caches                      | `php artisan optimize:clear`                 |
-| Re-run migrations from scratch        | `php artisan migrate:fresh --seed`           |
-| Build assets for production           | `npm run prod` (Mix) / `npm run build` (Vite) |
-| Export translatable strings           | `php artisan translatable:export <locale>`   |
-| Create Telescope tables (first run)   | `php artisan telescope:migrate`              |
-| Clear Telescope entries               | `php artisan telescope:clear`                |
+| Task | Command |
+| --- | --- |
+| Run PHP tests | `php artisan test` |
+| Run a single test | `php artisan test --filter=BookingTest` |
+| Run frontend tests | `npm test` (Vitest) |
+| Build for production | `npm run build` |
+| Tinker (REPL) | `php artisan tinker` |
+| Clear all caches | `php artisan optimize:clear` |
+| Re-run migrations from scratch | `php artisan migrate:fresh --seed` |
+| Export translatable strings | `php artisan translatable:export <locale>` |
+| Create Telescope tables (first run) | `php artisan telescope:migrate` |
+| Clear Telescope entries | `php artisan telescope:clear` |
 
 ---
 
 ## Dev tools (Telescope + Debugbar)
 
-Two observability tools are available for local development. Both are
-**dev dependencies only** and are disabled in the test suite.
-
 ### Laravel Telescope
 
-Telescope records HTTP requests, queries, jobs, mail, and more.
-Access the dashboard at `http://localhost:8000/telescope`.
+Records HTTP requests, queries, jobs, mail, and more. Access at
+`http://localhost:8000/telescope`.
 
-**First-time setup:**
+First-time setup:
 
 ```bash
 php artisan telescope:migrate
 ```
 
-**Toggle via `.env`:**
+Toggle via `.env`:
 
 ```dotenv
-TELESCOPE_ENABLED=true   # local dev (default in .env.example)
-TELESCOPE_ENABLED=false  # production / staging — always set this
+TELESCOPE_ENABLED=true    # local dev
+TELESCOPE_ENABLED=false   # production / staging — always set this
 ```
 
-Telescope is filtered to `local` environment in
-`app/Providers/TelescopeServiceProvider.php`. In non-local environments
-only exceptions, failed requests, failed jobs, and scheduled tasks
-are stored even if `TELESCOPE_ENABLED=true`. The `/telescope` panel
-is additionally gated by the `viewTelescope` gate defined in the same
-provider — add admin emails there to allow production access.
+Telescope is filtered to `local` in `TelescopeServiceProvider`. In other
+environments only exceptions, failed requests, and failed jobs are stored.
+The `/telescope` panel is gated by the `viewTelescope` gate — add admin
+emails there for production access.
 
 ### Laravel Debugbar
 
-Debugbar injects a toolbar into HTML responses showing queries,
-routes, views, and memory usage. It is automatically disabled for
-API/JSON responses and for non-debug environments.
+Injects a toolbar into HTML responses (queries, routes, memory). Disabled
+automatically for API/JSON responses and non-debug environments.
 
 ```dotenv
-DEBUGBAR_ENABLED=true   # local dev (default in .env.example)
-DEBUGBAR_ENABLED=false  # set this in production .env
+DEBUGBAR_ENABLED=true    # local dev
+DEBUGBAR_ENABLED=false   # production
 ```
 
 Neither tool runs during `php artisan test` — `phpunit.xml` sets
-`TELESCOPE_ENABLED=false` and `APP_ENV=testing` for the test suite.
+`TELESCOPE_ENABLED=false` and `APP_ENV=testing`.
 
 ---
 
-## Project structure (high level)
+## Project structure
 
 ```
 app/
+  Clients/                   # per-client service providers and services
+    DirectOnderweg/
+  Contracts/                 # interfaces (PricingServiceContract, TvaServiceContract)
   Helper/helper.php          # global helper functions (autoloaded)
   Http/Controllers/          # 30 domain controllers + Auth/
   Models/                    # 30 Eloquent models
-  Services/                  # currently 1: TvaRenumberService
-  Mail/                      # mailables (EmailVerification, Common, Document, TestMail)
+  Services/                  # TvaRenumberService
+  Mail/                      # mailables
   Providers/
-config/                      # standard Laravel config + captcha, paypal, dompdf, sign-pad, installer
+config/
+  clients/                   # per-client config (_default.php, directonderweg.php)
+  features.php               # global feature flag defaults
 database/
-  migrations/                # 57 migrations
+  migrations/
   factories/, seeders/
 lang/                        # 14 locales + matching <locale>.json files
 resources/
-  views/                     # 179 Blade files (being ported to React)
-  js/                        # app.js, bootstrap.js (Alpine.js + jQuery today)
+  js/
+    Pages/                   # Inertia/React page components
+    components/
+      ui/                    # shadcn/ui components (owned by the project)
+    Layouts/
 routes/
-  web.php  (527 lines)       # main user/admin routes
+  web.php                    # main user/admin routes
   api.php                    # API routes (Sanctum)
   auth.php                   # Breeze auth scaffold
-  channels.php               # broadcasting
 tests/
-  Feature/                   # Breeze defaults today; full coverage in progress (see docs/test-plan.md)
+  Feature/
   Unit/
 ```
 
@@ -329,125 +291,98 @@ tests/
 
 ## Locales
 
-The app currently ships with 14 locales: `ar`, `da`, `de`, `en`, `es`,
-`fr`, `it`, `ja`, `nl`, `pl`, `pt`, `ru`, plus the corresponding
-`*.json` sibling files. Both formats are used. **Don't remove or rename
-existing keys** — the migration depends on byte-for-byte locale
-parity. You can use `kkomelin/laravel-translatable-string-exporter` to
-add new strings consistently.
-
----
-
-## Payments & external integrations
-
-Three integrations need extra care:
-
-1. **Stripe** (`stripe/stripe-php`) — Stripe Checkout for bookings.
-   Local dev uses test-mode keys. Webhooks (if any) point at a Stripe
-   CLI forwarder: `stripe listen --forward-to localhost:8000/stripe/webhook`.
-2. **PayPal** (`srmklive/paypal`) — sandbox-only locally. PayPal's
-   sandbox sometimes returns flaky responses; retry before declaring
-   a bug.
-3. **reCAPTCHA** (`anhskohbo/no-captcha`) — Google's test keys
-   (`6LeIxAcTAAAAA...`) make reCAPTCHA always pass; use them locally.
+14 locales: `ar`, `da`, `de`, `en`, `es`, `fr`, `it`, `ja`, `nl`, `pl`,
+`pt`, `ru` plus corresponding `*.json` siblings. Both formats are used.
+**Don't remove or rename existing keys.** Use
+`kkomelin/laravel-translatable-string-exporter` to add new strings.
 
 ---
 
 ## Signatures and PDFs
 
-Rental agreements are generated with `barryvdh/laravel-dompdf` and
-signed via `creagia/laravel-sign-pad` (which currently uses the
-`jq-signature` jQuery plugin client-side). Generated files land under
-`storage/app/` — confirm `php artisan storage:link` has been run if
-they don't render.
+Rental agreements are generated with `barryvdh/laravel-dompdf`. Signatures
+are captured client-side with `react-signature-canvas` and stored via
+`creagia/laravel-sign-pad`. Generated files land under `storage/app/` —
+run `php artisan storage:link` if they don't appear.
 
 ---
 
-## Migration & testing
+## reCAPTCHA
 
-The repo is mid-modernization. If you're working on the migration:
-
-- Branch off `feat/modernization` (or a ticket sub-branch of it — see `CONTRIBUTING.md`).
-- Read `CLAUDE.md` for the rules-of-engagement.
-- Check `docs/migration-plan.md` for the current phase and what's
-  blocking the next gate.
-- Check `docs/test-plan.md` for what coverage is required before
-  touching a given controller.
-- Run `php artisan test` before pushing, every time.
+`anhskohbo/no-captcha` (reCAPTCHA v2). Google's test keys
+(`6LeIxAcTAAAAA...`) make reCAPTCHA always pass — use them locally.
+Ask the team lead for production keys.
 
 ---
 
 ## Monitoring
 
-Error monitoring runs via [Sentry](https://sentry.io). Ask the project owner for access to the **rentcar** Sentry project.
-
-### How issues are tagged
+Error monitoring via [Sentry](https://sentry.io). Ask the project owner
+for access to the **rentcar** Sentry project.
 
 Every event carries:
 
 | Tag | Source |
-| --- | ------ |
+| --- | --- |
 | `environment` | `SENTRY_ENVIRONMENT` — e.g. `production-directonderweg`, `staging-directonderweg`, `ci` |
-| `release` | `SENTRY_RELEASE` — set to `$GITHUB_SHA` in CI/CD and at deploy time |
-| `client` | `APP_CLIENT` — not yet wired; tracked as a follow-up task |
-| `user` | Authenticated user ID / email, captured automatically by the Laravel SDK |
+| `release` | `SENTRY_RELEASE` — set to `$GITHUB_SHA` in CI/CD |
+| `user` | Authenticated user ID/email, captured automatically |
 
 ### Triage flow
 
-1. Someone gets paged (Sentry alert or email notification).
-2. Open the issue in Sentry → read the breadcrumbs and stack trace.
-3. Assign yourself to the issue in Sentry.
-4. Fix it in a branch; in the commit message reference the Sentry issue:
+1. Open the Sentry issue → read breadcrumbs and stack trace.
+2. Assign yourself.
+3. Fix in a branch; reference the issue in the commit:
    ```
    fix(BAN-N): <summary>
 
    Fixes SENTRY-RENTCAR-42
    ```
-5. After the fix is deployed, mark the Sentry issue **Resolved**.
-
-### Ignoring noisy errors
-
-Use Sentry's **Inbound Filters** (Project Settings → Inbound Filters) or add entries to `ignore_exceptions` in `config/sentry.php`:
-
-```php
-'ignore_exceptions' => [
-    \Illuminate\Auth\AuthenticationException::class,
-    \Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
-],
-```
+4. After deploy, mark the Sentry issue **Resolved**.
 
 ### Silencing Sentry locally
 
-Leave `SENTRY_LARAVEL_DSN` empty (or omit it) in your `.env`. The SDK no-ops when the DSN is blank — no events are sent.
+Leave `SENTRY_LARAVEL_DSN` empty in `.env` — the SDK no-ops when blank.
 
-To smoke-test the integration locally once you have a real DSN, hit the local-only route:
+Smoke-test the integration locally (requires auth, local env only):
 
 ```
-GET /sentry-test   (requires auth, local env only)
+GET /sentry-test
 ```
 
-This throws an intentional exception that should appear in Sentry within a few seconds.
+---
+
+## Multi-client architecture
+
+The codebase serves multiple agencies from one deployment per client.
+`APP_CLIENT` selects the active client. Adding a new client requires:
+
+1. `config/clients/<newclient>.php` — feature flags, locale, branding seed, terms
+2. `app/Clients/<NewClient>/` — service provider + custom service implementations
+3. A branding seed row
+4. A CI matrix entry
+5. GitHub Environments (`staging-<newclient>`, `production-<newclient>`)
+
+See `docs/client-configurability.md` for the full architecture.
 
 ---
 
 ## Troubleshooting
 
-| Symptom                                                | Likely fix                                                   |
-| ------------------------------------------------------ | ------------------------------------------------------------ |
-| `Class "App\\Helper\\..." not found`                   | `composer dump-autoload`                                     |
-| Blank page after install                               | `php artisan key:generate`, check `APP_DEBUG=true`           |
-| 419 on POST forms                                      | Session cookie/CSRF — clear browser cookies for `localhost`  |
-| Stored PDFs / signatures not displaying                | `php artisan storage:link`                                   |
-| Mix builds asset paths under `/public/...` not found   | `npm run watch` not running, or wrong `APP_URL`              |
-| reCAPTCHA always fails locally                         | Use Google's test site/secret keys (see above)               |
-| Migrations error on `enum` change                      | Ensure `doctrine/dbal` is installed (it already is)          |
-| `file_put_contents(…sessions/…): Failed to open stream` | Run the storage-init commands below (missing framework dirs) |
-| `fileperms(): stat failed for …storage/upload/`       | Run the storage-init commands below (missing upload dirs)    |
+| Symptom | Likely fix |
+| --- | --- |
+| `Class "App\\Helper\\..." not found` | `composer dump-autoload` |
+| Blank page after install | `php artisan key:generate`, check `APP_DEBUG=true` |
+| 419 on POST forms | Clear browser cookies for `localhost` (CSRF/session) |
+| Stored PDFs / signatures not displaying | `php artisan storage:link` |
+| Vite assets not found | `npm run dev` not running, or wrong `APP_URL` |
+| reCAPTCHA always fails locally | Use Google's test keys (see above) |
+| Migrations error on `enum` change | `doctrine/dbal` is already installed |
+| `file_put_contents(…sessions/…): Failed to open stream` | Run storage-init commands below |
 
 ### Storage directory initialisation (fresh clone)
 
-Because `/storage` is fully gitignored, none of its subdirectories are
-tracked. After every fresh clone run:
+`/storage` is gitignored — run after every fresh clone:
 
 ```bash
 mkdir -p storage/framework/{sessions,views,testing,cache/data} \
@@ -460,7 +395,7 @@ chmod -R 777 storage/
 php artisan storage:link
 ```
 
-This is required before the `/install/permissions` wizard step will pass.
+Required before the `/install/permissions` wizard step will pass.
 
 ---
 
