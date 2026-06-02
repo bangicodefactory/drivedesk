@@ -16,7 +16,6 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "laravel/ui": "^4.5",
         "phpoffice/phpspreadsheet": "^3.3",
         "rachidlaasri/laravel-installer": "^4.1",
         "sentry/sentry-laravel": "^4.10",
