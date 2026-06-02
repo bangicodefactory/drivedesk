@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,19 +32,37 @@ function FileDetail({ label, name, dir, className = '' }) {
         <div className={className}>
             <h6 className="text-sm font-semibold text-muted-foreground mb-1">{label}</h6>
             {isImage ? (
-                <a href={url} target="_blank" rel="noreferrer" className="inline-block mb-4">
-                    <img
-                        src={url}
-                        alt={label}
-                        className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
-                    />
-                </a>
+                <div className="mb-4 inline-flex flex-col gap-1">
+                    <a href={url} target="_blank" rel="noreferrer">
+                        <img
+                            src={url}
+                            alt={label}
+                            className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
+                        />
+                    </a>
+                    <a
+                        href={url}
+                        download={name}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors self-start"
+                    >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                    </a>
+                </div>
             ) : (
-                <p className="mb-4">
+                <div className="mb-4 inline-flex items-center gap-2">
                     <a href={url} target="_blank" rel="noreferrer" className="text-primary underline hover:opacity-80">
                         {name}
                     </a>
-                </p>
+                    <a
+                        href={url}
+                        download={name}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="Download"
+                    >
+                        <Download className="h-4 w-4" />
+                    </a>
+                </div>
             )}
         </div>
     );
