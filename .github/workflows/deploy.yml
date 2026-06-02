@@ -15,17 +15,17 @@ on:
           - staging-directonderweg
           - production-directonderweg
 
-env:
-  # Resolve once; reused in job name, environment, and SSH script.
-  TARGET_ENV: ${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production-directonderweg') || 'staging-directonderweg' }}
-
 jobs:
   deploy:
-    name: Deploy to ${{ env.TARGET_ENV }}
+    # Tag push → production; workflow_dispatch → use the input choice.
+    name: Deploy to ${{ inputs.environment || 'production-directonderweg' }}
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ env.TARGET_ENV }}
+      name: ${{ inputs.environment || 'production-directonderweg' }}
+
+    env:
+      TARGET_ENV: ${{ inputs.environment || 'production-directonderweg' }}
 
     steps:
       - name: Checkout
