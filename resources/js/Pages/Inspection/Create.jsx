@@ -30,6 +30,9 @@ const schema = z.object({
     status: z.string().min(1, 'The status field is required.'),
     repair_status: z.string().min(1, 'The repair status field is required.'),
     amount: z.string().min(1, 'The amount field is required.'),
+    notes: z.string().optional(),
+    receipt: z.any().optional(),
+    types: z.any().optional(),
 });
 
 function InspectionCreate({ vehicles = {}, status = {}, repairStatus = {}, types = [] }) {

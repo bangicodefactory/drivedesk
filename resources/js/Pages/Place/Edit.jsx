@@ -18,6 +18,8 @@ const schema = z.object({
     city: z.string().min(1, 'The city field is required.'),
     island: z.string().min(1, 'The island field is required.'),
     price: z.string().min(1, 'The price field is required.'),
+    depo_name: z.string().optional(),
+    depo_address: z.string().optional(),
 });
 
 const str = (v) => (v != null ? String(v) : '');
