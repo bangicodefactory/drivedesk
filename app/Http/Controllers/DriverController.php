@@ -402,10 +402,7 @@ class DriverController extends Controller
 
     public function driverNumber()
     {
-        $latest = Driver::where('parent_id', parentId())->latest()->first();
-        if (!$latest) {
-            return 1;
-        }
-        return $latest->driver_id + 1;
+        $max = Driver::where('parent_id', parentId())->max('driver_id');
+        return ($max ?? 0) + 1;
     }
 }
