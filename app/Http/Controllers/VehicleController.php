@@ -222,11 +222,8 @@ class VehicleController extends Controller
 
     public function vehicleNumber()
     {
-        $latest = Vehicle::where('parent_id', parentId())->latest()->first();
-        if (!$latest) {
-            return 1;
-        }
-        return $latest->vehicle_id + 1;
+        $max = Vehicle::where('parent_id', parentId())->max('vehicle_id');
+        return ($max ?? 0) + 1;
     }
 
     public function getVehicleRateCalculation(Request $request)
