@@ -17,6 +17,9 @@ const schema = z.object({
     type: z.string().min(1, 'The type field is required.'),
     date: z.string().min(1, 'The date field is required.'),
     amount: z.string().min(1, 'The amount field is required.'),
+    vehicle: z.string().optional(),
+    notes: z.string().optional(),
+    receipt: z.any().optional(),
 });
 
 function ExpenseCreate({ vehicles = {}, types = {} }) {

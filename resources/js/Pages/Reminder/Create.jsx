@@ -17,6 +17,7 @@ const schema = z.object({
     type: z.string().min(1, 'The type field is required.'),
     vehicle: z.string().min(1, 'The vehicle field is required.'),
     reminder_date: z.string().min(1, 'The reminder date field is required.'),
+    note: z.string().optional(),
 });
 
 function ReminderCreate({ vehicles = {}, types = {} }) {
