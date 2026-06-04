@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 
@@ -28,9 +28,27 @@ const PAYMENT_VARIANT = {
     partiellement_paye: 'secondary',
 };
 
-function BookingIndex({ bookings, statuses, paymentStatuses }) {
+function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+
+    // Server-side search (paginated list — filter on the server to cover all pages).
+    const [search, setSearch] = useState(filters.search ?? '');
+    const isFirst = useRef(true);
+    useEffect(() => {
+        if (isFirst.current) {
+            isFirst.current = false;
+            return;
+        }
+        const t = setTimeout(() => {
+            router.get(
+                route('booking.index'),
+                search ? { search } : {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 300);
+        return () => clearTimeout(t);
+    }, [search]);
 
     const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
@@ -143,10 +161,19 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle className="flex items-center gap-2">
                         <Truck className="h-5 w-5" /> All Bookings
                     </CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search bookings…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -176,7 +203,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses }) {
                             {bookings.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        No bookings yet
+                                        {search ? 'No bookings match your search' : 'No bookings yet'}
                                     </TableCell>
                                 </TableRow>
                             )}
