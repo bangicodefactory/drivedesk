@@ -590,9 +590,9 @@ class DevDataSeeder extends Seeder
         if (empty($driverUserIds)) return;
 
         $credits = [
-            ['d' => 0, 'amount' => 500,  'status' => 'active',   'offset' => '-10 days'],
-            ['d' => 1, 'amount' => 1200, 'status' => 'active',   'offset' => '-5 days'],
-            ['d' => 2, 'amount' => 300,  'status' => 'inactive', 'offset' => '-20 days'],
+            ['d' => 0, 'amount' => 500,  'status' => Credit::STATUS_PAYE,     'offset' => '-10 days'],
+            ['d' => 1, 'amount' => 1200, 'status' => Credit::STATUS_NON_PAYE, 'offset' => '-5 days'],
+            ['d' => 2, 'amount' => 300,  'status' => Credit::STATUS_NON_PAYE, 'offset' => '-20 days'],
         ];
 
         foreach ($credits as $data) {
