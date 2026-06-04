@@ -2,7 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, PenLine } from 'lucide-react';
+import { Plus, Trash2, PenLine, Eye } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 function SignatureIndex({ signatures = [] }) {
@@ -60,7 +60,19 @@ function SignatureIndex({ signatures = [] }) {
                                     </TableCell>
                                     <TableCell>{sig.created_at}</TableCell>
                                     {can('manage driver') && (
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-1">
+                                            {sig.signature_url && (
+                                                <Button variant="ghost" size="icon" asChild>
+                                                    <a
+                                                        href={sig.signature_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        aria-label="View signature"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost" size="icon"
                                                 className="text-destructive hover:text-destructive"
