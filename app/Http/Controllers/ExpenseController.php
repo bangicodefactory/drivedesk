@@ -89,7 +89,7 @@ class ExpenseController extends Controller
                 if (!file_exists($dir)) {
                     mkdir($dir, 0777, true);
                 }
-                $request->file('receipt')->storeAs('upload/expense/', $expenseFileName);
+                $request->file('receipt')->storeAs('upload/expense/', $expenseFileName, 'public');
                 $expense->receipt = $expenseFileName;
             }
             $expense->save();
@@ -150,7 +150,7 @@ class ExpenseController extends Controller
                 if (!file_exists($dir)) {
                     mkdir($dir, 0777, true);
                 }
-                $request->file('receipt')->storeAs('upload/expense/', $expenseFileName);
+                $request->file('receipt')->storeAs('upload/expense/', $expenseFileName, 'public');
                 $expense->receipt = $expenseFileName;
             }
             $expense->save();
