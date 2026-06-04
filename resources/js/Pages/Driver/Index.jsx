@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Plus, Users } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Users, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/driver/index.blade.php.
@@ -23,6 +25,14 @@ function DriverIndex({ drivers = [] }) {
 
     const showActions = can('show driver') || can('edit driver') || can('delete driver');
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? drivers.filter((d) =>
+            [d.name, d.email, d.phone_number, d.license_number, d.driver_id_display]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : drivers;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -39,8 +49,17 @@ function DriverIndex({ drivers = [] }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>All Drivers</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search drivers…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -57,14 +76,14 @@ function DriverIndex({ drivers = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {drivers.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        No drivers yet
+                                        {drivers.length === 0 ? 'No drivers yet' : 'No drivers match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {drivers.map((d) => (
+                            {filtered.map((d) => (
                                 <TableRow key={d.id}>
                                     <TableCell className="font-mono text-sm">{d.driver_id_display ?? '-'}</TableCell>
                                     <TableCell>{d.name}</TableCell>
