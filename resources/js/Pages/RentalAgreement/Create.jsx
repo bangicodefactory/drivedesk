@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/Layouts/AdminLayout';
 
@@ -47,28 +48,25 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
 
                             <div className="space-y-1">
                                 <Label>Driver</Label>
-                                <Select onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Driver" /></SelectTrigger>
-                                    <SelectContent>
-                                        {drivers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={drivers.map((d) => ({ value: d.id, label: d.name }))}
+                                    value={watch('driver')}
+                                    onChange={(v) => setValue('driver', v)}
+                                    placeholder="Select Driver"
+                                    searchPlaceholder="Search driver…"
+                                />
                                 {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
                             </div>
 
                             <div className="space-y-1">
                                 <Label>Driver 2 (optional)</Label>
-                                <Select defaultValue="none" onValueChange={(v) => setValue('driver2', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">— None —</SelectItem>
-                                        {drivers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={[{ value: 'none', label: '— None —' }, ...drivers.map((d) => ({ value: d.id, label: d.name }))]}
+                                    value={watch('driver2') || 'none'}
+                                    onChange={(v) => setValue('driver2', v)}
+                                    placeholder="— None —"
+                                    searchPlaceholder="Search driver…"
+                                />
                             </div>
 
                             <div className="space-y-1">
