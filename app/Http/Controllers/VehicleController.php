@@ -18,7 +18,7 @@ class VehicleController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage vehicle')) {
-            $vehicles = Vehicle::where('parent_id', '=', parentId())->paginate(25);
+            $vehicles = Vehicle::where('parent_id', '=', parentId())->latest()->paginate(25);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
