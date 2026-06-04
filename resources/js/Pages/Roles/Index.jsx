@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge }  from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 function RolesIndex({ roles }) {
@@ -19,6 +21,14 @@ function RolesIndex({ roles }) {
         }
     }
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? roles.filter((r) =>
+            [r.name]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : roles;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -31,7 +41,18 @@ function RolesIndex({ roles }) {
             </div>
 
             <Card>
-                <CardHeader><CardTitle>All roles</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                    <CardTitle>All roles</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search roles…"
+                            className="pl-8"
+                        />
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -42,14 +63,14 @@ function RolesIndex({ roles }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {roles.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                                        No roles yet
+                                        {roles.length === 0 ? 'No roles yet' : 'No roles match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {roles.map((r) => (
+                            {filtered.map((r) => (
                                 <TableRow key={r.id}>
                                     <TableCell className="font-medium">{r.name}</TableCell>
                                     <TableCell>

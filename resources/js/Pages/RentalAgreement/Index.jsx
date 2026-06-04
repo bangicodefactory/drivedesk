@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Plus, FileText } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, FileText, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const STATUS_VARIANT = {
@@ -29,6 +31,14 @@ function RentalAgreementIndex({ agreements, statuses }) {
         }
     }
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? agreements.filter((a) =>
+            [a.agreement_id, a.driver_name, a.vehicle_label, statusLabel(a.status)]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : agreements;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -43,10 +53,19 @@ function RentalAgreementIndex({ agreements, statuses }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5" /> All Agreements
                     </CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search agreements…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -66,14 +85,14 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {agreements.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                                        No rental agreements yet
+                                        {agreements.length === 0 ? 'No rental agreements yet' : 'No rental agreements match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {agreements.map((a) => (
+                            {filtered.map((a) => (
                                 <TableRow key={a.id}>
                                     <TableCell className="font-mono text-sm">{a.agreement_id}</TableCell>
                                     <TableCell>{a.driver_name}</TableCell>

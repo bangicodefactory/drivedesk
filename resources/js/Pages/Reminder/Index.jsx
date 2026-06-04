@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, Bell, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react';
+import { Pencil, Trash2, Plus, Bell, CheckCircle, Clock, AlertTriangle, XCircle, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 function statusVariant(status) {
@@ -38,6 +40,14 @@ function ReminderIndex({ reminders = [], stats = {} }) {
     }
 
     const showActions = can('edit reminder') || can('delete reminder');
+
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? reminders.filter((reminder) =>
+            [reminder.name, reminder.reminder_type?.type, reminder.vehicles?.name, reminder.status]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : reminders;
 
     return (
         <div className="space-y-6 p-6">
@@ -102,8 +112,17 @@ function ReminderIndex({ reminders = [], stats = {} }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>All Reminders</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search reminders…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -119,14 +138,14 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {reminders.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 7 : 6} className="text-center text-muted-foreground py-8">
-                                        No reminders yet
+                                        {reminders.length === 0 ? 'No reminders yet' : 'No reminders match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {reminders.map((reminder) => (
+                            {filtered.map((reminder) => (
                                 <TableRow key={reminder.id}>
                                     <TableCell className="font-medium">{reminder.name}</TableCell>
                                     <TableCell>{reminder.reminder_type?.type ?? '—'}</TableCell>

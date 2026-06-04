@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, Package } from 'lucide-react';
+import { Pencil, Trash2, Plus, Package, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/addon/index.blade.php.
@@ -25,6 +27,14 @@ function AddonIndex({ addons = [] }) {
 
     const showActions = can('edit addon') || can('delete addon');
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? addons.filter((addon) =>
+            [addon.name, addon.price_formatted ?? addon.price, addon.billing_type]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : addons;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -41,8 +51,17 @@ function AddonIndex({ addons = [] }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>All Addons</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search addons…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -55,14 +74,14 @@ function AddonIndex({ addons = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {addons.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 4 : 3} className="text-center text-muted-foreground py-8">
-                                        No addons yet
+                                        {addons.length === 0 ? 'No addons yet' : 'No addons match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {addons.map((addon) => (
+                            {filtered.map((addon) => (
                                 <TableRow key={addon.id}>
                                     <TableCell>{addon.name}</TableCell>
                                     <TableCell>{addon.price_formatted ?? addon.price}</TableCell>

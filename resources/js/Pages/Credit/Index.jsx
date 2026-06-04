@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, Eye, CreditCard } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, CreditCard, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const STATUS_VARIANT = {
@@ -33,6 +33,14 @@ function CreditIndex({ credits = [], drivers = [] }) {
     }
 
     const showActions = can('manage driver');
+
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? credits.filter((credit) =>
+            [credit.driver_name, credit.amount, credit.status]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : credits;
 
     return (
         <div className="space-y-6 p-6">
@@ -67,7 +75,18 @@ function CreditIndex({ credits = [], drivers = [] }) {
             </div>
 
             <Card>
-                <CardHeader><CardTitle>All Credits</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                    <CardTitle>All Credits</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search credits…"
+                            className="pl-8"
+                        />
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -80,14 +99,14 @@ function CreditIndex({ credits = [], drivers = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {credits.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 5 : 4} className="text-center text-muted-foreground py-8">
-                                        No credits yet
+                                        {credits.length === 0 ? 'No credits yet' : 'No credits match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {credits.map((credit) => (
+                            {filtered.map((credit) => (
                                 <TableRow key={credit.id}>
                                     <TableCell className="font-medium">{credit.driver_name ?? '—'}</TableCell>
                                     <TableCell>{Number(credit.amount).toFixed(2)} Dh</TableCell>

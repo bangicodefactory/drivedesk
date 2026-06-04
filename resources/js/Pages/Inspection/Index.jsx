@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Plus, ClipboardCheck } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, ClipboardCheck, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/inspection/index.blade.php.
@@ -62,6 +64,15 @@ function InspectionIndex({ inspections = [] }) {
 
     const showActions = can('show inspection') || can('edit inspection') || can('delete inspection');
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? inspections.filter((inspection) =>
+            [inspection.vehicles?.name, inspection.inspector,
+                STATUS_LABELS[inspection.status], REPAIR_STATUS_LABELS[inspection.repair_status]]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : inspections;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -78,8 +89,17 @@ function InspectionIndex({ inspections = [] }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>All Inspections</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search inspections…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -94,14 +114,14 @@ function InspectionIndex({ inspections = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {inspections.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 6 : 5} className="text-center text-muted-foreground py-8">
-                                        No inspections yet
+                                        {inspections.length === 0 ? 'No inspections yet' : 'No inspections match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {inspections.map((inspection) => (
+                            {filtered.map((inspection) => (
                                 <TableRow key={inspection.id}>
                                     <TableCell>{inspection.vehicles?.name ?? '-'}</TableCell>
                                     <TableCell>{inspection.inspection_date_display ?? inspection.inspection_date ?? '-'}</TableCell>

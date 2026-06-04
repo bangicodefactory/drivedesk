@@ -11,14 +11,31 @@ use Inertia\Inertia;
 class ExpenseController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        if (\Auth::user()->can('manage expense')) {
-            $expenses = Expense::with(['vehicles', 'types'])->where('parent_id', '=', parentId())->paginate(25);
-        } else {
+        if (! \Auth::user()->can('manage expense')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
-        return Inertia::render('Expense/Index', compact('expenses'));
+
+        $search = trim((string) $request->get('search', ''));
+
+        $expenses = Expense::with(['vehicles', 'types'])
+            ->where('parent_id', '=', parentId())
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($w) use ($search) {
+                    $w->where('title', 'like', "%{$search}%")
+                        ->orWhere('amount', 'like', "%{$search}%")
+                        ->orWhereHas('types', fn($t) => $t->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('vehicles', fn($v) => $v->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->paginate(25)
+            ->withQueryString();
+
+        return Inertia::render('Expense/Index', [
+            'expenses' => $expenses,
+            'filters' => ['search' => $search],
+        ]);
     }
 
 

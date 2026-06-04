@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, Car } from 'lucide-react';
+import { Pencil, Trash2, Plus, Car, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/vehicle_type/index.blade.php.
@@ -23,6 +25,14 @@ function VehicleTypeIndex({ types = [] }) {
 
     const showActions = can('edit vehicle type') || can('delete vehicle type');
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? types.filter((type) =>
+            [type.type, type.notes]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : types;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -39,8 +49,17 @@ function VehicleTypeIndex({ types = [] }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>Vehicle Type</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search types…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -52,14 +71,14 @@ function VehicleTypeIndex({ types = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {types.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                                        No vehicle types yet
+                                        {types.length === 0 ? 'No vehicle types yet' : 'No vehicle types match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {types.map((type) => (
+                            {filtered.map((type) => (
                                 <TableRow key={type.id}>
                                     <TableCell>{type.type}</TableCell>
                                     <TableCell>{type.notes}</TableCell>

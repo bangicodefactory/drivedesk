@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, CheckCircle, XCircle, ClipboardList } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, ClipboardList, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const STATUS_VARIANT = {
@@ -28,6 +30,14 @@ function BookingRequestIndex({ bookingRequests = [] }) {
         }
     }
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? bookingRequests.filter((br) =>
+            [br.guest_name, br.car_name, br.status]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : bookingRequests;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -37,7 +47,18 @@ function BookingRequestIndex({ bookingRequests = [] }) {
             </div>
 
             <Card>
-                <CardHeader><CardTitle>All Requests</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                    <CardTitle>All Requests</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search requests…"
+                            className="pl-8"
+                        />
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -51,14 +72,14 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {bookingRequests.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                                        No booking requests yet
+                                        {bookingRequests.length === 0 ? 'No booking requests yet' : 'No booking requests match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {bookingRequests.map((br) => (
+                            {filtered.map((br) => (
                                 <TableRow key={br.id}>
                                     <TableCell className="font-medium">{br.guest_name ?? '—'}</TableCell>
                                     <TableCell>{br.car_name ?? '—'}</TableCell>
