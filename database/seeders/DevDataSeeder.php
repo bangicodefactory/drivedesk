@@ -388,24 +388,41 @@ class DevDataSeeder extends Seeder
 
     private function seedBookingPayments(array $bookingIds): void
     {
+        if (empty($bookingIds)) return;
+
         $methods = ['cash', 'stripe', 'paypal', 'bank_transfer'];
-        foreach (array_slice($bookingIds, 0, 5) as $i => $bookingId) {
-            $booking = Booking::find($bookingId);
-            if (!$booking || $booking->payment_status === 'unpaid') continue;
+
+        // Payments spread across all 12 months of the current year, each tied to
+        // a real booking (so the derived TVA invoices carry the booking's driver
+        // and vehicle). Dates are explicit so the TVA report has month coverage.
+        // [booking index, month, day, amount (TTC), method idx]
+        $year = now()->year;
+        $payments = [
+            [0, 1, 12, 2100, 0], [1, 2, 8, 2496, 1], [2, 2, 22, 648, 2],
+            [3, 3, 5, 3360, 0],  [4, 4, 15, 1152, 3], [0, 5, 3, 4200, 1],
+            [5, 5, 27, 912, 0],  [1, 6, 11, 1320, 2], [6, 7, 9, 4320, 3],
+            [2, 8, 1, 648, 0],   [3, 9, 19, 3360, 1], [4, 10, 6, 1152, 2],
+            [0, 10, 24, 2100, 0],[5, 11, 14, 3192, 1],[6, 12, 2, 5400, 2],
+            [3, 12, 20, 1320, 3],
+        ];
+
+        $count = 0;
+        foreach ($payments as $p) {
+            [$bi, $m, $d, $amount, $mi] = $p;
+            $bookingId = $bookingIds[$bi % count($bookingIds)];
+            $date = Carbon::create($year, $m, $d)->toDateString();
 
             BookingPayment::firstOrCreate(
-                ['booking_id' => $bookingId, 'parent_id' => $this->ownerId],
+                ['booking_id' => $bookingId, 'date' => $date, 'parent_id' => $this->ownerId],
                 [
-                    'amount'  => $booking->payment_status === 'partial'
-                        ? round($booking->amount * 0.5, 2)
-                        : $booking->amount,
-                    'payment_method' => $methods[$i % count($methods)],
-                    'date'    => $booking->start_date,
-                    'notes'   => 'Paiement enregistré lors de la prise en charge',
+                    'amount'         => $amount,
+                    'payment_method' => $methods[$mi],
+                    'notes'          => 'Paiement enregistré lors de la prise en charge',
                 ]
             );
+            $count++;
         }
-        $this->command->info('  Booking payments seeded.');
+        $this->command->info('  Booking payments: ' . $count);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -598,64 +615,86 @@ class DevDataSeeder extends Seeder
 
     private function seedTva(): void
     {
-        // TVA report defaults to the current year. Seed a full year of invoices
-        // across all 12 months + a couple in the prior year (so the year filter
-        // has more than one option). 20% VAT (Morocco standard).
-        $year     = now()->year;
-        $prevYear = $year - 1;
+        // Mirror the real flow: TVA invoices are derived from booking payments
+        // (see BookingController payment store / TvaController::generateMonthlyTva).
+        // One invoice per payment, with the booking's driver + vehicle and the
+        // payment amount as TTC (20% VAT back-calculated). Idempotent on idpaiment.
+        $payments = BookingPayment::where('parent_id', $this->ownerId)
+            ->orderBy('date')->get();
 
-        $clients = ['Ahmed Benali', 'Fatima Zahra', 'Youssef El Amrani', 'Société Atlas SARL', 'Hassan Idrissi'];
-        $cars    = ['Toyota RAV4', 'Dacia Duster', 'Renault Clio', 'Mercedes GLE', 'Peugeot 208', 'Volkswagen T-Roc', 'Ford Transit'];
+        if ($payments->isEmpty()) {
+            $this->command->warn('  Skipping TVA — no booking payments to derive from.');
+            return;
+        }
 
-        // [year, month, day, client idx, car idx, rental days, daily rate HT]
-        $invoices = [
-            [$year, 1, 12, 0, 0, 5, 350], [$year, 2, 8, 1, 1, 7, 220], [$year, 2, 22, 4, 2, 3, 180],
-            [$year, 3, 5, 2, 3, 4, 700], [$year, 4, 15, 0, 4, 6, 160], [$year, 5, 3, 3, 0, 10, 350],
-            [$year, 5, 27, 1, 5, 2, 380], [$year, 6, 11, 4, 1, 5, 220], [$year, 7, 9, 2, 6, 8, 450],
-            [$year, 8, 1, 0, 2, 3, 180], [$year, 9, 19, 3, 3, 4, 700], [$year, 10, 6, 1, 4, 6, 160],
-            [$year, 10, 24, 4, 0, 5, 350], [$year, 11, 14, 2, 5, 7, 380], [$year, 12, 2, 0, 6, 9, 450],
-            [$year, 12, 20, 3, 1, 4, 220],
-            [$prevYear, 11, 10, 1, 0, 5, 350], [$prevYear, 12, 18, 4, 3, 6, 700],
-        ];
+        $setting = function_exists('settings') ? settings() : [];
+
+        // Continue the global facture numbering like the controller does.
+        $last = Tva::orderByDesc('id')->first();
+        $counter = 0;
+        if ($last && preg_match('/\d+$/', (string) $last->facture_number, $m)) {
+            $counter = (int) $m[0];
+        }
 
         $count = 0;
-        foreach ($invoices as $i => $v) {
-            [$y, $m, $d, $ci, $cari, $days, $dailyHt] = $v;
-            $factureNumber = sprintf('FAC-%d-%04d', $y, $i + 1);
-
-            if (Tva::where('facture_number', $factureNumber)->where('parent_id', $this->ownerId)->exists()) {
-                continue;
+        foreach ($payments as $payment) {
+            if (Tva::where('idpaiment', $payment->id)->exists()) {
+                continue; // already generated for this payment
             }
 
-            $totalHt = $days * $dailyHt;
-            $tvaAmt  = round($totalHt * 0.20, 2);
-            $ttc     = round($totalHt * 1.20, 2);
-            $date    = Carbon::create($y, $m, $d)->toDateString();
+            $booking = Booking::with('drivers')->find($payment->booking_id);
+            if (!$booking) continue;
+
+            $driverName    = $booking->drivers->name ?? 'N/A';
+            $driverProfile = Driver::where('user_id', $booking->driver)->first();
+            $driverAddress = $driverProfile->address ?? '';
+
+            $vd = $booking->vehicle_details;
+            if (is_string($vd)) {
+                $decoded = json_decode($vd, true);
+                $vd = is_array($decoded) ? $decoded : [];
+            }
+            if (!is_array($vd)) $vd = [];
+            $vehicleName  = $vd['name'] ?? '';
+            $vehiclePlate = $vd['license_plate'] ?? '';
+
+            $totalDays = max(1, Carbon::parse($booking->start_date)->diffInDays(Carbon::parse($booking->end_date)));
+
+            $ttc = (float) $payment->amount;
+            $ht  = round($ttc / 1.2, 2);
+            $tvaAmount = round($ttc - $ht, 2);
+            $unitHt = $totalDays > 0 ? round($ttc / $totalDays, 2) : $ttc;
+
+            $counter++;
+            $date = $payment->date ?? now()->toDateString();
 
             $tva = new Tva([
-                'facture_number' => $factureNumber,
+                'facture_number' => $counter,
                 'facture_date'   => $date,
                 'generated_date' => $date,
-                'year'           => $y,
-                'month'          => $m,
-                'reference'      => 'BK-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
-                'client_name'    => $clients[$ci],
-                'client_address' => 'Casablanca, Maroc',
-                'company_name'   => 'Directonderweg',
-                'designation'    => $cars[$cari],
-                'quantity'       => $days,
-                'unit_price_ht'  => $dailyHt,
-                'total_ht'       => $totalHt,
-                'tva'            => 20,
-                'tva_amount'     => $tvaAmt,
+                'month'          => Carbon::parse($date)->month,
+                'year'           => Carbon::parse($date)->year,
+                'client_name'    => $driverName,
+                'client_address' => $driverAddress,
+                'company_name'   => $setting['company_name'] ?? 'Directonderweg',
+                'company_address'=> $setting['company_address'] ?? '',
+                'designation'    => trim($vehicleName . (($vehicleName && $vehiclePlate) ? ' - ' : '') . $vehiclePlate),
+                'idpaiment'      => $payment->id,
+                'booking_id'     => $booking->id,
+                'quantity'       => $totalDays,
+                'unit_price_ht'  => $unitHt,
+                'total_ht'       => $ht,
+                'tva'            => $tvaAmount,
+                'tva_amount'     => $tvaAmount,
                 'montant_ttc'    => $ttc,
                 'total_amount'   => $ttc,
-                'status'         => 'paid',
+                'payment_method' => $payment->payment_method ?? 'cash',
+                'status'         => 1,
             ]);
             $tva->parent_id = $this->ownerId; // not fillable — set explicitly
             $tva->save();
             $count++;
         }
-        $this->command->info('  TVA invoices: ' . $count . ' new (' . count($invoices) . ' total)');
+        $this->command->info('  TVA invoices: ' . $count . ' new (from ' . $payments->count() . ' payments)');
     }
 }
