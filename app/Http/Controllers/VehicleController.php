@@ -129,7 +129,17 @@ class VehicleController extends Controller
 
     public function show(Vehicle $vehicle)
     {
+        $year = $vehicle->year_of_ﬁrst_immatriculation;
+        $options = $vehicle->options();
+
         $payload = array_merge($vehicle->toArray(), [
+            'vehicle_id_display' => vehiclePrefix() . $vehicle->vehicle_id,
+            'type_label' => !empty($vehicle->types) ? $vehicle->types->type : null,
+            'registration_expiry_date_display' => !empty($vehicle->registration_expiry_date) ? dateFormat($vehicle->registration_expiry_date) : null,
+            'year_of_first_immatriculation_display' => (!empty($year) && $year != 0) ? $year : null,
+            'gearbox_label' => Vehicle::$gearbox[$vehicle->gearbox] ?? null,
+            'fuel_type_label' => Vehicle::$fuelType[$vehicle->fuel_type] ?? null,
+            'option_names' => !empty($options) ? $options->pluck('name')->toArray() : [],
             'daily_rate_formatted' => priceFormat($vehicle->daily_rate),
         ]);
         return Inertia::render('Vehicle/Show', ['vehicle' => $payload]);
