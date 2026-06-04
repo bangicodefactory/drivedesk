@@ -205,17 +205,17 @@ function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} })
                                 {errors.kilometers && <p className="text-sm text-destructive">{errors.kilometers.message}</p>}
                             </div>
 
-                            <div className="space-y-1.5 md:col-span-2">
+                            <div className="space-y-1.5">
                                 <Label>Options</Label>
                                 <Controller
                                     name="option"
                                     control={control}
                                     render={({ field }) => (
-                                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div className="space-y-2">
                                             {Object.entries(option).map(([k, label]) => (
                                                 <label
                                                     key={k}
-                                                    className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-accent cursor-pointer"
+                                                    className="flex items-center gap-2 cursor-pointer"
                                                 >
                                                     <Checkbox
                                                         checked={(field.value ?? []).map(String).includes(String(k))}
