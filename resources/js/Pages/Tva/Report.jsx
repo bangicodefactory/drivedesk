@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { FileText, Percent, Coins, TrendingUp, Car, Calendar, BarChart2, Trophy } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Chart series colors come from the theme's chart tokens so they follow the
 // active palette and dark mode (recharts needs concrete color values, so we
@@ -63,6 +64,7 @@ function TvaReport({
     topProfitableCars,
     carPerformanceStats,
 }) {
+    const t = useTranslation();
     function changeYear(year) {
         router.get(route('tva.report'), { year }, { preserveScroll: true });
     }
@@ -92,14 +94,14 @@ function TvaReport({
     return (
         <div className="p-6 space-y-6">
             <h1 className="text-2xl font-semibold flex items-center gap-2">
-                <FileText className="h-6 w-6" /> TVA Report
+                <FileText className="h-6 w-6" /> {t('TVA Report')}
             </h1>
 
             {/* Year filter */}
             <Card>
                 <CardContent className="pt-4">
                     <div className="w-48 space-y-1">
-                        <Label>Select Year</Label>
+                        <Label>{t('Select Year')}</Label>
                         <Select value={String(selectedYear)} onValueChange={changeYear}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -114,17 +116,17 @@ function TvaReport({
 
             {/* Yearly stats cards */}
             <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-                <StatCard icon={FileText}   color="primary" label="Total Invoices"           value={fmt(yearlyStats.total_invoices, 0)} />
-                <StatCard icon={Percent}    color="success" label="Total TVA"                value={`${fmt(yearlyStats.total_tva_amount)} MAD`} />
-                <StatCard icon={Coins}      color="info"    label="Total Revenue (TTC)"      value={`${fmt(yearlyStats.total_ttc_amount)} MAD`} />
-                <StatCard icon={TrendingUp} color="warning" label="Avg Invoice Value (HT)"   value={`${fmt(yearlyStats.average_invoice_value)} MAD`} />
+                <StatCard icon={FileText}   color="primary" label={t('Total Invoices')}           value={fmt(yearlyStats.total_invoices, 0)} />
+                <StatCard icon={Percent}    color="success" label={t('Total TVA')}                value={`${fmt(yearlyStats.total_tva_amount)} MAD`} />
+                <StatCard icon={Coins}      color="info"    label={t('Total Revenue (TTC)')}      value={`${fmt(yearlyStats.total_ttc_amount)} MAD`} />
+                <StatCard icon={TrendingUp} color="warning" label={t('Avg Invoice Value (HT)')}   value={`${fmt(yearlyStats.average_invoice_value)} MAD`} />
             </div>
 
             {/* Charts row 1 — monthly TVA line + top clients doughnut */}
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <Card className="xl:col-span-2">
                     <CardHeader>
-                        <CardTitle className="text-sm">Monthly TVA Overview — {selectedYear}</CardTitle>
+                        <CardTitle className="text-sm">{t('Monthly TVA Overview')} — {selectedYear}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={320}>
@@ -143,7 +145,7 @@ function TvaReport({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm">Top 5 Clients by TVA</CardTitle>
+                        <CardTitle className="text-sm">{t('Top 5 Clients by TVA')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={260}>
@@ -176,10 +178,10 @@ function TvaReport({
 
             {/* Car stats cards */}
             <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-                <StatCard icon={Car}       color="success" label="Total Unique Cars"     value={fmt(carPerformanceStats.total_unique_cars, 0)} />
-                <StatCard icon={Calendar}  color="info"    label="Total Rental Days"     value={`${fmt(carPerformanceStats.total_rental_days, 0)} Days`} />
-                <StatCard icon={BarChart2} color="warning" label="Avg Rentals per Car"   value={fmt(carPerformanceStats.average_rentals_per_car, 1)} />
-                <StatCard icon={Trophy}    color="danger"  label="Most Rented Car"
+                <StatCard icon={Car}       color="success" label={t('Total Unique Cars')}     value={fmt(carPerformanceStats.total_unique_cars, 0)} />
+                <StatCard icon={Calendar}  color="info"    label={t('Total Rental Days')}     value={`${fmt(carPerformanceStats.total_rental_days, 0)} ${t('Days')}`} />
+                <StatCard icon={BarChart2} color="warning" label={t('Avg Rentals per Car')}   value={fmt(carPerformanceStats.average_rentals_per_car, 1)} />
+                <StatCard icon={Trophy}    color="danger"  label={t('Most Rented Car')}
                     value={
                         carPerformanceStats.most_rented_car?.car_name
                             ? carPerformanceStats.most_rented_car.car_name.slice(0, 20)
@@ -192,7 +194,7 @@ function TvaReport({
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm">Top 5 Most Rented Cars</CardTitle>
+                        <CardTitle className="text-sm">{t('Top 5 Most Rented Cars')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={280}>
@@ -213,7 +215,7 @@ function TvaReport({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm">Top 5 Most Profitable Cars (HT)</CardTitle>
+                        <CardTitle className="text-sm">{t('Top 5 Most Profitable Cars (HT)')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={240}>
@@ -247,17 +249,17 @@ function TvaReport({
             {/* Monthly stats table */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-sm">Monthly Statistics — {selectedYear}</CardTitle>
+                    <CardTitle className="text-sm">{t('Monthly Statistics')} — {selectedYear}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Month</TableHead>
-                                <TableHead className="text-right">Invoices</TableHead>
-                                <TableHead className="text-right">Total HT</TableHead>
-                                <TableHead className="text-right">Total TVA</TableHead>
-                                <TableHead className="text-right">Total TTC</TableHead>
+                                <TableHead>{t('Month')}</TableHead>
+                                <TableHead className="text-right">{t('Invoices')}</TableHead>
+                                <TableHead className="text-right">{t('Total HT')}</TableHead>
+                                <TableHead className="text-right">{t('Total TVA')}</TableHead>
+                                <TableHead className="text-right">{t('Total TTC')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -273,7 +275,7 @@ function TvaReport({
                         </TableBody>
                         <tfoot>
                             <tr className="border-t-2 font-bold bg-muted/50">
-                                <td className="px-4 py-2">Total</td>
+                                <td className="px-4 py-2">{t('Total')}</td>
                                 <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_invoices, 0)}</td>
                                 <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_ht_amount)} MAD</td>
                                 <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_tva_amount)} MAD</td>
@@ -287,17 +289,17 @@ function TvaReport({
             {/* Top clients table */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-sm">Top Clients by TVA Amount — {selectedYear}</CardTitle>
+                    <CardTitle className="text-sm">{t('Top Clients by TVA Amount')} — {selectedYear}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Rank</TableHead>
-                                <TableHead>Client Name</TableHead>
-                                <TableHead className="text-right">Invoices</TableHead>
-                                <TableHead className="text-right">Total TVA</TableHead>
-                                <TableHead className="text-right">Total TTC</TableHead>
+                                <TableHead>{t('Rank')}</TableHead>
+                                <TableHead>{t('Client Name')}</TableHead>
+                                <TableHead className="text-right">{t('Invoices')}</TableHead>
+                                <TableHead className="text-right">{t('Total TVA')}</TableHead>
+                                <TableHead className="text-right">{t('Total TTC')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -319,17 +321,17 @@ function TvaReport({
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm">Top 5 Most Rented Cars — {selectedYear}</CardTitle>
+                        <CardTitle className="text-sm">{t('Top 5 Most Rented Cars')} — {selectedYear}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Rank</TableHead>
-                                    <TableHead>Car</TableHead>
-                                    <TableHead className="text-right">Rentals</TableHead>
-                                    <TableHead className="text-right">Total Days</TableHead>
-                                    <TableHead className="text-right">Avg Value (HT)</TableHead>
+                                    <TableHead>{t('Rank')}</TableHead>
+                                    <TableHead>{t('Car')}</TableHead>
+                                    <TableHead className="text-right">{t('Rentals')}</TableHead>
+                                    <TableHead className="text-right">{t('Total Days')}</TableHead>
+                                    <TableHead className="text-right">{t('Avg Value (HT)')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -349,17 +351,17 @@ function TvaReport({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm">Top 5 Most Profitable Cars (HT) — {selectedYear}</CardTitle>
+                        <CardTitle className="text-sm">{t('Top 5 Most Profitable Cars (HT)')} — {selectedYear}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Rank</TableHead>
-                                    <TableHead>Car</TableHead>
-                                    <TableHead className="text-right">Revenue (HT)</TableHead>
-                                    <TableHead className="text-right">TVA</TableHead>
-                                    <TableHead className="text-right">Revenue (TTC)</TableHead>
+                                    <TableHead>{t('Rank')}</TableHead>
+                                    <TableHead>{t('Car')}</TableHead>
+                                    <TableHead className="text-right">{t('Revenue (HT)')}</TableHead>
+                                    <TableHead className="text-right">{t('TVA')}</TableHead>
+                                    <TableHead className="text-right">{t('Revenue (TTC)')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

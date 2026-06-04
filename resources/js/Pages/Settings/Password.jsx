@@ -5,6 +5,7 @@ import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     current_password: z.string().min(1, 'Current password is required'),
@@ -20,18 +21,19 @@ function Password() {
         defaultValues: { current_password: '', new_password: '', confirm_password: '' },
     });
     const { register, reset, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Password</h1>
-                <p className="text-sm text-muted-foreground">Update the password on your account.</p>
+                <h1 className="text-2xl font-semibold">{t('Password')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Update the password on your account.')}</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Change password</CardTitle>
-                    <CardDescription>You will be signed out of other sessions after saving.</CardDescription>
+                    <CardTitle>{t('Change password')}</CardTitle>
+                    <CardDescription>{t('You will be signed out of other sessions after saving.')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -41,25 +43,25 @@ function Password() {
                         className="space-y-4"
                     >
                         <div className="space-y-1.5">
-                            <Label htmlFor="current_password">Current password</Label>
+                            <Label htmlFor="current_password">{t('Current password')}</Label>
                             <Input id="current_password" type="password" autoComplete="current-password" {...register('current_password')} />
                             {errors.current_password && <p className="text-sm text-destructive">{errors.current_password.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="new_password">New password</Label>
+                            <Label htmlFor="new_password">{t('New password')}</Label>
                             <Input id="new_password" type="password" autoComplete="new-password" {...register('new_password')} />
                             {errors.new_password && <p className="text-sm text-destructive">{errors.new_password.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="confirm_password">Confirm new password</Label>
+                            <Label htmlFor="confirm_password">{t('Confirm new password')}</Label>
                             <Input id="confirm_password" type="password" autoComplete="new-password" {...register('confirm_password')} />
                             {errors.confirm_password && <p className="text-sm text-destructive">{errors.confirm_password.message}</p>}
                         </div>
 
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save password'}
+                            {isSubmitting ? t('Saving…') : t('Save password')}
                         </Button>
                     </form>
                 </CardContent>

@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, MapPin, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/place/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -15,6 +16,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // guards. Each place row carries a `price_formatted` prop produced by
 // priceFormat() on the server (same as the Blade priceFormat($place->price)).
 function PlaceIndex({ places = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -38,12 +40,12 @@ function PlaceIndex({ places = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <MapPin className="h-6 w-6" /> Place
+                    <MapPin className="h-6 w-6" /> {t('Place')}
                 </h1>
                 {can('manage place') && (
                     <Button size="sm" asChild>
                         <Link href={route('place.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Place
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Place')}
                         </Link>
                     </Button>
                 )}
@@ -51,13 +53,13 @@ function PlaceIndex({ places = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Places</CardTitle>
+                    <CardTitle>{t('All Places')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search places…"
+                            placeholder={t('Search places…')}
                             className="pl-8"
                         />
                     </div>
@@ -66,20 +68,20 @@ function PlaceIndex({ places = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>City</TableHead>
-                                <TableHead>Island</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Depo name</TableHead>
-                                <TableHead>Depo address</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('City')}</TableHead>
+                                <TableHead>{t('Island')}</TableHead>
+                                <TableHead>{t('Price')}</TableHead>
+                                <TableHead>{t('Depo name')}</TableHead>
+                                <TableHead>{t('Depo address')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                                        {places.length === 0 ? 'No places yet' : 'No places match your search'}
+                                        {places.length === 0 ? t('No places yet') : t('No places match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -95,7 +97,7 @@ function PlaceIndex({ places = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit place') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('place.edit', p.id)} aria-label="Edit">
+                                                    <Link href={route('place.edit', p.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -106,7 +108,7 @@ function PlaceIndex({ places = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(p.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

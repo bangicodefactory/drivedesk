@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Pencil } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function DetailRow({ label, value }) {
     return (
@@ -14,44 +15,45 @@ function DetailRow({ label, value }) {
 }
 
 function TvaShow({ tva }) {
+    const t = useTranslation();
     const fmt = (n) => n !== null && n !== undefined ? Number(n).toFixed(2) : '—';
 
     return (
         <div className="p-6 max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Eye className="h-6 w-6" /> TVA Details
+                    <Eye className="h-6 w-6" /> {t('TVA Details')}
                 </h1>
                 <Button variant="outline" size="sm" asChild>
                     <Link href={route('tva.edit', tva.id)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                        <Pencil className="mr-2 h-4 w-4" /> {t('Edit')}
                     </Link>
                 </Button>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Invoice #{tva.facture_number}</CardTitle>
+                    <CardTitle className="text-base">{t('Invoice')} #{tva.facture_number}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 gap-6">
-                        <DetailRow label="Facture Number" value={tva.facture_number} />
-                        <DetailRow label="Facture Date"   value={tva.facture_date} />
-                        <DetailRow label="Client Name"    value={tva.client_name} />
-                        <DetailRow label="Duration (Quantity)" value={tva.quantity} />
-                        <DetailRow label="Unit Price HT"  value={fmt(tva.unit_price_ht)} />
-                        <DetailRow label="Total HT"       value={fmt(tva.total_ht)} />
-                        <DetailRow label="TVA (Tax)"      value={fmt(tva.tva)} />
-                        <DetailRow label="Montant TTC"    value={fmt(tva.montant_ttc)} />
-                        <DetailRow label="Vehicle"        value={tva.designation} />
-                        <DetailRow label="ICE"            value={tva.payment_method} />
+                        <DetailRow label={t('Facture Number')} value={tva.facture_number} />
+                        <DetailRow label={t('Facture Date')}   value={tva.facture_date} />
+                        <DetailRow label={t('Client Name')}    value={tva.client_name} />
+                        <DetailRow label={t('Duration (Quantity)')} value={tva.quantity} />
+                        <DetailRow label={t('Unit Price HT')}  value={fmt(tva.unit_price_ht)} />
+                        <DetailRow label={t('Total HT')}       value={fmt(tva.total_ht)} />
+                        <DetailRow label={t('TVA (Tax)')}      value={fmt(tva.tva)} />
+                        <DetailRow label={t('Montant TTC')}    value={fmt(tva.montant_ttc)} />
+                        <DetailRow label={t('Vehicle')}        value={tva.designation} />
+                        <DetailRow label={t('ICE')}            value={tva.payment_method} />
                     </div>
                 </CardContent>
             </Card>
 
             <div className="mt-4">
                 <Button variant="outline" asChild>
-                    <Link href={route('tva.index')}>Back to TVA List</Link>
+                    <Link href={route('tva.index')}>{t('Back to TVA List')}</Link>
                 </Button>
             </div>
         </div>

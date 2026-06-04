@@ -12,6 +12,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/vehicle/edit.blade.php.
 // Submits PUT to route('vehicle.update') via a spoofed _method=PUT (matches the
@@ -44,6 +45,7 @@ const schema = z.object({
 const str = (v) => (v != null ? String(v) : '');
 
 function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, option = {} }) {
+    const t = useTranslation();
     const selectedOptions = String(vehicle.option ?? '').split(',').filter((v) => v !== '');
 
     const { form, submit } = useZodForm(schema, {
@@ -80,25 +82,25 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Vehicle</CardTitle>
+                    <CardTitle>{t('Edit Vehicle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('vehicle.update', vehicle.id), { forceFormData: true })}>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="name">Vehicle Name</Label>
-                                <Input id="name" placeholder="Enter vehicle name" {...register('name')} />
+                                <Label htmlFor="name">{t('Vehicle Name')}</Label>
+                                <Input id="name" placeholder={t('Enter vehicle name')} {...register('name')} />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Type</Label>
+                                <Label htmlFor="type">{t('Type')}</Label>
                                 <Controller
                                     name="type"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(types).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -111,47 +113,47 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="model">Model</Label>
-                                <Input id="model" placeholder="Enter model" {...register('model')} />
+                                <Label htmlFor="model">{t('Model')}</Label>
+                                <Input id="model" placeholder={t('Enter model')} {...register('model')} />
                                 {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="engine_type">Engine Type</Label>
-                                <Input id="engine_type" placeholder="Enter engine type" {...register('engine_type')} />
+                                <Label htmlFor="engine_type">{t('Engine Type')}</Label>
+                                <Input id="engine_type" placeholder={t('Enter engine type')} {...register('engine_type')} />
                                 {errors.engine_type && <p className="text-sm text-destructive">{errors.engine_type.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="engine_no">Engine Number</Label>
-                                <Input id="engine_no" placeholder="Enter engine number" {...register('engine_no')} />
+                                <Label htmlFor="engine_no">{t('Engine Number')}</Label>
+                                <Input id="engine_no" placeholder={t('Enter engine number')} {...register('engine_no')} />
                                 {errors.engine_no && <p className="text-sm text-destructive">{errors.engine_no.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="license_plate">License Plate</Label>
-                                <Input id="license_plate" placeholder="Enter license plate" {...register('license_plate')} />
+                                <Label htmlFor="license_plate">{t('License Plate')}</Label>
+                                <Input id="license_plate" placeholder={t('Enter license plate')} {...register('license_plate')} />
                                 {errors.license_plate && <p className="text-sm text-destructive">{errors.license_plate.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="registration_expiry_date">Registration Expiry Date</Label>
+                                <Label htmlFor="registration_expiry_date">{t('Registration Expiry Date')}</Label>
                                 <Input id="registration_expiry_date" type="date" {...register('registration_expiry_date')} />
                                 {errors.registration_expiry_date && <p className="text-sm text-destructive">{errors.registration_expiry_date.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="daily_rate">Daily Rate</Label>
-                                <Input id="daily_rate" type="number" step="any" placeholder="Enter daily rate" {...register('daily_rate')} />
+                                <Label htmlFor="daily_rate">{t('Daily Rate')}</Label>
+                                <Input id="daily_rate" type="number" step="any" placeholder={t('Enter daily rate')} {...register('daily_rate')} />
                                 {errors.daily_rate && <p className="text-sm text-destructive">{errors.daily_rate.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="year_of_first_immatriculation">Year of First Immatriculation</Label>
+                                <Label htmlFor="year_of_first_immatriculation">{t('Year of First Immatriculation')}</Label>
                                 <Input
                                     id="year_of_first_immatriculation"
                                     type="number"
-                                    placeholder="Enter Year of First Immatriculation"
+                                    placeholder={t('Enter Year of First Immatriculation')}
                                     {...register('year_of_ﬁrst_immatriculation')}
                                 />
                                 {errors['year_of_ﬁrst_immatriculation'] && (
@@ -160,13 +162,13 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="gearbox">Gearbox</Label>
+                                <Label htmlFor="gearbox">{t('Gearbox')}</Label>
                                 <Controller
                                     name="gearbox"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="gearbox"><SelectValue placeholder="Gearbox" /></SelectTrigger>
+                                            <SelectTrigger id="gearbox"><SelectValue placeholder={t('Gearbox')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(gearbox).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -179,13 +181,13 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="fuel_type">Fuel Type</Label>
+                                <Label htmlFor="fuel_type">{t('Fuel Type')}</Label>
                                 <Controller
                                     name="fuel_type"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="fuel_type"><SelectValue placeholder="Fuel Type" /></SelectTrigger>
+                                            <SelectTrigger id="fuel_type"><SelectValue placeholder={t('Fuel Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(fuelType).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -198,19 +200,19 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="number_of_seats">Number of Seats</Label>
+                                <Label htmlFor="number_of_seats">{t('Number of Seats')}</Label>
                                 <Input id="number_of_seats" type="number" {...register('number_of_seats')} />
                                 {errors.number_of_seats && <p className="text-sm text-destructive">{errors.number_of_seats.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="kilometers">Kilometer</Label>
+                                <Label htmlFor="kilometers">{t('Kilometer')}</Label>
                                 <Input id="kilometers" type="number" {...register('kilometers')} />
                                 {errors.kilometers && <p className="text-sm text-destructive">{errors.kilometers.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label>Options</Label>
+                                <Label>{t('Options')}</Label>
                                 <Controller
                                     name="option"
                                     control={control}
@@ -234,26 +236,26 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="document">Document</Label>
+                                <Label htmlFor="document">{t('Document')}</Label>
                                 <Input id="document" type="file" onChange={(e) => setValue('document', e.target.files?.[0] ?? null)} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="picture">Photo de voiture</Label>
+                                <Label htmlFor="picture">{t('Photo de voiture')}</Label>
                                 <Input id="picture" type="file" onChange={(e) => setValue('picture', e.target.files?.[0] ?? null)} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={1} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={1} {...register('notes')} />
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('vehicle.index')}>Close</Link>
+                                <Link href={route('vehicle.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Update</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                         </div>
                     </form>
                 </CardContent>

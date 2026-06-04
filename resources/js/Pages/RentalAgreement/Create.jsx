@@ -11,8 +11,10 @@ import {
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
     const { register, handleSubmit, setValue, watch, formState: { isSubmitting } } = useForm({
         defaultValues: {
@@ -47,45 +49,45 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
                             <div className="space-y-1">
-                                <Label>Driver</Label>
+                                <Label>{t('Driver')}</Label>
                                 <SearchableSelect
                                     options={drivers.map((d) => ({ value: d.id, label: d.name }))}
                                     value={watch('driver')}
                                     onChange={(v) => setValue('driver', v)}
-                                    placeholder="Select Driver"
-                                    searchPlaceholder="Search driver…"
-                                    ariaLabel="Driver"
+                                    placeholder={t('Select Driver')}
+                                    searchPlaceholder={t('Search driver…')}
+                                    ariaLabel={t('Driver')}
                                 />
                                 {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Driver 2 (optional)</Label>
+                                <Label>{t('Driver 2 (optional)')}</Label>
                                 <SearchableSelect
-                                    options={[{ value: 'none', label: '— None —' }, ...drivers.map((d) => ({ value: d.id, label: d.name }))]}
+                                    options={[{ value: 'none', label: t('— None —') }, ...drivers.map((d) => ({ value: d.id, label: d.name }))]}
                                     value={watch('driver2') || 'none'}
                                     onChange={(v) => setValue('driver2', v)}
-                                    placeholder="— None —"
-                                    searchPlaceholder="Search driver…"
-                                    ariaLabel="Driver 2 (optional)"
+                                    placeholder={t('— None —')}
+                                    searchPlaceholder={t('Search driver…')}
+                                    ariaLabel={t('Driver 2 (optional)')}
                                 />
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <SearchableSelect
                                     options={vehicles.map((v) => ({ value: v.id, label: v.label }))}
                                     value={watch('vehicle')}
                                     onChange={(v) => setValue('vehicle', v)}
-                                    placeholder="Select Vehicle"
-                                    searchPlaceholder="Search vehicle…"
-                                    ariaLabel="Vehicle"
+                                    placeholder={t('Select Vehicle')}
+                                    searchPlaceholder={t('Search vehicle…')}
+                                    ariaLabel={t('Vehicle')}
                                 />
                                 {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Rental Start Date &amp; Time</Label>
+                                <Label>{t('Rental Start Date & Time')}</Label>
                                 <div className="flex gap-2">
                                     <Input type="date" {...register('rental_start_date', { required: true })} />
                                     <Input type="time" {...register('rental_start_time', { required: true })} />
@@ -93,7 +95,7 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Rental End Date &amp; Time</Label>
+                                <Label>{t('Rental End Date & Time')}</Label>
                                 <div className="flex gap-2">
                                     <Input type="date" {...register('rental_end_date', { required: true })} />
                                     <Input type="time" {...register('rental_end_time', { required: true })} />
@@ -101,12 +103,12 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="rental_duration">Rental Duration (Days)</Label>
-                                <Input id="rental_duration" type="number" placeholder="Enter rental duration" {...register('rental_duration', { required: true })} />
+                                <Label htmlFor="rental_duration">{t('Rental Duration (Days)')}</Label>
+                                <Input id="rental_duration" type="number" placeholder={t('Enter rental duration')} {...register('rental_duration', { required: true })} />
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Status</Label>
+                                <Label>{t('Status')}</Label>
                                 <Select defaultValue={statuses?.[0]?.value} onValueChange={(v) => setValue('status', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -122,24 +124,24 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     id="create_booking"
                                     onCheckedChange={(v) => setValue('create_booking', v)}
                                 />
-                                <Label htmlFor="create_booking" className="cursor-pointer">Also create a Booking</Label>
+                                <Label htmlFor="create_booking" className="cursor-pointer">{t('Also create a Booking')}</Label>
                             </div>
 
                             <div className="space-y-1 md:col-span-2">
-                                <Label htmlFor="terms_condition">Terms &amp; Conditions</Label>
+                                <Label htmlFor="terms_condition">{t('Terms & Conditions')}</Label>
                                 <Textarea id="terms_condition" rows={6} {...register('terms_condition')} />
                             </div>
 
                             <div className="space-y-1 md:col-span-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" rows={4} placeholder="Enter description" {...register('description')} />
+                                <Label htmlFor="description">{t('Description')}</Label>
+                                <Textarea id="description" rows={4} placeholder={t('Enter description')} {...register('description')} />
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>Create</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                 </div>
             </div>
         </form>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection_type/edit.blade.php.
 // Submits PUT to route('inspection-type.update') via a spoofed _method=PUT
@@ -20,6 +21,7 @@ const schema = z.object({
 });
 
 function InspectionTypeEdit({ inspectionType = {} }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: { type: inspectionType.type ?? '', _method: 'PUT' },
     });
@@ -29,23 +31,23 @@ function InspectionTypeEdit({ inspectionType = {} }) {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Type</CardTitle>
+                    <CardTitle>{t('Edit Type')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('inspection-type.update', inspectionType.id))}>
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Type</Label>
-                                <Input id="type" placeholder="Enter type" {...register('type')} />
+                                <Label htmlFor="type">{t('Type')}</Label>
+                                <Input id="type" placeholder={t('Enter type')} {...register('type')} />
                                 {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('inspection-type.index')}>Close</Link>
+                                <Link href={route('inspection-type.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Update</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -54,10 +56,12 @@ function InspectionTypeEdit({ inspectionType = {} }) {
     );
 }
 
-InspectionTypeEdit.layout = (page) => (
-    <AdminLayout breadcrumbs={[
-        { label: 'Inspection Type', href: route('inspection-type.index') },
-        { label: 'Edit' },
-    ]}>{page}</AdminLayout>
-);
+InspectionTypeEdit.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[
+            { label: 'Inspection Type', href: route('inspection-type.index') },
+            { label: 'Edit' },
+        ]}>{page}</AdminLayout>
+    );
+};
 export default InspectionTypeEdit;

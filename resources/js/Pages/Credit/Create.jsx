@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function CreditCreate({ drivers = [], statuses = {} }) {
+    const t = useTranslation();
     const { data, setData, post, processing, errors } = useForm({
         driver_id: '',
         amount: '',
@@ -22,14 +24,14 @@ function CreditCreate({ drivers = [], statuses = {} }) {
     return (
         <div className="p-6 max-w-lg">
             <Card>
-                <CardHeader><CardTitle>Add Credit</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Add Credit')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-1">
-                            <Label>Driver</Label>
+                            <Label>{t('Driver')}</Label>
                             <Select value={data.driver_id} onValueChange={(v) => setData('driver_id', v)}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select driver…" />
+                                    <SelectValue placeholder={t('Select driver…')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {drivers.map((d) => (
@@ -41,13 +43,13 @@ function CreditCreate({ drivers = [], statuses = {} }) {
                         </div>
 
                         <div className="space-y-1">
-                            <Label>Amount (Dh)</Label>
+                            <Label>{t('Amount (Dh)')}</Label>
                             <Input type="number" step="0.01" min="0" value={data.amount} onChange={(e) => setData('amount', e.target.value)} />
                             {errors.amount && <p className="text-sm text-destructive">{errors.amount}</p>}
                         </div>
 
                         <div className="space-y-1">
-                            <Label>Status</Label>
+                            <Label>{t('Status')}</Label>
                             <Select value={data.status} onValueChange={(v) => setData('status', v)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -60,14 +62,14 @@ function CreditCreate({ drivers = [], statuses = {} }) {
                         </div>
 
                         <div className="space-y-1">
-                            <Label>Date</Label>
+                            <Label>{t('Date')}</Label>
                             <Input type="date" value={data.credit_date} onChange={(e) => setData('credit_date', e.target.value)} />
                             {errors.credit_date && <p className="text-sm text-destructive">{errors.credit_date}</p>}
                         </div>
 
                         <div className="flex gap-2 pt-2">
-                            <Button type="submit" disabled={processing}>Save</Button>
-                            <Button type="button" variant="outline" onClick={() => window.history.back()}>Cancel</Button>
+                            <Button type="submit" disabled={processing}>{t('Save')}</Button>
+                            <Button type="button" variant="outline" onClick={() => window.history.back()}>{t('Cancel')}</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -76,7 +78,9 @@ function CreditCreate({ drivers = [], statuses = {} }) {
     );
 }
 
-CreditCreate.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Credits', href: route('credit.index') }, { label: 'Add' }]}>{page}</AdminLayout>
-);
+CreditCreate.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[{ label: 'Credits', href: route('credit.index') }, { label: 'Add' }]}>{page}</AdminLayout>
+    );
+};
 export default CreditCreate;

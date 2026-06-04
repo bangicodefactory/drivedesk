@@ -8,6 +8,7 @@ import { Button }   from '@/components/ui/button';
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const loginSchema = z.object({
     email:                  z.string().email('Enter a valid work email address'),
@@ -17,6 +18,7 @@ const loginSchema = z.object({
 });
 
 function Login({ status }) {
+    const t = useTranslation();
     const { recaptcha, branding } = usePage().props;
     const captchaRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -53,10 +55,10 @@ function Login({ status }) {
 
                     {/* Card header */}
                     <div className="mb-6 text-center">
-                        <h1 className="text-2xl font-bold text-white">Agency operations portal</h1>
+                        <h1 className="text-2xl font-bold text-white">{t('Agency operations portal')}</h1>
                         <p className="mt-1.5 flex items-center justify-center gap-1.5 text-sm text-white/70">
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
-                            Secure encrypted connection
+                            {t('Secure encrypted connection')}
                         </p>
                     </div>
 
@@ -74,14 +76,14 @@ function Login({ status }) {
                         {/* Work email */}
                         <div className="space-y-1.5">
                             <Label htmlFor="email" className="text-sm font-medium text-white/90">
-                                Work email
+                                {t('Work email')}
                             </Label>
                             <Input
                                 id="email"
                                 type="email"
                                 autoComplete="email"
                                 autoFocus
-                                placeholder="you@agency.com"
+                                placeholder={t('you@agency.com')}
                                 className="border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:border-indigo-400 focus:ring-indigo-400"
                                 {...register('email')}
                             />
@@ -94,13 +96,13 @@ function Login({ status }) {
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password" className="text-sm font-medium text-white/90">
-                                    Password
+                                    {t('Password')}
                                 </Label>
                                 <Link
                                     href={route('password.request')}
                                     className="text-xs text-indigo-300 hover:text-indigo-200"
                                 >
-                                    Forgot password?
+                                    {t('Forgot password?')}
                                 </Link>
                             </div>
                             <div className="relative">
@@ -113,7 +115,7 @@ function Login({ status }) {
                                 />
                                 <button
                                     type="button"
-                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    aria-label={showPassword ? t('Hide password') : t('Show password')}
                                     onClick={() => setShowPassword((v) => !v)}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
                                 >
@@ -137,7 +139,7 @@ function Login({ status }) {
                                 className="border-white/30 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-500"
                             />
                             <Label htmlFor="remember" className="cursor-pointer text-sm font-normal text-white/80">
-                                Keep me signed in
+                                {t('Keep me signed in')}
                             </Label>
                         </div>
 
@@ -165,13 +167,13 @@ function Login({ status }) {
                             className="w-full bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:ring-indigo-400"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Signing in…' : 'Sign in to portal'}
+                            {isSubmitting ? t('Signing in…') : t('Sign in to portal')}
                         </Button>
                     </form>
 
                     {/* Audit notice */}
                     <p className="mt-5 text-center text-xs text-white/40">
-                        Authorized personnel only. All activity is logged.
+                        {t('Authorized personnel only. All activity is logged.')}
                     </p>
                 </div>
             </main>
@@ -179,9 +181,9 @@ function Login({ status }) {
             {/* ── Footer ────────────────────────────────────────────────────── */}
             <footer className="relative z-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-8 py-4 text-xs text-white/40">
                 <span>© {year} {appName}</span>
-                <Link href="#" className="hover:text-white/70">Security policy</Link>
-                <Link href="#" className="hover:text-white/70">Terms</Link>
-                <Link href="#" className="hover:text-white/70">Support</Link>
+                <Link href="#" className="hover:text-white/70">{t('Security policy')}</Link>
+                <Link href="#" className="hover:text-white/70">{t('Terms')}</Link>
+                <Link href="#" className="hover:text-white/70">{t('Support')}</Link>
             </footer>
         </div>
     );

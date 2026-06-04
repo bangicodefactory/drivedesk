@@ -9,15 +9,17 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function UsersIndex({ users }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const canCreate = auth.permissions.includes('create user');
     const canEdit   = auth.permissions.includes('edit user');
     const canDelete = auth.permissions.includes('delete user');
 
     function remove(id) {
-        if (window.confirm('Delete this user?')) {
+        if (window.confirm(t('Delete this user?'))) {
             router.delete(route('users.destroy', id));
         }
     }
@@ -33,11 +35,11 @@ function UsersIndex({ users }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Users</h1>
+                <h1 className="text-2xl font-semibold">{t('Users')}</h1>
                 {canCreate && (
                     <Button asChild>
                         <Link href={route('users.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> New user
+                            <Plus className="mr-2 h-4 w-4" /> {t('New user')}
                         </Link>
                     </Button>
                 )}
@@ -45,13 +47,13 @@ function UsersIndex({ users }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All users</CardTitle>
+                    <CardTitle>{t('All users')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search users…"
+                            placeholder={t('Search users…')}
                             className="pl-8"
                         />
                     </div>
@@ -60,19 +62,19 @@ function UsersIndex({ users }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Company</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('Email')}</TableHead>
+                                <TableHead>{t('Type')}</TableHead>
+                                <TableHead>{t('Company')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead className="text-right">{t('Actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                                        {users.length === 0 ? 'No users yet' : 'No users match your search'}
+                                        {users.length === 0 ? t('No users yet') : t('No users match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -84,13 +86,13 @@ function UsersIndex({ users }) {
                                     <TableCell>{u.company_name ?? '—'}</TableCell>
                                     <TableCell>
                                         <Badge variant={u.is_active ? 'default' : 'secondary'}>
-                                            {u.is_active ? 'Active' : 'Inactive'}
+                                            {u.is_active ? t('Active') : t('Inactive')}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         {canEdit && (
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href={route('users.edit', u.id)} aria-label="Edit">
+                                                <Link href={route('users.edit', u.id)} aria-label={t('Edit')}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -100,7 +102,7 @@ function UsersIndex({ users }) {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => remove(u.id)}
-                                                aria-label="Delete"
+                                                aria-label={t('Delete')}
                                                 className="text-destructive hover:text-destructive"
                                             >
                                                 <Trash2 className="h-4 w-4" />

@@ -8,12 +8,14 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, ListChecks, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/option/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('edit|delete options') / Gate::check('manage options') guards.
 // Prop name `options` matches the controller compact('options').
 function OptionIndex({ options = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -37,12 +39,12 @@ function OptionIndex({ options = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <ListChecks className="h-6 w-6" /> Option
+                    <ListChecks className="h-6 w-6" /> {t('Option')}
                 </h1>
                 {can('manage options') && (
                     <Button size="sm" asChild>
                         <Link href={route('option.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Option
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Option')}
                         </Link>
                     </Button>
                 )}
@@ -50,13 +52,13 @@ function OptionIndex({ options = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Options</CardTitle>
+                    <CardTitle>{t('All Options')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search options…"
+                            placeholder={t('Search options…')}
                             className="pl-8"
                         />
                     </div>
@@ -65,15 +67,15 @@ function OptionIndex({ options = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Option</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Option')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 2 : 1} className="text-center text-muted-foreground py-8">
-                                        {options.length === 0 ? 'No options yet' : 'No options match your search'}
+                                        {options.length === 0 ? t('No options yet') : t('No options match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -84,7 +86,7 @@ function OptionIndex({ options = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit options') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('option.edit', option.id)} aria-label="Edit">
+                                                    <Link href={route('option.edit', option.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -95,7 +97,7 @@ function OptionIndex({ options = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(option.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

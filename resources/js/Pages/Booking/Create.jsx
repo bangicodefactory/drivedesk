@@ -11,9 +11,11 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 import axios from 'axios';
 
 function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, addons }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
 
     const { register, handleSubmit, watch, setValue, getValues, formState: { isSubmitting } } = useForm({
@@ -141,21 +143,21 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
                             <div className="space-y-1">
-                                <Label htmlFor="start_date_time">Start Date &amp; Time</Label>
+                                <Label htmlFor="start_date_time">{t('Start Date & Time')}</Label>
                                 <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} />
                                 {serverErrors?.start_date_time && <p className="text-sm text-destructive">{serverErrors.start_date_time}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="end_date_time">End Date &amp; Time</Label>
+                                <Label htmlFor="end_date_time">{t('End Date & Time')}</Label>
                                 <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} />
                                 {serverErrors?.end_date_time && <p className="text-sm text-destructive">{serverErrors.end_date_time}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <Select onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
                                     <SelectContent>
                                         {availableVehicles.map((v) => (
                                             <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
@@ -166,9 +168,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Driver</Label>
+                                <Label>{t('Driver')}</Label>
                                 <Select onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Driver" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Driver')} /></SelectTrigger>
                                     <SelectContent>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
@@ -179,9 +181,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Pickup Address</Label>
+                                <Label>{t('Pickup Address')}</Label>
                                 <Select onValueChange={(v) => setValue('pickup_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Pickup Address" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -191,9 +193,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Drop Off Address</Label>
+                                <Label>{t('Drop Off Address')}</Label>
                                 <Select onValueChange={(v) => setValue('drop_off_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Drop Off Address" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -203,7 +205,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Status</Label>
+                                <Label>{t('Status')}</Label>
                                 <Select defaultValue={statuses?.[0]?.value} onValueChange={(v) => setValue('status', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -215,12 +217,12 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="discount">Discount</Label>
-                                <Input id="discount" type="number" step="any" min="0" placeholder="Enter discount" {...register('discount')} />
+                                <Label htmlFor="discount">{t('Discount')}</Label>
+                                <Input id="discount" type="number" step="any" min="0" placeholder={t('Enter discount')} {...register('discount')} />
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="daily_price">Price per day</Label>
+                                <Label htmlFor="daily_price">{t('Price per day')}</Label>
                                 <Input
                                     id="daily_price"
                                     type="number"
@@ -232,13 +234,13 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={2} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} />
                             </div>
 
                             {addons.length > 0 && (
                                 <div className="space-y-2 md:col-span-2 lg:col-span-3">
-                                    <Label>Addons</Label>
+                                    <Label>{t('Addons')}</Label>
                                     <div className="flex flex-wrap gap-4">
                                         {addons.map((a) => (
                                             <div key={a.id} className="flex items-center gap-2">
@@ -260,7 +262,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     <table className="w-auto text-sm border-collapse">
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground">Duration</td>
+                                                <td className="pr-8 py-1 text-muted-foreground">{t('Duration')}</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
                                         </tbody>
@@ -275,11 +277,11 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                         )}
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground font-medium">Discount</td>
+                                                <td className="pr-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
                                             </tr>
                                             <tr>
-                                                <td className="pr-8 py-1 font-semibold">Total Amount</td>
+                                                <td className="pr-8 py-1 font-semibold">{t('Total Amount')}</td>
                                                 <td className="font-semibold">{priceBreakdown.finalTotal} Dh</td>
                                             </tr>
                                         </tbody>
@@ -291,7 +293,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>Create</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                 </div>
             </div>
         </form>

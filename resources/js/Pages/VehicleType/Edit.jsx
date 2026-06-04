@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/vehicle_type/edit.blade.php (modal fragment ->
 // full Inertia page). Submits PUT to route('vehicle-type.update') via a spoofed
@@ -21,6 +22,7 @@ const schema = z.object({
 });
 
 function VehicleTypeEdit({ vehicleType = {} }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             type: vehicleType.type ?? '',
@@ -34,29 +36,29 @@ function VehicleTypeEdit({ vehicleType = {} }) {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Vehicle Type</CardTitle>
+                    <CardTitle>{t('Edit Vehicle Type')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('vehicle-type.update', vehicleType.id))}>
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Type</Label>
-                                <Input id="type" placeholder="Enter type" {...register('type')} />
+                                <Label htmlFor="type">{t('Type')}</Label>
+                                <Input id="type" placeholder={t('Enter type')} {...register('type')} />
                                 {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={2} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} />
                                 {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('vehicle-type.index')}>Close</Link>
+                                <Link href={route('vehicle-type.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Update</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                         </div>
                     </form>
                 </CardContent>

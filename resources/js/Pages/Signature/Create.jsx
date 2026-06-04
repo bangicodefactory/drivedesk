@@ -9,8 +9,10 @@ import {
 } from '@/components/ui/select';
 import { PenLine, Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function SignatureCreate({ drivers }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
     const sigCanvasRef = useRef(null);
     const [userId, setUserId] = useState('');
@@ -30,7 +32,7 @@ function SignatureCreate({ drivers }) {
         e.preventDefault();
         if (!userId) return;
         if (sigCanvasRef.current?.isEmpty()) {
-            alert('Please provide a signature before submitting.');
+            alert(t('Please provide a signature before submitting.'));
             return;
         }
         setSubmitting(true);
@@ -43,20 +45,20 @@ function SignatureCreate({ drivers }) {
     return (
         <div className="p-6 max-w-xl mx-auto space-y-6">
             <h1 className="text-2xl font-semibold flex items-center gap-2">
-                <PenLine className="h-6 w-6" /> Create Signature
+                <PenLine className="h-6 w-6" /> {t('Create Signature')}
             </h1>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Signature Pad</CardTitle>
+                    <CardTitle>{t('Signature Pad')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="space-y-5">
 
                         <div className="space-y-1">
-                            <Label>Select Client</Label>
+                            <Label>{t('Select Client')}</Label>
                             <Select onValueChange={setUserId} required>
-                                <SelectTrigger><SelectValue placeholder="Select a driver/client" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('Select a driver/client')} /></SelectTrigger>
                                 <SelectContent>
                                     {drivers.map((d) => (
                                         <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
@@ -69,7 +71,7 @@ function SignatureCreate({ drivers }) {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Signature</Label>
+                            <Label>{t('Signature')}</Label>
                             <div className="border rounded-md overflow-hidden bg-white touch-none">
                                 <SignatureCanvas
                                     ref={sigCanvasRef}
@@ -89,10 +91,10 @@ function SignatureCreate({ drivers }) {
 
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" onClick={clear}>
-                                <Eraser className="mr-2 h-4 w-4" /> Clear
+                                <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
                             </Button>
                             <Button type="submit" disabled={submitting || isEmpty || !userId}>
-                                <Save className="mr-2 h-4 w-4" /> Save Signature
+                                <Save className="mr-2 h-4 w-4" /> {t('Save Signature')}
                             </Button>
                         </div>
                     </form>

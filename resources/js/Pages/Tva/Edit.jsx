@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pencil } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     facture_number: z.string().min(1, 'Required'),
@@ -22,6 +23,7 @@ const schema = z.object({
 const TVA_RATE = 0.2;
 
 function TvaEdit({ tva }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
 
     const {
@@ -71,31 +73,31 @@ function TvaEdit({ tva }) {
     return (
         <div className="p-6 max-w-3xl mx-auto">
             <h1 className="text-2xl font-semibold flex items-center gap-2 mb-6">
-                <Pencil className="h-6 w-6" /> Edit TVA
+                <Pencil className="h-6 w-6" /> {t('Edit TVA')}
             </h1>
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Invoice #{tva.facture_number}</CardTitle>
+                    <CardTitle className="text-base">{t('Invoice')} #{tva.facture_number}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
                         {/* Booking — read-only display */}
                         <div className="space-y-1">
-                            <Label>Booking</Label>
+                            <Label>{t('Booking')}</Label>
                             <Input value={tva.booking_id ?? 'N/A'} readOnly className="bg-muted" />
                         </div>
 
                         {/* Vehicle / Designation — read-only */}
                         <div className="space-y-1">
-                            <Label>Vehicle</Label>
+                            <Label>{t('Vehicle')}</Label>
                             <Input value={tva.designation ?? ''} readOnly className="bg-muted" />
                         </div>
 
                         {/* Facture Number */}
                         <div className="space-y-1">
-                            <Label htmlFor="facture_number">Facture Number</Label>
+                            <Label htmlFor="facture_number">{t('Facture Number')}</Label>
                             <Input id="facture_number" {...register('facture_number')} />
                             {errors.facture_number && (
                                 <p className="text-sm text-destructive">{errors.facture_number.message}</p>
@@ -104,7 +106,7 @@ function TvaEdit({ tva }) {
 
                         {/* Facture Date */}
                         <div className="space-y-1">
-                            <Label htmlFor="facture_date">Facture Date</Label>
+                            <Label htmlFor="facture_date">{t('Facture Date')}</Label>
                             <Input id="facture_date" type="date" {...register('facture_date')} />
                             {errors.facture_date && (
                                 <p className="text-sm text-destructive">{errors.facture_date.message}</p>
@@ -113,13 +115,13 @@ function TvaEdit({ tva }) {
 
                         {/* Quantity — read-only */}
                         <div className="space-y-1">
-                            <Label>Quantity (Days)</Label>
+                            <Label>{t('Quantity (Days)')}</Label>
                             <Input value={tva.quantity ?? ''} readOnly className="bg-muted" />
                         </div>
 
                         {/* Unit Price HT — triggers auto-calc */}
                         <div className="space-y-1">
-                            <Label htmlFor="unit_price_ht">Unit Price HT (P.U.H.T)</Label>
+                            <Label htmlFor="unit_price_ht">{t('Unit Price HT (P.U.H.T)')}</Label>
                             <Input
                                 id="unit_price_ht"
                                 type="number"
@@ -133,7 +135,7 @@ function TvaEdit({ tva }) {
 
                         {/* Total HT — auto-calculated, read-only */}
                         <div className="space-y-1">
-                            <Label htmlFor="total_ht">Total HT</Label>
+                            <Label htmlFor="total_ht">{t('Total HT')}</Label>
                             <Input
                                 id="total_ht"
                                 type="number"
@@ -146,7 +148,7 @@ function TvaEdit({ tva }) {
 
                         {/* TVA — auto-calculated, read-only */}
                         <div className="space-y-1">
-                            <Label htmlFor="tva">TVA (20%)</Label>
+                            <Label htmlFor="tva">{t('TVA (20%)')}</Label>
                             <Input
                                 id="tva"
                                 type="number"
@@ -159,7 +161,7 @@ function TvaEdit({ tva }) {
 
                         {/* Montant TTC — auto-calculated */}
                         <div className="space-y-1">
-                            <Label htmlFor="montant_ttc">Montant TTC</Label>
+                            <Label htmlFor="montant_ttc">{t('Montant TTC')}</Label>
                             <Input
                                 id="montant_ttc"
                                 type="number"
@@ -173,10 +175,10 @@ function TvaEdit({ tva }) {
 
                         <div className="md:col-span-2 flex justify-end gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={() => router.get(route('tva.index'))}>
-                                Cancel
+                                {t('Cancel')}
                             </Button>
                             <Button type="submit" disabled={isSubmitting}>
-                                Update TVA
+                                {t('Update TVA')}
                             </Button>
                         </div>
                     </form>

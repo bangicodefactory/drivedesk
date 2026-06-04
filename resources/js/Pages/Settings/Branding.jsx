@@ -9,6 +9,7 @@ import { Switch }   from '@/components/ui/switch';
 import { Badge }    from '@/components/ui/badge';
 import { CheckCircle2, Paintbrush, Sun, Moon, Monitor } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ── JS mirror of ThemePalette (subset for live preview) ──────────────────────
 // Kept in sync with App\Support\ThemePalette via the shared fixture test.
@@ -119,6 +120,7 @@ const schema = z.object({
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function Branding({ settings }) {
+    const t = useTranslation();
     const brandColor  = settings?.brand_color  || '';
     const accentColor = settings?.accent_color || '';
 
@@ -159,11 +161,10 @@ function Branding({ settings }) {
             <div>
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
                     <Paintbrush className="h-6 w-6 text-primary" />
-                    Branding &amp; Theme
+                    {t('Branding & Theme')}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                    Set your agency's brand color. The app derives a full contrast-safe
-                    palette for light and dark mode automatically.
+                    {t("Set your agency's brand color. The app derives a full contrast-safe palette for light and dark mode automatically.")}
                 </p>
             </div>
 
@@ -171,27 +172,27 @@ function Branding({ settings }) {
 
                 {/* ── Brand color ─────────────────────────────────────────── */}
                 <Card>
-                    <CardHeader><CardTitle>Brand color</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Brand color')}</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
 
                         {/* Presets */}
                         <div>
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-2 block">
-                                Presets
+                                {t('Presets')}
                             </Label>
                             <div className="flex flex-wrap gap-2">
                                 {PRESETS.map(({ label, hex }) => (
                                     <button
                                         key={hex}
                                         type="button"
-                                        title={label}
+                                        title={t(label)}
                                         onClick={() => handlePreset(hex)}
                                         className="h-8 w-8 rounded-full border-2 transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         style={{
                                             backgroundColor: hex,
                                             borderColor: watchedBrand === hex ? 'currentColor' : 'transparent',
                                         }}
-                                        aria-label={label}
+                                        aria-label={t(label)}
                                     />
                                 ))}
                             </div>
@@ -204,7 +205,7 @@ function Branding({ settings }) {
                                 value={watchedBrand || '#1A1D29'}
                                 onChange={(e) => setValue('brand_color', e.target.value)}
                                 className="h-10 w-14 cursor-pointer rounded border border-input bg-transparent p-0.5"
-                                aria-label="Brand color picker"
+                                aria-label={t('Brand color picker')}
                             />
                             <div className="flex-1">
                                 <Input
@@ -219,7 +220,7 @@ function Branding({ settings }) {
                             {contrastOk && (
                                 <div className="flex items-center gap-1 text-xs text-success whitespace-nowrap">
                                     <CheckCircle2 className="h-3.5 w-3.5" />
-                                    AA ✓
+                                    {t('AA ✓')}
                                 </div>
                             )}
                         </div>
@@ -234,7 +235,7 @@ function Branding({ settings }) {
                                 } : {}}
                             >
                                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                                    Live preview
+                                    {t('Live preview')}
                                 </p>
                                 <div className="flex flex-wrap gap-2 items-center">
                                     <button
@@ -242,22 +243,22 @@ function Branding({ settings }) {
                                         className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium"
                                         style={{ backgroundColor: `hsl(${preview?.primary})`, color: `hsl(${preview?.primaryFg})` }}
                                     >
-                                        Save changes
+                                        {t('Save changes')}
                                     </button>
                                     <span
                                         className="text-sm font-medium cursor-pointer"
                                         style={{ color: `hsl(${preview?.primary})` }}
                                     >
-                                        Learn more →
+                                        {t('Learn more →')}
                                     </span>
                                     <input
                                         readOnly
-                                        placeholder="Focused input"
+                                        placeholder={t('Focused input')}
                                         className="h-8 rounded border px-2 text-sm outline-none"
                                         style={{ borderColor: `hsl(${preview?.primary})`, boxShadow: `0 0 0 2px hsl(${preview?.primary} / 0.25)` }}
                                     />
                                     <Badge style={{ backgroundColor: `hsl(${preview?.primary})`, color: `hsl(${preview?.primaryFg})` }}>
-                                        Active
+                                        {t('Active')}
                                     </Badge>
                                 </div>
                             </div>
@@ -269,7 +270,7 @@ function Branding({ settings }) {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Accent color</CardTitle>
+                            <CardTitle>{t('Accent color')}</CardTitle>
                             <div className="flex items-center gap-2 text-sm">
                                 <Switch
                                     checked={autoAccent}
@@ -279,7 +280,7 @@ function Branding({ settings }) {
                                     }}
                                     id="auto-accent"
                                 />
-                                <Label htmlFor="auto-accent" className="cursor-pointer text-sm">Auto from brand</Label>
+                                <Label htmlFor="auto-accent" className="cursor-pointer text-sm">{t('Auto from brand')}</Label>
                             </div>
                         </div>
                     </CardHeader>
@@ -291,7 +292,7 @@ function Branding({ settings }) {
                                     value={watch('accent_color') || '#10B981'}
                                     onChange={(e) => setValue('accent_color', e.target.value)}
                                     className="h-10 w-14 cursor-pointer rounded border border-input bg-transparent p-0.5"
-                                    aria-label="Accent color picker"
+                                    aria-label={t('Accent color picker')}
                                 />
                                 <div className="flex-1">
                                     <Input
@@ -310,25 +311,25 @@ function Branding({ settings }) {
 
                 {/* ── Surface temperature ──────────────────────────────────── */}
                 <Card>
-                    <CardHeader><CardTitle>Surface temperature</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Surface temperature')}</CardTitle></CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-3">
-                            Tints backgrounds and borders toward the brand's color temperature.
+                            {t("Tints backgrounds and borders toward the brand's color temperature.")}
                         </p>
                         <input type="hidden" {...register('brand_neutral')} />
                         <div className="flex gap-2">
-                            {(['cool', 'neutral', 'warm']).map((t) => (
+                            {(['cool', 'neutral', 'warm']).map((temp) => (
                                 <button
-                                    key={t}
+                                    key={temp}
                                     type="button"
-                                    onClick={() => setValue('brand_neutral', t)}
+                                    onClick={() => setValue('brand_neutral', temp)}
                                     className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize transition-colors ${
-                                        watchedNeutral === t
+                                        watchedNeutral === temp
                                             ? 'bg-primary text-primary-foreground border-primary'
                                             : 'hover:bg-accent hover:text-accent-foreground'
                                     }`}
                                 >
-                                    {t}
+                                    {t(temp)}
                                 </button>
                             ))}
                         </div>
@@ -337,7 +338,7 @@ function Branding({ settings }) {
 
                 {/* ── Default mode ─────────────────────────────────────────── */}
                 <Card>
-                    <CardHeader><CardTitle>Default mode</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Default mode')}</CardTitle></CardHeader>
                     <CardContent>
                         <input type="hidden" {...register('layout_mode')} />
                         <div className="flex gap-2">
@@ -357,7 +358,7 @@ function Branding({ settings }) {
                                     }`}
                                 >
                                     <Icon className="h-4 w-4" />
-                                    {label}
+                                    {t(label)}
                                 </button>
                             ))}
                         </div>
@@ -371,10 +372,10 @@ function Branding({ settings }) {
                         variant="outline"
                         onClick={handleReset}
                     >
-                        Reset to default
+                        {t('Reset to default')}
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Saving…' : 'Save branding'}
+                        {isSubmitting ? t('Saving…') : t('Save branding')}
                     </Button>
                 </div>
             </form>

@@ -8,6 +8,7 @@ import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const forgotSchema = z.object({
     email:                  z.string().email('Enter a valid email address'),
@@ -15,6 +16,7 @@ const forgotSchema = z.object({
 });
 
 function ForgotPassword({ status }) {
+    const t = useTranslation();
     const { recaptcha } = usePage().props;
     const captchaRef = useRef(null);
 
@@ -27,9 +29,9 @@ function ForgotPassword({ status }) {
         <div className="flex min-h-[80vh] items-center justify-center px-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Forgot password?</CardTitle>
+                    <CardTitle className="text-2xl">{t('Forgot password?')}</CardTitle>
                     <CardDescription>
-                        Enter your email and we'll send a reset link.
+                        {t("Enter your email and we'll send a reset link.")}
                     </CardDescription>
                 </CardHeader>
 
@@ -42,7 +44,7 @@ function ForgotPassword({ status }) {
 
                     <form onSubmit={submit('post', route('password.email'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -68,12 +70,12 @@ function ForgotPassword({ status }) {
                         )}
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? 'Sending…' : 'Send reset link'}
+                            {isSubmitting ? t('Sending…') : t('Send reset link')}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground">
                             <Link href={route('login')} className="underline hover:text-foreground">
-                                Back to sign in
+                                {t('Back to sign in')}
                             </Link>
                         </p>
                     </form>

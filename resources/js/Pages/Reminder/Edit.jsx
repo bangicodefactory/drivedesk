@@ -11,6 +11,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     _method: z.string().optional(),
@@ -21,6 +22,7 @@ const schema = z.object({
 });
 
 function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
+    const t = useTranslation();
     const reminderDate = reminder.reminder_date
         ? (typeof reminder.reminder_date === 'string' ? reminder.reminder_date.slice(0, 10) : reminder.reminder_date)
         : '';
@@ -41,24 +43,24 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
             <form onSubmit={submit('post', route('reminder.update', reminder.id))} className="space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Edit Reminder</CardTitle>
+                        <CardTitle>{t('Edit Reminder')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" placeholder="Enter name" {...register('name')} />
+                                <Label htmlFor="name">{t('Name')}</Label>
+                                <Input id="name" placeholder={t('Enter name')} {...register('name')} />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Reminder Type</Label>
+                                <Label htmlFor="type">{t('Reminder Type')}</Label>
                                 <Controller
                                     name="type"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(type).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -71,19 +73,19 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <Input value={vehicleName || '—'} readOnly className="bg-muted" />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="reminder_date">Reminder Date</Label>
+                                <Label htmlFor="reminder_date">{t('Reminder Date')}</Label>
                                 <Input id="reminder_date" type="date" {...register('reminder_date')} />
                                 {errors.reminder_date && <p className="text-sm text-destructive">{errors.reminder_date.message}</p>}
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label htmlFor="note">Note</Label>
-                                <Textarea id="note" placeholder="Enter note" rows={3} {...register('note')} />
+                                <Label htmlFor="note">{t('Note')}</Label>
+                                <Textarea id="note" placeholder={t('Enter note')} rows={3} {...register('note')} />
                             </div>
                         </div>
                     </CardContent>
@@ -91,9 +93,9 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" type="button" asChild>
-                        <Link href={route('reminder.index')}>Close</Link>
+                        <Link href={route('reminder.index')}>{t('Close')}</Link>
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>Update</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                 </div>
             </form>
         </div>

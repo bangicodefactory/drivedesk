@@ -8,6 +8,7 @@ import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const registerSchema = z.object({
     name:                   z.string().min(1, 'Name is required').max(255),
@@ -23,6 +24,7 @@ const registerSchema = z.object({
 });
 
 function Register() {
+    const t = useTranslation();
     const { recaptcha } = usePage().props;
     const captchaRef = useRef(null);
 
@@ -38,44 +40,44 @@ function Register() {
         <div className="flex min-h-[80vh] items-center justify-center px-4 py-8">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Create account</CardTitle>
-                    <CardDescription>Fill in the details below to get started</CardDescription>
+                    <CardTitle className="text-2xl">{t('Create account')}</CardTitle>
+                    <CardDescription>{t('Fill in the details below to get started')}</CardDescription>
                 </CardHeader>
 
                 <CardContent>
                     <form onSubmit={submit('post', route('register'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
-                            <Label htmlFor="name">Full name</Label>
+                            <Label htmlFor="name">{t('Full name')}</Label>
                             <Input id="name" autoComplete="name" autoFocus {...register('name')} />
                             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input id="email" type="email" autoComplete="email" {...register('email')} />
                             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="company_name">Company name</Label>
+                            <Label htmlFor="company_name">{t('Company name')}</Label>
                             <Input id="company_name" {...register('company_name')} />
                             {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="city">City</Label>
+                            <Label htmlFor="city">{t('City')}</Label>
                             <Input id="city" {...register('city')} />
                             {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('Password')}</Label>
                             <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
                             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
+                            <Label htmlFor="password_confirmation">{t('Confirm password')}</Label>
                             <Input id="password_confirmation" type="password" autoComplete="new-password" {...register('password_confirmation')} />
                             {errors.password_confirmation && <p className="text-sm text-destructive">{errors.password_confirmation.message}</p>}
                         </div>
@@ -95,13 +97,13 @@ function Register() {
                         )}
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? 'Creating account…' : 'Create account'}
+                            {isSubmitting ? t('Creating account…') : t('Create account')}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
+                            {t('Already have an account?')}{' '}
                             <Link href={route('login')} className="underline hover:text-foreground">
-                                Sign in
+                                {t('Sign in')}
                             </Link>
                         </p>
                     </form>

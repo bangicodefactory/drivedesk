@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function BookingPlanning({ bookingData, vehicleData }) {
+    const t = useTranslation();
     const calRef = useRef(null);
     const calInstanceRef = useRef(null);
 
@@ -32,7 +34,7 @@ function BookingPlanning({ bookingData, vehicleData }) {
                 },
                 navLinks: true,
                 resourceAreaWidth: '25%',
-                resourceAreaHeaderContent: 'Vehicles',
+                resourceAreaHeaderContent: t('Vehicles'),
                 resources: vehicleData,
                 events: bookingData,
                 eventOverlap: true,

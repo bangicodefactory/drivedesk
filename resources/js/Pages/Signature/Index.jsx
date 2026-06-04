@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, PenLine, Eye } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function SignatureIndex({ signatures = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     function remove(id) {
-        if (window.confirm('Delete this signature?')) {
+        if (window.confirm(t('Delete this signature?'))) {
             router.delete(route('signature.destroy', id));
         }
     }
@@ -19,34 +21,34 @@ function SignatureIndex({ signatures = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <PenLine className="h-6 w-6" /> Signatures
+                    <PenLine className="h-6 w-6" /> {t('Signatures')}
                 </h1>
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('signature.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Signature
+                            <Plus className="mr-2 h-4 w-4" /> {t('Add Signature')}
                         </Link>
                     </Button>
                 )}
             </div>
 
             <Card>
-                <CardHeader><CardTitle>All Signatures</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('All Signatures')}</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Preview</TableHead>
-                                <TableHead>Date</TableHead>
-                                {can('manage driver') && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Preview')}</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                {can('manage driver') && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {signatures.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                        No signatures yet
+                                        {t('No signatures yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -67,7 +69,7 @@ function SignatureIndex({ signatures = [] }) {
                                                         href={sig.signature_url}
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        aria-label="View signature"
+                                                        aria-label={t('View signature')}
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </a>
@@ -77,7 +79,7 @@ function SignatureIndex({ signatures = [] }) {
                                                 variant="ghost" size="icon"
                                                 className="text-destructive hover:text-destructive"
                                                 onClick={() => remove(sig.id)}
-                                                aria-label="Delete"
+                                                aria-label={t('Delete')}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

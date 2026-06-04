@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/option/create.blade.php.
 // Field name matches the Blade form 1:1 (name). Posts to route('option.store')
@@ -17,6 +18,7 @@ const schema = z.object({
 });
 
 function OptionCreate() {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: { name: '' },
     });
@@ -26,21 +28,21 @@ function OptionCreate() {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Create Option</CardTitle>
+                    <CardTitle>{t('Create Option')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('option.store'))}>
                         <div className="space-y-1.5">
-                            <Label htmlFor="name">Option</Label>
-                            <Input id="name" placeholder="Enter option" {...register('name')} />
+                            <Label htmlFor="name">{t('Option')}</Label>
+                            <Input id="name" placeholder={t('Enter option')} {...register('name')} />
                             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('option.index')}>Close</Link>
+                                <Link href={route('option.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Create</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                         </div>
                     </form>
                 </CardContent>

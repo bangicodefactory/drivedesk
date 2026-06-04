@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Download, RefreshCw, Receipt } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const MONTHS = [
     { value: '01', label: 'January' }, { value: '02', label: 'February' },
@@ -36,6 +37,7 @@ const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => currentYear - i);
 
 function TvaIndex({ tvas, filters }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -116,7 +118,7 @@ function TvaIndex({ tvas, filters }) {
                 </h1>
                 <Button variant="outline" size="sm" asChild>
                     <Link href={route('tva.renumber.index')}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Renumber Invoices
+                        <RefreshCw className="mr-2 h-4 w-4" /> {t('Renumber Invoices')}
                     </Link>
                 </Button>
             </div>
@@ -126,27 +128,27 @@ function TvaIndex({ tvas, filters }) {
                 <CardContent className="pt-4">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
                         <div className="space-y-1">
-                            <Label>From Date</Label>
+                            <Label>{t('From Date')}</Label>
                             <Input type="date" value={f.from_date} onChange={(e) => setF({ ...f, from_date: e.target.value })} />
                         </div>
                         <div className="space-y-1">
-                            <Label>To Date</Label>
+                            <Label>{t('To Date')}</Label>
                             <Input type="date" value={f.to_date} onChange={(e) => setF({ ...f, to_date: e.target.value })} />
                         </div>
                         <div className="space-y-1">
-                            <Label>Driver Name</Label>
-                            <Input placeholder="Search by driver" value={f.driver_name} onChange={(e) => setF({ ...f, driver_name: e.target.value })} />
+                            <Label>{t('Driver Name')}</Label>
+                            <Input placeholder={t('Search by driver')} value={f.driver_name} onChange={(e) => setF({ ...f, driver_name: e.target.value })} />
                         </div>
                         <div className="space-y-1">
-                            <Label>Day</Label>
+                            <Label>{t('Day')}</Label>
                             <Input type="date" value={f.filter_day} onChange={(e) => setF({ ...f, filter_day: e.target.value })} />
                         </div>
                         <div className="space-y-1">
-                            <Label>Month</Label>
+                            <Label>{t('Month')}</Label>
                             <Select value={f.filter_month || 'all'} onValueChange={(v) => setF({ ...f, filter_month: v === 'all' ? '' : v })}>
-                                <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('Select Month')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">{t('All')}</SelectItem>
                                     {MONTHS.map((m) => (
                                         <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                                     ))}
@@ -154,11 +156,11 @@ function TvaIndex({ tvas, filters }) {
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label>Year</Label>
+                            <Label>{t('Year')}</Label>
                             <Select value={f.filter_year || 'all'} onValueChange={(v) => setF({ ...f, filter_year: v === 'all' ? '' : v })}>
-                                <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('Select Year')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">{t('All')}</SelectItem>
                                     {YEARS.map((y) => (
                                         <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                                     ))}
@@ -167,8 +169,8 @@ function TvaIndex({ tvas, filters }) {
                         </div>
                     </div>
                     <div className="flex gap-2 mt-3">
-                        <Button size="sm" onClick={applyFilters}>Apply Filters</Button>
-                        <Button size="sm" variant="outline" onClick={clearFilters}>Clear</Button>
+                        <Button size="sm" onClick={applyFilters}>{t('Apply Filters')}</Button>
+                        <Button size="sm" variant="outline" onClick={clearFilters}>{t('Clear')}</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -178,7 +180,7 @@ function TvaIndex({ tvas, filters }) {
                 <CardContent className="pt-4">
                     <form onSubmit={generateTva} className="flex flex-wrap gap-3 items-end">
                         <div className="space-y-1">
-                            <Label>Année</Label>
+                            <Label>{t('Année')}</Label>
                             <Select value={genYear} onValueChange={setGenYear}>
                                 <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -187,7 +189,7 @@ function TvaIndex({ tvas, filters }) {
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label>Mois</Label>
+                            <Label>{t('Mois')}</Label>
                             <Select value={genMonth} onValueChange={setGenMonth}>
                                 <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -196,11 +198,11 @@ function TvaIndex({ tvas, filters }) {
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label>Numéro de TVA</Label>
-                            <Input type="number" placeholder="Numéro de TVA" className="w-40"
+                            <Label>{t('Numéro de TVA')}</Label>
+                            <Input type="number" placeholder={t('Numéro de TVA')} className="w-40"
                                 value={genNumber} onChange={(e) => setGenNumber(e.target.value)} />
                         </div>
-                        <Button type="submit">Générer TVA</Button>
+                        <Button type="submit">{t('Générer TVA')}</Button>
                     </form>
                 </CardContent>
             </Card>
@@ -209,10 +211,10 @@ function TvaIndex({ tvas, filters }) {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                        <span>Invoices ({tvas.length})</span>
+                        <span>{t('Invoices')} ({tvas.length})</span>
                         {selected.length > 0 && (
                             <Button size="sm" variant="outline" onClick={bulkDownload}>
-                                <Download className="mr-2 h-4 w-4" /> Download Selected ({selected.length})
+                                <Download className="mr-2 h-4 w-4" /> {t('Download Selected')} ({selected.length})
                             </Button>
                         )}
                     </CardTitle>
@@ -227,14 +229,14 @@ function TvaIndex({ tvas, filters }) {
                                         checked={selected.length === tvas.length && tvas.length > 0}
                                     />
                                 </TableHead>
-                                <TableHead>Facture N°</TableHead>
-                                <TableHead>Booking ID</TableHead>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Designation</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>TTC</TableHead>
+                                <TableHead>{t('Facture N°')}</TableHead>
+                                <TableHead>{t('Booking ID')}</TableHead>
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Designation')}</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                <TableHead>{t('TTC')}</TableHead>
                                 {(can('show booking') || can('edit booking') || can('delete booking')) && (
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -242,7 +244,7 @@ function TvaIndex({ tvas, filters }) {
                             {tvas.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        No invoices found
+                                        {t('No invoices found')}
                                     </TableCell>
                                 </TableRow>
                             )}

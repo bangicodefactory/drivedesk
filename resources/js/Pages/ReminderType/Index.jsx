@@ -8,8 +8,10 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Bell, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function ReminderTypeIndex({ types = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -32,12 +34,12 @@ function ReminderTypeIndex({ types = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Bell className="h-6 w-6" /> Reminder Type
+                    <Bell className="h-6 w-6" /> {t('Reminder Type')}
                 </h1>
                 {can('manage reminder') && (
                     <Button size="sm" asChild>
                         <Link href={route('reminder-type.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Type
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
                         </Link>
                     </Button>
                 )}
@@ -45,13 +47,13 @@ function ReminderTypeIndex({ types = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Reminder Types</CardTitle>
+                    <CardTitle>{t('All Reminder Types')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search types…"
+                            placeholder={t('Search types…')}
                             className="pl-8"
                         />
                     </div>
@@ -60,15 +62,15 @@ function ReminderTypeIndex({ types = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Type</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Type')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 2 : 1} className="text-center text-muted-foreground py-8">
-                                        {types.length === 0 ? 'No reminder types yet' : 'No types match your search'}
+                                        {types.length === 0 ? t('No reminder types yet') : t('No types match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -79,7 +81,7 @@ function ReminderTypeIndex({ types = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit reminder') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('reminder-type.edit', type.id)} aria-label="Edit">
+                                                    <Link href={route('reminder-type.edit', type.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -90,7 +92,7 @@ function ReminderTypeIndex({ types = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(type.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

@@ -11,6 +11,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/driver/edit.blade.php.
 // Submits PUT to route('driver.update') via a spoofed _method=PUT (matches the
@@ -44,6 +45,7 @@ const schema = z.object({
 const str = (v) => (v != null ? String(v) : '');
 
 function DriverEdit({ driver = {}, user = {}, gender = {} }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             first_name: user.first_name ?? '',
@@ -73,42 +75,42 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Driver</CardTitle>
+                    <CardTitle>{t('Edit Driver')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('driver.update', user.id), { forceFormData: true })}>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="first_name">First Name</Label>
-                                <Input id="first_name" placeholder="Enter First Name" {...register('first_name')} />
+                                <Label htmlFor="first_name">{t('First Name')}</Label>
+                                <Input id="first_name" placeholder={t('Enter First Name')} {...register('first_name')} />
                                 {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="last_name">Last Name</Label>
-                                <Input id="last_name" placeholder="Enter First Name" {...register('last_name')} />
+                                <Label htmlFor="last_name">{t('Last Name')}</Label>
+                                <Input id="last_name" placeholder={t('Enter First Name')} {...register('last_name')} />
                                 {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" placeholder="Enter Email" {...register('email')} />
+                                <Label htmlFor="email">{t('Email')}</Label>
+                                <Input id="email" placeholder={t('Enter Email')} {...register('email')} />
                                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="phone_number">Phone Number</Label>
-                                <Input id="phone_number" placeholder="Enter Phone Number" {...register('phone_number')} />
+                                <Label htmlFor="phone_number">{t('Phone Number')}</Label>
+                                <Input id="phone_number" placeholder={t('Enter Phone Number')} {...register('phone_number')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="gender">Gender</Label>
+                                <Label htmlFor="gender">{t('Gender')}</Label>
                                 <Controller
                                     name="gender"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="gender"><SelectValue placeholder="Gender" /></SelectTrigger>
+                                            <SelectTrigger id="gender"><SelectValue placeholder={t('Gender')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(gender).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -120,80 +122,80 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="age">age</Label>
-                                <Input id="age" type="number" placeholder="Enter age" {...register('age')} />
+                                <Label htmlFor="age">{t('age')}</Label>
+                                <Input id="age" type="number" placeholder={t('Enter age')} {...register('age')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="birth_date">Birth date</Label>
+                                <Label htmlFor="birth_date">{t('Birth date')}</Label>
                                 <Input id="birth_date" type="date" {...register('birth_date')} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label htmlFor="address">Address</Label>
-                                <Textarea id="address" placeholder="Enter address" rows={1} {...register('address')} />
+                                <Label htmlFor="address">{t('Address')}</Label>
+                                <Textarea id="address" placeholder={t('Enter address')} rows={1} {...register('address')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="license_number">License Number</Label>
-                                <Input id="license_number" placeholder="Enter license number" {...register('license_number')} />
+                                <Label htmlFor="license_number">{t('License Number')}</Label>
+                                <Input id="license_number" placeholder={t('Enter license number')} {...register('license_number')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="issue_date">Issue Date</Label>
+                                <Label htmlFor="issue_date">{t('Issue Date')}</Label>
                                 <Input id="issue_date" type="date" {...register('issue_date')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="expiration_date">Expiration Date</Label>
+                                <Label htmlFor="expiration_date">{t('Expiration Date')}</Label>
                                 <Input id="expiration_date" type="date" {...register('expiration_date')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="license">License 1:</Label>
+                                <Label htmlFor="license">{t('License 1:')}</Label>
                                 <Input id="license" type="file" onChange={(e) => setValue('license', e.target.files?.[0] ?? null)} />
-                                {driver.license && <p className="text-xs text-muted-foreground">Current: {driver.license}</p>}
+                                {driver.license && <p className="text-xs text-muted-foreground">{t('Current:')} {driver.license}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="license1">License 2:</Label>
+                                <Label htmlFor="license1">{t('License 2:')}</Label>
                                 <Input id="license1" type="file" onChange={(e) => setValue('license1', e.target.files?.[0] ?? null)} />
-                                {driver.license_1 && <p className="text-xs text-muted-foreground">Current: {driver.license_1}</p>}
+                                {driver.license_1 && <p className="text-xs text-muted-foreground">{t('Current:')} {driver.license_1}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="document">ID file 1:</Label>
+                                <Label htmlFor="document">{t('ID file 1:')}</Label>
                                 <Input id="document" type="file" onChange={(e) => setValue('document', e.target.files?.[0] ?? null)} />
-                                {driver.document && <p className="text-xs text-muted-foreground">Current: {driver.document}</p>}
+                                {driver.document && <p className="text-xs text-muted-foreground">{t('Current:')} {driver.document}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="document1">ID file 2:</Label>
+                                <Label htmlFor="document1">{t('ID file 2:')}</Label>
                                 <Input id="document1" type="file" onChange={(e) => setValue('document1', e.target.files?.[0] ?? null)} />
-                                {driver.document_1 && <p className="text-xs text-muted-foreground">Current: {driver.document_1}</p>}
+                                {driver.document_1 && <p className="text-xs text-muted-foreground">{t('Current:')} {driver.document_1}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="reference">Reference</Label>
-                                <Input id="reference" placeholder="Enter reference" {...register('reference')} />
+                                <Label htmlFor="reference">{t('Reference')}</Label>
+                                <Input id="reference" placeholder={t('Enter reference')} {...register('reference')} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={1} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={1} {...register('notes')} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label htmlFor="ICE_company">ICE_company</Label>
-                                <Input id="ICE_company" placeholder="Enter ICE if client company" {...register('ICE_company')} />
+                                <Label htmlFor="ICE_company">{t('ICE_company')}</Label>
+                                <Input id="ICE_company" placeholder={t('Enter ICE if client company')} {...register('ICE_company')} />
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('driver.index')}>Close</Link>
+                                <Link href={route('driver.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Update</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                         </div>
                     </form>
                 </CardContent>

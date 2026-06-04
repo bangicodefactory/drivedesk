@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Eye, CreditCard, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     'payé': 'outline',
@@ -15,6 +16,7 @@ const STATUS_VARIANT = {
 };
 
 function CreditIndex({ credits = [], drivers = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -22,7 +24,7 @@ function CreditIndex({ credits = [], drivers = [] }) {
     const [driverFilter, setDriverFilter] = useState(params.get('driver_id') ?? '');
 
     function remove(id) {
-        if (window.confirm('Delete this credit?')) {
+        if (window.confirm(t('Delete this credit?'))) {
             router.delete(route('credit.destroy', id));
         }
     }
@@ -46,12 +48,12 @@ function CreditIndex({ credits = [], drivers = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <CreditCard className="h-6 w-6" /> Credits
+                    <CreditCard className="h-6 w-6" /> {t('Credits')}
                 </h1>
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('credit.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Credit
+                            <Plus className="mr-2 h-4 w-4" /> {t('Add Credit')}
                         </Link>
                     </Button>
                 )}
@@ -60,29 +62,29 @@ function CreditIndex({ credits = [], drivers = [] }) {
             <div className="flex gap-3 items-center">
                 <Select value={driverFilter} onValueChange={filter}>
                     <SelectTrigger className="w-56">
-                        <SelectValue placeholder="Filter by driver…" />
+                        <SelectValue placeholder={t('Filter by driver…')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All drivers</SelectItem>
+                        <SelectItem value="">{t('All drivers')}</SelectItem>
                         {drivers.map((d) => (
                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
                 {driverFilter && (
-                    <Button variant="ghost" size="sm" onClick={() => filter('')}>Clear</Button>
+                    <Button variant="ghost" size="sm" onClick={() => filter('')}>{t('Clear')}</Button>
                 )}
             </div>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Credits</CardTitle>
+                    <CardTitle>{t('All Credits')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search credits…"
+                            placeholder={t('Search credits…')}
                             className="pl-8"
                         />
                     </div>
@@ -91,18 +93,18 @@ function CreditIndex({ credits = [], drivers = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Date</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Amount')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 5 : 4} className="text-center text-muted-foreground py-8">
-                                        {credits.length === 0 ? 'No credits yet' : 'No credits match your search'}
+                                        {credits.length === 0 ? t('No credits yet') : t('No credits match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -119,12 +121,12 @@ function CreditIndex({ credits = [], drivers = [] }) {
                                     {showActions && (
                                         <TableCell className="text-right space-x-1">
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href={route('credit.show', credit.id)} aria-label="View">
+                                                <Link href={route('credit.show', credit.id)} aria-label={t('View')}>
                                                     <Eye className="h-4 w-4" />
                                                 </Link>
                                             </Button>
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href={route('credit.edit', credit.id)} aria-label="Edit">
+                                                <Link href={route('credit.edit', credit.id)} aria-label={t('Edit')}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -132,7 +134,7 @@ function CreditIndex({ credits = [], drivers = [] }) {
                                                 variant="ghost" size="icon"
                                                 className="text-destructive hover:text-destructive"
                                                 onClick={() => remove(credit.id)}
-                                                aria-label="Delete"
+                                                aria-label={t('Delete')}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -148,7 +150,9 @@ function CreditIndex({ credits = [], drivers = [] }) {
     );
 }
 
-CreditIndex.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Credits' }]}>{page}</AdminLayout>
-);
+CreditIndex.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[{ label: 'Credits' }]}>{page}</AdminLayout>
+    );
+};
 export default CreditIndex;

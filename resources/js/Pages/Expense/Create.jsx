@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     title: z.string().min(1, 'The title field is required.'),
@@ -24,6 +25,7 @@ const schema = z.object({
 });
 
 function ExpenseCreate({ vehicles = {}, types = {} }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             title: '',
@@ -42,24 +44,24 @@ function ExpenseCreate({ vehicles = {}, types = {} }) {
             <form onSubmit={submit('post', route('expense.store'), { forceFormData: true })} className="space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Create Expense</CardTitle>
+                        <CardTitle>{t('Create Expense')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="title">Title</Label>
-                                <Input id="title" placeholder="Enter title" {...register('title')} />
+                                <Label htmlFor="title">{t('Title')}</Label>
+                                <Input id="title" placeholder={t('Enter title')} {...register('title')} />
                                 {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Expense Type</Label>
+                                <Label htmlFor="type">{t('Expense Type')}</Label>
                                 <Controller
                                     name="type"
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(types).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -72,7 +74,7 @@ function ExpenseCreate({ vehicles = {}, types = {} }) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <Controller
                                     name="vehicle"
                                     control={control}
@@ -83,34 +85,34 @@ function ExpenseCreate({ vehicles = {}, types = {} }) {
                                                 .map(([k, label]) => ({ value: k, label }))}
                                             value={field.value}
                                             onChange={field.onChange}
-                                            placeholder="Select Vehicle"
-                                            searchPlaceholder="Search vehicle…"
-                                            ariaLabel="Vehicle"
+                                            placeholder={t('Select Vehicle')}
+                                            searchPlaceholder={t('Search vehicle…')}
+                                            ariaLabel={t('Vehicle')}
                                         />
                                     )}
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="date">Date</Label>
+                                <Label htmlFor="date">{t('Date')}</Label>
                                 <Input id="date" type="date" {...register('date')} />
                                 {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="amount">Amount</Label>
-                                <Input id="amount" type="number" step="0.01" placeholder="Enter amount" {...register('amount')} />
+                                <Label htmlFor="amount">{t('Amount')}</Label>
+                                <Input id="amount" type="number" step="0.01" placeholder={t('Enter amount')} {...register('amount')} />
                                 {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="receipt">Receipt</Label>
+                                <Label htmlFor="receipt">{t('Receipt')}</Label>
                                 <Input id="receipt" type="file" onChange={(e) => setValue('receipt', e.target.files?.[0] ?? null)} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={3} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={3} {...register('notes')} />
                             </div>
                         </div>
                     </CardContent>
@@ -118,19 +120,21 @@ function ExpenseCreate({ vehicles = {}, types = {} }) {
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" type="button" asChild>
-                        <Link href={route('expense.index')}>Close</Link>
+                        <Link href={route('expense.index')}>{t('Close')}</Link>
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>Create</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                 </div>
             </form>
         </div>
     );
 }
 
-ExpenseCreate.layout = (page) => (
-    <AdminLayout breadcrumbs={[
-        { label: 'Expenses', href: route('expense.index') },
-        { label: 'Create' },
-    ]}>{page}</AdminLayout>
-);
+ExpenseCreate.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[
+            { label: 'Expenses', href: route('expense.index') },
+            { label: 'Create' },
+        ]}>{page}</AdminLayout>
+    );
+};
 export default ExpenseCreate;

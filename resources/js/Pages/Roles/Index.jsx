@@ -9,14 +9,16 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function RolesIndex({ roles }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const canEdit   = auth.permissions.includes('edit role');
     const canDelete = auth.permissions.includes('delete role');
 
     function remove(id) {
-        if (window.confirm('Delete this role?')) {
+        if (window.confirm(t('Delete this role?'))) {
             router.delete(route('role.destroy', id));
         }
     }
@@ -32,23 +34,23 @@ function RolesIndex({ roles }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Roles</h1>
+                <h1 className="text-2xl font-semibold">{t('Roles')}</h1>
                 <Button asChild>
                     <Link href={route('role.create')}>
-                        <Plus className="mr-2 h-4 w-4" /> New role
+                        <Plus className="mr-2 h-4 w-4" /> {t('New role')}
                     </Link>
                 </Button>
             </div>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All roles</CardTitle>
+                    <CardTitle>{t('All roles')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search roles…"
+                            placeholder={t('Search roles…')}
                             className="pl-8"
                         />
                     </div>
@@ -57,16 +59,16 @@ function RolesIndex({ roles }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Permissions</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('Permissions')}</TableHead>
+                                <TableHead className="text-right">{t('Actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                                        {roles.length === 0 ? 'No roles yet' : 'No roles match your search'}
+                                        {roles.length === 0 ? t('No roles yet') : t('No roles match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -79,7 +81,7 @@ function RolesIndex({ roles }) {
                                     <TableCell className="text-right space-x-1">
                                         {canEdit && (
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href={route('role.edit', r.id)} aria-label="Edit">
+                                                <Link href={route('role.edit', r.id)} aria-label={t('Edit')}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -89,7 +91,7 @@ function RolesIndex({ roles }) {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => remove(r.id)}
-                                                aria-label="Delete"
+                                                aria-label={t('Delete')}
                                                 className="text-destructive hover:text-destructive"
                                             >
                                                 <Trash2 className="h-4 w-4" />

@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     CURRENCY_SYMBOL:        z.string().min(1, 'Required'),
@@ -59,6 +60,7 @@ function Payment({ settings }) {
         },
     });
     const { register, watch, setValue, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     const stripeOn      = watch('stripe_payment') === 'on';
     const paypalOn      = watch('paypal_payment') === 'on';
@@ -74,8 +76,8 @@ function Payment({ settings }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Payment Settings</h1>
-                <p className="text-sm text-muted-foreground">Currency and payment gateway configuration.</p>
+                <h1 className="text-2xl font-semibold">{t('Payment Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Currency and payment gateway configuration.')}</p>
             </div>
 
             <Card>
@@ -85,12 +87,12 @@ function Payment({ settings }) {
                         {/* Currency */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <Label htmlFor="CURRENCY_SYMBOL">Currency Icon</Label>
+                                <Label htmlFor="CURRENCY_SYMBOL">{t('Currency Icon')}</Label>
                                 <Input id="CURRENCY_SYMBOL" {...register('CURRENCY_SYMBOL')} />
                                 {errors.CURRENCY_SYMBOL && <p className="text-sm text-destructive">{errors.CURRENCY_SYMBOL.message}</p>}
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="CURRENCY">Currency Code</Label>
+                                <Label htmlFor="CURRENCY">{t('Currency Code')}</Label>
                                 <Input id="CURRENCY" {...register('CURRENCY')} />
                                 {errors.CURRENCY && <p className="text-sm text-destructive">{errors.CURRENCY.message}</p>}
                             </div>
@@ -101,17 +103,17 @@ function Payment({ settings }) {
                         {/* Stripe */}
                         <div className="space-y-3">
                             <ToggleRow
-                                label="Stripe Payment"
+                                label={t('Stripe Payment')}
                                 checked={settings?.STRIPE_PAYMENT === 'on' ? !stripeOn : stripeOn}
                                 onChange={(v) => setValue('stripe_payment', v ? 'on' : 'off')}
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <Label htmlFor="stripe_key">Account Key</Label>
+                                    <Label htmlFor="stripe_key">{t('Account Key')}</Label>
                                     <Input id="stripe_key" autoComplete="off" {...register('stripe_key')} />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="stripe_secret">Account Secret Key</Label>
+                                    <Label htmlFor="stripe_secret">{t('Account Secret Key')}</Label>
                                     <Input id="stripe_secret" autoComplete="off" {...register('stripe_secret')} />
                                 </div>
                             </div>
@@ -122,12 +124,12 @@ function Payment({ settings }) {
                         {/* PayPal */}
                         <div className="space-y-3">
                             <ToggleRow
-                                label="PayPal Payment"
+                                label={t('PayPal Payment')}
                                 checked={settings?.paypal_payment === 'on' ? !paypalOn : paypalOn}
                                 onChange={(v) => setValue('paypal_payment', v ? 'on' : 'off')}
                             />
                             <div className="flex gap-4 items-center">
-                                <Label>Account Mode</Label>
+                                <Label>{t('Account Mode')}</Label>
                                 {['sandbox', 'live'].map((mode) => (
                                     <label key={mode} className="flex items-center gap-1.5 cursor-pointer">
                                         <input
@@ -142,11 +144,11 @@ function Payment({ settings }) {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <Label htmlFor="paypal_client_id">Client ID</Label>
+                                    <Label htmlFor="paypal_client_id">{t('Client ID')}</Label>
                                     <Input id="paypal_client_id" autoComplete="off" {...register('paypal_client_id')} />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="paypal_secret_key">Secret Key</Label>
+                                    <Label htmlFor="paypal_secret_key">{t('Secret Key')}</Label>
                                     <Input id="paypal_secret_key" autoComplete="off" {...register('paypal_secret_key')} />
                                 </div>
                             </div>
@@ -157,7 +159,7 @@ function Payment({ settings }) {
                         {/* Bank Transfer */}
                         <div className="space-y-3">
                             <ToggleRow
-                                label="Bank Transfer Payment"
+                                label={t('Bank Transfer Payment')}
                                 checked={settings?.bank_transfer_payment === 'on' ? !bankOn : bankOn}
                                 onChange={(v) => setValue('bank_transfer_payment', v ? 'on' : 'off')}
                             />
@@ -169,12 +171,12 @@ function Payment({ settings }) {
                                     ['bank_ifsc_code',      'IFSC Code'],
                                 ].map(([key, label]) => (
                                     <div key={key} className="space-y-1">
-                                        <Label htmlFor={key}>{label}</Label>
+                                        <Label htmlFor={key}>{t(label)}</Label>
                                         <Input id={key} {...register(key)} />
                                     </div>
                                 ))}
                                 <div className="space-y-1 col-span-2">
-                                    <Label htmlFor="bank_other_details">Other Details</Label>
+                                    <Label htmlFor="bank_other_details">{t('Other Details')}</Label>
                                     <Textarea id="bank_other_details" rows={2} {...register('bank_other_details')} />
                                 </div>
                             </div>
@@ -185,24 +187,24 @@ function Payment({ settings }) {
                         {/* Flutterwave */}
                         <div className="space-y-3">
                             <ToggleRow
-                                label="Flutterwave Payment"
+                                label={t('Flutterwave Payment')}
                                 checked={settings?.flutterwave_payment === 'on' ? !flutterwaveOn : flutterwaveOn}
                                 onChange={(v) => setValue('flutterwave_payment', v ? 'on' : 'off')}
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <Label htmlFor="flutterwave_public_key">Public Key</Label>
+                                    <Label htmlFor="flutterwave_public_key">{t('Public Key')}</Label>
                                     <Input id="flutterwave_public_key" autoComplete="off" {...register('flutterwave_public_key')} />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="flutterwave_secret_key">Secret Key</Label>
+                                    <Label htmlFor="flutterwave_secret_key">{t('Secret Key')}</Label>
                                     <Input id="flutterwave_secret_key" autoComplete="off" {...register('flutterwave_secret_key')} />
                                 </div>
                             </div>
                         </div>
 
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
+                            {isSubmitting ? t('Saving…') : t('Save')}
                         </Button>
                     </form>
                 </CardContent>

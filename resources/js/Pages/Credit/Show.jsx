@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = { 'payé': 'outline', 'non payé': 'destructive' };
 
 function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth }) {
+    const t = useTranslation();
     function remove(id) {
-        if (window.confirm('Delete this credit?')) {
+        if (window.confirm(t('Delete this credit?'))) {
             router.delete(route('credit.destroy', id));
         }
     }
@@ -24,36 +26,36 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={route('credit.index')}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
-                <h1 className="text-2xl font-semibold">Credits — {driver?.name}</h1>
+                <h1 className="text-2xl font-semibold">{t('Credits')} — {driver?.name}</h1>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
-                    <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Summary')}</CardTitle></CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span className="font-medium">{driver?.name}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Total paid</span><span className="font-medium text-green-600">{paidTotal.toFixed(2)} Dh</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Total unpaid</span><span className="font-medium text-destructive">{unpaidTotal.toFixed(2)} Dh</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Driver')}</span><span className="font-medium">{driver?.name}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Total paid')}</span><span className="font-medium text-green-600">{paidTotal.toFixed(2)} Dh</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Total unpaid')}</span><span className="font-medium text-destructive">{unpaidTotal.toFixed(2)} Dh</span></div>
                     </CardContent>
                 </Card>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Credit History</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Credit History')}</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                <TableHead>{t('Amount')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead className="text-right">{t('Action')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {credits.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No credits</TableCell>
+                                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">{t('No credits')}</TableCell>
                                 </TableRow>
                             )}
                             {credits.map((c) => (
@@ -65,13 +67,13 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         <Button variant="ghost" size="icon" asChild>
-                                            <Link href={route('credit.edit', c.id)} aria-label="Edit"><Pencil className="h-4 w-4" /></Link>
+                                            <Link href={route('credit.edit', c.id)} aria-label={t('Edit')}><Pencil className="h-4 w-4" /></Link>
                                         </Button>
                                         <Button
                                             variant="ghost" size="icon"
                                             className="text-destructive hover:text-destructive"
                                             onClick={() => remove(c.id)}
-                                            aria-label="Delete"
+                                            aria-label={t('Delete')}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -86,7 +88,9 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
     );
 }
 
-CreditShow.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Credits', href: route('credit.index') }, { label: 'Details' }]}>{page}</AdminLayout>
-);
+CreditShow.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[{ label: 'Credits', href: route('credit.index') }, { label: 'Details' }]}>{page}</AdminLayout>
+    );
+};
 export default CreditShow;

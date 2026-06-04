@@ -9,6 +9,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function splitDateTime(datetime) {
     if (!datetime) return { date: '', time: '' };
@@ -17,6 +18,7 @@ function splitDateTime(datetime) {
 }
 
 function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
 
     const start = splitDateTime(agreement.rental_start_date);
@@ -53,7 +55,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
                             <div className="space-y-1">
-                                <Label>Driver</Label>
+                                <Label>{t('Driver')}</Label>
                                 <Select defaultValue={String(agreement.driver ?? '')} onValueChange={(v) => setValue('driver', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -66,11 +68,11 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Driver 2 (optional)</Label>
+                                <Label>{t('Driver 2 (optional)')}</Label>
                                 <Select defaultValue={agreement.driver2 ? String(agreement.driver2) : 'none'} onValueChange={(v) => setValue('driver2', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">— None —</SelectItem>
+                                        <SelectItem value="none">{t('— None —')}</SelectItem>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                                         ))}
@@ -79,7 +81,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <Select defaultValue={String(agreement.vehicle ?? '')} onValueChange={(v) => setValue('vehicle', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -91,7 +93,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Rental Start Date &amp; Time</Label>
+                                <Label>{t('Rental Start Date & Time')}</Label>
                                 <div className="flex gap-2">
                                     <Input type="date" {...register('rental_start_date', { required: true })} />
                                     <Input type="time" {...register('rental_start_time', { required: true })} />
@@ -99,7 +101,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Rental End Date &amp; Time</Label>
+                                <Label>{t('Rental End Date & Time')}</Label>
                                 <div className="flex gap-2">
                                     <Input type="date" {...register('rental_end_date', { required: true })} />
                                     <Input type="time" {...register('rental_end_time', { required: true })} />
@@ -107,12 +109,12 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="rental_duration">Rental Duration (Days)</Label>
+                                <Label htmlFor="rental_duration">{t('Rental Duration (Days)')}</Label>
                                 <Input id="rental_duration" type="number" {...register('rental_duration', { required: true })} />
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Status</Label>
+                                <Label>{t('Status')}</Label>
                                 <Select defaultValue={agreement.status} onValueChange={(v) => setValue('status', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -124,12 +126,12 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             </div>
 
                             <div className="space-y-1 md:col-span-2">
-                                <Label htmlFor="terms_condition">Terms &amp; Conditions</Label>
+                                <Label htmlFor="terms_condition">{t('Terms & Conditions')}</Label>
                                 <Textarea id="terms_condition" rows={6} {...register('terms_condition')} />
                             </div>
 
                             <div className="space-y-1 md:col-span-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">{t('Description')}</Label>
                                 <Textarea id="description" rows={4} {...register('description')} />
                             </div>
                         </div>
@@ -137,7 +139,7 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>Update</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                 </div>
             </div>
         </form>
