@@ -63,7 +63,7 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                                     <TableCell>{c.credit_date ?? '—'}</TableCell>
                                     <TableCell>{Number(c.amount).toFixed(2)} Dh</TableCell>
                                     <TableCell>
-                                        <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status}</Badge>
+                                        <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{t(c.status)}</Badge>
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         <Button variant="ghost" size="icon" asChild>

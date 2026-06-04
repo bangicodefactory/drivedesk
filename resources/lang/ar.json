@@ -262,6 +262,8 @@
     "Number Of Times This Coupon Can Be Used": "عدد المرات التي يمكن فيها استخدام هذه القسيمة",
     "Enter coupon use limit": "أدخل حد استخدام القسيمة",
     "Status": "حالة",
+    "payé": "مدفوع",
+    "non payé": "غير مدفوع",
     "Role": "دور",
     "Create Role": "إنشاء دور",
     "Assigned Users": "المستخدمون المعينون",
