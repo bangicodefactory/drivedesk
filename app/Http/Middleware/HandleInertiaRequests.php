@@ -15,7 +15,7 @@ class HandleInertiaRequests extends Middleware
 
     // Precomputed HSL values for each theme color (primary, primary-foreground)
     private const PRIMARY_MAP = [
-        'color1' => ['203.7 75.7% 42.0%', '210 40% 98%'],
+        'color1' => ['221.2 83.2% 53.3%', '0 0% 100%'], // Aether Mobility electric blue #2563eb (default)
         'color2' => ['262.8 89.7% 50.6%', '210 40% 98%'],
         'color3' => ['201.7 100.0% 50.2%', '210 40% 98%'],
         'color4' => ['354.3 70.5% 53.5%', '210 40% 98%'],
@@ -178,12 +178,12 @@ class HandleInertiaRequests extends Middleware
         }
 
         // If theme_color is explicitly set, honour it (preserves existing agency choices).
-        // When no theme_color is set at all, use the Velocity Drive default (#a13a00).
+        // When no theme_color is set at all, use the Aether Mobility default (#2563eb).
         if (!empty($s['theme_color'])) {
             return self::PRIMARY_MAP[$s['theme_color']] ?? self::PRIMARY_MAP['color1'];
         }
 
-        return ['22 100% 32%', '0 0% 100%']; // Velocity Drive primary #a13a00
+        return ['221.2 83.2% 53.3%', '0 0% 100%']; // Aether Mobility primary #2563eb
     }
 
     private function hexToHsl(string $hex): array
