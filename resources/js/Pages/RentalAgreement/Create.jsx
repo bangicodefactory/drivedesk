@@ -71,14 +71,13 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
 
                             <div className="space-y-1">
                                 <Label>Vehicle</Label>
-                                <Select onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
-                                    <SelectContent>
-                                        {vehicles.map((v) => (
-                                            <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={vehicles.map((v) => ({ value: v.id, label: v.label }))}
+                                    value={watch('vehicle')}
+                                    onChange={(v) => setValue('vehicle', v)}
+                                    placeholder="Select Vehicle"
+                                    searchPlaceholder="Search vehicle…"
+                                />
                                 {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
                             </div>
 
