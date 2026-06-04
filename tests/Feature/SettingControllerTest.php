@@ -167,7 +167,7 @@ class SettingControllerTest extends TestCase
 
     public function test_general_data_uploads_logo_for_owner(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $logo = UploadedFile::fake()->image('logo.png')->mimeType('image/png');
 
@@ -180,12 +180,12 @@ class SettingControllerTest extends TestCase
             ->assertSessionHas('success');
 
         $expectedFilename = $this->owner->id . '_logo.png';
-        Storage::assertExists('upload/logo/' . $expectedFilename);
+        Storage::disk('public')->assertExists('upload/logo/' . $expectedFilename);
     }
 
     public function test_general_data_uploads_favicon_for_owner(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $favicon = UploadedFile::fake()->image('favicon.png')->mimeType('image/png');
 
@@ -198,7 +198,7 @@ class SettingControllerTest extends TestCase
             ->assertSessionHas('success');
 
         $expectedFilename = $this->owner->id . '_favicon.png';
-        Storage::assertExists('upload/logo/' . $expectedFilename);
+        Storage::disk('public')->assertExists('upload/logo/' . $expectedFilename);
     }
 
     public function test_general_data_rejects_non_png_logo(): void
@@ -216,7 +216,7 @@ class SettingControllerTest extends TestCase
 
     public function test_general_data_uploads_home_images_for_owner(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $img1 = UploadedFile::fake()->image('home1.png')->mimeType('image/png');
         $img2 = UploadedFile::fake()->image('home2.png')->mimeType('image/png');
@@ -230,8 +230,8 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        Storage::assertExists('upload/home/' . $this->owner->id . '_image_home_1.png');
-        Storage::assertExists('upload/home/' . $this->owner->id . '_image_home_2.png');
+        Storage::disk('public')->assertExists('upload/home/' . $this->owner->id . '_image_home_1.png');
+        Storage::disk('public')->assertExists('upload/home/' . $this->owner->id . '_image_home_2.png');
     }
 
     // ── SettingController::storeSignature ─────────────────────────────────────
@@ -903,7 +903,7 @@ class SettingControllerTest extends TestCase
 
     public function test_general_data_uploads_logo_for_super_admin(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $superAdmin = User::factory()->create([
             'type'      => 'super admin',
@@ -920,12 +920,12 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        Storage::assertExists('upload/logo/logo.png');
+        Storage::disk('public')->assertExists('upload/logo/logo.png');
     }
 
     public function test_general_data_uploads_favicon_for_super_admin(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $superAdmin = User::factory()->create([
             'type'      => 'super admin',
@@ -942,12 +942,12 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        Storage::assertExists('upload/logo/favicon.png');
+        Storage::disk('public')->assertExists('upload/logo/favicon.png');
     }
 
     public function test_general_data_uploads_home_images_for_super_admin(): void
     {
-        Storage::fake();
+        Storage::fake('public');
 
         $superAdmin = User::factory()->create([
             'type'      => 'super admin',
@@ -966,8 +966,8 @@ class SettingControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        Storage::assertExists('upload/home/image_home_1.png');
-        Storage::assertExists('upload/home/image_home_2.png');
+        Storage::disk('public')->assertExists('upload/home/image_home_1.png');
+        Storage::disk('public')->assertExists('upload/home/image_home_2.png');
     }
 
     public function test_general_data_rejects_missing_application_name_for_super_admin(): void
