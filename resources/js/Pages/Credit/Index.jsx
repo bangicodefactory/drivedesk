@@ -30,8 +30,11 @@ function CreditIndex({ credits = [], drivers = [] }) {
     }
 
     function filter(driverId) {
-        setDriverFilter(driverId);
-        router.get(route('credit.index'), driverId ? { driver_id: driverId } : {}, { preserveState: true, replace: true });
+        // Radix Select forbids an empty-string item value, so the "All drivers"
+        // option uses the 'all' sentinel; normalize it back to no filter here.
+        const real = driverId === 'all' ? '' : driverId;
+        setDriverFilter(real);
+        router.get(route('credit.index'), real ? { driver_id: real } : {}, { preserveState: true, replace: true });
     }
 
     const showActions = can('manage driver');
@@ -60,12 +63,12 @@ function CreditIndex({ credits = [], drivers = [] }) {
             </div>
 
             <div className="flex gap-3 items-center">
-                <Select value={driverFilter} onValueChange={filter}>
+                <Select value={driverFilter || 'all'} onValueChange={filter}>
                     <SelectTrigger className="w-56">
                         <SelectValue placeholder={t('Filter by driver…')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">{t('All drivers')}</SelectItem>
+                        <SelectItem value="all">{t('All drivers')}</SelectItem>
                         {drivers.map((d) => (
                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                         ))}
