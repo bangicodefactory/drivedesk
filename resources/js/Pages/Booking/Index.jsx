@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
@@ -194,9 +195,9 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             <TableRow>
                                 {can('delete booking') && (
                                     <TableHead style={{ width: 32 }}>
-                                        <input
-                                            type="checkbox"
-                                            onChange={toggleAll}
+                                        <Checkbox
+                                            aria-label="Select all bookings"
+                                            onCheckedChange={(v) => toggleAll({ target: { checked: v === true } })}
                                             checked={selected.length === bookings.data.length && bookings.data.length > 0}
                                         />
                                     </TableHead>
@@ -224,10 +225,10 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                 <TableRow key={b.id}>
                                     {can('delete booking') && (
                                         <TableCell>
-                                            <input
-                                                type="checkbox"
+                                            <Checkbox
+                                                aria-label={`Select booking ${b.booking_id}`}
                                                 checked={selected.includes(b.id)}
-                                                onChange={() => toggleOne(b.id)}
+                                                onCheckedChange={() => toggleOne(b.id)}
                                             />
                                         </TableCell>
                                     )}

@@ -71,6 +71,7 @@ function VehicleShow({ vehicle = {} }) {
                                             <img
                                                 src={`/storage/upload/picture/${vehicle.picture}`}
                                                 alt="Vehicle"
+                                                loading="lazy"
                                                 className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
                                             />
                                         </a>

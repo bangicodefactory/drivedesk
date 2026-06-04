@@ -55,7 +55,7 @@ function SignatureIndex({ signatures = [] }) {
                                     <TableCell className="font-medium">{sig.driver_name ?? '—'}</TableCell>
                                     <TableCell>
                                         {sig.signature_url ? (
-                                            <img src={sig.signature_url} alt="signature" className="h-10 max-w-[120px] object-contain border rounded" />
+                                            <img src={sig.signature_url} alt="signature" loading="lazy" className="h-10 max-w-[120px] object-contain border rounded" />
                                         ) : '—'}
                                     </TableCell>
                                     <TableCell>{sig.created_at}</TableCell>
