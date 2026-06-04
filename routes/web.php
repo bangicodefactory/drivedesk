@@ -247,6 +247,7 @@ Route::group(
         Route::post('booking/import', [BookingController::class, 'importExcel'])->name('booking.import');
         Route::get('booking/template/download', [BookingController::class, 'downloadTemplate'])->name('booking.template');
         Route::post('booking/bulk-destroy', [BookingController::class, 'bulkDestroy'])->name('booking.bulk-destroy');
+        Route::post('booking/bulk-mark-paid', [BookingController::class, 'bulkMarkPaid'])->name('booking.bulk-mark-paid');
         Route::resource('booking', BookingController::class);
         Route::post('/booking_requests/{id}/approve', [RequestBookingController::class, 'confirmBooking'])->name('booking_requests.approve');
         Route::post('/booking_requests/{id}/refuse', [RequestBookingController::class, 'refuseBooking'])

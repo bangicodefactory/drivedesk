@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 
@@ -76,6 +76,13 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         router.post(route('booking.bulk-destroy'), { ids: selected });
     }
 
+    function bulkMarkPaid() {
+        if (!selected.length) return;
+        router.post(route('booking.bulk-mark-paid'), { ids: selected }, {
+            onSuccess: () => setSelected([]),
+        });
+    }
+
     function submitImport(e) {
         e.preventDefault();
         if (!importFile) return;
@@ -92,6 +99,12 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             <div className="flex flex-wrap items-center gap-2 justify-between">
                 <h1 className="text-2xl font-semibold">Bookings</h1>
                 <div className="flex flex-wrap gap-2">
+                    {selected.length > 0 && can('edit booking') && (
+                        <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Mark as Paid ({selected.length})
+                        </Button>
+                    )}
                     {selected.length > 0 && can('delete booking') && (
                         <Button variant="destructive" size="sm" onClick={bulkDelete}>
                             <Trash2 className="mr-2 h-4 w-4" />
