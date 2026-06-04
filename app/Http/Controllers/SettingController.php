@@ -63,7 +63,7 @@ class SettingController extends Controller
                 mkdir($directory, 0777, true);
             }
 
-            $request->file('profile')->storeAs('upload/profile/', $profileToStore);
+            $request->file('profile')->storeAs('upload/profile/', $profileToStore, 'public');
         }
 
         if (!empty($request->profile)) {
@@ -780,7 +780,7 @@ class SettingController extends Controller
             $seoFileName = $seoFilename . '_' . time() . '.' . $supportExtension;
 
 
-            $request->file('meta_seo_image')->storeAs('upload/seo/', $seoFileName);
+            $request->file('meta_seo_image')->storeAs('upload/seo/', $seoFileName, 'public');
 
 
             \DB::insert(
