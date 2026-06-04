@@ -50,7 +50,7 @@ class RentalAgreementController extends Controller
 
             $drivers = User::where('parent_id', parentId())
                 ->where('type', 'driver')
-                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc') // last added first (id is monotonic; created_at can tie)
                 ->get();
 
             $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
