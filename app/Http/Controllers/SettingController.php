@@ -216,33 +216,33 @@ class SettingController extends Controller
 
             if ($request->logo) {
                 $superadminLogoName = 'logo.png';
-                $request->file('logo')->storeAs('upload/logo/', $superadminLogoName);
+                $request->file('logo')->storeAs('upload/logo/', $superadminLogoName, 'public');
             }
 
             if ($request->landing_logo) {
                 $superadminLandLogoName = 'landing_logo.png';
-                $request->file('landing_logo')->storeAs('upload/logo/', $superadminLandLogoName);
+                $request->file('landing_logo')->storeAs('upload/logo/', $superadminLandLogoName, 'public');
             }
 
             if ($request->favicon) {
                 $superadminFavicon = 'favicon.png';
-                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
+                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
             if ($request->favicon) {
                 $superadminFavicon = 'favicon.png';
-                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
+                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
             if ($request->favicon) {
                 $superadminFavicon = 'favicon.png';
-                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon);
+                $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
 
             if ($request->image_home_1) {
-                $request->file('image_home_1')->storeAs('upload/home/', 'image_home_1.png');
+                $request->file('image_home_1')->storeAs('upload/home/', 'image_home_1.png', 'public');
             }
 
             if ($request->image_home_2) {
-                $request->file('image_home_2')->storeAs('upload/home/', 'image_home_2.png');
+                $request->file('image_home_2')->storeAs('upload/home/', 'image_home_2.png', 'public');
             }
 
         } elseif (\Auth::user()->type == 'owner') {
@@ -289,7 +289,7 @@ class SettingController extends Controller
 
             if ($request->logo) {
                 $ownerLogoName = parentId() . '_logo.png';
-                $request->file('logo')->storeAs('upload/logo/', $ownerLogoName);
+                $request->file('logo')->storeAs('upload/logo/', $ownerLogoName, 'public');
 
                 \DB::insert(
                     'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
@@ -303,7 +303,7 @@ class SettingController extends Controller
 
             if ($request->favicon) {
                 $ownerFaviconName = parentId() . '_favicon.png';
-                $request->file('favicon')->storeAs('upload/logo/', $ownerFaviconName);
+                $request->file('favicon')->storeAs('upload/logo/', $ownerFaviconName, 'public');
 
                 \DB::insert(
                     'insert into settings (`value`, `name`,`parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
@@ -317,7 +317,7 @@ class SettingController extends Controller
 
             if ($request->image_home_1) {
                 $fileName = parentId() . '_image_home_1.png';
-                $request->file('image_home_1')->storeAs('upload/home/', $fileName);
+                $request->file('image_home_1')->storeAs('upload/home/', $fileName, 'public');
                 \DB::insert(
                     'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
                     [$fileName, 'image_home_1', parentId()]
@@ -326,7 +326,7 @@ class SettingController extends Controller
 
             if ($request->image_home_2) {
                 $fileName = parentId() . '_image_home_2.png';
-                $request->file('image_home_2')->storeAs('upload/home/', $fileName);
+                $request->file('image_home_2')->storeAs('upload/home/', $fileName, 'public');
                 \DB::insert(
                     'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
                     [$fileName, 'image_home_2', parentId()]
