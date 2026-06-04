@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     sender_name:       z.string().min(1, 'Required'),
@@ -33,6 +34,7 @@ function Smtp({ settings }) {
         },
     });
     const { register, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     const [testEmail, setTestEmail] = useState('');
     const [sendingTest, setSendingTest] = useState(false);
@@ -49,12 +51,12 @@ function Smtp({ settings }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">SMTP Settings</h1>
-                <p className="text-sm text-muted-foreground">Outbound email server configuration.</p>
+                <h1 className="text-2xl font-semibold">{t('SMTP Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Outbound email server configuration.')}</p>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Mail Server</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Mail Server')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('setting.smtp'))} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -69,25 +71,25 @@ function Smtp({ settings }) {
                                 ['server_port',       'SMTP Port',         'text'],
                             ].map(([key, label, type]) => (
                                 <div key={key} className="space-y-1">
-                                    <Label htmlFor={key}>{label}</Label>
+                                    <Label htmlFor={key}>{t(label)}</Label>
                                     <Input id={key} type={type} autoComplete="off" {...register(key)} />
                                     {errors[key] && <p className="text-sm text-destructive">{errors[key].message}</p>}
                                 </div>
                             ))}
                         </div>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
+                            {isSubmitting ? t('Saving…') : t('Save')}
                         </Button>
                     </form>
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Test Mail</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Test Mail')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={sendTestMail} className="flex gap-3 items-end">
                         <div className="flex-1 space-y-1">
-                            <Label htmlFor="test_email">Recipient email</Label>
+                            <Label htmlFor="test_email">{t('Recipient email')}</Label>
                             <Input
                                 id="test_email"
                                 type="email"
@@ -98,7 +100,7 @@ function Smtp({ settings }) {
                             />
                         </div>
                         <Button type="submit" variant="outline" disabled={sendingTest}>
-                            {sendingTest ? 'Sending…' : 'Send Test'}
+                            {sendingTest ? t('Sending…') : t('Send Test')}
                         </Button>
                     </form>
                 </CardContent>

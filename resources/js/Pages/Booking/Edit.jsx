@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 import axios from 'axios';
 
 // Convert "YYYY/MM/DD HH:MM" or "YYYY-MM-DD HH:MM" to "YYYY-MM-DDTHH:MM"
@@ -24,6 +25,7 @@ function formatDt(val) {
 }
 
 function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, places, addons }) {
+    const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
 
     const existingAddons = booking.addon ? booking.addon.split(',').map((x) => x.trim()) : [];
@@ -127,21 +129,21 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
                             <div className="space-y-1">
-                                <Label htmlFor="start_date_time">Start Date & Time</Label>
+                                <Label htmlFor="start_date_time">{t('Start Date & Time')}</Label>
                                 <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} />
                                 {serverErrors?.start_date_time && <p className="text-sm text-destructive">{serverErrors.start_date_time}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="end_date_time">End Date & Time</Label>
+                                <Label htmlFor="end_date_time">{t('End Date & Time')}</Label>
                                 <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} />
                                 {serverErrors?.end_date_time && <p className="text-sm text-destructive">{serverErrors.end_date_time}</p>}
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Vehicle</Label>
+                                <Label>{t('Vehicle')}</Label>
                                 <Select defaultValue={String(booking.vehicle ?? '')} onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
                                     <SelectContent>
                                         {initialVehicles.map((v) => (
                                             <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
@@ -151,9 +153,9 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Driver</Label>
+                                <Label>{t('Driver')}</Label>
                                 <Select defaultValue={String(booking.driver ?? '')} onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Driver" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Driver')} /></SelectTrigger>
                                     <SelectContent>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
@@ -163,9 +165,9 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Pickup Address</Label>
+                                <Label>{t('Pickup Address')}</Label>
                                 <Select defaultValue={String(booking.pickup_address ?? '')} onValueChange={(v) => setValue('pickup_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Pickup Address" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -175,9 +177,9 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Drop Off Address</Label>
+                                <Label>{t('Drop Off Address')}</Label>
                                 <Select defaultValue={String(booking.drop_off_address ?? '')} onValueChange={(v) => setValue('drop_off_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select Drop Off Address" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -187,7 +189,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                             </div>
 
                             <div className="space-y-1">
-                                <Label>Status</Label>
+                                <Label>{t('Status')}</Label>
                                 <Select defaultValue={booking.status} onValueChange={(v) => setValue('status', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -199,23 +201,23 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="discount">Discount</Label>
-                                <Input id="discount" type="number" step="any" min="0" placeholder="Enter discount" {...register('discount')} />
+                                <Label htmlFor="discount">{t('Discount')}</Label>
+                                <Input id="discount" type="number" step="any" min="0" placeholder={t('Enter discount')} {...register('discount')} />
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="daily_price">Price per day</Label>
+                                <Label htmlFor="daily_price">{t('Price per day')}</Label>
                                 <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} onBlur={() => recalculate()} />
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="notes">Notes</Label>
-                                <Textarea id="notes" placeholder="Enter notes" rows={2} {...register('notes')} />
+                                <Label htmlFor="notes">{t('Notes')}</Label>
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} />
                             </div>
 
                             {addons.length > 0 && (
                                 <div className="space-y-2 md:col-span-2 lg:col-span-3">
-                                    <Label>Addons</Label>
+                                    <Label>{t('Addons')}</Label>
                                     <div className="flex flex-wrap gap-4">
                                         {addons.map((a) => (
                                             <div key={a.id} className="flex items-center gap-2">
@@ -236,7 +238,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                     <table className="w-auto text-sm border-collapse">
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground">Duration</td>
+                                                <td className="pr-8 py-1 text-muted-foreground">{t('Duration')}</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
                                         </tbody>
@@ -251,11 +253,11 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                         )}
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground font-medium">Discount</td>
+                                                <td className="pr-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
                                             </tr>
                                             <tr>
-                                                <td className="pr-8 py-1 font-semibold">Total Amount</td>
+                                                <td className="pr-8 py-1 font-semibold">{t('Total Amount')}</td>
                                                 <td className="font-semibold">{priceBreakdown.finalTotal} Dh</td>
                                             </tr>
                                         </tbody>
@@ -267,7 +269,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>Update</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                 </div>
             </div>
         </form>

@@ -8,12 +8,14 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Car, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/vehicle_type/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade Gate::check('manage vehicle type') / @can('edit|delete vehicle type')
 // guards. Prop name `types` matches the controller compact('types').
 function VehicleTypeIndex({ types = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -37,12 +39,12 @@ function VehicleTypeIndex({ types = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Car className="h-6 w-6" /> Vehicle Type
+                    <Car className="h-6 w-6" /> {t('Vehicle Type')}
                 </h1>
                 {can('manage vehicle type') && (
                     <Button size="sm" asChild>
                         <Link href={route('vehicle-type.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Type
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
                         </Link>
                     </Button>
                 )}
@@ -50,13 +52,13 @@ function VehicleTypeIndex({ types = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>Vehicle Type</CardTitle>
+                    <CardTitle>{t('Vehicle Type')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search types…"
+                            placeholder={t('Search types…')}
                             className="pl-8"
                         />
                     </div>
@@ -65,16 +67,16 @@ function VehicleTypeIndex({ types = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Notes</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Type')}</TableHead>
+                                <TableHead>{t('Notes')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                                        {types.length === 0 ? 'No vehicle types yet' : 'No vehicle types match your search'}
+                                        {types.length === 0 ? t('No vehicle types yet') : t('No vehicle types match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -86,7 +88,7 @@ function VehicleTypeIndex({ types = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit vehicle type') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('vehicle-type.edit', type.id)} aria-label="Edit">
+                                                    <Link href={route('vehicle-type.edit', type.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -97,7 +99,7 @@ function VehicleTypeIndex({ types = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(type.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

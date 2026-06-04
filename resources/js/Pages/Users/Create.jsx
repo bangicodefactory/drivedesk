@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     name:     z.string().min(1, 'Name is required'),
@@ -19,6 +20,7 @@ const schema = z.object({
 });
 
 function UsersCreate({ userRoles = [] }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: { name: '', email: '', password: '', role: '' },
     });
@@ -26,38 +28,38 @@ function UsersCreate({ userRoles = [] }) {
 
     return (
         <div className="max-w-2xl space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">New user</h1>
+            <h1 className="text-2xl font-semibold">{t('New user')}</h1>
 
             <Card>
-                <CardHeader><CardTitle>User details</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('User details')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('users.store'))} className="space-y-4">
                         <div className="space-y-1.5">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">{t('Name')}</Label>
                             <Input id="name" autoFocus {...register('name')} />
                             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input id="email" type="email" {...register('email')} />
                             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('Password')}</Label>
                             <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
                             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="role">Role</Label>
+                            <Label htmlFor="role">{t('Role')}</Label>
                             <Controller
                                 name="role"
                                 control={control}
                                 render={({ field }) => (
                                     <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                        <SelectTrigger id="role"><SelectValue placeholder={t('Select a role')} /></SelectTrigger>
                                         <SelectContent>
                                             {userRoles.map((r) => (
                                                 <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
@@ -71,10 +73,10 @@ function UsersCreate({ userRoles = [] }) {
 
                         <div className="flex gap-2">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Creating…' : 'Create user'}
+                                {isSubmitting ? t('Creating…') : t('Create user')}
                             </Button>
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('users.index')}>Cancel</Link>
+                                <Link href={route('users.index')}>{t('Cancel')}</Link>
                             </Button>
                         </div>
                     </form>

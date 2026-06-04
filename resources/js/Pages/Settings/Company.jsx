@@ -9,6 +9,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     company_name:                    z.string().min(1, 'Required'),
@@ -68,46 +69,47 @@ function Company({ settings, timezones }) {
         },
     });
     const { register, setValue, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     const tzList = timezones ? Object.entries(timezones) : [];
 
     return (
         <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Company Settings</h1>
-                <p className="text-sm text-muted-foreground">Company details, legal identifiers and system preferences.</p>
+                <h1 className="text-2xl font-semibold">{t('Company Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Company details, legal identifiers and system preferences.')}</p>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Company Info</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Company Info')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('setting.company'))} className="space-y-6">
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="company_name">Name</Label>
-                                <Input id="company_name" placeholder="Enter company name" {...register('company_name')} />
+                                <Label htmlFor="company_name">{t('Name')}</Label>
+                                <Input id="company_name" placeholder={t('Enter company name')} {...register('company_name')} />
                                 {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="company_email">Email</Label>
-                                <Input id="company_email" type="email" placeholder="Enter company email" {...register('company_email')} />
+                                <Label htmlFor="company_email">{t('Email')}</Label>
+                                <Input id="company_email" type="email" placeholder={t('Enter company email')} {...register('company_email')} />
                                 {errors.company_email && <p className="text-sm text-destructive">{errors.company_email.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="company_phone">Phone Number</Label>
-                                <Input id="company_phone" placeholder="Enter company phone" {...register('company_phone')} />
+                                <Label htmlFor="company_phone">{t('Phone Number')}</Label>
+                                <Input id="company_phone" placeholder={t('Enter company phone')} {...register('company_phone')} />
                                 {errors.company_phone && <p className="text-sm text-destructive">{errors.company_phone.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="company_address">Address</Label>
-                                <Textarea id="company_address" rows={2} placeholder="Enter company address" {...register('company_address')} />
+                                <Label htmlFor="company_address">{t('Address')}</Label>
+                                <Textarea id="company_address" rows={2} placeholder={t('Enter company address')} {...register('company_address')} />
                                 {errors.company_address && <p className="text-sm text-destructive">{errors.company_address.message}</p>}
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-3">Legal Identifiers</p>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">{t('Legal Identifiers')}</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {[
                                     ['patente', 'Patente', 'Enter patente'],
@@ -116,15 +118,15 @@ function Company({ settings, timezones }) {
                                     ['ice',     'ICE',     'Enter ICE'],
                                 ].map(([key, label, placeholder]) => (
                                     <div key={key} className="space-y-1.5">
-                                        <Label htmlFor={key}>{label}</Label>
-                                        <Input id={key} placeholder={placeholder} {...register(key)} />
+                                        <Label htmlFor={key}>{t(label)}</Label>
+                                        <Input id={key} placeholder={t(placeholder)} {...register(key)} />
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-3">Number Prefixes</p>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">{t('Number Prefixes')}</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {[
                                     ['client_number_prefix',           'Client Number Prefix',            'e.g. CLT-'],
@@ -134,24 +136,24 @@ function Company({ settings, timezones }) {
                                     ['rental_agreement_number_prefix', 'Rental Agreement Number Prefix',  'e.g. RA-'],
                                 ].map(([key, label, placeholder]) => (
                                     <div key={key} className="space-y-1.5">
-                                        <Label htmlFor={key}>{label}</Label>
-                                        <Input id={key} placeholder={placeholder} {...register(key)} />
+                                        <Label htmlFor={key}>{t(label)}</Label>
+                                        <Input id={key} placeholder={t(placeholder)} {...register(key)} />
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-3">Currency</p>
+                            <p className="text-sm font-medium text-muted-foreground mb-3">{t('Currency')}</p>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="CURRENCY_SYMBOL">Currency Icon</Label>
-                                    <Input id="CURRENCY_SYMBOL" placeholder="e.g. €" {...register('CURRENCY_SYMBOL')} />
+                                    <Label htmlFor="CURRENCY_SYMBOL">{t('Currency Icon')}</Label>
+                                    <Input id="CURRENCY_SYMBOL" placeholder={t('e.g. €')} {...register('CURRENCY_SYMBOL')} />
                                     {errors.CURRENCY_SYMBOL && <p className="text-sm text-destructive">{errors.CURRENCY_SYMBOL.message}</p>}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="CURRENCY">Currency Code</Label>
-                                    <Input id="CURRENCY" placeholder="e.g. EUR" {...register('CURRENCY')} />
+                                    <Label htmlFor="CURRENCY">{t('Currency Code')}</Label>
+                                    <Input id="CURRENCY" placeholder={t('e.g. EUR')} {...register('CURRENCY')} />
                                     {errors.CURRENCY && <p className="text-sm text-destructive">{errors.CURRENCY.message}</p>}
                                 </div>
                             </div>
@@ -159,7 +161,7 @@ function Company({ settings, timezones }) {
 
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>System Date Format</Label>
+                                <Label>{t('System Date Format')}</Label>
                                 <div className="space-y-1.5">
                                     {DATE_FORMATS.map(({ value, label }) => (
                                         <label key={value} className="flex items-center gap-2 cursor-pointer">
@@ -176,7 +178,7 @@ function Company({ settings, timezones }) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>System Time Format</Label>
+                                <Label>{t('System Time Format')}</Label>
                                 <div className="space-y-1.5">
                                     {TIME_FORMATS.map(({ value, label }) => (
                                         <label key={value} className="flex items-center gap-2 cursor-pointer">
@@ -195,12 +197,12 @@ function Company({ settings, timezones }) {
 
                         {tzList.length > 0 && (
                             <div className="space-y-1.5">
-                                <Label>Timezone</Label>
+                                <Label>{t('Timezone')}</Label>
                                 <Select
                                     defaultValue={settings?.timezone ?? ''}
                                     onValueChange={(v) => setValue('timezone', v)}
                                 >
-                                    <SelectTrigger><SelectValue placeholder="Select timezone" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('Select timezone')} /></SelectTrigger>
                                     <SelectContent>
                                         {tzList.map(([value, label]) => (
                                             <SelectItem key={value} value={value}>{label}</SelectItem>
@@ -212,7 +214,7 @@ function Company({ settings, timezones }) {
 
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving…' : 'Save'}
+                                {isSubmitting ? t('Saving…') : t('Save')}
                             </Button>
                         </div>
                     </form>

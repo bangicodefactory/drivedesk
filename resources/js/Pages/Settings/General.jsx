@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     application_name: z.string().min(1, 'Application name is required'),
@@ -20,6 +21,7 @@ const schema = z.object({
 });
 
 function General({ settings, loginUser }) {
+    const t = useTranslation();
     const isSuperAdmin = loginUser?.type === 'super admin';
 
     const { form, submit } = useZodForm(schema, {
@@ -50,45 +52,45 @@ function General({ settings, loginUser }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">General Settings</h1>
-                <p className="text-sm text-muted-foreground">Branding, logos and home images.</p>
+                <h1 className="text-2xl font-semibold">{t('General Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Branding, logos and home images.')}</p>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Application</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Application')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('setting.general'), { forceFormData: true })} className="space-y-4">
                         <div className="space-y-1">
-                            <Label htmlFor="application_name">Application Name</Label>
+                            <Label htmlFor="application_name">{t('Application Name')}</Label>
                             <Input id="application_name" {...register('application_name')} />
                             {errors.application_name && <p className="text-sm text-destructive">{errors.application_name.message}</p>}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <Label htmlFor="logo">Logo (.png)</Label>
+                                <Label htmlFor="logo">{t('Logo (.png)')}</Label>
                                 <Input id="logo" type="file" accept=".png" onChange={(e) => setValue('logo', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="favicon">Favicon (.png)</Label>
+                                <Label htmlFor="favicon">{t('Favicon (.png)')}</Label>
                                 <Input id="favicon" type="file" accept=".png" onChange={(e) => setValue('favicon', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="image_home_1">Première image accueil</Label>
+                                <Label htmlFor="image_home_1">{t('Première image accueil')}</Label>
                                 <Input id="image_home_1" type="file" accept=".png" onChange={(e) => setValue('image_home_1', e.target.files?.[0] ?? null)} />
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="image_home_2">Deuxième image accueil</Label>
+                                <Label htmlFor="image_home_2">{t('Deuxième image accueil')}</Label>
                                 <Input id="image_home_2" type="file" accept=".png" onChange={(e) => setValue('image_home_2', e.target.files?.[0] ?? null)} />
                             </div>
                             {isSuperAdmin && (
                                 <div className="space-y-1 col-span-2">
-                                    <Label htmlFor="landing_logo">Landing Page Logo (.png)</Label>
+                                    <Label htmlFor="landing_logo">{t('Landing Page Logo (.png)')}</Label>
                                     <Input id="landing_logo" type="file" accept=".png" onChange={(e) => setValue('landing_logo', e.target.files?.[0] ?? null)} />
                                 </div>
                             )}
                         </div>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
+                            {isSubmitting ? t('Saving…') : t('Save')}
                         </Button>
                     </form>
                 </CardContent>
@@ -96,15 +98,15 @@ function General({ settings, loginUser }) {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Admin Signature</CardTitle>
+                    <CardTitle>{t('Admin Signature')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {settings?.admin_signature && (
                         <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Current signature:</p>
+                            <p className="text-sm text-muted-foreground">{t('Current signature:')}</p>
                             <img
                                 src={`/storage/${settings.admin_signature}`}
-                                alt="Admin signature"
+                                alt={t('Admin signature')}
                                 className="max-h-24 border rounded"
                             />
                         </div>
@@ -120,10 +122,10 @@ function General({ settings, loginUser }) {
                     </div>
                     <div className="flex gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => { sigRef.current?.clear(); setSigEmpty(true); }}>
-                            <Eraser className="mr-2 h-4 w-4" /> Clear
+                            <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
                         </Button>
                         <Button type="button" size="sm" disabled={sigEmpty || savingSig} onClick={saveSig}>
-                            <Save className="mr-2 h-4 w-4" /> {savingSig ? 'Saving…' : 'Save Signature'}
+                            <Save className="mr-2 h-4 w-4" /> {savingSig ? t('Saving…') : t('Save Signature')}
                         </Button>
                     </div>
                 </CardContent>

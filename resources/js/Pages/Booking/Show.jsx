@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Pencil, Printer, CreditCard, Trash2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -32,6 +33,7 @@ const PAYMENT_VARIANT = {
 };
 
 function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }) {
+    const t = useTranslation();
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
         date: new Date().toISOString().slice(0, 10),
@@ -53,7 +55,7 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
         const amount = parseFloat(form.amount) || 0;
         const method = (form.payment_method || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         if (amount > 5000 && method === 'espece') {
-            setError('Cash payments over 5000 are not allowed. Please choose another method.');
+            setError(t('Cash payments over 5000 are not allowed. Please choose another method.'));
             return;
         }
         router.post(route('booking.payment.store', bookingId), form, {
@@ -66,29 +68,29 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
-                    <CreditCard className="mr-2 h-4 w-4" /> Payment
+                    <CreditCard className="mr-2 h-4 w-4" /> {t('Payment')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create Payment</DialogTitle>
+                    <DialogTitle>{t('Create Payment')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-4">
                     {error && <p className="text-sm text-destructive">{error}</p>}
                     <div className="space-y-1">
-                        <Label htmlFor="pay-date">Date</Label>
+                        <Label htmlFor="pay-date">{t('Date')}</Label>
                         <Input id="pay-date" type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
                     </div>
                     <div className="space-y-1">
-                        <Label htmlFor="pay-amount">Amount</Label>
+                        <Label htmlFor="pay-amount">{t('Amount')}</Label>
                         <Input id="pay-amount" type="number" step="any" value={form.amount} onChange={(e) => set('amount', e.target.value)} required />
                     </div>
                     <div className="space-y-1">
-                        <Label htmlFor="pay-quantity">Quantity (Days)</Label>
+                        <Label htmlFor="pay-quantity">{t('Quantity (Days)')}</Label>
                         <Input id="pay-quantity" type="number" min="1" step="1" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} required />
                     </div>
                     <div className="space-y-1">
-                        <Label>Method</Label>
+                        <Label>{t('Method')}</Label>
                         <Select defaultValue={form.payment_method} onValueChange={(v) => set('payment_method', v)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -99,12 +101,12 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
                         </Select>
                     </div>
                     <div className="space-y-1">
-                        <Label htmlFor="pay-notes">Notes</Label>
+                        <Label htmlFor="pay-notes">{t('Notes')}</Label>
                         <Textarea id="pay-notes" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
                     </div>
                     <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>Close</Button>
-                        <Button type="submit">Create</Button>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('Close')}</Button>
+                        <Button type="submit">{t('Create')}</Button>
                     </div>
                 </form>
             </DialogContent>
@@ -113,11 +115,12 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
 }
 
 function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     function deletePayment(pid) {
-        if (window.confirm('Delete this payment?')) {
+        if (window.confirm(t('Delete this payment?'))) {
             router.delete(route('booking.payment.destroy', [booking.id, pid]));
         }
     }
@@ -142,12 +145,12 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                 {can('edit booking') && (
                     <Button size="sm" asChild>
                         <Link href={route('booking.edit', booking.encrypted_id)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                            <Pencil className="mr-2 h-4 w-4" /> {t('Edit')}
                         </Link>
                     </Button>
                 )}
                 <Button size="sm" variant="outline" onClick={print}>
-                    <Printer className="mr-2 h-4 w-4" /> Print
+                    <Printer className="mr-2 h-4 w-4" /> {t('Print')}
                 </Button>
             </div>
 
@@ -181,7 +184,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                     {/* Billing info */}
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
                         <div className="flex-1">
-                            <h5 className="font-semibold mb-2">Receipt To:</h5>
+                            <h5 className="font-semibold mb-2">{t('Receipt To:')}</h5>
                             <ul className="space-y-1 text-sm">
                                 <li>{booking.driver_name}</li>
                                 <li>{booking.driver_phone}</li>
@@ -190,10 +193,10 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                             </ul>
                         </div>
                         <div className="flex-1 text-sm space-y-1">
-                            <p><span className="text-muted-foreground">Booking Date:</span> {booking.created_at}</p>
-                            <p><span className="text-muted-foreground">Booking ID:</span> <span className="font-mono">{booking.booking_id}</span></p>
-                            <p><span className="text-muted-foreground">Start:</span> {booking.start_date} — {booking.start_time}</p>
-                            <p><span className="text-muted-foreground">End:</span> {booking.end_date} — {booking.end_time}</p>
+                            <p><span className="text-muted-foreground">{t('Booking Date:')}</span> {booking.created_at}</p>
+                            <p><span className="text-muted-foreground">{t('Booking ID:')}</span> <span className="font-mono">{booking.booking_id}</span></p>
+                            <p><span className="text-muted-foreground">{t('Start:')}</span> {booking.start_date} — {booking.start_time}</p>
+                            <p><span className="text-muted-foreground">{t('End:')}</span> {booking.end_date} — {booking.end_time}</p>
                         </div>
                     </div>
 
@@ -201,13 +204,13 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                     <Table className="mb-6">
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Vehicle</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
                                 <TableHead>{booking.vehicle_name}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow>
-                                <TableCell>Duration</TableCell>
+                                <TableCell>{t('Duration')}</TableCell>
                                 <TableCell>{booking.duration}</TableCell>
                             </TableRow>
                             {booking.addons?.map((a) => (
@@ -217,7 +220,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                 </TableRow>
                             ))}
                             <TableRow>
-                                <TableCell>Pickup Address</TableCell>
+                                <TableCell>{t('Pickup Address')}</TableCell>
                                 <TableCell>
                                     {booking.pickup_address
                                         ? `${booking.pickup_address.name}${booking.pickup_address.price ? ` (${booking.pickup_address.price} Dh)` : ''}`
@@ -225,7 +228,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell>Drop Off Address</TableCell>
+                                <TableCell>{t('Drop Off Address')}</TableCell>
                                 <TableCell>
                                     {booking.drop_off_address
                                         ? `${booking.drop_off_address.name}${booking.drop_off_address.price ? ` (${booking.drop_off_address.price} Dh)` : ''}`
@@ -233,7 +236,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell>Payment Status</TableCell>
+                                <TableCell>{t('Payment Status')}</TableCell>
                                 <TableCell>
                                     <Badge variant={PAYMENT_VARIANT[booking.payment_status] ?? 'secondary'}>
                                         {booking.payment_status_label}
@@ -248,19 +251,19 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                         <Table>
                             <TableBody>
                                 <TableRow>
-                                    <TableCell>Total Amount (HT)</TableCell>
+                                    <TableCell>{t('Total Amount (HT)')}</TableCell>
                                     <TableCell className="text-right">{booking.total_ht} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>TVA (20%)</TableCell>
+                                    <TableCell>{t('TVA (20%)')}</TableCell>
                                     <TableCell className="text-right">{booking.tva_amount} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>Paid</TableCell>
+                                    <TableCell>{t('Paid')}</TableCell>
                                     <TableCell className="text-right">{booking.paid_amount} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell className="font-semibold">Due Amount (TTC)</TableCell>
+                                    <TableCell className="font-semibold">{t('Due Amount (TTC)')}</TableCell>
                                     <TableCell className="text-right font-semibold">{booking.total_amount} Dh</TableCell>
                                 </TableRow>
                             </TableBody>
@@ -272,18 +275,18 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
             {/* Payment History */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Payment History</CardTitle>
+                    <CardTitle>{t('Payment History')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Method</TableHead>
-                                <TableHead>Notes</TableHead>
-                                <TableHead>Amount</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                <TableHead>{t('Method')}</TableHead>
+                                <TableHead>{t('Notes')}</TableHead>
+                                <TableHead>{t('Amount')}</TableHead>
                                 {can('delete booking payment') && (
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -291,7 +294,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                             {booking.payments?.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
-                                        No payments yet
+                                        {t('No payments yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -308,7 +311,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                                 size="icon"
                                                 className="text-destructive hover:text-destructive"
                                                 onClick={() => deletePayment(p.id)}
-                                                aria-label="Delete payment"
+                                                aria-label={t('Delete payment')}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

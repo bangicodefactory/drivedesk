@@ -8,12 +8,14 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, Users, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/driver/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete driver') / Gate::check('manage|create driver')
 // guards. Prop name `drivers` matches the controller compact('drivers').
 function DriverIndex({ drivers = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -37,12 +39,12 @@ function DriverIndex({ drivers = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Users className="h-6 w-6" /> Driver
+                    <Users className="h-6 w-6" /> {t('Driver')}
                 </h1>
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('driver.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Driver
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Driver')}
                         </Link>
                     </Button>
                 )}
@@ -50,13 +52,13 @@ function DriverIndex({ drivers = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Drivers</CardTitle>
+                    <CardTitle>{t('All Drivers')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search drivers…"
+                            placeholder={t('Search drivers…')}
                             className="pl-8"
                         />
                     </div>
@@ -65,21 +67,21 @@ function DriverIndex({ drivers = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Phone Number</TableHead>
-                                <TableHead>License Number</TableHead>
-                                <TableHead>Issue Date</TableHead>
-                                <TableHead>Expiration Date</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('ID')}</TableHead>
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Email')}</TableHead>
+                                <TableHead>{t('Phone Number')}</TableHead>
+                                <TableHead>{t('License Number')}</TableHead>
+                                <TableHead>{t('Issue Date')}</TableHead>
+                                <TableHead>{t('Expiration Date')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {drivers.length === 0 ? 'No drivers yet' : 'No drivers match your search'}
+                                        {drivers.length === 0 ? t('No drivers yet') : t('No drivers match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -96,14 +98,14 @@ function DriverIndex({ drivers = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('show driver') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('driver.show', d.id)} aria-label="Details">
+                                                    <Link href={route('driver.show', d.id)} aria-label={t('Details')}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
                                             )}
                                             {can('edit driver') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('driver.edit', d.id)} aria-label="Edit">
+                                                    <Link href={route('driver.edit', d.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -114,7 +116,7 @@ function DriverIndex({ drivers = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(d.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

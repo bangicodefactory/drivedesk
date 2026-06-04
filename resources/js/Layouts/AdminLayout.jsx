@@ -400,16 +400,20 @@ function UserMenu() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Breadcrumbs({ items }) {
+    const t = useTranslation();
     if (!items?.length) return null;
 
+    // Labels are passed in English; translate here (a real component, so the
+    // hook is valid — never call useTranslation() inside a page's static
+    // `.layout` function, which Inertia invokes outside React's render tree).
     return (
         <nav aria-label="breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
             {items.map((crumb, i) => (
                 <span key={i} className="flex items-center gap-1">
                     {i > 0 && <span className="select-none">/</span>}
                     {crumb.href
-                        ? <Link href={crumb.href} className="hover:text-foreground transition-colors">{crumb.label}</Link>
-                        : <span className="text-foreground font-medium">{crumb.label}</span>
+                        ? <Link href={crumb.href} className="hover:text-foreground transition-colors">{t(crumb.label)}</Link>
+                        : <span className="text-foreground font-medium">{t(crumb.label)}</span>
                     }
                 </span>
             ))}

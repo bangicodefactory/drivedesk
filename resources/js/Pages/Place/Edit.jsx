@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/place/edit.blade.php.
 // Submits PUT to route('place.update') via a spoofed _method=PUT (matches the
@@ -26,6 +27,7 @@ const schema = z.object({
 const str = (v) => (v != null ? String(v) : '');
 
 function PlaceEdit({ place = {} }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             name: place.name ?? '',
@@ -43,51 +45,51 @@ function PlaceEdit({ place = {} }) {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Place</CardTitle>
+                    <CardTitle>{t('Edit Place')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('place.update', place.id))}>
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" placeholder="Enter place name" {...register('name')} />
+                                <Label htmlFor="name">{t('Name')}</Label>
+                                <Input id="name" placeholder={t('Enter place name')} {...register('name')} />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="city">City</Label>
-                                <Input id="city" placeholder="Enter city" {...register('city')} />
+                                <Label htmlFor="city">{t('City')}</Label>
+                                <Input id="city" placeholder={t('Enter city')} {...register('city')} />
                                 {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="island">Island</Label>
-                                <Input id="island" placeholder="Enter island" {...register('island')} />
+                                <Label htmlFor="island">{t('Island')}</Label>
+                                <Input id="island" placeholder={t('Enter island')} {...register('island')} />
                                 {errors.island && <p className="text-sm text-destructive">{errors.island.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="price">Price</Label>
-                                <Input id="price" type="number" placeholder="Enter price" {...register('price')} />
+                                <Label htmlFor="price">{t('Price')}</Label>
+                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} />
                                 {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="depo_name">Depo name</Label>
-                                <Input id="depo_name" placeholder="Enter depo name" {...register('depo_name')} />
+                                <Label htmlFor="depo_name">{t('Depo name')}</Label>
+                                <Input id="depo_name" placeholder={t('Enter depo name')} {...register('depo_name')} />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="depo_address">Depo address</Label>
-                                <Input id="depo_address" placeholder="Enter depo address" {...register('depo_address')} />
+                                <Label htmlFor="depo_address">{t('Depo address')}</Label>
+                                <Input id="depo_address" placeholder={t('Enter depo address')} {...register('depo_address')} />
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('place.index')}>Close</Link>
+                                <Link href={route('place.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Update</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                         </div>
                     </form>
                 </CardContent>

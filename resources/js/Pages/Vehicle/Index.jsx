@@ -9,11 +9,13 @@ import {
 import { Eye, Pencil, Trash2, Plus, Car, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/vehicle/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete vehicle') / Gate::check('manage vehicle') guards.
 function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -26,18 +28,18 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
             isFirst.current = false;
             return;
         }
-        const t = setTimeout(() => {
+        const timer = setTimeout(() => {
             router.get(
                 route('vehicle.index'),
                 search ? { search } : {},
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 300);
-        return () => clearTimeout(t);
+        return () => clearTimeout(timer);
     }, [search]);
 
     function remove(id) {
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm(t('Are you sure?'))) {
             router.delete(route('vehicle.destroy', id));
         }
     }
@@ -48,12 +50,12 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Car className="h-6 w-6" /> Vehicle
+                    <Car className="h-6 w-6" /> {t('Vehicle')}
                 </h1>
                 {can('manage vehicle') && (
                     <Button size="sm" asChild>
                         <Link href={route('vehicle.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Vehicle
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Vehicle')}
                         </Link>
                     </Button>
                 )}
@@ -61,13 +63,13 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Vehicles</CardTitle>
+                    <CardTitle>{t('All Vehicles')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search vehicles…"
+                            placeholder={t('Search vehicles…')}
                             className="pl-8"
                         />
                     </div>
@@ -76,21 +78,21 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Model</TableHead>
-                                <TableHead>License Plate</TableHead>
-                                <TableHead>Registration Expiration Date</TableHead>
-                                <TableHead>Engine Type</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('ID')}</TableHead>
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('Type')}</TableHead>
+                                <TableHead>{t('Model')}</TableHead>
+                                <TableHead>{t('License Plate')}</TableHead>
+                                <TableHead>{t('Registration Expiration Date')}</TableHead>
+                                <TableHead>{t('Engine Type')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {vehicles.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {search ? 'No vehicles match your search' : 'No vehicles yet'}
+                                        {search ? t('No vehicles match your search') : t('No vehicles yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -107,14 +109,14 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('show vehicle') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('vehicle.show', v.id)} aria-label="Details">
+                                                    <Link href={route('vehicle.show', v.id)} aria-label={t('Details')}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
                                             )}
                                             {can('edit vehicle') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('vehicle.edit', v.id)} aria-label="Edit">
+                                                    <Link href={route('vehicle.edit', v.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -125,7 +127,7 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(v.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

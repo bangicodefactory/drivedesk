@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Package, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/addon/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -16,6 +17,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // shows the formatted price (price_formatted is appended by the controller to
 // reproduce the Blade priceFormat($addon->price) helper output).
 function AddonIndex({ addons = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -39,12 +41,12 @@ function AddonIndex({ addons = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Package className="h-6 w-6" /> Addon
+                    <Package className="h-6 w-6" /> {t('Addon')}
                 </h1>
                 {can('manage addon') && (
                     <Button size="sm" asChild>
                         <Link href={route('addon.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Addon
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Addon')}
                         </Link>
                     </Button>
                 )}
@@ -52,13 +54,13 @@ function AddonIndex({ addons = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Addons</CardTitle>
+                    <CardTitle>{t('All Addons')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search addons…"
+                            placeholder={t('Search addons…')}
                             className="pl-8"
                         />
                     </div>
@@ -67,17 +69,17 @@ function AddonIndex({ addons = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Addon</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Billing Type</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Addon')}</TableHead>
+                                <TableHead>{t('Price')}</TableHead>
+                                <TableHead>{t('Billing Type')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 4 : 3} className="text-center text-muted-foreground py-8">
-                                        {addons.length === 0 ? 'No addons yet' : 'No addons match your search'}
+                                        {addons.length === 0 ? t('No addons yet') : t('No addons match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -90,7 +92,7 @@ function AddonIndex({ addons = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit addon') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('addon.edit', addon.id)} aria-label="Edit">
+                                                    <Link href={route('addon.edit', addon.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -101,7 +103,7 @@ function AddonIndex({ addons = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(addon.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

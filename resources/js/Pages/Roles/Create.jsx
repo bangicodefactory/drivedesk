@@ -8,6 +8,7 @@ import { Label }    from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     title: z.string().min(1, 'Role name is required'),
@@ -15,6 +16,7 @@ const schema = z.object({
 });
 
 function RolesCreate({ permissions = [] }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: { title: '', user_permission: [] },
     });
@@ -28,20 +30,20 @@ function RolesCreate({ permissions = [] }) {
 
     return (
         <div className="max-w-3xl space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">New role</h1>
+            <h1 className="text-2xl font-semibold">{t('New role')}</h1>
 
             <Card>
-                <CardHeader><CardTitle>Role details</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Role details')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('role.store'))} className="space-y-6">
                         <div className="space-y-1.5">
-                            <Label htmlFor="title">Role name</Label>
+                            <Label htmlFor="title">{t('Role name')}</Label>
                             <Input id="title" autoFocus {...register('title')} />
                             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Permissions</Label>
+                            <Label>{t('Permissions')}</Label>
                             <Controller
                                 name="user_permission"
                                 control={control}
@@ -69,10 +71,10 @@ function RolesCreate({ permissions = [] }) {
 
                         <div className="flex gap-2">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Creating…' : 'Create role'}
+                                {isSubmitting ? t('Creating…') : t('Create role')}
                             </Button>
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('role.index')}>Cancel</Link>
+                                <Link href={route('role.index')}>{t('Cancel')}</Link>
                             </Button>
                         </div>
                     </form>

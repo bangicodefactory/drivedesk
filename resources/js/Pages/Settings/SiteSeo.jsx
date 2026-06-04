@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     meta_seo_title:       z.string().min(1, 'Required'),
@@ -23,12 +24,13 @@ function SiteSeo({ settings }) {
         },
     });
     const { register, setValue, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     return (
         <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Site SEO Settings</h1>
-                <p className="text-sm text-muted-foreground">Meta tags for search engine optimisation.</p>
+                <h1 className="text-2xl font-semibold">{t('Site SEO Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Meta tags for search engine optimisation.')}</p>
             </div>
 
             <form
@@ -39,10 +41,10 @@ function SiteSeo({ settings }) {
 
                     {/* Left: meta image */}
                     <Card>
-                        <CardHeader><CardTitle>Meta Image</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>{t('Meta Image')}</CardTitle></CardHeader>
                         <CardContent className="space-y-3">
                             <div className="space-y-1.5">
-                                <Label htmlFor="meta_seo_image">Meta Image</Label>
+                                <Label htmlFor="meta_seo_image">{t('Meta Image')}</Label>
                                 <Input id="meta_seo_image" type="file" accept="image/*" onChange={(e) => setValue('meta_seo_image', e.target.files?.[0] ?? null)} />
                             </div>
                             {settings?.meta_seo_image && (
@@ -57,26 +59,26 @@ function SiteSeo({ settings }) {
 
                     {/* Right: meta text fields */}
                     <Card>
-                        <CardHeader><CardTitle>SEO Meta Tags</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>{t('SEO Meta Tags')}</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="meta_seo_title">Meta Title</Label>
-                                <Input id="meta_seo_title" placeholder="Enter meta SEO title" {...register('meta_seo_title')} />
+                                <Label htmlFor="meta_seo_title">{t('Meta Title')}</Label>
+                                <Input id="meta_seo_title" placeholder={t('Enter meta SEO title')} {...register('meta_seo_title')} />
                                 {errors.meta_seo_title && <p className="text-sm text-destructive">{errors.meta_seo_title.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="meta_seo_keyword">Meta Keyword</Label>
-                                <Input id="meta_seo_keyword" placeholder="Enter meta SEO keyword" {...register('meta_seo_keyword')} />
+                                <Label htmlFor="meta_seo_keyword">{t('Meta Keyword')}</Label>
+                                <Input id="meta_seo_keyword" placeholder={t('Enter meta SEO keyword')} {...register('meta_seo_keyword')} />
                                 {errors.meta_seo_keyword && <p className="text-sm text-destructive">{errors.meta_seo_keyword.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="meta_seo_description">Meta Description</Label>
-                                <Textarea id="meta_seo_description" rows={3} placeholder="Enter meta SEO description" {...register('meta_seo_description')} />
+                                <Label htmlFor="meta_seo_description">{t('Meta Description')}</Label>
+                                <Textarea id="meta_seo_description" rows={3} placeholder={t('Enter meta SEO description')} {...register('meta_seo_description')} />
                                 {errors.meta_seo_description && <p className="text-sm text-destructive">{errors.meta_seo_description.message}</p>}
                             </div>
                             <div className="flex justify-end">
                                 <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Saving…' : 'Save'}
+                                    {isSubmitting ? t('Saving…') : t('Save')}
                                 </Button>
                             </div>
                         </CardContent>

@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -30,6 +31,7 @@ const PAYMENT_VARIANT = {
 };
 
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -41,14 +43,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             isFirst.current = false;
             return;
         }
-        const t = setTimeout(() => {
+        const timer = setTimeout(() => {
             router.get(
                 route('booking.index'),
                 search ? { search } : {},
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 300);
-        return () => clearTimeout(t);
+        return () => clearTimeout(timer);
     }, [search]);
 
     const [selected, setSelected] = useState([]);
@@ -66,14 +68,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     }
 
     function remove(id) {
-        if (window.confirm('Delete this booking?')) {
+        if (window.confirm(t('Delete this booking?'))) {
             router.delete(route('booking.destroy', id));
         }
     }
 
     function bulkDelete() {
         if (!selected.length) return;
-        if (!window.confirm(`Delete ${selected.length} selected booking(s)?`)) return;
+        if (!window.confirm(`${t('Delete')} ${selected.length} ${t('selected booking(s)?')}`)) return;
         router.post(route('booking.bulk-destroy'), { ids: selected });
     }
 
@@ -98,47 +100,47 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex flex-wrap items-center gap-2 justify-between">
-                <h1 className="text-2xl font-semibold">Bookings</h1>
+                <h1 className="text-2xl font-semibold">{t('Bookings')}</h1>
                 <div className="flex flex-wrap gap-2">
                     {selected.length > 0 && can('edit booking') && (
                         <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Mark as Paid ({selected.length})
+                            {t('Mark as Paid')} ({selected.length})
                         </Button>
                     )}
                     {selected.length > 0 && can('delete booking') && (
                         <Button variant="destructive" size="sm" onClick={bulkDelete}>
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Selected ({selected.length})
+                            {t('Delete Selected')} ({selected.length})
                         </Button>
                     )}
                     {can('create booking') && (
                         <>
                             <Button variant="outline" size="sm" asChild>
                                 <a href={route('booking.template')} target="_blank">
-                                    <Download className="mr-2 h-4 w-4" /> Template
+                                    <Download className="mr-2 h-4 w-4" /> {t('Template')}
                                 </a>
                             </Button>
                             <Dialog open={importOpen} onOpenChange={setImportOpen}>
                                 <DialogTrigger asChild>
                                     <Button variant="outline" size="sm">
-                                        <Upload className="mr-2 h-4 w-4" /> Import Excel
+                                        <Upload className="mr-2 h-4 w-4" /> {t('Import Excel')}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
-                                        <DialogTitle>Import Bookings from Excel</DialogTitle>
+                                        <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
                                     <form onSubmit={submitImport} className="space-y-4">
                                         <p className="text-sm text-muted-foreground">
-                                            Upload an .xlsx or .xls file. Download the{' '}
+                                            {t('Upload an .xlsx or .xls file. Download the')}{' '}
                                             <a href={route('booking.template')} target="_blank" className="underline">
-                                                template
+                                                {t('template')}
                                             </a>{' '}
-                                            to see the required format.
+                                            {t('to see the required format.')}
                                         </p>
                                         <div className="space-y-1">
-                                            <Label htmlFor="importFile">Excel File</Label>
+                                            <Label htmlFor="importFile">{t('Excel File')}</Label>
                                             <Input
                                                 id="importFile"
                                                 type="file"
@@ -148,15 +150,15 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                             />
                                         </div>
                                         <div className="text-xs text-muted-foreground bg-muted p-3 rounded">
-                                            <strong>Format attendu (10 colonnes):</strong><br />
+                                            <strong>{t('Format attendu (10 colonnes):')}</strong><br />
                                             NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
                                         </div>
                                         <div className="flex justify-end gap-2">
                                             <Button type="button" variant="outline" onClick={() => setImportOpen(false)}>
-                                                Cancel
+                                                {t('Cancel')}
                                             </Button>
                                             <Button type="submit">
-                                                <Upload className="mr-2 h-4 w-4" /> Import
+                                                <Upload className="mr-2 h-4 w-4" /> {t('Import')}
                                             </Button>
                                         </div>
                                     </form>
@@ -167,7 +169,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                     {can('manage vehicle') && (
                         <Button size="sm" asChild>
                             <Link href={route('booking.create')}>
-                                <Plus className="mr-2 h-4 w-4" /> Create Booking
+                                <Plus className="mr-2 h-4 w-4" /> {t('Create Booking')}
                             </Link>
                         </Button>
                     )}
@@ -177,14 +179,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle className="flex items-center gap-2">
-                        <Truck className="h-5 w-5" /> All Bookings
+                        <Truck className="h-5 w-5" /> {t('All Bookings')}
                     </CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search bookings…"
+                            placeholder={t('Search bookings…')}
                             className="pl-8"
                         />
                     </div>
@@ -196,20 +198,20 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                 {can('delete booking') && (
                                     <TableHead style={{ width: 32 }}>
                                         <Checkbox
-                                            aria-label="Select all bookings"
+                                            aria-label={t('Select all bookings')}
                                             onCheckedChange={(v) => toggleAll({ target: { checked: v === true } })}
                                             checked={selected.length === bookings.data.length && bookings.data.length > 0}
                                         />
                                     </TableHead>
                                 )}
-                                <TableHead>ID</TableHead>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Duration</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Payment</TableHead>
+                                <TableHead>{t('ID')}</TableHead>
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Duration')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead>{t('Payment')}</TableHead>
                                 {(can('edit booking') || can('delete booking') || can('show booking')) && (
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -217,7 +219,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             {bookings.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {search ? 'No bookings match your search' : 'No bookings yet'}
+                                        {search ? t('No bookings match your search') : t('No bookings yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -226,7 +228,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                     {can('delete booking') && (
                                         <TableCell>
                                             <Checkbox
-                                                aria-label={`Select booking ${b.booking_id}`}
+                                                aria-label={`${t('Select booking')} ${b.booking_id}`}
                                                 checked={selected.includes(b.id)}
                                                 onCheckedChange={() => toggleOne(b.id)}
                                             />
@@ -253,14 +255,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('booking.show', b.encrypted_id)} aria-label="View">
+                                                    <Link href={route('booking.show', b.encrypted_id)} aria-label={t('View')}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
                                             )}
                                             {can('edit booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('booking.edit', b.encrypted_id)} aria-label="Edit">
+                                                    <Link href={route('booking.edit', b.encrypted_id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -270,7 +272,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => remove(b.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                     className="text-destructive hover:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4" />

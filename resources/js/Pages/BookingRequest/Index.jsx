@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Eye, CheckCircle, XCircle, ClipboardList, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     pending:   'secondary',
@@ -15,17 +16,18 @@ const STATUS_VARIANT = {
 };
 
 function BookingRequestIndex({ bookingRequests = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     function confirm(id) {
-        if (window.confirm('Confirm this booking request?')) {
+        if (window.confirm(t('Confirm this booking request?'))) {
             router.post(route('booking_requests.approve', id));
         }
     }
 
     function refuse(id) {
-        if (window.confirm('Refuse this booking request?')) {
+        if (window.confirm(t('Refuse this booking request?'))) {
             router.post(route('booking_requests.refuse', id));
         }
     }
@@ -42,19 +44,19 @@ function BookingRequestIndex({ bookingRequests = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <ClipboardList className="h-6 w-6" /> Booking Requests
+                    <ClipboardList className="h-6 w-6" /> {t('Booking Requests')}
                 </h1>
             </div>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Requests</CardTitle>
+                    <CardTitle>{t('All Requests')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search requests…"
+                            placeholder={t('Search requests…')}
                             className="pl-8"
                         />
                     </div>
@@ -63,19 +65,19 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Guest</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Start</TableHead>
-                                <TableHead>End</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                                <TableHead>{t('Guest')}</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Start')}</TableHead>
+                                <TableHead>{t('End')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead className="text-right">{t('Action')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                                        {bookingRequests.length === 0 ? 'No booking requests yet' : 'No booking requests match your search'}
+                                        {bookingRequests.length === 0 ? t('No booking requests yet') : t('No booking requests match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -92,7 +94,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         <Button variant="ghost" size="icon" asChild>
-                                            <Link href={route('booking_requests.show', br.encrypted_id)} aria-label="View">
+                                            <Link href={route('booking_requests.show', br.encrypted_id)} aria-label={t('View')}>
                                                 <Eye className="h-4 w-4" />
                                             </Link>
                                         </Button>
@@ -101,7 +103,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                                 variant="ghost" size="icon"
                                                 className="text-green-600 hover:text-green-600"
                                                 onClick={() => confirm(br.id)}
-                                                aria-label="Confirm"
+                                                aria-label={t('Confirm')}
                                             >
                                                 <CheckCircle className="h-4 w-4" />
                                             </Button>
@@ -111,7 +113,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                                 variant="ghost" size="icon"
                                                 className="text-destructive hover:text-destructive"
                                                 onClick={() => refuse(br.id)}
-                                                aria-label="Refuse"
+                                                aria-label={t('Refuse')}
                                             >
                                                 <XCircle className="h-4 w-4" />
                                             </Button>

@@ -7,37 +7,39 @@ import {
 } from '@/components/ui/table';
 import { Trash2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function PermissionsIndex({ permissions }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const canDelete = auth.permissions.includes('delete permission');
 
     function remove(id) {
-        if (window.confirm('Delete this permission?')) {
+        if (window.confirm(t('Delete this permission?'))) {
             router.delete(route('permission.destroy', id));
         }
     }
 
     return (
         <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">Permissions</h1>
+            <h1 className="text-2xl font-semibold">{t('Permissions')}</h1>
 
             <Card>
-                <CardHeader><CardTitle>All permissions</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('All permissions')}</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Guard</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('Guard')}</TableHead>
+                                <TableHead className="text-right">{t('Actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {permissions.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                                        No permissions yet
+                                        {t('No permissions yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -51,7 +53,7 @@ function PermissionsIndex({ permissions }) {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => remove(p.id)}
-                                                aria-label="Delete"
+                                                aria-label={t('Delete')}
                                                 className="text-destructive hover:text-destructive"
                                             >
                                                 <Trash2 className="h-4 w-4" />

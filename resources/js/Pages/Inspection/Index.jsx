@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, ClipboardCheck, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection/index.blade.php.
 // Status / repair-status labels mirror Inspection::$status and
@@ -53,11 +54,12 @@ function repairStatusVariant(status) {
 }
 
 function InspectionIndex({ inspections = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     function remove(id) {
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm(t('Are you sure?'))) {
             router.delete(route('inspection.destroy', id));
         }
     }
@@ -77,12 +79,12 @@ function InspectionIndex({ inspections = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <ClipboardCheck className="h-6 w-6" /> Inspection
+                    <ClipboardCheck className="h-6 w-6" /> {t('Inspection')}
                 </h1>
                 {can('manage vehicle') && (
                     <Button size="sm" asChild>
                         <Link href={route('inspection.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Inspection
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Inspection')}
                         </Link>
                     </Button>
                 )}
@@ -90,13 +92,13 @@ function InspectionIndex({ inspections = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Inspections</CardTitle>
+                    <CardTitle>{t('All Inspections')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search inspections…"
+                            placeholder={t('Search inspections…')}
                             className="pl-8"
                         />
                     </div>
@@ -105,19 +107,19 @@ function InspectionIndex({ inspections = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Inspection Date</TableHead>
-                                <TableHead>Inspection By</TableHead>
-                                <TableHead>Inspection Status</TableHead>
-                                <TableHead>Repair Status</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Inspection Date')}</TableHead>
+                                <TableHead>{t('Inspection By')}</TableHead>
+                                <TableHead>{t('Inspection Status')}</TableHead>
+                                <TableHead>{t('Repair Status')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 6 : 5} className="text-center text-muted-foreground py-8">
-                                        {inspections.length === 0 ? 'No inspections yet' : 'No inspections match your search'}
+                                        {inspections.length === 0 ? t('No inspections yet') : t('No inspections match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -129,14 +131,14 @@ function InspectionIndex({ inspections = [] }) {
                                     <TableCell>
                                         {STATUS_LABELS[inspection.status] && (
                                             <Badge variant={statusVariant(inspection.status)}>
-                                                {STATUS_LABELS[inspection.status]}
+                                                {t(STATUS_LABELS[inspection.status])}
                                             </Badge>
                                         )}
                                     </TableCell>
                                     <TableCell>
                                         {REPAIR_STATUS_LABELS[inspection.repair_status] && (
                                             <Badge variant={repairStatusVariant(inspection.repair_status)}>
-                                                {REPAIR_STATUS_LABELS[inspection.repair_status]}
+                                                {t(REPAIR_STATUS_LABELS[inspection.repair_status])}
                                             </Badge>
                                         )}
                                     </TableCell>
@@ -144,14 +146,14 @@ function InspectionIndex({ inspections = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('show inspection') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('inspection.show', inspection.id_encrypted)} aria-label="Details">
+                                                    <Link href={route('inspection.show', inspection.id_encrypted)} aria-label={t('Details')}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
                                             )}
                                             {can('edit inspection') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('inspection.edit', inspection.id_encrypted)} aria-label="Edit">
+                                                    <Link href={route('inspection.edit', inspection.id_encrypted)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -162,7 +164,7 @@ function InspectionIndex({ inspections = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(inspection.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

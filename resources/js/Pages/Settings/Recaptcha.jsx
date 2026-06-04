@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     google_recaptcha: z.string().optional(),
@@ -21,6 +22,7 @@ function Recaptcha({ settings }) {
         },
     });
     const { register, watch, setValue, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     const enabled = watch('google_recaptcha') === 'on'
         ? true
@@ -29,12 +31,12 @@ function Recaptcha({ settings }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Google reCAPTCHA</h1>
-                <p className="text-sm text-muted-foreground">Protect public forms from spam bots.</p>
+                <h1 className="text-2xl font-semibold">{t('Google reCAPTCHA')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Protect public forms from spam bots.')}</p>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>reCAPTCHA Settings</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('reCAPTCHA Settings')}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('setting.google.recaptcha'))} className="space-y-4">
                         <div className="flex items-center gap-3">
@@ -42,24 +44,24 @@ function Recaptcha({ settings }) {
                                 defaultChecked={settings?.google_recaptcha === 'on'}
                                 onCheckedChange={(v) => setValue('google_recaptcha', v ? 'on' : 'off')}
                             />
-                            <Label className="cursor-pointer">Enable Google reCAPTCHA</Label>
+                            <Label className="cursor-pointer">{t('Enable Google reCAPTCHA')}</Label>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <Label htmlFor="recaptcha_key">Recaptcha Key</Label>
+                                <Label htmlFor="recaptcha_key">{t('Recaptcha Key')}</Label>
                                 <Input id="recaptcha_key" autoComplete="off" {...register('recaptcha_key')} />
                                 {errors.recaptcha_key && <p className="text-sm text-destructive">{errors.recaptcha_key.message}</p>}
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="recaptcha_secret">Recaptcha Secret</Label>
+                                <Label htmlFor="recaptcha_secret">{t('Recaptcha Secret')}</Label>
                                 <Input id="recaptcha_secret" autoComplete="off" {...register('recaptcha_secret')} />
                                 {errors.recaptcha_secret && <p className="text-sm text-destructive">{errors.recaptcha_secret.message}</p>}
                             </div>
                         </div>
 
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving…' : 'Save'}
+                            {isSubmitting ? t('Saving…') : t('Save')}
                         </Button>
                     </form>
                 </CardContent>

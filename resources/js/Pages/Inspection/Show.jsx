@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection/show.blade.php.
 // Status / repair-status labels mirror Inspection::$status and
@@ -53,51 +54,52 @@ function Detail({ label, children }) {
 }
 
 function InspectionShow({ inspection = {}, details = {} }) {
+    const t = useTranslation();
     const checklist = Object.values(details);
 
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Details</h1>
+                <h1 className="text-2xl font-semibold">{t('Details')}</h1>
                 <Button variant="outline" asChild>
-                    <Link href={route('inspection.index')}>Back</Link>
+                    <Link href={route('inspection.index')}>{t('Back')}</Link>
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <Card className="lg:col-span-1">
                     <CardHeader>
-                        <CardTitle>Inspection Details</CardTitle>
+                        <CardTitle>{t('Inspection Details')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-x-8">
-                            <Detail label="Vehicle">{inspection.vehicles?.name ?? '-'}</Detail>
-                            <Detail label="Inspection By">{inspection.inspector}</Detail>
-                            <Detail label="Inspection Date">{inspection.inspection_date_display ?? inspection.inspection_date ?? '-'}</Detail>
-                            <Detail label="Inspection Status">
+                            <Detail label={t('Vehicle')}>{inspection.vehicles?.name ?? '-'}</Detail>
+                            <Detail label={t('Inspection By')}>{inspection.inspector}</Detail>
+                            <Detail label={t('Inspection Date')}>{inspection.inspection_date_display ?? inspection.inspection_date ?? '-'}</Detail>
+                            <Detail label={t('Inspection Status')}>
                                 {STATUS_LABELS[inspection.status] && (
                                     <Badge variant={statusVariant(inspection.status)}>
-                                        {STATUS_LABELS[inspection.status]}
+                                        {t(STATUS_LABELS[inspection.status])}
                                     </Badge>
                                 )}
                             </Detail>
-                            <Detail label="Repair Status">
+                            <Detail label={t('Repair Status')}>
                                 {REPAIR_STATUS_LABELS[inspection.repair_status] && (
                                     <Badge variant={repairStatusVariant(inspection.repair_status)}>
-                                        {REPAIR_STATUS_LABELS[inspection.repair_status]}
+                                        {t(REPAIR_STATUS_LABELS[inspection.repair_status])}
                                     </Badge>
                                 )}
                             </Detail>
-                            <Detail label="Amount">{inspection.amount_formatted ?? inspection.amount}</Detail>
+                            <Detail label={t('Amount')}>{inspection.amount_formatted ?? inspection.amount}</Detail>
                             {inspection.receipt && (
-                                <Detail label="Receipt">
+                                <Detail label={t('Receipt')}>
                                     <a
                                         className="text-primary underline"
                                         href={`/storage/upload/expense/${inspection.receipt}`}
                                         target="_blank"
                                         rel="noreferrer"
                                     >
-                                        Receipt
+                                        {t('Receipt')}
                                     </a>
                                 </Detail>
                             )}
@@ -108,12 +110,12 @@ function InspectionShow({ inspection = {}, details = {} }) {
                 <div className="space-y-6 lg:col-span-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Incoming Details</CardTitle>
+                            <CardTitle>{t('Incoming Details')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-x-8">
-                                <Detail label="Date">{inspection.incoming_date_display ?? inspection.incoming_date ?? '-'}</Detail>
-                                <Detail label="Meter Reading (Km)">
+                                <Detail label={t('Date')}>{inspection.incoming_date_display ?? inspection.incoming_date ?? '-'}</Detail>
+                                <Detail label={t('Meter Reading (Km)')}>
                                     {inspection.meter_reading_incoming ? inspection.meter_reading_incoming : '-'}
                                 </Detail>
                             </div>
@@ -122,7 +124,7 @@ function InspectionShow({ inspection = {}, details = {} }) {
                     {inspection.notes && (
                         <Card>
                             <CardHeader>
-                                <Detail label="Notes">{inspection.notes}</Detail>
+                                <Detail label={t('Notes')}>{inspection.notes}</Detail>
                             </CardHeader>
                         </Card>
                     )}
@@ -131,7 +133,7 @@ function InspectionShow({ inspection = {}, details = {} }) {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Inspections Checklist</CardTitle>
+                    <CardTitle>{t('Inspections Checklist')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

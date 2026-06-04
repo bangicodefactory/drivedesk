@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection_type/create.blade.php.
 // Field name matches the Blade form 1:1 (type). Posts to
@@ -17,6 +18,7 @@ const schema = z.object({
 });
 
 function InspectionTypeCreate() {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: { type: '' },
     });
@@ -26,23 +28,23 @@ function InspectionTypeCreate() {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Create Type</CardTitle>
+                    <CardTitle>{t('Create Type')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('inspection-type.store'))}>
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="type">Type</Label>
-                                <Input id="type" placeholder="Enter type" {...register('type')} />
+                                <Label htmlFor="type">{t('Type')}</Label>
+                                <Input id="type" placeholder={t('Enter type')} {...register('type')} />
                                 {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('inspection-type.index')}>Close</Link>
+                                <Link href={route('inspection-type.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Create</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -51,10 +53,12 @@ function InspectionTypeCreate() {
     );
 }
 
-InspectionTypeCreate.layout = (page) => (
-    <AdminLayout breadcrumbs={[
-        { label: 'Inspection Type', href: route('inspection-type.index') },
-        { label: 'Create' },
-    ]}>{page}</AdminLayout>
-);
+InspectionTypeCreate.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[
+            { label: 'Inspection Type', href: route('inspection-type.index') },
+            { label: 'Create' },
+        ]}>{page}</AdminLayout>
+    );
+};
 export default InspectionTypeCreate;

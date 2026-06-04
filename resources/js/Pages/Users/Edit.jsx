@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     name:      z.string().min(1, 'Name is required'),
@@ -20,6 +21,7 @@ const schema = z.object({
 });
 
 function UsersEdit({ user, userRoles = [] }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             name:      user?.name  ?? '',
@@ -32,32 +34,32 @@ function UsersEdit({ user, userRoles = [] }) {
 
     return (
         <div className="max-w-2xl space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">Edit user</h1>
+            <h1 className="text-2xl font-semibold">{t('Edit user')}</h1>
 
             <Card>
                 <CardHeader><CardTitle>{user?.name}</CardTitle></CardHeader>
                 <CardContent>
                     <form onSubmit={submit('put', route('users.update', user.id))} className="space-y-4">
                         <div className="space-y-1.5">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">{t('Name')}</Label>
                             <Input id="name" {...register('name')} />
                             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input id="email" type="email" {...register('email')} />
                             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="role">Role</Label>
+                            <Label htmlFor="role">{t('Role')}</Label>
                             <Controller
                                 name="role"
                                 control={control}
                                 render={({ field }) => (
                                     <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                        <SelectTrigger id="role"><SelectValue placeholder={t('Select a role')} /></SelectTrigger>
                                         <SelectContent>
                                             {userRoles.map((r) => (
                                                 <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
@@ -77,15 +79,15 @@ function UsersEdit({ user, userRoles = [] }) {
                                     <Switch id="is_active" checked={field.value} onCheckedChange={field.onChange} />
                                 )}
                             />
-                            <Label htmlFor="is_active" className="cursor-pointer">Active</Label>
+                            <Label htmlFor="is_active" className="cursor-pointer">{t('Active')}</Label>
                         </div>
 
                         <div className="flex gap-2">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving…' : 'Save changes'}
+                                {isSubmitting ? t('Saving…') : t('Save changes')}
                             </Button>
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('users.index')}>Cancel</Link>
+                                <Link href={route('users.index')}>{t('Cancel')}</Link>
                             </Button>
                         </div>
                     </form>

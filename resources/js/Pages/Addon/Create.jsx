@@ -9,6 +9,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/addon/create.blade.php.
 // Field names match the Blade form 1:1 (name, price, billing_type). Posts to
@@ -24,6 +25,7 @@ const schema = z.object({
 });
 
 function AddonCreate({ billingType = {} }) {
+    const t = useTranslation();
     const entries = Object.entries(billingType);
     const firstKey = entries.length ? entries[0][0] : '';
 
@@ -37,26 +39,26 @@ function AddonCreate({ billingType = {} }) {
         <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Create Addon</CardTitle>
+                    <CardTitle>{t('Create Addon')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit('post', route('addon.store'))}>
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="name">Addon</Label>
-                                <Input id="name" placeholder="Enter addon name" {...register('name')} />
+                                <Label htmlFor="name">{t('Addon')}</Label>
+                                <Input id="name" placeholder={t('Enter addon name')} {...register('name')} />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="price">Price</Label>
-                                <Input id="price" type="number" placeholder="Enter price" {...register('price')} />
+                                <Label htmlFor="price">{t('Price')}</Label>
+                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} />
                                 {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="billing_type">Billing Type</Label>
+                                <Label htmlFor="billing_type">{t('Billing Type')}</Label>
                                 <Select value={selectedBilling} onValueChange={(v) => setValue('billing_type', v)}>
                                     <SelectTrigger id="billing_type">
-                                        <SelectValue placeholder="Select billing type" />
+                                        <SelectValue placeholder={t('Select billing type')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {entries.map(([value, label]) => (
@@ -70,9 +72,9 @@ function AddonCreate({ billingType = {} }) {
 
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="ghost" type="button" asChild>
-                                <Link href={route('addon.index')}>Close</Link>
+                                <Link href={route('addon.index')}>{t('Close')}</Link>
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>Create</Button>
+                            <Button type="submit" disabled={isSubmitting}>{t('Create')}</Button>
                         </div>
                     </form>
                 </CardContent>

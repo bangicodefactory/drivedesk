@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     pending:   'secondary',
@@ -12,17 +13,18 @@ const STATUS_VARIANT = {
 };
 
 function BookingRequestShow({ booking }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     function confirm() {
-        if (window.confirm('Confirm this booking request?')) {
+        if (window.confirm(t('Confirm this booking request?'))) {
             router.post(route('booking_requests.approve', booking.id));
         }
     }
 
     function refuse() {
-        if (window.confirm('Refuse this booking request?')) {
+        if (window.confirm(t('Refuse this booking request?'))) {
             router.post(route('booking_requests.refuse', booking.id));
         }
     }
@@ -33,7 +35,7 @@ function BookingRequestShow({ booking }) {
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={route('booking_requests.index')}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
-                <h1 className="text-2xl font-semibold">Booking Request #{booking.id}</h1>
+                <h1 className="text-2xl font-semibold">{t('Booking Request')} #{booking.id}</h1>
                 <Badge variant={STATUS_VARIANT[booking.status] ?? 'secondary'}>{booking.status}</Badge>
             </div>
 
@@ -41,12 +43,12 @@ function BookingRequestShow({ booking }) {
                 <div className="flex gap-2">
                     {can('create booking') && (
                         <Button onClick={confirm} className="gap-2">
-                            <CheckCircle className="h-4 w-4" /> Confirm
+                            <CheckCircle className="h-4 w-4" /> {t('Confirm')}
                         </Button>
                     )}
                     {can('delete booking') && (
                         <Button variant="destructive" onClick={refuse} className="gap-2">
-                            <XCircle className="h-4 w-4" /> Refuse
+                            <XCircle className="h-4 w-4" /> {t('Refuse')}
                         </Button>
                     )}
                 </div>
@@ -54,35 +56,35 @@ function BookingRequestShow({ booking }) {
 
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
-                    <CardHeader><CardTitle>Guest</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Guest')}</CardTitle></CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span>{booking.guest_name}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{booking.guest_email}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span>{booking.guest_phone ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Name')}</span><span>{booking.guest_name}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Email')}</span><span>{booking.guest_email}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Phone')}</span><span>{booking.guest_phone ?? '—'}</span></div>
                     </CardContent>
                 </Card>
 
                 <Card>
-                    <CardHeader><CardTitle>Vehicle</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Vehicle')}</CardTitle></CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Car</span><span>{booking.car_name}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Daily Rate</span><span>{booking.daily_rate} Dh</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Car')}</span><span>{booking.car_name}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Daily Rate')}</span><span>{booking.daily_rate} Dh</span></div>
                     </CardContent>
                 </Card>
 
                 <Card>
-                    <CardHeader><CardTitle>Rental Period</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('Rental Period')}</CardTitle></CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Start</span><span>{booking.start_date} {booking.start_time}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">End</span><span>{booking.end_date} {booking.end_time}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Pickup</span><span>{booking.pickup_place ?? '—'}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Drop-off</span><span>{booking.dropoff_place ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Start')}</span><span>{booking.start_date} {booking.start_time}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('End')}</span><span>{booking.end_date} {booking.end_time}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Pickup')}</span><span>{booking.pickup_place ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Drop-off')}</span><span>{booking.dropoff_place ?? '—'}</span></div>
                     </CardContent>
                 </Card>
 
                 {booking.notes && (
                     <Card>
-                        <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>{t('Notes')}</CardTitle></CardHeader>
                         <CardContent><p className="text-sm">{booking.notes}</p></CardContent>
                     </Card>
                 )}

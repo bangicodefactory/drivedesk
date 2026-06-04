@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, ListChecks, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection_type/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -15,6 +16,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // Gate::check('manage inspection type') guards. Prop name `types` matches the
 // controller compact('types').
 function InspectionTypeIndex({ types = [] }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -37,12 +39,12 @@ function InspectionTypeIndex({ types = [] }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <ListChecks className="h-6 w-6" /> Inspection Type
+                    <ListChecks className="h-6 w-6" /> {t('Inspection Type')}
                 </h1>
                 {can('manage inspection type') && (
                     <Button size="sm" asChild>
                         <Link href={route('inspection-type.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Type
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
                         </Link>
                     </Button>
                 )}
@@ -50,13 +52,13 @@ function InspectionTypeIndex({ types = [] }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Inspection Types</CardTitle>
+                    <CardTitle>{t('All Inspection Types')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search types…"
+                            placeholder={t('Search types…')}
                             className="pl-8"
                         />
                     </div>
@@ -65,15 +67,15 @@ function InspectionTypeIndex({ types = [] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Type</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Type')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 2 : 1} className="text-center text-muted-foreground py-8">
-                                        {types.length === 0 ? 'No inspection types yet' : 'No types match your search'}
+                                        {types.length === 0 ? t('No inspection types yet') : t('No types match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -84,7 +86,7 @@ function InspectionTypeIndex({ types = [] }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit inspection type') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('inspection-type.edit', type.id)} aria-label="Edit">
+                                                    <Link href={route('inspection-type.edit', type.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -95,7 +97,7 @@ function InspectionTypeIndex({ types = [] }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(type.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -112,7 +114,9 @@ function InspectionTypeIndex({ types = [] }) {
     );
 }
 
-InspectionTypeIndex.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Inspection Type' }]}>{page}</AdminLayout>
-);
+InspectionTypeIndex.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[{ label: 'Inspection Type' }]}>{page}</AdminLayout>
+    );
+};
 export default InspectionTypeIndex;

@@ -5,6 +5,7 @@ import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const resetSchema = z.object({
     token:                 z.string(),
@@ -17,6 +18,7 @@ const resetSchema = z.object({
 });
 
 function ResetPassword({ token, email }) {
+    const t = useTranslation();
     const { form, submit } = useZodForm(resetSchema, {
         defaultValues: { token: token ?? '', email: email ?? '', password: '', password_confirmation: '' },
     });
@@ -26,8 +28,8 @@ function ResetPassword({ token, email }) {
         <div className="flex min-h-[80vh] items-center justify-center px-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Reset password</CardTitle>
-                    <CardDescription>Enter your new password below.</CardDescription>
+                    <CardTitle className="text-2xl">{t('Reset password')}</CardTitle>
+                    <CardDescription>{t('Enter your new password below.')}</CardDescription>
                 </CardHeader>
 
                 <CardContent>
@@ -41,7 +43,7 @@ function ResetPassword({ token, email }) {
                         )}
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -52,7 +54,7 @@ function ResetPassword({ token, email }) {
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password">New password</Label>
+                            <Label htmlFor="password">{t('New password')}</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -64,7 +66,7 @@ function ResetPassword({ token, email }) {
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password_confirmation">Confirm new password</Label>
+                            <Label htmlFor="password_confirmation">{t('Confirm new password')}</Label>
                             <Input
                                 id="password_confirmation"
                                 type="password"
@@ -75,7 +77,7 @@ function ResetPassword({ token, email }) {
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? 'Resetting…' : 'Reset password'}
+                            {isSubmitting ? t('Resetting…') : t('Reset password')}
                         </Button>
                     </form>
                 </CardContent>

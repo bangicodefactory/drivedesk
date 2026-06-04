@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const schema = z.object({
     name:    z.string().min(1, 'Name is required').max(255),
@@ -20,18 +21,19 @@ function Account({ loginUser }) {
         },
     });
     const { register, setValue, formState: { errors, isSubmitting } } = form;
+    const t = useTranslation();
 
     return (
         <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">Account Settings</h1>
-                <p className="text-sm text-muted-foreground">Update your profile information.</p>
+                <h1 className="text-2xl font-semibold">{t('Account Settings')}</h1>
+                <p className="text-sm text-muted-foreground">{t('Update your profile information.')}</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Profile</CardTitle>
-                    <CardDescription>Your name, email address and profile picture.</CardDescription>
+                    <CardTitle>{t('Profile')}</CardTitle>
+                    <CardDescription>{t('Your name, email address and profile picture.')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -41,20 +43,20 @@ function Account({ loginUser }) {
                     >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" placeholder="Enter your name" autoComplete="name" {...register('name')} />
+                                <Label htmlFor="name">{t('Name')}</Label>
+                                <Input id="name" placeholder={t('Enter your name')} autoComplete="name" {...register('name')} />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" placeholder="Enter your email" autoComplete="email" {...register('email')} />
+                                <Label htmlFor="email">{t('Email Address')}</Label>
+                                <Input id="email" type="email" placeholder={t('Enter your email')} autoComplete="email" {...register('email')} />
                                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="profile">Profile</Label>
+                            <Label htmlFor="profile">{t('Profile')}</Label>
                             <Input
                                 id="profile"
                                 type="file"
@@ -66,7 +68,7 @@ function Account({ loginUser }) {
 
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving…' : 'Save'}
+                                {isSubmitting ? t('Saving…') : t('Save')}
                             </Button>
                         </div>
                     </form>

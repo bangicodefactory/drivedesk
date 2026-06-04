@@ -11,6 +11,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Port of resources/views/inspection/edit.blade.php.
 // Submits multipart PUT to route('inspection.update') via a spoofed _method=PUT
@@ -39,6 +40,7 @@ const str = (v) => (v != null ? String(v) : '');
 function InspectionEdit({
     inspection = {}, vehicles = {}, status = {}, repairStatus = {}, types = [], details = {},
 }) {
+    const t = useTranslation();
     // Rebuild the nested types[id] map from `details`. The Blade checkbox is
     // checked when details[id]['type'] is non-empty; carry the same flag as 'on'.
     const initialTypes = {};
@@ -83,18 +85,18 @@ function InspectionEdit({
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Inspection Details</CardTitle>
+                            <CardTitle>{t('Inspection Details')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="vehicle">Vehicle</Label>
+                                    <Label htmlFor="vehicle">{t('Vehicle')}</Label>
                                     <Controller
                                         name="vehicle"
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="vehicle"><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
+                                                <SelectTrigger id="vehicle"><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(vehicles).filter(([k]) => k !== '').map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -107,25 +109,25 @@ function InspectionEdit({
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="inspector">Inspection By</Label>
+                                    <Label htmlFor="inspector">{t('Inspection By')}</Label>
                                     <Input id="inspector" {...register('inspector')} />
                                     {errors.inspector && <p className="text-sm text-destructive">{errors.inspector.message}</p>}
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="inspection_date">Inspection Date</Label>
+                                    <Label htmlFor="inspection_date">{t('Inspection Date')}</Label>
                                     <Input id="inspection_date" type="date" {...register('inspection_date')} />
                                     {errors.inspection_date && <p className="text-sm text-destructive">{errors.inspection_date.message}</p>}
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="status">Inspection Status</Label>
+                                    <Label htmlFor="status">{t('Inspection Status')}</Label>
                                     <Controller
                                         name="status"
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="status"><SelectValue placeholder="Inspection Status" /></SelectTrigger>
+                                                <SelectTrigger id="status"><SelectValue placeholder={t('Inspection Status')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(status).map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -138,13 +140,13 @@ function InspectionEdit({
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="repair_status">Repair Status</Label>
+                                    <Label htmlFor="repair_status">{t('Repair Status')}</Label>
                                     <Controller
                                         name="repair_status"
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="repair_status"><SelectValue placeholder="Repair Status" /></SelectTrigger>
+                                                <SelectTrigger id="repair_status"><SelectValue placeholder={t('Repair Status')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(repairStatus).map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -157,8 +159,8 @@ function InspectionEdit({
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="notes">Notes</Label>
-                                    <Textarea id="notes" placeholder="Enter notes" rows={2} {...register('notes')} />
+                                    <Label htmlFor="notes">{t('Notes')}</Label>
+                                    <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} />
                                 </div>
                             </div>
                         </CardContent>
@@ -169,12 +171,12 @@ function InspectionEdit({
                             <CardContent className="pt-6">
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="amount">Amount</Label>
-                                        <Input id="amount" type="number" placeholder="Enter amount" {...register('amount')} />
+                                        <Label htmlFor="amount">{t('Amount')}</Label>
+                                        <Input id="amount" type="number" placeholder={t('Enter amount')} {...register('amount')} />
                                         {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="receipt">Receipt</Label>
+                                        <Label htmlFor="receipt">{t('Receipt')}</Label>
                                         <Input id="receipt" type="file" onChange={(e) => setValue('receipt', e.target.files?.[0] ?? null)} />
                                     </div>
                                 </div>
@@ -183,21 +185,21 @@ function InspectionEdit({
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Incoming Details</CardTitle>
+                                <CardTitle>{t('Incoming Details')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="incoming_date">Date</Label>
+                                        <Label htmlFor="incoming_date">{t('Date')}</Label>
                                         <Input id="incoming_date" type="date" {...register('incoming_date')} />
                                         {errors.incoming_date && <p className="text-sm text-destructive">{errors.incoming_date.message}</p>}
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="meter_reading_incoming">Meter Reading (km)</Label>
+                                        <Label htmlFor="meter_reading_incoming">{t('Meter Reading (km)')}</Label>
                                         <Input
                                             id="meter_reading_incoming"
                                             type="number"
-                                            placeholder="Enter meter reading incoming (km)"
+                                            placeholder={t('Enter meter reading incoming (km)')}
                                             {...register('meter_reading_incoming')}
                                         />
                                         {errors.meter_reading_incoming && <p className="text-sm text-destructive">{errors.meter_reading_incoming.message}</p>}
@@ -210,7 +212,7 @@ function InspectionEdit({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Inspections Checklist</CardTitle>
+                        <CardTitle>{t('Inspections Checklist')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -225,7 +227,7 @@ function InspectionEdit({
                                         />
                                         <Input
                                             type="text"
-                                            placeholder="Enter notes"
+                                            placeholder={t('Enter notes')}
                                             autoComplete="off"
                                             value={checklist[type.id]?.note ?? ''}
                                             onChange={(e) => setChecklist(type.id, 'note', e.target.value)}
@@ -239,9 +241,9 @@ function InspectionEdit({
 
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" type="button" asChild>
-                        <Link href={route('inspection.index')}>Close</Link>
+                        <Link href={route('inspection.index')}>{t('Close')}</Link>
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>Update</Button>
+                    <Button type="submit" disabled={isSubmitting}>{t('Update')}</Button>
                 </div>
             </form>
         </div>

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, FileText, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
     draft: 'secondary',
@@ -20,13 +21,14 @@ const STATUS_VARIANT = {
 };
 
 function RentalAgreementIndex({ agreements, statuses }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
 
     function remove(id) {
-        if (window.confirm('Delete this rental agreement?')) {
+        if (window.confirm(t('Delete this rental agreement?'))) {
             router.delete(route('rental-agreement.destroy', id));
         }
     }
@@ -42,11 +44,11 @@ function RentalAgreementIndex({ agreements, statuses }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Rental Agreements</h1>
+                <h1 className="text-2xl font-semibold">{t('Rental Agreements')}</h1>
                 {can('manage rental agreement') && (
                     <Button size="sm" asChild>
                         <Link href={route('rental-agreement.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Agreement
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Agreement')}
                         </Link>
                     </Button>
                 )}
@@ -55,14 +57,14 @@ function RentalAgreementIndex({ agreements, statuses }) {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" /> All Agreements
+                        <FileText className="h-5 w-5" /> {t('All Agreements')}
                     </CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search agreements…"
+                            placeholder={t('Search agreements…')}
                             className="pl-8"
                         />
                     </div>
@@ -71,16 +73,16 @@ function RentalAgreementIndex({ agreements, statuses }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Driver</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Start</TableHead>
-                                <TableHead>End</TableHead>
-                                <TableHead>Duration</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>{t('ID')}</TableHead>
+                                <TableHead>{t('Driver')}</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                <TableHead>{t('Start')}</TableHead>
+                                <TableHead>{t('End')}</TableHead>
+                                <TableHead>{t('Duration')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
                                 {(can('edit rental agreement') || can('delete rental agreement') || can('show rental agreement')) && (
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -88,7 +90,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                                        {agreements.length === 0 ? 'No rental agreements yet' : 'No rental agreements match your search'}
+                                        {agreements.length === 0 ? t('No rental agreements yet') : t('No rental agreements match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -100,7 +102,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
                                     <TableCell>{a.date}</TableCell>
                                     <TableCell>{a.rental_start_date}</TableCell>
                                     <TableCell>{a.rental_end_date}</TableCell>
-                                    <TableCell>{a.rental_duration} Days</TableCell>
+                                    <TableCell>{a.rental_duration} {t('Days')}</TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[a.status] ?? 'secondary'}>
                                             {statusLabel(a.status)}
@@ -110,14 +112,14 @@ function RentalAgreementIndex({ agreements, statuses }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('show rental agreement') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('rental-agreement.show', a.encrypted_id)} aria-label="View">
+                                                    <Link href={route('rental-agreement.show', a.encrypted_id)} aria-label={t('View')}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
                                             )}
                                             {can('edit rental agreement') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('rental-agreement.edit', a.id)} aria-label="Edit">
+                                                    <Link href={route('rental-agreement.edit', a.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -128,7 +130,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
                                                     size="icon"
                                                     onClick={() => remove(a.id)}
                                                     className="text-destructive hover:text-destructive"
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

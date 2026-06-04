@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Pencil, Trash2, Plus, Bell, CheckCircle, Clock, AlertTriangle, XCircle, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function statusVariant(status) {
     if (status === 'overdue') return 'destructive';
@@ -19,6 +20,7 @@ function statusVariant(status) {
 }
 
 function ReminderIndex({ reminders = [], stats = {} }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -53,12 +55,12 @@ function ReminderIndex({ reminders = [], stats = {} }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Bell className="h-6 w-6" /> Reminders
+                    <Bell className="h-6 w-6" /> {t('Reminders')}
                 </h1>
                 {can('create reminder') && (
                     <Button size="sm" asChild>
                         <Link href={route('reminder.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Reminder
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Reminder')}
                         </Link>
                     </Button>
                 )}
@@ -71,7 +73,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             <XCircle className="h-8 w-8 text-destructive" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.overdue ?? 0}</p>
-                                <p className="text-sm text-muted-foreground">Overdue</p>
+                                <p className="text-sm text-muted-foreground">{t('Overdue')}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -82,7 +84,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             <AlertTriangle className="h-8 w-8 text-orange-500" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.urgent ?? 0}</p>
-                                <p className="text-sm text-muted-foreground">Urgent</p>
+                                <p className="text-sm text-muted-foreground">{t('Urgent')}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -93,7 +95,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             <Clock className="h-8 w-8 text-blue-500" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.upcoming ?? 0}</p>
-                                <p className="text-sm text-muted-foreground">Upcoming</p>
+                                <p className="text-sm text-muted-foreground">{t('Upcoming')}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -104,7 +106,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             <CheckCircle className="h-8 w-8 text-green-500" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.completed ?? 0}</p>
-                                <p className="text-sm text-muted-foreground">Completed</p>
+                                <p className="text-sm text-muted-foreground">{t('Completed')}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -113,13 +115,13 @@ function ReminderIndex({ reminders = [], stats = {} }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Reminders</CardTitle>
+                    <CardTitle>{t('All Reminders')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search reminders…"
+                            placeholder={t('Search reminders…')}
                             className="pl-8"
                         />
                     </div>
@@ -128,20 +130,20 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Reminder Date</TableHead>
-                                <TableHead>Days</TableHead>
-                                <TableHead>Status</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Name')}</TableHead>
+                                <TableHead>{t('Type')}</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Reminder Date')}</TableHead>
+                                <TableHead>{t('Days')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 7 : 6} className="text-center text-muted-foreground py-8">
-                                        {reminders.length === 0 ? 'No reminders yet' : 'No reminders match your search'}
+                                        {reminders.length === 0 ? t('No reminders yet') : t('No reminders match your search')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -168,8 +170,8 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => markComplete(reminder.id)}
-                                                    aria-label="Mark complete"
-                                                    title="Mark as completed"
+                                                    aria-label={t('Mark complete')}
+                                                    title={t('Mark as completed')}
                                                 >
                                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                                 </Button>
@@ -179,15 +181,15 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => snooze(reminder.id)}
-                                                    aria-label="Snooze"
-                                                    title="Snooze"
+                                                    aria-label={t('Snooze')}
+                                                    title={t('Snooze')}
                                                 >
                                                     <Clock className="h-4 w-4 text-blue-600" />
                                                 </Button>
                                             )}
                                             {can('edit reminder') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('reminder.edit', reminder.id)} aria-label="Edit">
+                                                    <Link href={route('reminder.edit', reminder.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -198,7 +200,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(reminder.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

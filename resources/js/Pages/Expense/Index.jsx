@@ -9,8 +9,10 @@ import {
 import { Pencil, Trash2, Plus, Receipt, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
+    const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -33,7 +35,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
     }, [search]);
 
     function remove(id) {
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm(t('Are you sure?'))) {
             router.delete(route('expense.destroy', id));
         }
     }
@@ -44,12 +46,12 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
-                    <Receipt className="h-6 w-6" /> Expenses
+                    <Receipt className="h-6 w-6" /> {t('Expenses')}
                 </h1>
                 {can('create expense') && (
                     <Button size="sm" asChild>
                         <Link href={route('expense.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> Create Expense
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Expense')}
                         </Link>
                     </Button>
                 )}
@@ -57,13 +59,13 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>All Expenses</CardTitle>
+                    <CardTitle>{t('All Expenses')}</CardTitle>
                     <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search expenses…"
+                            placeholder={t('Search expenses…')}
                             className="pl-8"
                         />
                     </div>
@@ -72,20 +74,20 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Receipt</TableHead>
-                                {showActions && <TableHead className="text-right">Action</TableHead>}
+                                <TableHead>{t('Title')}</TableHead>
+                                <TableHead>{t('Type')}</TableHead>
+                                <TableHead>{t('Vehicle')}</TableHead>
+                                <TableHead>{t('Date')}</TableHead>
+                                <TableHead>{t('Amount')}</TableHead>
+                                <TableHead>{t('Receipt')}</TableHead>
+                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {expenses.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={showActions ? 7 : 6} className="text-center text-muted-foreground py-8">
-                                        {search ? 'No expenses match your search' : 'No expenses yet'}
+                                        {search ? t('No expenses match your search') : t('No expenses yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -104,7 +106,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                                 rel="noreferrer"
                                                 className="text-primary underline text-sm"
                                             >
-                                                View
+                                                {t('View')}
                                             </a>
                                         ) : '—'}
                                     </TableCell>
@@ -112,7 +114,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                         <TableCell className="text-right space-x-1">
                                             {can('edit expense') && (
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={route('expense.edit', expense.id)} aria-label="Edit">
+                                                    <Link href={route('expense.edit', expense.id)} aria-label={t('Edit')}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -123,7 +125,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => remove(expense.id)}
-                                                    aria-label="Delete"
+                                                    aria-label={t('Delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -141,7 +143,9 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
     );
 }
 
-ExpenseIndex.layout = (page) => (
-    <AdminLayout breadcrumbs={[{ label: 'Expenses' }]}>{page}</AdminLayout>
-);
+ExpenseIndex.layout = (page) => {
+    return (
+        <AdminLayout breadcrumbs={[{ label: 'Expenses' }]}>{page}</AdminLayout>
+    );
+};
 export default ExpenseIndex;
