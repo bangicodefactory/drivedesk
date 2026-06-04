@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const schema = z.object({
@@ -71,19 +72,21 @@ function ExpenseCreate({ vehicles = {}, types = {} }) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="vehicle">Vehicle</Label>
+                                <Label>Vehicle</Label>
                                 <Controller
                                     name="vehicle"
                                     control={control}
                                     render={({ field }) => (
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="vehicle"><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
-                                            <SelectContent>
-                                                {Object.entries(vehicles).filter(([k]) => k !== '').map(([k, label]) => (
-                                                    <SelectItem key={k} value={String(k)}>{label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <SearchableSelect
+                                            options={Object.entries(vehicles)
+                                                .filter(([k]) => k !== '')
+                                                .map(([k, label]) => ({ value: k, label }))}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Select Vehicle"
+                                            searchPlaceholder="Search vehicle…"
+                                            ariaLabel="Vehicle"
+                                        />
                                     )}
                                 />
                             </div>
