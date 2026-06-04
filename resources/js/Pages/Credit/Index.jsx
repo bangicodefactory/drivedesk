@@ -11,7 +11,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const STATUS_VARIANT = {
-    'payé': 'outline',
+    'payé': 'success',
     'non payé': 'destructive',
 };
 

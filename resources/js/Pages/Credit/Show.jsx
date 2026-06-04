@@ -7,7 +7,7 @@ import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const STATUS_VARIANT = { 'payé': 'outline', 'non payé': 'destructive' };
+const STATUS_VARIANT = { 'payé': 'success', 'non payé': 'destructive' };
 
 function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth }) {
     const t = useTranslation();
