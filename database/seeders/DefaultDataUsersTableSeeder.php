@@ -391,6 +391,28 @@ class DefaultDataUsersTableSeeder extends Seeder
                     'name' => 'manage tva report',
                     'guard_name' => 'web',
                 ],
+                // Pricing permissions — referenced by the super-admin role below;
+                // must exist in the master list or givePermissionTo() throws.
+                [
+                    'name' => 'manage pricing packages',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'create pricing packages',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'edit pricing packages',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'delete pricing packages',
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' => 'manage pricing transation',
+                    'guard_name' => 'web',
+                ],
             ];
             Permission::insert($allPermission);
 
