@@ -117,7 +117,7 @@ function CreditIndex({ credits = [], drivers = [] }) {
                                     <TableCell>{Number(credit.amount).toFixed(2)} Dh</TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[credit.status] ?? 'secondary'}>
-                                            {credit.status}
+                                            {t(credit.status)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{credit.credit_date ?? '—'}</TableCell>

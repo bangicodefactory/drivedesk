@@ -53,7 +53,7 @@ function CreditCreate({ drivers = [], statuses = {} }) {
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {Object.entries(statuses).map(([val, label]) => (
-                                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                                        <SelectItem key={val} value={val}>{t(label)}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
