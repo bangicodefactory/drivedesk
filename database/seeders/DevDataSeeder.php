@@ -16,6 +16,7 @@ use App\Models\Place;
 use App\Models\Reminder;
 use App\Models\ReminderType;
 use App\Models\RentalAgreement;
+use App\Models\Tva;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
@@ -60,6 +61,7 @@ class DevDataSeeder extends Seeder
                           $this->seedReminders($vehicleIds, $remTypeIds);
                           $this->seedRentalAgreements($vehicleIds, $driverUserIds);
                           $this->seedCredits($driverUserIds);
+                          $this->seedTva();
 
         $this->command->info('Dev data seeding complete.');
     }
@@ -588,5 +590,72 @@ class DevDataSeeder extends Seeder
             );
         }
         $this->command->info('  Credits: ' . count($credits));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TVA invoices (powers the TVA Report page)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private function seedTva(): void
+    {
+        // TVA report defaults to the current year. Seed a full year of invoices
+        // across all 12 months + a couple in the prior year (so the year filter
+        // has more than one option). 20% VAT (Morocco standard).
+        $year     = now()->year;
+        $prevYear = $year - 1;
+
+        $clients = ['Ahmed Benali', 'Fatima Zahra', 'Youssef El Amrani', 'Société Atlas SARL', 'Hassan Idrissi'];
+        $cars    = ['Toyota RAV4', 'Dacia Duster', 'Renault Clio', 'Mercedes GLE', 'Peugeot 208', 'Volkswagen T-Roc', 'Ford Transit'];
+
+        // [year, month, day, client idx, car idx, rental days, daily rate HT]
+        $invoices = [
+            [$year, 1, 12, 0, 0, 5, 350], [$year, 2, 8, 1, 1, 7, 220], [$year, 2, 22, 4, 2, 3, 180],
+            [$year, 3, 5, 2, 3, 4, 700], [$year, 4, 15, 0, 4, 6, 160], [$year, 5, 3, 3, 0, 10, 350],
+            [$year, 5, 27, 1, 5, 2, 380], [$year, 6, 11, 4, 1, 5, 220], [$year, 7, 9, 2, 6, 8, 450],
+            [$year, 8, 1, 0, 2, 3, 180], [$year, 9, 19, 3, 3, 4, 700], [$year, 10, 6, 1, 4, 6, 160],
+            [$year, 10, 24, 4, 0, 5, 350], [$year, 11, 14, 2, 5, 7, 380], [$year, 12, 2, 0, 6, 9, 450],
+            [$year, 12, 20, 3, 1, 4, 220],
+            [$prevYear, 11, 10, 1, 0, 5, 350], [$prevYear, 12, 18, 4, 3, 6, 700],
+        ];
+
+        $count = 0;
+        foreach ($invoices as $i => $v) {
+            [$y, $m, $d, $ci, $cari, $days, $dailyHt] = $v;
+            $factureNumber = sprintf('FAC-%d-%04d', $y, $i + 1);
+
+            if (Tva::where('facture_number', $factureNumber)->where('parent_id', $this->ownerId)->exists()) {
+                continue;
+            }
+
+            $totalHt = $days * $dailyHt;
+            $tvaAmt  = round($totalHt * 0.20, 2);
+            $ttc     = round($totalHt * 1.20, 2);
+            $date    = Carbon::create($y, $m, $d)->toDateString();
+
+            $tva = new Tva([
+                'facture_number' => $factureNumber,
+                'facture_date'   => $date,
+                'generated_date' => $date,
+                'year'           => $y,
+                'month'          => $m,
+                'reference'      => 'BK-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                'client_name'    => $clients[$ci],
+                'client_address' => 'Casablanca, Maroc',
+                'company_name'   => 'Directonderweg',
+                'designation'    => $cars[$cari],
+                'quantity'       => $days,
+                'unit_price_ht'  => $dailyHt,
+                'total_ht'       => $totalHt,
+                'tva'            => 20,
+                'tva_amount'     => $tvaAmt,
+                'montant_ttc'    => $ttc,
+                'total_amount'   => $ttc,
+                'status'         => 'paid',
+            ]);
+            $tva->parent_id = $this->ownerId; // not fillable — set explicitly
+            $tva->save();
+            $count++;
+        }
+        $this->command->info('  TVA invoices: ' . $count . ' new (' . count($invoices) . ' total)');
     }
 }
