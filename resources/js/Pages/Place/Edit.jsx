@@ -14,6 +14,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // controller's update() `required` rules (name|city|island|price) for UX only;
 // Laravel validation stays authoritative and its errors surface via setError.
 const schema = z.object({
+    _method: z.string().optional(),
     name: z.string().min(1, 'The name field is required.'),
     city: z.string().min(1, 'The city field is required.'),
     island: z.string().min(1, 'The island field is required.'),

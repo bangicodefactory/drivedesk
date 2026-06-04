@@ -13,6 +13,7 @@ import {
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const schema = z.object({
+    _method: z.string().optional(),
     name: z.string().min(1, 'The name field is required.'),
     type: z.string().min(1, 'The type field is required.'),
     reminder_date: z.string().min(1, 'The reminder date field is required.'),

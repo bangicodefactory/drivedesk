@@ -15,6 +15,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // surface via setError inside useZodForm. Prop `inspectionType` matches the
 // controller compact('inspectionType').
 const schema = z.object({
+    _method: z.string().optional(),
     type: z.string().min(1, 'The type field is required.'),
 });
 

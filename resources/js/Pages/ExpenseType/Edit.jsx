@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const schema = z.object({
+    _method: z.string().optional(),
     title: z.string().min(1, 'The title field is required.'),
 });
 
