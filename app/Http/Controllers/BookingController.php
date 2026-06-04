@@ -626,6 +626,24 @@ class BookingController extends Controller
         return redirect()->route('booking.index')->with('success', __('Selected bookings successfully deleted.'));
     }
 
+    public function bulkMarkPaid(Request $request)
+    {
+        if (!\Auth::user()->can('edit booking')) {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return redirect()->back()->with('error', __('No bookings selected.'));
+        }
+
+        Booking::whereIn('id', $ids)
+            ->where('parent_id', parentId())
+            ->update(['payment_status' => 'paye']);
+
+        return redirect()->route('booking.index')->with('success', __('Selected bookings marked as paid.'));
+    }
+
     public function downloadTemplate()
     {
         $spreadsheet = new Spreadsheet();
