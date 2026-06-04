@@ -26,6 +26,7 @@ import {
     BellRing, FileText, Settings, ChevronLeft, ChevronDown, Menu, LogOut,
     UserCircle, Shield, CreditCard, Wrench, Receipt, Tags,
     Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell,
+    Languages, Check,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,6 +298,46 @@ function SidebarContent({ collapsed = false }) {
 // UserMenu
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Locales accepted by the SetLocale middleware ($supportedLanguages).
+const LOCALES = [
+    { code: 'en', label: 'English' },
+    { code: 'fr', label: 'Français' },
+    { code: 'ar', label: 'العربية' },
+];
+
+function LanguageSwitcher() {
+    const { auth } = usePage().props;
+    const current = auth?.user?.lang || 'fr';
+
+    function change(code) {
+        if (code === current) return;
+        // GET /language/{lang} persists user.lang + session and redirects back.
+        router.get(route('language.change', code), {}, { preserveScroll: true });
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Change language">
+                    <Languages className="h-5 w-5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+                {LOCALES.map((l) => (
+                    <DropdownMenuItem
+                        key={l.code}
+                        onClick={() => change(l.code)}
+                        className={cn('cursor-pointer', current === l.code && 'font-semibold')}
+                    >
+                        <span className="flex-1">{l.label}</span>
+                        {current === l.code && <Check className="ml-2 h-4 w-4" />}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 function UserMenu() {
     const { auth } = usePage().props;
     const user = auth.user;
@@ -451,6 +492,9 @@ export default function AdminLayout({ children, breadcrumbs }) {
                         <div className="flex-1">
                             <Breadcrumbs items={breadcrumbs} />
                         </div>
+
+                        {/* Language switcher */}
+                        <LanguageSwitcher />
 
                         {/* User menu */}
                         <UserMenu />
