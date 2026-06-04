@@ -340,6 +340,13 @@ class DevDataSeeder extends Seeder
             $booking = Booking::create([
                 'booking_id'      => $nextBookingId++,
                 'vehicle'         => $vehicleId,
+                // Snapshot the vehicle as the app does on real bookings, so the
+                // index Vehicle column and vehicle search work on seeded data.
+                'vehicle_details' => $vehicle ? [
+                    'id'            => $vehicle->id,
+                    'name'          => $vehicle->name,
+                    'license_plate' => $vehicle->license_plate,
+                ] : null,
                 'driver'          => $driverUid,
                 'start_date'      => $start->toDateString(),
                 'start_time'      => '09:00:00',
