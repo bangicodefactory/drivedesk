@@ -26,15 +26,30 @@ use Spatie\Permission\Models\Role;
 class BookingController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        if (\Auth::user()->can('manage booking')) {
-            $bookings = Booking::where('parent_id', '=', parentId())->orderBy('created_at', 'desc')->paginate(25);
-        } else {
+        if (! \Auth::user()->can('manage booking')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
+        $search = trim((string) $request->get('search', ''));
+
+        $bookings = Booking::where('parent_id', '=', parentId())
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($w) use ($search) {
+                    $w->where('booking_id', 'like', "%{$search}%")
+                        ->orWhere('vehicle_details', 'like', "%{$search}%")
+                        ->orWhereHas('drivers', function ($d) use ($search) {
+                            $d->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(25)
+            ->withQueryString();
+
         return Inertia::render('Booking/Index', [
+            'filters' => ['search' => $search],
             'bookings' => $bookings->through(fn($b) => [
                 'id'             => $b->id,
                 'encrypted_id'   => Crypt::encrypt($b->id),
