@@ -54,6 +54,7 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     onChange={(v) => setValue('driver', v)}
                                     placeholder="Select Driver"
                                     searchPlaceholder="Search driver…"
+                                    ariaLabel="Driver"
                                 />
                                 {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
                             </div>
@@ -66,6 +67,7 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     onChange={(v) => setValue('driver2', v)}
                                     placeholder="— None —"
                                     searchPlaceholder="Search driver…"
+                                    ariaLabel="Driver 2 (optional)"
                                 />
                             </div>
 
@@ -77,6 +79,7 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     onChange={(v) => setValue('vehicle', v)}
                                     placeholder="Select Vehicle"
                                     searchPlaceholder="Search vehicle…"
+                                    ariaLabel="Vehicle"
                                 />
                                 {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
                             </div>

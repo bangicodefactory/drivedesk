@@ -49,7 +49,7 @@ function Login({ status }) {
 
             {/* ── Centered sign-in card ─────────────────────────────────────── */}
             <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
-                <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-md">
+                <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">
 
                     {/* Card header */}
                     <div className="mb-6 text-center">
@@ -171,7 +171,7 @@ function Login({ status }) {
 
                     {/* Audit notice */}
                     <p className="mt-5 text-center text-xs text-white/40">
-                        Authorized personnel only — all activity is logged
+                        Authorized personnel only. All activity is logged.
                     </p>
                 </div>
             </main>

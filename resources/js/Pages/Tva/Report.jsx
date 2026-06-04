@@ -14,29 +14,38 @@ import {
 import { FileText, Percent, Coins, TrendingUp, Car, Calendar, BarChart2, Trophy } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-const CHART_COLORS = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'];
+// Chart series colors come from the theme's chart tokens so they follow the
+// active palette and dark mode (recharts needs concrete color values, so we
+// pass the CSS variables through).
+const CHART_COLORS = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
+];
+
+const STAT_ICON_COLOR = {
+    primary: 'text-primary',
+    success: 'text-success',
+    info:    'text-info',
+    warning: 'text-warning',
+    danger:  'text-destructive',
+};
 
 const fmt = (n, decimals = 2) =>
     n !== null && n !== undefined ? Number(n).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : '0.00';
 
 function StatCard({ icon: Icon, color, label, value }) {
-    const borderClass = {
-        primary: 'border-l-[#4e73df]',
-        success: 'border-l-[#1cc88a]',
-        info:    'border-l-[#36b9cc]',
-        warning: 'border-l-[#f6c23e]',
-        danger:  'border-l-[#e74a3b]',
-    }[color] ?? 'border-l-gray-400';
-
     return (
-        <Card className={`border-l-4 ${borderClass}`}>
+        <Card>
             <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-xs font-bold uppercase text-muted-foreground tracking-wide mb-1">{label}</p>
                         <p className="text-xl font-bold">{value}</p>
                     </div>
-                    <Icon className="h-8 w-8 text-muted-foreground/40" />
+                    <Icon className={`h-8 w-8 ${STAT_ICON_COLOR[color] ?? 'text-muted-foreground'}`} />
                 </div>
             </CardContent>
         </Card>
@@ -120,13 +129,13 @@ function TvaReport({
                     <CardContent>
                         <ResponsiveContainer width="100%" height={320}>
                             <LineChart data={lineData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                                 <YAxis tickFormatter={(v) => v.toLocaleString()} tick={{ fontSize: 11 }} />
                                 <Tooltip formatter={(v) => `${v.toLocaleString()} MAD`} />
                                 <Legend />
-                                <Line type="monotone" dataKey="TVA Amount" stroke="#4e73df" strokeWidth={2} dot={false} />
-                                <Line type="monotone" dataKey="Total TTC"  stroke="#1cc88a" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="TVA Amount" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="Total TTC"  stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
                             </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -188,7 +197,7 @@ function TvaReport({
                     <CardContent>
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={topRentedData} margin={{ top: 5, right: 10, left: 10, bottom: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                                 <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" />
                                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                                 <Tooltip />

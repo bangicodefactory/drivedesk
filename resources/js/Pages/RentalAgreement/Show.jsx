@@ -137,14 +137,14 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                             <div>
                                 <p className="text-sm font-medium mb-2">Signature Client 1</p>
                                 {agreement.driver1_signature
-                                    ? <img src={agreement.driver1_signature} alt="Driver 1 signature" className="max-w-[150px] max-h-[80px] border-none block" />
+                                    ? <img src={agreement.driver1_signature} alt="Driver 1 signature" loading="lazy" className="max-w-[150px] max-h-[80px] border-none block" />
                                     : <div className="border-b border-black w-40 h-8" />
                                 }
                             </div>
                             <div>
                                 <p className="text-sm font-medium mb-2">Signature Client 2</p>
                                 {agreement.driver2_signature
-                                    ? <img src={agreement.driver2_signature} alt="Driver 2 signature" className="max-w-[150px] max-h-[80px] border-none block" />
+                                    ? <img src={agreement.driver2_signature} alt="Driver 2 signature" loading="lazy" className="max-w-[150px] max-h-[80px] border-none block" />
                                     : <div className="border-b border-black w-40 h-8" />
                                 }
                             </div>

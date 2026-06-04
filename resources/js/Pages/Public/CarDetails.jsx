@@ -365,6 +365,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                     <img
                                         src={`/storage/${c.picture}`}
                                         alt={c.name}
+                                        loading="lazy"
                                         className="w-full h-48 object-cover"
                                     />
                                 )}

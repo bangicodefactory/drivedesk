@@ -37,6 +37,7 @@ function FileDetail({ label, name, dir, className = '' }) {
                         <img
                             src={url}
                             alt={label}
+                            loading="lazy"
                             className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
                         />
                     </a>

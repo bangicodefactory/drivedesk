@@ -410,7 +410,7 @@ export default function AdminLayout({ children, breadcrumbs }) {
                 {/* ── Desktop sidebar ── */}
                 <aside
                     className={cn(
-                        'hidden lg:flex flex-col border-r bg-card transition-all duration-300',
+                        'hidden lg:flex flex-col border-r bg-card transition-[width] duration-300 ease-out',
                         collapsed ? 'w-16' : 'w-60',
                     )}
                 >

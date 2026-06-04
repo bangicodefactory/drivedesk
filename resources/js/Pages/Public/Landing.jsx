@@ -36,7 +36,8 @@ function Hero({ heroImages }) {
         return () => clearInterval(id);
     }, [next]);
 
-    const defaultBg = 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)';
+    // Hero fallback uses theme tokens so it tracks the active palette.
+    const defaultBg = 'linear-gradient(135deg, hsl(var(--chart-4)) 0%, hsl(var(--primary)) 100%)';
 
     return (
         <section className="relative h-[520px] md:h-[620px] overflow-hidden">
@@ -207,6 +208,7 @@ function CarRentals({ vehicles }) {
                                 <img
                                     src={v.picture ? `/storage/upload/picture/${v.picture}` : '/assets/images/client/default-car.jpg'}
                                     alt={v.name}
+                                    loading="lazy"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     onError={e => { e.target.src = '/assets/images/client/default-car.jpg'; }}
                                 />
