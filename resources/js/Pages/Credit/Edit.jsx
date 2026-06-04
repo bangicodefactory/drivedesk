@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -29,14 +30,14 @@ function CreditEdit({ credit, drivers = [], statuses = {} }) {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-1">
                             <Label>{t('Driver')}</Label>
-                            <Select value={data.driver_id} onValueChange={(v) => setData('driver_id', v)}>
-                                <SelectTrigger><SelectValue placeholder={t('Select driver…')} /></SelectTrigger>
-                                <SelectContent>
-                                    {drivers.map((d) => (
-                                        <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                options={drivers.map((d) => ({ value: String(d.id), label: d.name }))}
+                                value={data.driver_id}
+                                onChange={(v) => setData('driver_id', v)}
+                                placeholder={t('Select driver…')}
+                                searchPlaceholder={t('Search driver…')}
+                                ariaLabel={t('Driver')}
+                            />
                             {errors.driver_id && <p className="text-sm text-destructive">{errors.driver_id}</p>}
                         </div>
 
