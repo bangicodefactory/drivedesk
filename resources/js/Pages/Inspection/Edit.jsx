@@ -20,6 +20,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // Props inspection/vehicles/status/repairStatus/types/details match the
 // controller compact('inspection','vehicles','status','repairStatus','fuelLevel','types','details').
 const schema = z.object({
+    _method: z.string().optional(),
     vehicle: z.string().min(1, 'The vehicle field is required.'),
     inspector: z.string().min(1, 'The inspector field is required.'),
     inspection_date: z.string().min(1, 'The inspection date field is required.'),

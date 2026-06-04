@@ -13,6 +13,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // schema mirrors the controller update() `required` rule. Laravel validation
 // stays authoritative. Prop `option` matches the controller compact('option').
 const schema = z.object({
+    _method: z.string().optional(),
     name: z.string().min(1, 'The name field is required.'),
 });
 

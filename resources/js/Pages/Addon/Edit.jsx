@@ -17,6 +17,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // rules. Laravel validation stays authoritative. Props `addon` and
 // `billingType` match the controller compact('addon','billingType').
 const schema = z.object({
+    _method: z.string().optional(),
     name: z.string().min(1, 'The name field is required.'),
     price: z.string().min(1, 'The price field is required.'),
     billing_type: z.string().min(1, 'The billing type field is required.'),

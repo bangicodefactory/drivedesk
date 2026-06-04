@@ -15,6 +15,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 // required` rule. Laravel validation stays authoritative. Prop name
 // `vehicleType` matches the controller compact('vehicleType').
 const schema = z.object({
+    _method: z.string().optional(),
     type: z.string().min(1, 'The type field is required.'),
     notes: z.string().optional(),
 });
