@@ -337,31 +337,43 @@ class DevDataSeeder extends Seeder
                 ? implode(',', array_slice($addonIds, 0, 2))
                 : ($addonIds[0] ?? null);
 
-            $booking = Booking::create([
-                'booking_id'      => $nextBookingId++,
-                'vehicle'         => $vehicleId,
-                // Snapshot the vehicle as the app does on real bookings, so the
-                // index Vehicle column and vehicle search work on seeded data.
-                'vehicle_details' => $vehicle ? [
-                    'id'            => $vehicle->id,
-                    'name'          => $vehicle->name,
-                    'license_plate' => $vehicle->license_plate,
-                ] : null,
-                'driver'          => $driverUid,
-                'start_date'      => $start->toDateString(),
-                'start_time'      => '09:00:00',
-                'end_date'        => $end->toDateString(),
-                'end_time'        => '18:00:00',
-                'pickup_address'  => $puId,
-                'drop_off_address'=> $doId,
-                'status'          => $data['status'],
-                'amount'          => $amount,
-                'payment_status'  => $data['pay'],
-                'payment_method'  => $data['method'],
-                'addon'           => $addonStr,
-                'daily_price_final'=> $dailyRate,
-                'parent_id'       => $this->ownerId,
-            ]);
+            // Idempotent: each seed row has a unique (vehicle, driver, status)
+            // signature. Dates use relative offsets (now-anchored) so they can't
+            // be part of a stable key — match on the signature instead so re-runs
+            // don't duplicate bookings.
+            $booking = Booking::where('parent_id', $this->ownerId)
+                ->where('vehicle', $vehicleId)
+                ->where('driver', $driverUid)
+                ->where('status', $data['status'])
+                ->first();
+
+            if (!$booking) {
+                $booking = Booking::create([
+                    'booking_id'      => $nextBookingId++,
+                    'vehicle'         => $vehicleId,
+                    // Snapshot the vehicle as the app does on real bookings, so the
+                    // index Vehicle column and vehicle search work on seeded data.
+                    'vehicle_details' => $vehicle ? [
+                        'id'            => $vehicle->id,
+                        'name'          => $vehicle->name,
+                        'license_plate' => $vehicle->license_plate,
+                    ] : null,
+                    'driver'          => $driverUid,
+                    'start_date'      => $start->toDateString(),
+                    'start_time'      => '09:00:00',
+                    'end_date'        => $end->toDateString(),
+                    'end_time'        => '18:00:00',
+                    'pickup_address'  => $puId,
+                    'drop_off_address'=> $doId,
+                    'status'          => $data['status'],
+                    'amount'          => $amount,
+                    'payment_status'  => $data['pay'],
+                    'payment_method'  => $data['method'],
+                    'addon'           => $addonStr,
+                    'daily_price_final'=> $dailyRate,
+                    'parent_id'       => $this->ownerId,
+                ]);
+            }
             $ids[] = $booking->id;
         }
         $this->command->info('  Bookings: ' . count($ids));
