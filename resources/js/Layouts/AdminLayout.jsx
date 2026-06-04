@@ -21,6 +21,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, ChevronLeft, ChevronDown, Menu, LogOut,
@@ -141,6 +142,7 @@ function initials(name) {
 
 function NavLeaf({ item, collapsed }) {
     const { url } = usePage();
+    const t = useTranslation();
     const isActive = url.startsWith(route(item.route));
     const Icon = item.icon;
 
@@ -155,7 +157,7 @@ function NavLeaf({ item, collapsed }) {
             )}
         >
             {Icon && <Icon className="h-4 w-4 shrink-0" />}
-            {!collapsed && <span>{item.label}</span>}
+            {!collapsed && <span>{t(item.label)}</span>}
         </Link>
     );
 
@@ -164,13 +166,14 @@ function NavLeaf({ item, collapsed }) {
     return (
         <Tooltip>
             <TooltipTrigger asChild>{link}</TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
+            <TooltipContent side="right">{t(item.label)}</TooltipContent>
         </Tooltip>
     );
 }
 
 function NavCollapsible({ item, collapsed }) {
     const { url } = usePage();
+    const t = useTranslation();
     const Icon = item.icon;
     const isAnyChildActive = item.children.some((c) => url.startsWith(route(c.route)));
     const [open, setOpen] = useState(isAnyChildActive);
@@ -191,10 +194,10 @@ function NavCollapsible({ item, collapsed }) {
                     </span>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="p-2 min-w-[160px]">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(item.label)}</p>
                     {item.children.map((c) => (
                         <Link key={c.route} href={route(c.route)} className="block py-0.5 text-sm hover:underline">
-                            {c.label}
+                            {t(c.label)}
                         </Link>
                     ))}
                 </TooltipContent>
@@ -214,7 +217,7 @@ function NavCollapsible({ item, collapsed }) {
                 )}
             >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
+                <span className="flex-1 text-left">{t(item.label)}</span>
                 <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', open && 'rotate-180')} />
             </button>
             {open && (
@@ -231,7 +234,7 @@ function NavCollapsible({ item, collapsed }) {
                                     isActive && 'bg-accent text-accent-foreground font-medium',
                                 )}
                             >
-                                {child.label}
+                                {t(child.label)}
                             </Link>
                         );
                     })}
@@ -252,6 +255,7 @@ function NavItem({ item, collapsed }) {
 
 function SidebarContent({ collapsed = false }) {
     const { branding } = usePage().props;
+    const t = useTranslation();
     const sections = useNavSections();
 
     return (
@@ -278,7 +282,7 @@ function SidebarContent({ collapsed = false }) {
                     <div key={section.section}>
                         {!collapsed && (
                             <p className="mb-1 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                {section.section}
+                                {t(section.section)}
                             </p>
                         )}
                         <div className="space-y-0.5">
@@ -340,6 +344,7 @@ function LanguageSwitcher() {
 
 function UserMenu() {
     const { auth } = usePage().props;
+    const t = useTranslation();
     const user = auth.user;
     const canManageSettings = auth.user?.type === 'super admin' || [
         'manage general settings', 'manage account settings', 'manage password settings',
@@ -373,17 +378,17 @@ function UserMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                    <Link href={route('setting.account')}>Profile</Link>
+                    <Link href={route('setting.account')}>{t('Profile')}</Link>
                 </DropdownMenuItem>
                 {canManageSettings && (
                     <DropdownMenuItem asChild>
-                        <Link href={route('setting.general')}>Settings</Link>
+                        <Link href={route('setting.general')}>{t('Settings')}</Link>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    {t('Log out')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

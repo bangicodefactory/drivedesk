@@ -18,6 +18,14 @@ function injectDarkVars(darkMap) {
     el.textContent = `.dark {\n${rules}\n}`;
 }
 
+// RTL applies when the active locale is Arabic, or when the admin has set the
+// layout_direction setting to rtlmode. Locale takes precedence.
+function applyDirection(locale, branding) {
+    const rtl = locale === 'ar' || branding?.layoutDirection === 'rtlmode';
+    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = locale || 'en';
+}
+
 function applyBranding(branding) {
     if (!branding) return;
 
@@ -34,10 +42,6 @@ function applyBranding(branding) {
         }
     }
 
-    if (branding.layoutDirection) {
-        document.documentElement.dir =
-            branding.layoutDirection === 'rtlmode' ? 'rtl' : 'ltr';
-    }
 }
 
 createInertiaApp({
@@ -48,13 +52,16 @@ createInertiaApp({
     },
     setup({ el, App, props }) {
         const branding = props.initialPage.props.branding;
+        const locale   = props.initialPage.props.locale;
 
         // Apply before first paint so there's no theme flash
         applyBranding(branding);
+        applyDirection(locale, branding);
 
-        // Keep in sync on SPA navigations (e.g. admin changes theme mid-session)
+        // Keep in sync on SPA navigations (e.g. admin changes theme/locale mid-session)
         router.on('navigate', (event) => {
             applyBranding(event.detail.page.props.branding);
+            applyDirection(event.detail.page.props.locale, event.detail.page.props.branding);
         });
 
         const initialTheme = branding?.layoutMode === 'darkmode' ? 'dark' : 'light';

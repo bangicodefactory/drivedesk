@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
             'branding'     => $this->buildBranding(),
             'client'       => $this->buildClient(),
             'recaptcha'    => $this->buildRecaptcha(),
+            'locale'       => app()->getLocale(),
             'translations' => $this->loadTranslations(),
             'flash'        => [
                 'success' => $request->session()->get('success'),
