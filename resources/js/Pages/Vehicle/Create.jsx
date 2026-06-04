@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -63,9 +64,13 @@ function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} })
             document: null,
         },
     });
-    const { register, control, setValue, watch, formState: { errors, isSubmitting } } = form;
+    const { register, control, setValue, formState: { errors, isSubmitting } } = form;
 
-    const selectedOptions = (watch('option') ?? []).map(String);
+    function toggleOption(field, key) {
+        const set = new Set((field.value ?? []).map(String));
+        set.has(key) ? set.delete(key) : set.add(key);
+        field.onChange([...set]);
+    }
 
     return (
         <div className="space-y-6 p-6">
@@ -200,21 +205,28 @@ function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} })
                                 {errors.kilometers && <p className="text-sm text-destructive">{errors.kilometers.message}</p>}
                             </div>
 
-                            <div className="space-y-1.5">
-                                <Label htmlFor="option">Options</Label>
-                                <select
-                                    id="option"
-                                    multiple
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={selectedOptions}
-                                    onChange={(e) =>
-                                        setValue('option', Array.from(e.target.selectedOptions, (o) => o.value))
-                                    }
-                                >
-                                    {Object.entries(option).map(([k, label]) => (
-                                        <option key={k} value={String(k)}>{label}</option>
-                                    ))}
-                                </select>
+                            <div className="space-y-1.5 md:col-span-2">
+                                <Label>Options</Label>
+                                <Controller
+                                    name="option"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                            {Object.entries(option).map(([k, label]) => (
+                                                <label
+                                                    key={k}
+                                                    className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-accent cursor-pointer"
+                                                >
+                                                    <Checkbox
+                                                        checked={(field.value ?? []).map(String).includes(String(k))}
+                                                        onCheckedChange={() => toggleOption(field, String(k))}
+                                                    />
+                                                    <span className="text-sm">{label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                />
                             </div>
 
                             <div className="space-y-1.5">
