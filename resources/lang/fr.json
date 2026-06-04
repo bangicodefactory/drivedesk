@@ -1182,5 +1182,10 @@
   "On Hold": "En attente",
   "cool": "froide",
   "neutral": "neutre",
-  "warm": "chaude"
+  "warm": "chaude",
+  "No notifications yet": "Aucune notification pour le moment",
+  "No notifications match your search": "Aucune notification ne correspond à votre recherche",
+  "Delete this notification?": "Supprimer cette notification ?",
+  "Create Notification": "Créer une notification",
+  "Search…": "Rechercher…"
 }

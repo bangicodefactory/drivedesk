@@ -1188,5 +1188,10 @@
     "Super Admin": "المشرف العام",
     "Owner": "المالك",
     "Organisations": "المؤسسات",
-    "Organisations per month": "المؤسسات شهرياً"
+    "Organisations per month": "المؤسسات شهرياً",
+    "No notifications yet": "لا توجد إشعارات بعد",
+    "No notifications match your search": "لا توجد إشعارات تطابق بحثك",
+    "Delete this notification?": "حذف هذا الإشعار؟",
+    "Create Notification": "إنشاء إشعار",
+    "Search…": "بحث…"
 }

@@ -4,9 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
+    /**
+     * Normalize the static module catalogue for the SPA. Tolerates the legacy
+     * 'templete' key (only 'user_create' uses it; the rest use 'template').
+     */
+    private function moduleCatalogue(): array
+    {
+        return collect(Notification::$modules)->map(function ($module, $key) {
+            return [
+                'key'        => $key,
+                'name'       => $module['name'],
+                'subject'    => $module['subject'] ?? '',
+                'template'   => $module['templete'] ?? $module['template'] ?? '',
+                'short_code' => $module['short_code'] ?? [],
+            ];
+        })->values()->all();
+    }
     /**
      * Display a listing of the resource.
      *
@@ -16,7 +33,14 @@ class NotificationController extends Controller
     {
         if (\Auth::user()->can('manage notification')) {
             $notifications = Notification::where('parent_id', parentId())->get();
-            return view('notification.index', compact('notifications'));
+            return Inertia::render('Notification/Index', [
+                'notifications' => $notifications->map(fn ($item) => [
+                    'id'            => $item->id,
+                    'name'          => $item->name,
+                    'subject'       => $item->subject,
+                    'enabled_email' => (int) $item->enabled_email,
+                ])->values(),
+            ]);
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -29,12 +53,9 @@ class NotificationController extends Controller
      */
     public function create()
     {
-        $Notifications = Notification::$modules;
-        $notification_option = [];
-        foreach ($Notifications as $key => $value) {
-            $notification_option[$key] = $value['name'];
-        }
-        return view('notification.create', compact('notification_option', 'Notifications'));
+        return Inertia::render('Notification/Create', [
+            'modules' => $this->moduleCatalogue(),
+        ]);
     }
 
     /**
@@ -97,15 +118,19 @@ class NotificationController extends Controller
      */
     public function edit(Notification $notification)
     {
-        $short_code=$notification->short_code;
-        $notification->short_code = json_decode($notification->short_code);
+        $module = Notification::$modules[$notification->module] ?? null;
 
-        $Notifications = Notification::$modules;
-        $notification_option = [];
-        foreach ($Notifications as $key => $value) {
-            $notification_option[$key] = $value['name'];
-        }
-        return view('notification.edit', compact('notification', 'notification_option', 'Notifications'));
+        return Inertia::render('Notification/Edit', [
+            'notification' => [
+                'id'            => $notification->id,
+                'module'        => $notification->module,
+                'name'          => $notification->name,
+                'subject'       => $notification->subject,
+                'message'       => $notification->message,
+                'enabled_email' => (int) $notification->enabled_email,
+            ],
+            'shortCodes' => $module['short_code'] ?? [],
+        ]);
     }
 
     /**

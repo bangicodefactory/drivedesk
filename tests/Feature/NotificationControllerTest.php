@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -155,13 +156,47 @@ class NotificationControllerTest extends TestCase
     }
 
     // ── NotificationController::create ───────────────────────────────────────
-    // NOTE: create renders a Blade view that crashes with 500 due to a
-    // missing 'templete' key in the old view — this is a known pre-existing
-    // bug in the unported Blade view, not something introduced by tests.
+    // Previously the Blade view 500'd on the missing 'templete' key. The Inertia
+    // port normalizes the module catalogue, so the page now renders.
 
     public function test_create_requires_auth(): void
     {
         $this->get(route('notification.create'))->assertRedirect(route('login'));
+    }
+
+    public function test_create_renders_inertia_page_for_authorized_user(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('notification.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Notification/Create')
+                ->has('modules'));
+    }
+
+    // ── Inertia render assertions ─────────────────────────────────────────────
+
+    public function test_index_renders_inertia_page(): void
+    {
+        $this->makeNotification('new_booking');
+
+        $this->actingAs($this->owner)
+            ->get(route('notification.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Notification/Index')
+                ->has('notifications', 1));
+    }
+
+    public function test_edit_renders_inertia_page(): void
+    {
+        $notification = $this->makeNotification('new_booking');
+
+        $this->actingAs($this->owner)
+            ->get(route('notification.edit', $notification))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Notification/Edit')
+                ->where('notification.id', $notification->id)
+                ->has('shortCodes'));
     }
 
     // ── NotificationController::edit ──────────────────────────────────────────
