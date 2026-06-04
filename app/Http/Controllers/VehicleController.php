@@ -105,12 +105,8 @@ class VehicleController extends Controller
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
                 $documentExtension = $request->file('document')->getClientOriginalExtension();
                 $documentFileName = $documentFilename . '_' . time() . '.' . $documentExtension;
-                $dir = storage_path('upload/document');
-                $image_path = $dir . $documentFilenameWithExt;
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0777, true);
-                }
-                $request->file('document')->storeAs('upload/document/', $documentFileName);
+                // 'public' disk → storage/app/public/upload/document, served at /storage/upload/document
+                $request->file('document')->storeAs('upload/document/', $documentFileName, 'public');
                 $vehicle->document = $documentFileName;
             }
             $vehicle->save();
@@ -198,12 +194,8 @@ class VehicleController extends Controller
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
                 $documentExtension = $request->file('document')->getClientOriginalExtension();
                 $documentFileName = $documentFilename . '_' . time() . '.' . $documentExtension;
-                $dir = storage_path('upload/document');
-                $image_path = $dir . $documentFilenameWithExt;
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0777, true);
-                }
-                $request->file('document')->storeAs('upload/document/', $documentFileName);
+                // 'public' disk → storage/app/public/upload/document, served at /storage/upload/document
+                $request->file('document')->storeAs('upload/document/', $documentFileName, 'public');
                 $vehicle->document = $documentFileName;
             }
             if (!empty($request->picture)) {
