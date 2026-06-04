@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react';
 import { Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,30 @@ function VehicleShow({ vehicle = {} }) {
                                     )
                                     : '-'}
                             </p>
+                        </div>
+                        <div>
+                            <h6 className="text-sm font-semibold text-muted-foreground mb-1">Photo de voiture</h6>
+                            {vehicle.picture
+                                ? (
+                                    <div className="mb-4 inline-flex items-center gap-2">
+                                        <a href={`/storage/upload/picture/${vehicle.picture}`} target="_blank" rel="noreferrer">
+                                            <img
+                                                src={`/storage/upload/picture/${vehicle.picture}`}
+                                                alt="Vehicle"
+                                                className="h-28 w-auto rounded border object-cover shadow-sm hover:opacity-80 transition-opacity"
+                                            />
+                                        </a>
+                                        <a
+                                            href={`/storage/upload/picture/${vehicle.picture}`}
+                                            download={vehicle.picture}
+                                            className="text-muted-foreground hover:text-primary transition-colors"
+                                            title="Download"
+                                        >
+                                            <Download className="h-4 w-4" />
+                                        </a>
+                                    </div>
+                                )
+                                : <p className="mb-4 text-muted-foreground">-</p>}
                         </div>
                         <div className="md:col-span-2">
                             <h6 className="text-sm font-semibold text-muted-foreground">Notes</h6>

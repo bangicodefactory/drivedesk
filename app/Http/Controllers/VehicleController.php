@@ -87,12 +87,8 @@ class VehicleController extends Controller
                 $pictureFilename = pathinfo($pictureFilenameWithExt, PATHINFO_FILENAME);
                 $pictureExtension = $request->file('picture')->getClientOriginalExtension();
                 $pictureFileName = $pictureFilename . '_' . time() . '.' . $pictureExtension;
-                $dir = storage_path('upload/picture');
-                $image_path = $dir . $pictureFilenameWithExt;
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0777, true);
-                }
-                $request->file('picture')->storeAs('upload/picture/', $pictureFileName);
+                // 'public' disk → storage/app/public/upload/picture, served at /storage/upload/picture
+                $request->file('picture')->storeAs('upload/picture/', $pictureFileName, 'public');
                 $vehicle->picture = $pictureFileName;
             }
             $vehicle->daily_rate = $request->daily_rate;
@@ -209,6 +205,15 @@ class VehicleController extends Controller
                 }
                 $request->file('document')->storeAs('upload/document/', $documentFileName);
                 $vehicle->document = $documentFileName;
+            }
+            if (!empty($request->picture)) {
+                $pictureFilenameWithExt = $request->file('picture')->getClientOriginalName();
+                $pictureFilename = pathinfo($pictureFilenameWithExt, PATHINFO_FILENAME);
+                $pictureExtension = $request->file('picture')->getClientOriginalExtension();
+                $pictureFileName = $pictureFilename . '_' . time() . '.' . $pictureExtension;
+                // 'public' disk → storage/app/public/upload/picture, served at /storage/upload/picture
+                $request->file('picture')->storeAs('upload/picture/', $pictureFileName, 'public');
+                $vehicle->picture = $pictureFileName;
             }
 
             $vehicle->save();

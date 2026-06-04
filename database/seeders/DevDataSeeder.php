@@ -134,14 +134,17 @@ class DevDataSeeder extends Seeder
 
     private function seedVehicles(array $vtIds): array
     {
+        // gear/fuel use the keys from Vehicle::$gearbox and Vehicle::$fuelType
+        // (automatic|manual, essence|diesel|petrol|hybrid|electric|gas) so the
+        // show page and edit form resolve their labels correctly.
         $vehicles = [
-            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'Auto',   'fuel' => 'Hybrid',  'km' => 12000],
-            ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'Manual', 'fuel' => 'Diesel',  'km' => 45000],
-            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'Manual', 'fuel' => 'Petrol',  'km' => 8000],
-            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'Auto',   'fuel' => 'Diesel',  'km' => 5000],
-            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'Manual', 'fuel' => 'Petrol', 'km' => 30000],
-            ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'Auto',   'fuel' => 'Petrol',  'km' => 18000],
-            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'Manual', 'fuel' => 'Diesel', 'km' => 60000],
+            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000],
+            ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000],
+            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000],
+            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000],
+            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000],
+            ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000],
+            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000],
         ];
 
         $yearCol = 'year_of_ﬁrst_immatriculation'; // Unicode ligature — matches DB column exactly
