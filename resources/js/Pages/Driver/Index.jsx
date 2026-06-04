@@ -95,7 +95,7 @@ function DriverIndex({ drivers = [] }) {
                                     <TableCell>{d.issue_date_display ?? '-'}</TableCell>
                                     <TableCell>{d.expiration_date_display ?? '-'}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-right space-x-1 whitespace-nowrap">
                                             {can('show driver') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('driver.show', d.id)} aria-label={t('Details')}>
