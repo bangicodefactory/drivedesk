@@ -15,20 +15,41 @@ use Psy\Readline\Hoa\Console;
 class VehicleController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        if (\Auth::user()->can('manage vehicle')) {
-            $vehicles = Vehicle::where('parent_id', '=', parentId())->latest()->paginate(25);
-        } else {
+        if (! \Auth::user()->can('manage vehicle')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+
+        $search = trim((string) $request->get('search', ''));
+
+        $vehicles = Vehicle::where('parent_id', '=', parentId())
+            ->with('types')
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($w) use ($search) {
+                    $w->where('name', 'like', "%{$search}%")
+                        ->orWhere('model', 'like', "%{$search}%")
+                        ->orWhere('license_plate', 'like', "%{$search}%")
+                        ->orWhere('engine_type', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
 
         $payload = $vehicles->through(function ($vehicle) {
             $data = $vehicle->toArray();
             $data['daily_rate_formatted'] = priceFormat($vehicle->daily_rate);
+            $data['vehicle_id_display'] = vehiclePrefix() . $vehicle->vehicle_id;
+            $data['type_label'] = !empty($vehicle->types) ? $vehicle->types->type : null;
+            $data['registration_expiry_date_display'] = !empty($vehicle->registration_expiry_date) ? dateFormat($vehicle->registration_expiry_date) : null;
             return $data;
         });
-        return Inertia::render('Vehicle/Index', ['vehicles' => $payload]);
+
+        return Inertia::render('Vehicle/Index', [
+            'vehicles' => $payload,
+            'filters' => ['search' => $search],
+        ]);
     }
 
 
