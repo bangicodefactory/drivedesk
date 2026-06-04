@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, MapPin } from 'lucide-react';
+import { Pencil, Trash2, Plus, MapPin, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Port of resources/views/place/index.blade.php.
@@ -24,6 +26,14 @@ function PlaceIndex({ places = [] }) {
 
     const showActions = can('edit place') || can('delete place');
 
+    const [query, setQuery] = useState('');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? places.filter((p) =>
+            [p.name, p.city, p.island, p.price_formatted ?? p.price, p.depo_name, p.depo_address]
+                .some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : places;
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -40,8 +50,17 @@ function PlaceIndex({ places = [] }) {
             </div>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>All Places</CardTitle>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search places…"
+                            className="pl-8"
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -57,14 +76,14 @@ function PlaceIndex({ places = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {places.length === 0 && (
+                            {filtered.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                                        No places yet
+                                        {places.length === 0 ? 'No places yet' : 'No places match your search'}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {places.map((p) => (
+                            {filtered.map((p) => (
                                 <TableRow key={p.id}>
                                     <TableCell>{p.name}</TableCell>
                                     <TableCell>{p.city}</TableCell>
