@@ -244,8 +244,8 @@ class SettingControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->post(route('AdminSignature.store'), ['signature' => $png])
-            ->assertOk()
-            ->assertJson(['success' => true]);
+            ->assertRedirect()
+            ->assertSessionHas('success');
 
         // The DB setting should be created
         $this->assertDatabaseHas('settings', [

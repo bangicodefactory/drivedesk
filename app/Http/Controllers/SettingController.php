@@ -884,11 +884,10 @@ class SettingController extends Controller
 
     flushSettingsCache();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Signature uploaded successfully.',
-        'path' => asset('storage/' . $path)
-    ]);
+    // The signature pad posts via Inertia (router.post), so respond with a
+    // redirect rather than JSON — Inertia follows it and re-renders the
+    // settings page with the freshly saved admin_signature.
+    return redirect()->back()->with('success', __('Signature uploaded successfully.'));
 }
 
     // public function getSignature()
