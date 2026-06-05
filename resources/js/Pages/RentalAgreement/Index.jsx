@@ -105,7 +105,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
                                     <TableCell>{a.rental_duration} {t('Days')}</TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[a.status] ?? 'secondary'}>
-                                            {statusLabel(a.status)}
+                                            {t(statusLabel(a.status))}
                                         </Badge>
                                     </TableCell>
                                     {(can('edit rental agreement') || can('delete rental agreement') || can('show rental agreement')) && (

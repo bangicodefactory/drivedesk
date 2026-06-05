@@ -1187,5 +1187,8 @@
   "No notifications match your search": "Aucune notification ne correspond à votre recherche",
   "Delete this notification?": "Supprimer cette notification ?",
   "Create Notification": "Créer une notification",
-  "Search…": "Rechercher…"
+  "Search…": "Rechercher…",
+  "Draft": "Brouillon",
+  "Confirmed": "Confirmé",
+  "Cancelled": "Annulé"
 }
