@@ -12,8 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-            'settings/store-signature',
-            'settings/update-signature',
-            'settings/delete-signature',
+        // store-signature now posts via Inertia (CSRF token sent automatically);
+        // update-/delete-signature routes are commented out in web.php. No
+        // endpoint needs a CSRF exemption.
     ];
 }
