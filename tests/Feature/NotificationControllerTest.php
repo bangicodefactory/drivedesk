@@ -93,7 +93,11 @@ class NotificationControllerTest extends TestCase
             ->assertRedirect(route('notification.index'))
             ->assertSessionHas('success');
 
-        $this->assertDatabaseHas('notifications', ['module' => 'new_booking', 'parent_id' => $this->owner->id]);
+        $this->assertDatabaseHas('notifications', [
+            'module'    => 'new_booking',
+            'name'      => 'New Booking',
+            'parent_id' => $this->owner->id,
+        ]);
     }
 
     public function test_store_flashes_error_on_missing_module(): void
