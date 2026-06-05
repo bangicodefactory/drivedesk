@@ -84,6 +84,10 @@ class NotificationController extends Controller
             if (empty($exist)) {
                 $notification = new Notification();
                 $notification->module = $request->module;
+                // Populate the display name from the module catalogue so the
+                // listing shows it. The legacy Blade create flow 500'd before
+                // ever reaching save(), so no rows were created this way.
+                $notification->name = Notification::$modules[$request->module]['name'] ?? null;
                 $notification->subject = $request->subject;
                 $notification->message = $request->message;
                 $notification->enabled_email = isset($request->enabled_email) ? 1 : 0;
