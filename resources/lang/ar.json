@@ -1193,5 +1193,8 @@
     "No notifications match your search": "لا توجد إشعارات تطابق بحثك",
     "Delete this notification?": "حذف هذا الإشعار؟",
     "Create Notification": "إنشاء إشعار",
-    "Search…": "بحث…"
+    "Search…": "بحث…",
+    "Draft": "مسودة",
+    "Confirmed": "مؤكد",
+    "Cancelled": "ملغى"
 }
