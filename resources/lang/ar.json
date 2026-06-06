@@ -1216,5 +1216,6 @@
     "On Going": "قيد التنفيذ",
     "impayé": "غير مدفوع",
     "Payé": "مدفوع",
-    "partiellement payé": "مدفوع جزئيًا"
+    "partiellement payé": "مدفوع جزئيًا",
+    "Delete this TVA invoice?": "حذف فاتورة الضريبة هذه؟"
 }

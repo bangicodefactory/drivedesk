@@ -23,7 +23,7 @@ function AddonIndex({ addons = [] }) {
     const can = (p) => auth.permissions.includes(p);
 
     async function remove(id) {
-        if (await confirmDialog({ title: 'Are you sure?' })) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('addon.destroy', id));
         }
     }
