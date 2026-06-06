@@ -153,7 +153,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                     <TableCell className="font-medium">{reminder.name}</TableCell>
                                     <TableCell>{reminder.reminder_type?.type ?? '—'}</TableCell>
                                     <TableCell>{reminder.vehicles?.name ?? '—'}</TableCell>
-                                    <TableCell>{reminder.reminder_date}</TableCell>
+                                    <TableCell>{reminder.reminder_date ? reminder.reminder_date.slice(0, 10) : '—'}</TableCell>
                                     <TableCell>
                                         {reminder.days_remaining !== undefined
                                             ? Math.round(reminder.days_remaining)
@@ -161,7 +161,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={statusVariant(reminder.status)} className="capitalize">
-                                            {reminder.status}
+                                            {t(reminder.status)}
                                         </Badge>
                                     </TableCell>
                                     {showActions && (
