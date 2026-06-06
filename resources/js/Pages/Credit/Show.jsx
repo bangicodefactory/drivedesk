@@ -28,7 +28,7 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={route('credit.index')}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
-                <h1 className="text-2xl font-semibold">{t('Credits')} — {driver?.name}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Credits')} — {driver?.name}</h1>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">

@@ -35,7 +35,7 @@ function NotificationIndex({ notifications = [] }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <Mail className="h-6 w-6" /> {t('Email Notification Template')}
                 </h1>
                 {can('create notification') && (

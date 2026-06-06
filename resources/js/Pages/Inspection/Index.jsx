@@ -80,7 +80,7 @@ function InspectionIndex({ inspections = [] }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <ClipboardCheck className="h-6 w-6" /> {t('Inspection')}
                 </h1>
                 {can('manage vehicle') && (

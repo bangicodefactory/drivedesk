@@ -36,7 +36,7 @@ function RolesIndex({ roles }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">{t('Roles')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Roles')}</h1>
                 <Button asChild>
                     <Link href={route('role.create')}>
                         <Plus className="mr-2 h-4 w-4" /> {t('New role')}

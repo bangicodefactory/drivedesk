@@ -24,7 +24,7 @@ function PermissionsIndex({ permissions }) {
 
     return (
         <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">{t('Permissions')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('Permissions')}</h1>
 
             <Card>
                 <CardHeader><CardTitle>{t('All permissions')}</CardTitle></CardHeader>

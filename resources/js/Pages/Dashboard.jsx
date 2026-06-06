@@ -30,7 +30,7 @@ function Dashboard({ stats, incomeExpenseByMonth, organizationByMonth, operation
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-semibold">{t('Dashboard')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Dashboard')}</h1>
                 <Badge variant={isSuperAdmin ? 'default' : 'secondary'}>
                     {isSuperAdmin ? t('Super Admin') : t('Owner')}
                 </Badge>
@@ -73,24 +73,28 @@ function OwnerDashboard({ operational, immediateActions, fleetAvailability, inco
                     title={t('Cars Out Today')}
                     value={op.carsOut}
                     icon={Car}
+                    iconClassName="h-4 w-4 text-primary"
                     subtitle={`/ ${op.totalVehicles ?? 0} ${t('Vehicles')}`}
                 />
                 <StatCard
                     title={t('Returns Due Today')}
                     value={op.returnsDueToday}
                     icon={RotateCcw}
+                    iconClassName="h-4 w-4 text-amber-600 dark:text-amber-500"
                     subtitle={`${op.overdue ?? 0} ${t('overdue')}`}
                 />
                 <StatCard
                     title={t('Maintenance Due')}
                     value={op.maintenanceDue}
                     icon={Wrench}
+                    iconClassName="h-4 w-4 text-violet-600 dark:text-violet-400"
                     subtitle={t('Reminders')}
                 />
                 <StatCard
                     title={t("Today's Revenue")}
                     value={op.revenueToday != null ? fmtMoney(op.revenueToday, locale) : null}
                     icon={TrendingUp}
+                    iconClassName="h-4 w-4 text-emerald-600 dark:text-emerald-500"
                     subtitle={`${t('This month')}: ${fmtMoney(op.revenueMonth, locale)}`}
                 />
             </div>
