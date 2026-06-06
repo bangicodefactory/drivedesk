@@ -1,18 +1,19 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, PenLine, Eye } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function SignatureIndex({ signatures = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm(t('Delete this signature?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this signature?') })) {
             router.delete(route('signature.destroy', id));
         }
     }
@@ -20,7 +21,7 @@ function SignatureIndex({ signatures = [] }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <PenLine className="h-6 w-6" /> {t('Signatures')}
                 </h1>
                 {can('manage driver') && (
@@ -32,9 +33,7 @@ function SignatureIndex({ signatures = [] }) {
                 )}
             </div>
 
-            <Card>
-                <CardHeader><CardTitle>{t('All Signatures')}</CardTitle></CardHeader>
-                <CardContent>
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -89,8 +88,7 @@ function SignatureIndex({ signatures = [] }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }

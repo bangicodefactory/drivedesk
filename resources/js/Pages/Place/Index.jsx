@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,6 +8,7 @@ import {
 import { Pencil, Trash2, Plus, MapPin, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/place/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -17,11 +17,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 // priceFormat() on the server (same as the Blade priceFormat($place->price)).
 function PlaceIndex({ places = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm('Are you sure?')) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('place.destroy', id));
         }
     }
@@ -39,7 +40,7 @@ function PlaceIndex({ places = [] }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <MapPin className="h-6 w-6" /> {t('Place')}
                 </h1>
                 {can('manage place') && (
@@ -51,10 +52,8 @@ function PlaceIndex({ places = [] }) {
                 )}
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>{t('All Places')}</CardTitle>
-                    <div className="relative w-full max-w-xs">
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
@@ -63,8 +62,9 @@ function PlaceIndex({ places = [] }) {
                             className="pl-8"
                         />
                     </div>
-                </CardHeader>
-                <CardContent>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -119,8 +119,7 @@ function PlaceIndex({ places = [] }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
         </div>
     );
 }

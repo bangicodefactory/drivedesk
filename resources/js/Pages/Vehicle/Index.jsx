@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,12 +9,14 @@ import { Eye, Pencil, Trash2, Plus, Car, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/vehicle/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete vehicle') / Gate::check('manage vehicle') guards.
 function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -38,8 +39,8 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
         return () => clearTimeout(timer);
     }, [search]);
 
-    function remove(id) {
-        if (window.confirm(t('Are you sure?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('vehicle.destroy', id));
         }
     }
@@ -49,7 +50,7 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <Car className="h-6 w-6" /> {t('Vehicle')}
                 </h1>
                 {can('manage vehicle') && (
@@ -61,10 +62,8 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                 )}
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>{t('All Vehicles')}</CardTitle>
-                    <div className="relative w-full max-w-xs">
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
@@ -73,8 +72,9 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                             className="pl-8"
                         />
                     </div>
-                </CardHeader>
-                <CardContent>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -139,8 +139,7 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                         </TableBody>
                     </Table>
                     <Pagination paginator={vehicles} />
-                </CardContent>
-            </Card>
+                </div>
         </div>
     );
 }

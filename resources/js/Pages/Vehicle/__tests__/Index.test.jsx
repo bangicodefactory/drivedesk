@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { usePage, router } from '@inertiajs/react';
 import VehicleIndex from '@/Pages/Vehicle/Index';
+
+// Confirm dialog replaces window.confirm; mock useConfirm with a controllable result.
+const { confirmState } = vi.hoisted(() => ({ confirmState: { result: true } }));
+vi.mock('@/components/ui/confirm-dialog', () => ({
+    useConfirm: () => () => Promise.resolve(confirmState.result),
+    ConfirmProvider: ({ children }) => children,
+}));
 
 // Mock Inertia: usePage feeds auth.permissions, Link renders a plain anchor,
 // router.delete is a spy so we can assert the confirm-gated destroy flow.
@@ -63,21 +70,20 @@ describe('Vehicle/Index permission gating', () => {
         expect(screen.getByText('Test Car')).toBeInTheDocument();
     });
 
-    it('renders the delete control only with delete vehicle permission and calls router.delete on confirm', () => {
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    it('renders the delete control only with delete vehicle permission and calls router.delete on confirm', async () => {
+        confirmState.result = true;
         renderWith(['delete vehicle']);
         const deleteButton = screen.getByLabelText('Delete');
         fireEvent.click(deleteButton);
-        expect(router.delete).toHaveBeenCalledWith('/vehicle.destroy/7');
-        confirmSpy.mockRestore();
+        await waitFor(() => expect(router.delete).toHaveBeenCalledWith('/vehicle.destroy/7'));
     });
 
-    it('does not call router.delete when confirm is cancelled', () => {
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('does not call router.delete when confirm is cancelled', async () => {
+        confirmState.result = false;
         renderWith(['delete vehicle']);
         fireEvent.click(screen.getByLabelText('Delete'));
+        await Promise.resolve();
         expect(router.delete).not.toHaveBeenCalled();
-        confirmSpy.mockRestore();
     });
 
     it('hides the delete control without delete vehicle permission', () => {
