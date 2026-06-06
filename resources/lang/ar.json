@@ -242,7 +242,7 @@
     "User": "مستخدم",
     "Date": "تاريخ",
     "Coupon Name": "اسم القسيمة",
-    "Type": "يكتب",
+    "Type": "النوع",
     "Rate": "معدل",
     "Code": "شفرة",
     "Valid For": "صالحة ل",
@@ -1207,5 +1207,6 @@
     "Fleet Availability": "توفر الأسطول",
     "overdue": "متأخر",
     "urgent": "عاجل",
-    "upcoming": "قادم"
+    "upcoming": "قادم",
+    "completed": "مكتمل"
 }

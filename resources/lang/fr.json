@@ -242,7 +242,7 @@
   "User": "Utilisateur",
   "Date": "Date",
   "Coupon Name": "Nom du coupon",
-  "Type": "Taper",
+  "Type": "Type",
   "Rate": "Taux",
   "Code": "Code",
   "Valid For": "Valable pour",
@@ -1201,5 +1201,6 @@
   "Fleet Availability": "Disponibilité de la flotte",
   "overdue": "en retard",
   "urgent": "urgent",
-  "upcoming": "à venir"
+  "upcoming": "à venir",
+  "completed": "complété"
 }
