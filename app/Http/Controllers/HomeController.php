@@ -104,6 +104,13 @@ class HomeController extends Controller
         $today     = Carbon::today();
         $closed    = ['cancelled', 'completed']; // not "out" / not pending return
 
+        // Row-level lists expose individual bookings/reminders, so they honour
+        // the same permissions as their modules. Aggregate counts stay visible
+        // (consistent with the existing totalBooking/totalIncome cards).
+        $user        = \Auth::user();
+        $canBooking  = $user->can('manage booking');
+        $canReminder = $user->can('manage reminder');
+
         // ── Operational metric cards ──────────────────────────────────────────
         $carsOut = Booking::where('parent_id', $parentId)
             ->whereDate('start_date', '<=', $today)
@@ -140,30 +147,34 @@ class HomeController extends Controller
 
         // ── Immediate actions: overdue returns + urgent/overdue reminders ─────
         $actions = [];
-        foreach ($overdueBookings->take(5) as $b) {
-            $vehicle = $vehiclesById->get($b->vehicle);
-            $actions[] = [
-                'type'     => 'return',
-                'title'    => $vehicle?->name ?? ('#' . $b->booking_id),
-                'subtitle' => $driverNames[$b->driver] ?? null,
-                'status'   => 'overdue',
-                'href'     => route('booking.show', $b->id),
-            ];
+        if ($canBooking) {
+            foreach ($overdueBookings->take(5) as $b) {
+                $vehicle = $vehiclesById->get($b->vehicle);
+                $actions[] = [
+                    'type'     => 'return',
+                    'title'    => $vehicle?->name ?? ('#' . $b->booking_id),
+                    'subtitle' => $driverNames[$b->driver] ?? null,
+                    'status'   => 'overdue',
+                    'href'     => route('booking.show', $b->id),
+                ];
+            }
         }
-        $urgentReminders = Reminder::with('vehicles')
-            ->where('parent_id', $parentId)
-            ->whereIn('status', ['urgent', 'overdue'])
-            ->orderBy('reminder_date')
-            ->take(5)
-            ->get();
-        foreach ($urgentReminders as $r) {
-            $actions[] = [
-                'type'     => 'maintenance',
-                'title'    => $r->vehicles?->name ?? $r->name,
-                'subtitle' => $r->note,
-                'status'   => $r->status,
-                'href'     => route('reminder.index'),
-            ];
+        if ($canReminder) {
+            $urgentReminders = Reminder::with('vehicles')
+                ->where('parent_id', $parentId)
+                ->whereIn('status', ['urgent', 'overdue'])
+                ->orderBy('reminder_date')
+                ->take(5)
+                ->get();
+            foreach ($urgentReminders as $r) {
+                $actions[] = [
+                    'type'     => 'maintenance',
+                    'title'    => $r->vehicles?->name ?? $r->name,
+                    'subtitle' => $r->note,
+                    'status'   => $r->status,
+                    'href'     => route('reminder.index'),
+                ];
+            }
         }
         $actions = array_slice($actions, 0, 6);
 
@@ -176,28 +187,32 @@ class HomeController extends Controller
             $days[] = $d->toDateString();
         }
 
-        $bookingsInRange = Booking::where('parent_id', $parentId)
-            ->where('status', '!=', 'cancelled')
-            ->whereDate('start_date', '<=', $rangeEnd)
-            ->whereDate('end_date', '>=', $rangeStart)
-            ->get();
+        // The timeline is a booking view, so it is gated behind 'manage booking'.
+        $fleetVehicles = [];
+        if ($canBooking) {
+            $bookingsInRange = Booking::where('parent_id', $parentId)
+                ->where('status', '!=', 'cancelled')
+                ->whereDate('start_date', '<=', $rangeEnd)
+                ->whereDate('end_date', '>=', $rangeStart)
+                ->get();
 
-        $fleetVehicles = $vehiclesById->take(8)->map(function ($v) use ($bookingsInRange, $driverNames) {
-            $bookings = $bookingsInRange->where('vehicle', $v->id)->map(fn ($b) => [
-                'booking_id' => $b->booking_id,
-                'start'      => optional($b->start_date)->toDateString(),
-                'end'        => optional($b->end_date)->toDateString(),
-                'status'     => $b->status,
-                'driver'     => $driverNames[$b->driver] ?? null,
-            ])->values()->all();
+            $fleetVehicles = $vehiclesById->take(8)->map(function ($v) use ($bookingsInRange, $driverNames) {
+                $bookings = $bookingsInRange->where('vehicle', $v->id)->map(fn ($b) => [
+                    'booking_id' => $b->booking_id,
+                    'start'      => optional($b->start_date)->toDateString(),
+                    'end'        => optional($b->end_date)->toDateString(),
+                    'status'     => $b->status,
+                    'driver'     => $driverNames[$b->driver] ?? null,
+                ])->values()->all();
 
-            return [
-                'id'            => $v->id,
-                'name'          => $v->name,
-                'license_plate' => $v->license_plate,
-                'bookings'      => $bookings,
-            ];
-        })->values()->all();
+                return [
+                    'id'            => $v->id,
+                    'name'          => $v->name,
+                    'license_plate' => $v->license_plate,
+                    'bookings'      => $bookings,
+                ];
+            })->values()->all();
+        }
 
         return [
             'operational' => [

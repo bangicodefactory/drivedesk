@@ -23,6 +23,7 @@ class HomeControllerTest extends TestCase
         $this->asClient('directonderweg');
 
         Permission::firstOrCreate(['name' => 'manage reminder', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'manage booking', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
@@ -120,6 +121,39 @@ $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
             ->get(route('dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('operational.carsOut', fn ($v) => $v >= 1));
+    }
+
+    public function test_immediate_actions_and_fleet_hidden_without_permissions(): void
+    {
+        // Owner with data but no manage-booking/reminder sees no row-level lists.
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        \App\Models\Vehicle::factory()->create(['parent_id' => $owner->id]);
+        Booking::factory()->create([
+            'parent_id'  => $owner->id,
+            'start_date' => now()->subDays(3),
+            'end_date'   => now()->subDay(),     // overdue
+            'status'     => 'in_progress',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('immediateActions', [])
+                ->where('fleetAvailability.vehicles', [])
+                // aggregate counts stay visible
+                ->where('operational.overdue', fn ($v) => $v >= 1));
+    }
+
+    public function test_fleet_visible_with_manage_booking(): void
+    {
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $owner->givePermissionTo('manage booking');
+        \App\Models\Vehicle::factory()->create(['parent_id' => $owner->id]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('fleetAvailability.vehicles', 1));
     }
 
     public function test_inertia_dashboard_owner_without_manage_reminder_has_empty_reminders(): void

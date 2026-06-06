@@ -24,8 +24,10 @@ export default function FleetAvailability({ data }) {
 
     const col = (dateStr) => Math.round((new Date(dateStr).getTime() - startMs) / DAY_MS);
     const clamp = (x) => Math.max(0, Math.min(n - 1, x));
+    // Dates arrive as 'YYYY-MM-DD' (parsed as UTC midnight); format in UTC so
+    // the day label can't shift in non-UTC timezones.
     const fmtDay = (d) =>
-        new Date(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+        new Date(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
 
     return (
         <Card>
