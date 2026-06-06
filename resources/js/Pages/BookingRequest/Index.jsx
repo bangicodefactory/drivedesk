@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Eye, CheckCircle, XCircle, ClipboardList, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     pending:   'secondary',
@@ -17,17 +18,18 @@ const STATUS_VARIANT = {
 
 function BookingRequestIndex({ bookingRequests = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function confirm(id) {
-        if (window.confirm(t('Confirm this booking request?'))) {
+    async function confirm(id) {
+        if (await confirmDialog({ title: t('Confirm this booking request?') })) {
             router.post(route('booking_requests.approve', id));
         }
     }
 
-    function refuse(id) {
-        if (window.confirm(t('Refuse this booking request?'))) {
+    async function refuse(id) {
+        if (await confirmDialog({ title: t('Refuse this booking request?') })) {
             router.post(route('booking_requests.refuse', id));
         }
     }

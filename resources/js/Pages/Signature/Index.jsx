@@ -5,14 +5,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Trash2, PenLine, Eye } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function SignatureIndex({ signatures = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm(t('Delete this signature?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this signature?') })) {
             router.delete(route('signature.destroy', id));
         }
     }

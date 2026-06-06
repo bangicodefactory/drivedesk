@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+
+// Confirm dialog replaces window.confirm; mock useConfirm with a controllable result.
+const { confirmState } = vi.hoisted(() => ({ confirmState: { result: true } }));
+vi.mock('@/components/ui/confirm-dialog', () => ({
+    useConfirm: () => () => Promise.resolve(confirmState.result),
+    ConfirmProvider: ({ children }) => children,
+}));
 
 // Mock Ziggy's global route() helper used inside the component.
 beforeEach(() => {
@@ -76,19 +83,18 @@ describe('Place/Index', () => {
         expect(screen.getByLabelText('Delete')).toBeInTheDocument();
     });
 
-    it('calls router.delete on confirm and skips it on cancel', () => {
+    it('calls router.delete on confirm and skips it on cancel', async () => {
         permissionsRef.current = ['delete place'];
         render(<PlaceIndex places={[place]} />);
 
-        const cancelSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+        confirmState.result = false;
         fireEvent.click(screen.getByLabelText('Delete'));
+        await Promise.resolve();
         expect(router.delete).not.toHaveBeenCalled();
-        cancelSpy.mockRestore();
 
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+        confirmState.result = true;
         fireEvent.click(screen.getByLabelText('Delete'));
-        expect(router.delete).toHaveBeenCalledWith('/place.destroy/7');
-        confirmSpy.mockRestore();
+        await waitFor(() => expect(router.delete).toHaveBeenCalledWith('/place.destroy/7'));
     });
 
     it('falls back to a dash for missing optional depo fields', () => {

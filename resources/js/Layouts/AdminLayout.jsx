@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -511,7 +512,9 @@ export default function AdminLayout({ children, breadcrumbs }) {
 
                     {/* Page content */}
                     <main className="flex-1 overflow-y-auto">
-                        {children}
+                        <ConfirmProvider>
+                            {children}
+                        </ConfirmProvider>
                     </main>
                 </div>
             </div>

@@ -18,6 +18,7 @@ import {
 import { Pencil, Printer, CreditCard, Trash2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -34,6 +35,7 @@ const PAYMENT_VARIANT = {
 
 function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
         date: new Date().toISOString().slice(0, 10),
@@ -119,8 +121,8 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function deletePayment(pid) {
-        if (window.confirm(t('Delete this payment?'))) {
+    async function deletePayment(pid) {
+        if (await confirmDialog({ title: t('Delete this payment?') })) {
             router.delete(route('booking.payment.destroy', [booking.id, pid]));
         }
     }

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil, Trash2, Plus, Eye, CreditCard, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     'payé': 'success',
@@ -17,14 +18,15 @@ const STATUS_VARIANT = {
 
 function CreditIndex({ credits = [], drivers = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     const params = new URLSearchParams(window.location.search);
     const [driverFilter, setDriverFilter] = useState(params.get('driver_id') ?? '');
 
-    function remove(id) {
-        if (window.confirm(t('Delete this credit?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this credit?') })) {
             router.delete(route('credit.destroy', id));
         }
     }

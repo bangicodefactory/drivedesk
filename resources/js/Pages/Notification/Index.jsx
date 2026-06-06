@@ -8,11 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil, Trash2, Plus, Mail, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/notification/index.blade.php. Columns, badge states
 // (Enable/Disable) and the destroy route are preserved 1:1.
 function NotificationIndex({ notifications = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
     const showActions = can('edit notification') || can('delete notification');
@@ -24,8 +26,8 @@ function NotificationIndex({ notifications = [] }) {
             [n.name, n.subject].some((v) => String(v ?? '').toLowerCase().includes(q)))
         : notifications;
 
-    function remove(id) {
-        if (window.confirm(t('Delete this notification?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this notification?') })) {
             router.delete(route('notification.destroy', id));
         }
     }

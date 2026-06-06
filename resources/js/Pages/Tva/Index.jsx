@@ -14,6 +14,7 @@ import {
 import { Eye, Pencil, Trash2, Download, RefreshCw, Receipt } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const MONTHS = [
     { value: '01', label: 'January' }, { value: '02', label: 'February' },
@@ -38,6 +39,7 @@ const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => currentYear -
 
 function TvaIndex({ tvas, filters }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -104,8 +106,8 @@ function TvaIndex({ tvas, filters }) {
         });
     }
 
-    function remove(id) {
-        if (window.confirm('Delete this TVA invoice?')) {
+    async function remove(id) {
+        if (await confirmDialog({ title: 'Delete this TVA invoice?' })) {
             router.delete(route('tva.destroy', id));
         }
     }

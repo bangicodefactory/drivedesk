@@ -10,15 +10,17 @@ import {
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function RolesIndex({ roles }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const canEdit   = auth.permissions.includes('edit role');
     const canDelete = auth.permissions.includes('delete role');
 
-    function remove(id) {
-        if (window.confirm(t('Delete this role?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this role?') })) {
             router.delete(route('role.destroy', id));
         }
     }

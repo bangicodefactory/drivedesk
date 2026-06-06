@@ -9,6 +9,7 @@ import {
 import { Pencil, Trash2, Plus, ListChecks, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/option/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
@@ -16,11 +17,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 // Prop name `options` matches the controller compact('options').
 function OptionIndex({ options = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm('Are you sure?')) {
+    async function remove(id) {
+        if (await confirmDialog({ title: 'Are you sure?' })) {
             router.delete(route('option.destroy', id));
         }
     }

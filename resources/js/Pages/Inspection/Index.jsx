@@ -10,6 +10,7 @@ import {
 import { Eye, Pencil, Trash2, Plus, ClipboardCheck, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/inspection/index.blade.php.
 // Status / repair-status labels mirror Inspection::$status and
@@ -55,11 +56,12 @@ function repairStatusVariant(status) {
 
 function InspectionIndex({ inspections = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm(t('Are you sure?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('inspection.destroy', id));
         }
     }

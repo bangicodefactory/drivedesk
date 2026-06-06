@@ -16,6 +16,7 @@ import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -32,6 +33,7 @@ const PAYMENT_VARIANT = {
 
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -67,15 +69,15 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         );
     }
 
-    function remove(id) {
-        if (window.confirm(t('Delete this booking?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this booking?') })) {
             router.delete(route('booking.destroy', id));
         }
     }
 
-    function bulkDelete() {
+    async function bulkDelete() {
         if (!selected.length) return;
-        if (!window.confirm(`${t('Delete')} ${selected.length} ${t('selected booking(s)?')}`)) return;
+        if (!await confirmDialog({ title: `${t('Delete')} ${selected.length} ${t('selected booking(s)?')}` })) return;
         router.post(route('booking.bulk-destroy'), { ids: selected });
     }
 

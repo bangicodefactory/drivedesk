@@ -10,6 +10,7 @@ import {
 import { Eye, Pencil, Trash2, Plus, FileText, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     draft: 'secondary',
@@ -22,13 +23,14 @@ const STATUS_VARIANT = {
 
 function RentalAgreementIndex({ agreements, statuses }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
 
-    function remove(id) {
-        if (window.confirm(t('Delete this rental agreement?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this rental agreement?') })) {
             router.delete(route('rental-agreement.destroy', id));
         }
     }

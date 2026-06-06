@@ -9,14 +9,16 @@ import {
 import { Pencil, Trash2, Plus, Tag, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function ExpenseTypeIndex({ types = [] }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function remove(id) {
-        if (window.confirm('Are you sure?')) {
+    async function remove(id) {
+        if (await confirmDialog({ title: 'Are you sure?' })) {
             router.delete(route('expense-type.destroy', id));
         }
     }
