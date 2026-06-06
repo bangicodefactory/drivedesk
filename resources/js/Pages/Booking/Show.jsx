@@ -157,7 +157,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
             </div>
 
             {/* Invoice Card */}
-            <Card>
+            <Card className="print:border-0 print:shadow-none">
                 <CardContent className="pt-6">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:justify-between gap-6 mb-6">
@@ -275,7 +275,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
             </Card>
 
             {/* Payment History */}
-            <Card>
+            <Card className="print:border-0 print:shadow-none">
                 <CardHeader>
                     <CardTitle>{t('Payment History')}</CardTitle>
                 </CardHeader>
