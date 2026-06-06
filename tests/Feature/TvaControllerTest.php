@@ -410,8 +410,12 @@ class TvaControllerTest extends TestCase
     public function test_generate_monthly_tva_deletes_existing_records_for_month(): void
     {
         $monthStart = now()->startOfMonth();
-        Tva::factory()->withInvoice()->create([
+        // Pin month/year to the generated period — the factory default is a random
+        // month (numberBetween(1,12)), which made this assertion flaky (see below).
+        $old = Tva::factory()->withInvoice()->create([
             'facture_date' => $monthStart->format('Y-m-d'),
+            'month'        => $monthStart->month,
+            'year'         => $monthStart->year,
             'parent_id'    => $this->owner->id,
         ]);
 
@@ -423,11 +427,17 @@ class TvaControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        // After generation, the old record (without a booking payment) should be gone
+        // The stale record (no backing booking payment) is cleared when the month
+        // is regenerated. Tva soft-deletes, so generate() sets deleted_at rather
+        // than physically removing the row — assert it's no longer ACTIVE.
+        // (assertDatabaseMissing reads the raw table and would still see the
+        // soft-deleted row, so scope it to deleted_at = null.)
+        $this->assertSoftDeleted($old);
         $this->assertDatabaseMissing('tvas', [
-            'parent_id' => $this->owner->id,
-            'year'      => $monthStart->year,
-            'month'     => $monthStart->month,
+            'parent_id'  => $this->owner->id,
+            'year'       => $monthStart->year,
+            'month'      => $monthStart->month,
+            'deleted_at' => null,
         ]);
     }
 
