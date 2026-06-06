@@ -68,7 +68,7 @@ class SignatureController extends Controller
             // Verify if it's a valid base64 image
             if (strpos($signature, 'data:image/png;base64,') === false) {
                 return redirect()->back()
-                    ->with('error', 'Invalid signature format')
+                    ->with('error', __('Invalid signature format'))
                     ->withInput();
             }
     
@@ -81,7 +81,7 @@ class SignatureController extends Controller
     
             if (!$imageData) {
                 return redirect()->back()
-                    ->with('error', 'Failed to decode signature')
+                    ->with('error', __('Failed to decode signature'))
                     ->withInput();
             }
     
@@ -98,7 +98,7 @@ class SignatureController extends Controller
             // Try to store the file
             if (!Storage::disk('public')->put($fullPath, $imageData)) {
                 return redirect()->back()
-                    ->with('error', 'Failed to save signature')
+                    ->with('error', __('Failed to save signature'))
                     ->withInput();
             }
     
@@ -112,17 +112,17 @@ class SignatureController extends Controller
                 // If database insertion fails, delete the stored file
                 Storage::disk('public')->delete($fullPath);
                 return redirect()->back()
-                    ->with('error', 'Failed to save signature record')
+                    ->with('error', __('Failed to save signature record'))
                     ->withInput();
             }
     
             return redirect()->route('signature.index')
-                ->with('success', 'Signature saved successfully');
+                ->with('success', __('Signature saved successfully'));
     
         } catch (\Exception $e) {
             \Log::error('Signature save error: ' . $e->getMessage());
             return redirect()->back()
-                ->with('error', 'An error occurred while saving the signature')
+                ->with('error', __('An error occurred while saving the signature'))
                 ->withInput();
         }
     }
