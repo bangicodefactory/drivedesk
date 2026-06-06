@@ -45,6 +45,10 @@ export function ConfirmProvider({ children }) {
                     />
                     <DialogPrimitive.Content
                         onOpenAutoFocus={(e) => e.preventDefault()}
+                        // When there's no description, tell Radix it's intentional
+                        // (suppresses its missing-aria-describedby warning); when there
+                        // is one, let <Description> wire the association automatically.
+                        {...(state?.description ? {} : { 'aria-describedby': undefined })}
                         className={cn(
                             'fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
                             'rounded-xl border bg-background p-6 shadow-lg',
