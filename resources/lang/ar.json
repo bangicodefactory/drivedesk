@@ -1217,5 +1217,11 @@
     "impayé": "غير مدفوع",
     "Payé": "مدفوع",
     "partiellement payé": "مدفوع جزئيًا",
-    "Delete this TVA invoice?": "حذف فاتورة الضريبة هذه؟"
+    "Delete this TVA invoice?": "حذف فاتورة الضريبة هذه؟",
+    "Signature saved successfully": "تم حفظ التوقيع بنجاح",
+    "Invalid signature format": "تنسيق التوقيع غير صالح",
+    "Failed to decode signature": "فشل فك ترميز التوقيع",
+    "Failed to save signature": "فشل حفظ التوقيع",
+    "Failed to save signature record": "فشل حفظ سجل التوقيع",
+    "An error occurred while saving the signature": "حدث خطأ أثناء حفظ التوقيع"
 }
