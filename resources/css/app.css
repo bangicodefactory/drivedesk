@@ -110,3 +110,21 @@
         min-height: 100vh;
     }
 }
+
+/* ── Print ──────────────────────────────────────────────────────────────────
+ * Printable documents (the booking invoice and the rental agreement) print as
+ * a clean A4 sheet. The app chrome (sidebar, top bar, action buttons) is hidden
+ * via print:* utilities in AdminLayout and on the pages; here we just set the
+ * page geometry and force a white background. */
+@media print {
+    @page {
+        size: A4;
+        margin: 14mm;
+    }
+
+    html,
+    body,
+    #app {
+        background: #ffffff !important;
+    }
+}
