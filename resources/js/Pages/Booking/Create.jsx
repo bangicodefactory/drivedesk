@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -156,27 +157,27 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
 
                             <div className="space-y-1">
                                 <Label>{t('Vehicle')}</Label>
-                                <Select onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
-                                    <SelectContent>
-                                        {availableVehicles.map((v) => (
-                                            <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={availableVehicles.map((v) => ({ value: String(v.id), label: v.label }))}
+                                    value={vehicleId}
+                                    onChange={(v) => setValue('vehicle', v)}
+                                    placeholder={t('Select Vehicle')}
+                                    searchPlaceholder={t('Search vehicle…')}
+                                    ariaLabel={t('Vehicle')}
+                                />
                                 {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Driver')}</Label>
-                                <Select onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Driver')} /></SelectTrigger>
-                                    <SelectContent>
-                                        {drivers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={drivers.map((d) => ({ value: String(d.id), label: d.name }))}
+                                    value={watch('driver')}
+                                    onChange={(v) => setValue('driver', v)}
+                                    placeholder={t('Select Driver')}
+                                    searchPlaceholder={t('Search driver…')}
+                                    ariaLabel={t('Driver')}
+                                />
                                 {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
                             </div>
 
