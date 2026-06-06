@@ -116,7 +116,7 @@ class SignatureController extends Controller
                     ->withInput();
             }
     
-            return redirect()->back()
+            return redirect()->route('signature.index')
                 ->with('success', 'Signature saved successfully');
     
         } catch (\Exception $e) {
