@@ -1208,5 +1208,13 @@
     "overdue": "متأخر",
     "urgent": "عاجل",
     "upcoming": "قادم",
-    "completed": "مكتمل"
+    "completed": "مكتمل",
+    "pending": "قيد الانتظار",
+    "confirmed": "مؤكد",
+    "refused": "مرفوض",
+    "Yet to Start": "لم يبدأ بعد",
+    "On Going": "قيد التنفيذ",
+    "impayé": "غير مدفوع",
+    "Payé": "مدفوع",
+    "partiellement payé": "مدفوع جزئيًا"
 }

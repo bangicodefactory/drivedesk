@@ -1202,5 +1202,10 @@
   "overdue": "en retard",
   "urgent": "urgent",
   "upcoming": "à venir",
-  "completed": "complété"
+  "completed": "complété",
+  "pending": "en attente",
+  "confirmed": "confirmé",
+  "refused": "refusé",
+  "Yet to Start": "À démarrer",
+  "On Going": "En cours"
 }

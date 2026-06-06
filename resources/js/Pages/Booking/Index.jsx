@@ -241,12 +241,12 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[b.status] ?? 'secondary'}>
-                                            {statusLabel(b.status)}
+                                            {t(statusLabel(b.status))}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'}>
-                                            {payLabel(b.payment_status)}
+                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'} className="capitalize">
+                                            {t(payLabel(b.payment_status))}
                                         </Badge>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
