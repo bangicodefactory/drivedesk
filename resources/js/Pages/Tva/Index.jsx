@@ -107,7 +107,7 @@ function TvaIndex({ tvas, filters }) {
     }
 
     async function remove(id) {
-        if (await confirmDialog({ title: 'Delete this TVA invoice?' })) {
+        if (await confirmDialog({ title: t('Delete this TVA invoice?') })) {
             router.delete(route('tva.destroy', id));
         }
     }

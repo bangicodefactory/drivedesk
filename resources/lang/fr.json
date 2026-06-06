@@ -1207,5 +1207,6 @@
   "confirmed": "confirmé",
   "refused": "refusé",
   "Yet to Start": "À démarrer",
-  "On Going": "En cours"
+  "On Going": "En cours",
+  "Delete this TVA invoice?": "Supprimer cette facture TVA ?"
 }

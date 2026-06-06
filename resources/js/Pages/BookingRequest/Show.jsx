@@ -38,7 +38,7 @@ function BookingRequestShow({ booking }) {
                     <Link href={route('booking_requests.index')}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
                 <h1 className="text-3xl font-bold tracking-tight">{t('Booking Request')} #{booking.id}</h1>
-                <Badge variant={STATUS_VARIANT[booking.status] ?? 'secondary'}>{booking.status}</Badge>
+                <Badge variant={STATUS_VARIANT[booking.status] ?? 'secondary'} className="capitalize">{t(booking.status)}</Badge>
             </div>
 
             {booking.status === 'pending' && (
