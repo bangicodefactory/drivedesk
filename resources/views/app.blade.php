@@ -6,12 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title inertia>{{ config('app.name', 'RentCar') }}</title>
 
-    {{-- Brand typeface (Nunito): the SPA shell previously loaded no font and
-         fell back to the system sans. Matches font-sans in tailwind.config
-         and the legacy Blade UI. --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap">
+    {{-- Brand typeface (Nunito) is self-hosted via @fontsource-variable/nunito,
+         imported in resources/js/app.jsx and bundled by Vite — no external CDN
+         request. Family name 'Nunito Variable' is first in font-sans. --}}
 
     @routes
     @viteReactRefresh
