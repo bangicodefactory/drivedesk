@@ -88,8 +88,8 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                     <TableCell>{br.start_date}</TableCell>
                                     <TableCell>{br.end_date}</TableCell>
                                     <TableCell>
-                                        <Badge variant={STATUS_VARIANT[br.status] ?? 'secondary'}>
-                                            {br.status}
+                                        <Badge variant={STATUS_VARIANT[br.status] ?? 'secondary'} className="capitalize">
+                                            {t(br.status)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
