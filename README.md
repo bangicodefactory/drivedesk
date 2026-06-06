@@ -367,6 +367,34 @@ See `docs/client-configurability.md` for the full architecture.
 
 ---
 
+## Deployment checklist
+
+Each environment runs one client at a deploy-pinned tag (see
+`CLAUDE.md` §10.3). Run these on every deploy of a tag to a
+`production-<client>` / `staging-<client>` environment:
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan storage:link            # see note below
+php artisan optimize                # config/route/view cache
+# restart queue workers / php-fpm
+```
+
+- **`php artisan storage:link` must be run once per environment.** Stored
+  PDFs, signatures, and branding images are served through the
+  `public/storage → storage/app/public` symlink; without it those URLs
+  404 (broken-image previews). The symlink is **not** committed
+  (`/public/storage` is gitignored) precisely because it is per-machine —
+  never check it in. The command is idempotent, so re-running it on each
+  deploy is safe.
+- On a host where `storage/` is freshly created, also run the storage
+  directory init from [Troubleshooting](#storage-directory-initialisation-fresh-clone)
+  before `storage:link`.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely fix |

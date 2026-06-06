@@ -52,7 +52,7 @@ class SignatureControllerTest extends TestCase
                 'user_id'   => $this->owner->id,
                 'signature' => 'data:image/png;base64,' . self::VALID_PNG_BASE64,
             ])
-            ->assertRedirect()
+            ->assertRedirect(route('signature.index'))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('signatures', ['user_id' => $this->owner->id]);

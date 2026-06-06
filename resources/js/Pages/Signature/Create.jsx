@@ -4,9 +4,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { PenLine, Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -57,14 +55,14 @@ function SignatureCreate({ drivers }) {
 
                         <div className="space-y-1">
                             <Label>{t('Select Client')}</Label>
-                            <Select onValueChange={setUserId} required>
-                                <SelectTrigger><SelectValue placeholder={t('Select a driver/client')} /></SelectTrigger>
-                                <SelectContent>
-                                    {drivers.map((d) => (
-                                        <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                options={drivers.map((d) => ({ value: String(d.id), label: d.name }))}
+                                value={userId}
+                                onChange={setUserId}
+                                placeholder={t('Select a driver/client')}
+                                searchPlaceholder={t('Search driver…')}
+                                ariaLabel={t('Select Client')}
+                            />
                             {serverErrors?.user_id && (
                                 <p className="text-sm text-destructive">{serverErrors.user_id}</p>
                             )}
