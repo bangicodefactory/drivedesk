@@ -5,11 +5,13 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import StatCard           from '@/components/dashboard/StatCard';
 import IncomeExpenseChart from '@/components/dashboard/IncomeExpenseChart';
 import MonthlyBarChart    from '@/components/dashboard/MonthlyBarChart';
-import RemindersList      from '@/components/dashboard/RemindersList';
+import ImmediateActions   from '@/components/dashboard/ImmediateActions';
+import FleetAvailability  from '@/components/dashboard/FleetAvailability';
 import {
-    Users, UserCheck, CalendarCheck, DollarSign, ReceiptText,
-    Building2, CreditCard, ArrowRightLeft,
+    Car, RotateCcw, Wrench, TrendingUp, Building2,
 } from 'lucide-react';
+
+const fmtMoney = (v) => `${Number(v || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} Dh`;
 
 /**
  * Dashboard — BAN-66
@@ -17,7 +19,7 @@ import {
  * Branches on auth.user.type to render the owner or super-admin layout.
  * All widgets receive props sourced from HomeController::index.
  */
-function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth }) {
+function Dashboard({ stats, incomeExpenseByMonth, organizationByMonth, operational, immediateActions, fleetAvailability }) {
     const t = useTranslation();
     const { auth } = usePage().props;
     const isSuperAdmin = auth.user?.type === 'super admin';
@@ -37,8 +39,9 @@ function Dashboard({ stats, reminders, incomeExpenseByMonth, organizationByMonth
                     organizationByMonth={organizationByMonth}
                   />
                 : <OwnerDashboard
-                    stats={stats}
-                    reminders={reminders}
+                    operational={operational}
+                    immediateActions={immediateActions}
+                    fleetAvailability={fleetAvailability}
                     incomeExpenseByMonth={incomeExpenseByMonth}
                   />
             }
@@ -54,20 +57,52 @@ export default Dashboard;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OwnerDashboard({ stats, reminders, incomeExpenseByMonth }) {
+function OwnerDashboard({ operational, immediateActions, fleetAvailability, incomeExpenseByMonth }) {
     const t = useTranslation();
+    const op = operational ?? {};
+
     return (
         <div className="space-y-6">
+            {/* Operational metric cards — all derived from existing data */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title={t('Total Driver')}  value={stats?.totalDriver}  icon={UserCheck} />
-                <StatCard title={t('Total Booking')} value={stats?.totalBooking} icon={CalendarCheck} />
-                <StatCard title={t('Total Income')}  value={stats?.totalIncome}  icon={DollarSign} />
-                <StatCard title={t('Total Expense')} value={stats?.totalExpense} icon={ReceiptText} />
+                <StatCard
+                    title={t('Cars Out Today')}
+                    value={op.carsOut}
+                    icon={Car}
+                    subtitle={`/ ${op.totalVehicles ?? 0} ${t('Vehicles')}`}
+                />
+                <StatCard
+                    title={t('Returns Due Today')}
+                    value={op.returnsDueToday}
+                    icon={RotateCcw}
+                    subtitle={`${op.overdue ?? 0} ${t('overdue')}`}
+                />
+                <StatCard
+                    title={t('Maintenance Due')}
+                    value={op.maintenanceDue}
+                    icon={Wrench}
+                    subtitle={t('Reminders')}
+                />
+                <StatCard
+                    title={t("Today's Revenue")}
+                    value={op.revenueToday != null ? fmtMoney(op.revenueToday) : null}
+                    icon={TrendingUp}
+                    subtitle={`${t('This month')}: ${fmtMoney(op.revenueMonth)}`}
+                />
             </div>
 
-            <RemindersList reminders={reminders ?? []} />
+            {/* Immediate actions + income/expense */}
+            <div className="grid gap-6 lg:grid-cols-3">
+                <div className="lg:col-span-1">
+                    <ImmediateActions actions={immediateActions ?? []} />
+                </div>
+                <div className="lg:col-span-2">
+                    <IncomeExpenseChart data={incomeExpenseByMonth} />
+                </div>
+            </div>
 
-            <IncomeExpenseChart data={incomeExpenseByMonth} />
+            {/* Fleet availability timeline (next 7 days) */}
+            <FleetAvailability data={fleetAvailability} />
         </div>
     );
 }
