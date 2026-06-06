@@ -304,19 +304,21 @@ class DevDataSeeder extends Seeder
             return [];
         }
 
-        $statuses = ['pending', 'approved', 'in_progress', 'completed', 'cancelled'];
-        $payStatuses = ['paid', 'unpaid', 'partial'];
+        // Status/payment values mirror Booking::$status and Booking::$paymentStatus
+        // (the app's canonical vocabulary) so the index badges resolve to real labels.
+        $statuses = ['yet_to_start', 'on_going', 'completed', 'cancelled'];
+        $payStatuses = ['paye', 'impaye', 'partiellement_paye'];
         $payMethods  = ['cash', 'stripe', 'paypal'];
 
         $bookingsData = [
-            ['start' => '-30 days', 'end' => '-25 days', 'status' => 'completed', 'pay' => 'paid',    'method' => 'cash',   'v' => 0, 'd' => 0, 'pu' => 0, 'do' => 1],
-            ['start' => '-20 days', 'end' => '-15 days', 'status' => 'completed', 'pay' => 'paid',    'method' => 'stripe', 'v' => 1, 'd' => 1, 'pu' => 1, 'do' => 2],
-            ['start' => '-10 days', 'end' => '-5 days',  'status' => 'completed', 'pay' => 'partial', 'method' => 'cash',   'v' => 2, 'd' => 2, 'pu' => 0, 'do' => 0],
-            ['start' => '-3 days',  'end' => '+2 days',  'status' => 'in_progress','pay' => 'paid',   'method' => 'cash',   'v' => 3, 'd' => 0, 'pu' => 1, 'do' => 3],
-            ['start' => '+5 days',  'end' => '+10 days', 'status' => 'approved',  'pay' => 'unpaid',  'method' => 'cash',   'v' => 4, 'd' => 1, 'pu' => 2, 'do' => 4],
-            ['start' => '+15 days', 'end' => '+20 days', 'status' => 'pending',   'pay' => 'unpaid',  'method' => 'paypal', 'v' => 0, 'd' => 2, 'pu' => 3, 'do' => 1],
-            ['start' => '-50 days', 'end' => '-45 days', 'status' => 'completed', 'pay' => 'paid',    'method' => 'stripe', 'v' => 5, 'd' => 0, 'pu' => 0, 'do' => 2],
-            ['start' => '-60 days', 'end' => '-58 days', 'status' => 'cancelled', 'pay' => 'unpaid',  'method' => 'cash',   'v' => 1, 'd' => 1, 'pu' => 2, 'do' => 3],
+            ['start' => '-30 days', 'end' => '-25 days', 'status' => 'completed',   'pay' => 'paye',              'method' => 'cash',   'v' => 0, 'd' => 0, 'pu' => 0, 'do' => 1],
+            ['start' => '-20 days', 'end' => '-15 days', 'status' => 'completed',   'pay' => 'paye',              'method' => 'stripe', 'v' => 1, 'd' => 1, 'pu' => 1, 'do' => 2],
+            ['start' => '-10 days', 'end' => '-5 days',  'status' => 'completed',   'pay' => 'partiellement_paye','method' => 'cash',   'v' => 2, 'd' => 2, 'pu' => 0, 'do' => 0],
+            ['start' => '-3 days',  'end' => '+2 days',  'status' => 'on_going',    'pay' => 'paye',              'method' => 'cash',   'v' => 3, 'd' => 0, 'pu' => 1, 'do' => 3],
+            ['start' => '+5 days',  'end' => '+10 days', 'status' => 'yet_to_start','pay' => 'impaye',            'method' => 'cash',   'v' => 4, 'd' => 1, 'pu' => 2, 'do' => 4],
+            ['start' => '+15 days', 'end' => '+20 days', 'status' => 'yet_to_start','pay' => 'impaye',            'method' => 'paypal', 'v' => 0, 'd' => 2, 'pu' => 3, 'do' => 1],
+            ['start' => '-50 days', 'end' => '-45 days', 'status' => 'completed',   'pay' => 'paye',              'method' => 'stripe', 'v' => 5, 'd' => 0, 'pu' => 0, 'do' => 2],
+            ['start' => '-60 days', 'end' => '-58 days', 'status' => 'cancelled',   'pay' => 'impaye',            'method' => 'cash',   'v' => 1, 'd' => 1, 'pu' => 2, 'do' => 3],
         ];
 
         $ids = [];
@@ -467,12 +469,14 @@ class DevDataSeeder extends Seeder
     {
         if (empty($vehicleIds) || empty($typeIds)) return;
 
+        // Status/repair values mirror Inspection::$status and Inspection::$repairStatus
+        // (the app's canonical vocabulary) so the index badges resolve to real labels.
         $inspections = [
-            ['v' => 0, 't' => 0, 'offset' => '-60 days', 'status' => 'pass',   'repair' => 'no_repair',  'meter' => 10000, 'amount' => 350],
-            ['v' => 1, 't' => 1, 'offset' => '-30 days', 'status' => 'pass',   'repair' => 'no_repair',  'meter' => 44000, 'amount' => 800],
-            ['v' => 2, 't' => 2, 'offset' => '-15 days', 'status' => 'fail',   'repair' => 'in_repair',  'meter' => 7500,  'amount' => 1500],
-            ['v' => 3, 't' => 3, 'offset' => '-7 days',  'status' => 'pass',   'repair' => 'no_repair',  'meter' => 4800,  'amount' => 600],
-            ['v' => 4, 't' => 0, 'offset' => '-45 days', 'status' => 'pass',   'repair' => 'repaired',   'meter' => 28000, 'amount' => 400],
+            ['v' => 0, 't' => 0, 'offset' => '-60 days', 'status' => 'completed', 'repair' => 'completed',   'meter' => 10000, 'amount' => 350],
+            ['v' => 1, 't' => 1, 'offset' => '-30 days', 'status' => 'completed', 'repair' => 'completed',   'meter' => 44000, 'amount' => 800],
+            ['v' => 2, 't' => 2, 'offset' => '-15 days', 'status' => 'reject',    'repair' => 'in_progress', 'meter' => 7500,  'amount' => 1500],
+            ['v' => 3, 't' => 3, 'offset' => '-7 days',  'status' => 'completed', 'repair' => 'completed',   'meter' => 4800,  'amount' => 600],
+            ['v' => 4, 't' => 0, 'offset' => '-45 days', 'status' => 'completed', 'repair' => 'completed',   'meter' => 28000, 'amount' => 400],
         ];
 
         foreach ($inspections as $data) {
