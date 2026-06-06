@@ -261,8 +261,8 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                     <TableCell className="text-right">{booking.tva_amount} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>{t('Paid')}</TableCell>
-                                    <TableCell className="text-right">{booking.paid_amount} Dh</TableCell>
+                                    <TableCell>{t('Rest')}</TableCell>
+                                    <TableCell className="text-right">{Number(booking.due_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="font-semibold">{t('Due Amount (TTC)')}</TableCell>
