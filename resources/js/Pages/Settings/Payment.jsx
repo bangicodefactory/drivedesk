@@ -76,7 +76,7 @@ function Payment({ settings }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">{t('Payment Settings')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Payment Settings')}</h1>
                 <p className="text-sm text-muted-foreground">{t('Currency and payment gateway configuration.')}</p>
             </div>
 

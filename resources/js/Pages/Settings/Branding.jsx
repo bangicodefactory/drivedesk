@@ -159,7 +159,7 @@ function Branding({ settings }) {
     return (
         <div className="max-w-2xl space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <Paintbrush className="h-6 w-6 text-primary" />
                     {t('Branding & Theme')}
                 </h1>

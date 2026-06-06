@@ -46,7 +46,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">{t('Rental Agreements')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Rental Agreements')}</h1>
                 {can('manage rental agreement') && (
                     <Button size="sm" asChild>
                         <Link href={route('rental-agreement.create')}>

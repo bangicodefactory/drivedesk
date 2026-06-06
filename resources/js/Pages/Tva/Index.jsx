@@ -115,7 +115,7 @@ function TvaIndex({ tvas, filters }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <Receipt className="h-6 w-6" /> TVA
                 </h1>
                 <Button variant="outline" size="sm" asChild>

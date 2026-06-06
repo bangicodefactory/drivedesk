@@ -102,7 +102,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex flex-wrap items-center gap-2 justify-between">
-                <h1 className="text-2xl font-semibold">{t('Bookings')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
                 <div className="flex flex-wrap gap-2">
                     {selected.length > 0 && can('edit booking') && (
                         <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
