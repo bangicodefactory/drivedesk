@@ -12,6 +12,7 @@ node_modules
 run-tickets.ps1
 /public/build
 /public/hot
+/public/storage
 .phpunit.result.cache
 /tmp_itc.php
 /_review_branches.txt
