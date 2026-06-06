@@ -82,6 +82,46 @@ $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
             );
     }
 
+    // ── Operational widgets (Stitch-aligned dashboard) ───────────────────────
+
+    public function test_inertia_dashboard_owner_has_operational_widgets(): void
+    {
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->has('operational.carsOut')
+                ->has('operational.totalVehicles')
+                ->has('operational.returnsDueToday')
+                ->has('operational.overdue')
+                ->has('operational.maintenanceDue')
+                ->has('operational.revenueToday')
+                ->has('operational.revenueMonth')
+                ->has('immediateActions')
+                ->has('fleetAvailability.days', 7)
+                ->has('fleetAvailability.vehicles')
+            );
+    }
+
+    public function test_operational_cars_out_counts_active_booking_today(): void
+    {
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        Booking::factory()->create([
+            'parent_id'  => $owner->id,
+            'start_date' => now()->subDay(),
+            'end_date'   => now()->addDay(),
+            'status'     => 'in_progress',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('operational.carsOut', fn ($v) => $v >= 1));
+    }
+
     public function test_inertia_dashboard_owner_without_manage_reminder_has_empty_reminders(): void
     {
 $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);

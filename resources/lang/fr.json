@@ -1190,5 +1190,16 @@
   "Search…": "Rechercher…",
   "Draft": "Brouillon",
   "Confirmed": "Confirmé",
-  "Cancelled": "Annulé"
+  "Cancelled": "Annulé",
+  "Cars Out Today": "Véhicules sortis aujourd'hui",
+  "Returns Due Today": "Retours attendus aujourd'hui",
+  "Maintenance Due": "Entretien à prévoir",
+  "Today's Revenue": "Revenu du jour",
+  "This month": "Ce mois-ci",
+  "Immediate Actions": "Actions immédiates",
+  "All clear — nothing needs attention": "Tout est en ordre — rien à signaler",
+  "Fleet Availability": "Disponibilité de la flotte",
+  "overdue": "en retard",
+  "urgent": "urgent",
+  "upcoming": "à venir"
 }

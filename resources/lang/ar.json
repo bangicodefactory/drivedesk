@@ -1196,5 +1196,16 @@
     "Search…": "بحث…",
     "Draft": "مسودة",
     "Confirmed": "مؤكد",
-    "Cancelled": "ملغى"
+    "Cancelled": "ملغى",
+    "Cars Out Today": "السيارات الخارجة اليوم",
+    "Returns Due Today": "الإرجاعات المستحقة اليوم",
+    "Maintenance Due": "الصيانة المستحقة",
+    "Today's Revenue": "إيرادات اليوم",
+    "This month": "هذا الشهر",
+    "Immediate Actions": "إجراءات فورية",
+    "All clear — nothing needs attention": "كل شيء على ما يرام — لا شيء يتطلب انتباهاً",
+    "Fleet Availability": "توفر الأسطول",
+    "overdue": "متأخر",
+    "urgent": "عاجل",
+    "upcoming": "قادم"
 }
