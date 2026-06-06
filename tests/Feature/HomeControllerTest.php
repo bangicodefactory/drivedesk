@@ -23,6 +23,7 @@ class HomeControllerTest extends TestCase
         $this->asClient('directonderweg');
 
         Permission::firstOrCreate(['name' => 'manage reminder', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'manage booking', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
@@ -61,8 +62,9 @@ class HomeControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
                 ->has('stats')
-                ->has('reminders')
+                ->has('immediateActions')
                 ->has('incomeExpenseByMonth')
+                ->missing('reminders') // standalone reminders prop was removed
             );
     }
 
@@ -82,16 +84,78 @@ $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
             );
     }
 
-    public function test_inertia_dashboard_owner_without_manage_reminder_has_empty_reminders(): void
+    // ── Operational widgets (Stitch-aligned dashboard) ───────────────────────
+
+    public function test_inertia_dashboard_owner_has_operational_widgets(): void
     {
-$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
 
         $this->actingAs($owner)
             ->get(route('dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
-                ->where('reminders', [])
+                ->has('operational.carsOut')
+                ->has('operational.totalVehicles')
+                ->has('operational.returnsDueToday')
+                ->has('operational.overdue')
+                ->has('operational.maintenanceDue')
+                ->has('operational.revenueToday')
+                ->has('operational.revenueMonth')
+                ->has('immediateActions')
+                ->has('fleetAvailability.days', 7)
+                ->has('fleetAvailability.vehicles')
             );
+    }
+
+    public function test_operational_cars_out_counts_active_booking_today(): void
+    {
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        Booking::factory()->create([
+            'parent_id'  => $owner->id,
+            'start_date' => now()->subDay(),
+            'end_date'   => now()->addDay(),
+            'status'     => 'in_progress',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('operational.carsOut', fn ($v) => $v >= 1));
+    }
+
+    public function test_immediate_actions_and_fleet_hidden_without_permissions(): void
+    {
+        // Owner with data but no manage-booking/reminder sees no row-level lists.
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        \App\Models\Vehicle::factory()->create(['parent_id' => $owner->id]);
+        Booking::factory()->create([
+            'parent_id'  => $owner->id,
+            'start_date' => now()->subDays(3),
+            'end_date'   => now()->subDay(),     // overdue
+            'status'     => 'in_progress',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('immediateActions', [])
+                ->where('fleetAvailability.vehicles', [])
+                // aggregate counts stay visible
+                ->where('operational.overdue', fn ($v) => $v >= 1));
+    }
+
+    public function test_fleet_visible_with_manage_booking(): void
+    {
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $owner->givePermissionTo('manage booking');
+        \App\Models\Vehicle::factory()->create(['parent_id' => $owner->id]);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('fleetAvailability.vehicles', 1)
+                ->where('fleetAvailability.total', 1));
     }
 
     public function test_inertia_dashboard_renders_correct_component_for_super_admin(): void
@@ -108,9 +172,9 @@ $superAdmin = User::factory()->superAdmin()->create(['parent_id' => 0]);
             );
     }
 
-    public function test_inertia_dashboard_reminders_carry_vehicle_status_and_note(): void
+    public function test_immediate_actions_carry_urgent_reminder_details(): void
     {
-$owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $owner->givePermissionTo('manage reminder');
 
         $vehicle = \App\Models\Vehicle::factory()->create([
@@ -131,10 +195,10 @@ $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
             ->get(route('dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
-                ->where('reminders.0.note',   'Oil change due')
-                ->where('reminders.0.status', 'urgent')
-                ->where('reminders.0.vehicle.name',          'BMW X5')
-                ->where('reminders.0.vehicle.license_plate', 'XYZ-123')
+                ->where('immediateActions.0.type',     'maintenance')
+                ->where('immediateActions.0.title',    'BMW X5')
+                ->where('immediateActions.0.subtitle', 'Oil change due')
+                ->where('immediateActions.0.status',   'urgent')
             );
     }
 
