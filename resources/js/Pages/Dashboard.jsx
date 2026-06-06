@@ -11,7 +11,10 @@ import {
     Car, RotateCcw, Wrench, TrendingUp, Building2,
 } from 'lucide-react';
 
-const fmtMoney = (v) => `${Number(v || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} Dh`;
+// Locale-aware grouping (fr uses spaces, en commas) but always Latin digits,
+// matching how amounts are shown elsewhere in the app.
+const fmtMoney = (v, locale) =>
+    `${new Intl.NumberFormat(locale || 'en', { maximumFractionDigits: 0, numberingSystem: 'latn' }).format(Number(v || 0))} Dh`;
 
 /**
  * Dashboard — BAN-66
@@ -59,6 +62,7 @@ export default Dashboard;
 
 function OwnerDashboard({ operational, immediateActions, fleetAvailability, incomeExpenseByMonth }) {
     const t = useTranslation();
+    const { locale } = usePage().props;
     const op = operational ?? {};
 
     return (
@@ -85,9 +89,9 @@ function OwnerDashboard({ operational, immediateActions, fleetAvailability, inco
                 />
                 <StatCard
                     title={t("Today's Revenue")}
-                    value={op.revenueToday != null ? fmtMoney(op.revenueToday) : null}
+                    value={op.revenueToday != null ? fmtMoney(op.revenueToday, locale) : null}
                     icon={TrendingUp}
-                    subtitle={`${t('This month')}: ${fmtMoney(op.revenueMonth)}`}
+                    subtitle={`${t('This month')}: ${fmtMoney(op.revenueMonth, locale)}`}
                 />
             </div>
 

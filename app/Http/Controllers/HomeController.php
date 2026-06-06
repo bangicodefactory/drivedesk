@@ -47,18 +47,11 @@ class HomeController extends Controller
                 $result['incomeExpenseByMonth'] = $this->incomeExpenseByMonth();
                 $result['settings'] = settings();
 
-                if (\Auth::user()->can('manage reminder')) {
-                    $reminders = Reminder::with('vehicles')  // Eager load vehicles
-                        ->where('parent_id', '=', parentId())
-                        ->orderBy('reminder_date', 'asc')
-                        ->take(5)
-                        ->get();
-                } else {
-                    $reminders = collect([]);
-                }
-
                 $extras = $this->ownerDashboardExtras();
 
+                // Upcoming reminders are surfaced through immediateActions /
+                // fleetAvailability now (see ownerDashboardExtras), so the old
+                // standalone `reminders` prop is no longer sent.
                 return Inertia::render('Dashboard', [
                     'stats' => [
                         'totalUser'    => $result['totalUser'],
@@ -67,16 +60,6 @@ class HomeController extends Controller
                         'totalIncome'  => $result['totalIncome'],
                         'totalExpense' => $result['totalExpense'],
                     ],
-                    'reminders'           => $reminders->map(fn ($r) => [
-                        'id'            => $r->id,
-                        'reminder_date' => optional($r->reminder_date)->toDateString(),
-                        'note'          => $r->note,
-                        'status'        => $r->status,
-                        'vehicle'       => $r->vehicles ? [
-                            'name'          => $r->vehicles->name,
-                            'license_plate' => $r->vehicles->license_plate,
-                        ] : null,
-                    ])->values()->all(),
                     'incomeExpenseByMonth' => $result['incomeExpenseByMonth'],
                     'operational'          => $extras['operational'],
                     'immediateActions'     => $extras['immediateActions'],
@@ -228,6 +211,9 @@ class HomeController extends Controller
             'fleetAvailability' => [
                 'days'     => $days,
                 'vehicles' => $fleetVehicles,
+                // full count so the widget can show "Showing N of M" (the list
+                // above is capped at 8 vehicles).
+                'total'    => $canBooking ? $vehiclesById->count() : 0,
             ],
         ];
     }

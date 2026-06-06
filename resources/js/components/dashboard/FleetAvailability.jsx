@@ -19,6 +19,7 @@ export default function FleetAvailability({ data }) {
     const t = useTranslation();
     const days = data?.days ?? [];
     const vehicles = data?.vehicles ?? [];
+    const total = data?.total ?? vehicles.length;
     const n = days.length || 7;
     const startMs = days.length ? new Date(days[0]).getTime() : 0;
 
@@ -97,6 +98,12 @@ export default function FleetAvailability({ data }) {
                         </div>
                     ))}
                 </div>
+
+                {total > vehicles.length && (
+                    <p className="pt-3 text-center text-xs text-muted-foreground">
+                        {vehicles.length} / {total} {t('Vehicles')}
+                    </p>
+                )}
             </CardContent>
         </Card>
     );
