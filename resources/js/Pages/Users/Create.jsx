@@ -28,7 +28,7 @@ function UsersCreate({ userRoles = [] }) {
 
     return (
         <div className="max-w-2xl space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">{t('New user')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('New user')}</h1>
 
             <Card>
                 <CardHeader><CardTitle>{t('User details')}</CardTitle></CardHeader>

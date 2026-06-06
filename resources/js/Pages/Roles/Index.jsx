@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge }  from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,15 +9,17 @@ import {
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function RolesIndex({ roles }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const canEdit   = auth.permissions.includes('edit role');
     const canDelete = auth.permissions.includes('delete role');
 
-    function remove(id) {
-        if (window.confirm(t('Delete this role?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this role?') })) {
             router.delete(route('role.destroy', id));
         }
     }
@@ -34,7 +35,7 @@ function RolesIndex({ roles }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">{t('Roles')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Roles')}</h1>
                 <Button asChild>
                     <Link href={route('role.create')}>
                         <Plus className="mr-2 h-4 w-4" /> {t('New role')}
@@ -42,10 +43,8 @@ function RolesIndex({ roles }) {
                 </Button>
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>{t('All roles')}</CardTitle>
-                    <div className="relative w-full max-w-xs">
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
@@ -54,8 +53,9 @@ function RolesIndex({ roles }) {
                             className="pl-8"
                         />
                     </div>
-                </CardHeader>
-                <CardContent>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -102,8 +102,7 @@ function RolesIndex({ roles }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
         </div>
     );
 }

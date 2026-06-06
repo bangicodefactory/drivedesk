@@ -242,7 +242,7 @@
   "User": "Utilisateur",
   "Date": "Date",
   "Coupon Name": "Nom du coupon",
-  "Type": "Taper",
+  "Type": "Type",
   "Rate": "Taux",
   "Code": "Code",
   "Valid For": "Valable pour",
@@ -496,7 +496,7 @@
   "Transaction": "Transaction",
   "Payment Type": "Type de paiement",
   "Accept": "Accepter",
-  "Reject": "Rejeter",
+  "Reject": "Rejeté",
   "Create Addon": "Créer un module complémentaire",
   "Billing Type": "Type de facturation",
   "Edit Addon": "Modifier le module complémentaire",
@@ -1201,5 +1201,12 @@
   "Fleet Availability": "Disponibilité de la flotte",
   "overdue": "en retard",
   "urgent": "urgent",
-  "upcoming": "à venir"
+  "upcoming": "à venir",
+  "completed": "complété",
+  "pending": "en attente",
+  "confirmed": "confirmé",
+  "refused": "refusé",
+  "Yet to Start": "À démarrer",
+  "On Going": "En cours",
+  "Delete this TVA invoice?": "Supprimer cette facture TVA ?"
 }

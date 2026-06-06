@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import {
 import { Eye, Pencil, Trash2, Plus, FileText, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     draft: 'secondary',
@@ -22,13 +22,14 @@ const STATUS_VARIANT = {
 
 function RentalAgreementIndex({ agreements, statuses }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
 
-    function remove(id) {
-        if (window.confirm(t('Delete this rental agreement?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this rental agreement?') })) {
             router.delete(route('rental-agreement.destroy', id));
         }
     }
@@ -44,7 +45,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">{t('Rental Agreements')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Rental Agreements')}</h1>
                 {can('manage rental agreement') && (
                     <Button size="sm" asChild>
                         <Link href={route('rental-agreement.create')}>
@@ -54,12 +55,8 @@ function RentalAgreementIndex({ agreements, statuses }) {
                 )}
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" /> {t('All Agreements')}
-                    </CardTitle>
-                    <div className="relative w-full max-w-xs">
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
@@ -68,8 +65,9 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             className="pl-8"
                         />
                     </div>
-                </CardHeader>
-                <CardContent>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -141,8 +139,7 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
         </div>
     );
 }

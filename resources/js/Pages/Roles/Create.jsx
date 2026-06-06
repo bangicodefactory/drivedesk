@@ -30,7 +30,7 @@ function RolesCreate({ permissions = [] }) {
 
     return (
         <div className="max-w-3xl space-y-6 p-6">
-            <h1 className="text-2xl font-semibold">{t('New role')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('New role')}</h1>
 
             <Card>
                 <CardHeader><CardTitle>{t('Role details')}</CardTitle></CardHeader>

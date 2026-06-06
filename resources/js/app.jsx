@@ -1,4 +1,5 @@
 import './bootstrap';
+import '@fontsource-variable/nunito'; // self-hosted brand typeface (replaces Google Fonts CDN)
 import { createInertiaApp, router } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';

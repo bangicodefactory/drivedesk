@@ -29,7 +29,7 @@ function SiteSeo({ settings }) {
     return (
         <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-semibold">{t('Site SEO Settings')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Site SEO Settings')}</h1>
                 <p className="text-sm text-muted-foreground">{t('Meta tags for search engine optimisation.')}</p>
             </div>
 

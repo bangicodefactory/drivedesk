@@ -9,15 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @param {number|string|null}    props.value    — number or pre-formatted string; null shows skeleton
  * @param {React.ComponentType}   [props.icon]   — optional lucide icon component
  * @param {string}                [props.subtitle]
+ * @param {string}                [props.iconClassName] — color/size override for the icon
  */
-export default function StatCard({ title, value, icon: Icon, subtitle }) {
+export default function StatCard({ title, value, icon: Icon, subtitle, iconClassName }) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                     {title}
                 </CardTitle>
-                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                {Icon && <Icon className={iconClassName ?? 'h-4 w-4 text-muted-foreground'} />}
             </CardHeader>
             <CardContent>
                 {value == null

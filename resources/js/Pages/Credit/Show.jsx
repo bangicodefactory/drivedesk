@@ -6,13 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = { 'payé': 'success', 'non payé': 'destructive' };
 
 function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth }) {
     const t = useTranslation();
-    function remove(id) {
-        if (window.confirm(t('Delete this credit?'))) {
+    const confirmDialog = useConfirm();
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this credit?') })) {
             router.delete(route('credit.destroy', id));
         }
     }
@@ -26,7 +28,7 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={route('credit.index')}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
-                <h1 className="text-2xl font-semibold">{t('Credits')} — {driver?.name}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Credits')} — {driver?.name}</h1>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">

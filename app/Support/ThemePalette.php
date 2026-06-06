@@ -7,10 +7,16 @@ namespace App\Support;
  *
  * Pure class — no framework dependencies, fully unit-testable.
  *
+ * The brand-driven colors (primary light/dark and the chart series) are derived
+ * in OKLCH so their lightness is perceptually uniform across hues — a yellow and
+ * a blue requested at the same target lightness read as equally "heavy", which
+ * HSL cannot guarantee. Output stays in shadcn's "H S% L%" format (consumed via
+ * hsl(var(--token))). Neutrals, fixed semantics and accent keep their HSL
+ * derivation. WCAG AA for every foreground pair is still enforced by contrastFg.
+ *
  * Usage:
  *   $palette = ThemePalette::derive('#3B82F6');
  *   // $palette['light'] => ['--primary' => '217 91% 60%', ...]
- *   // $palette['dark']  => ['--primary' => '217 91% 70%', ...]
  */
 class ThemePalette
 {
@@ -52,11 +58,12 @@ class ThemePalette
      */
     public static function derive(string $brandHex, ?string $accentHex = null, string $neutral = 'cool'): array
     {
-        [$h, $s, $l] = self::hexToHsl($brandHex);
+        [$h, $s, $l]    = self::hexToHsl($brandHex);     // neutrals / accent hue / secondary tint
+        [$bL, $bC, $bH] = self::hexToOklch($brandHex);   // brand color lightness (perceptual)
 
         return [
-            'light' => self::lightTokens($h, $s, $l, $accentHex, $neutral),
-            'dark'  => self::darkTokens($h, $s, $l, $accentHex, $neutral),
+            'light' => self::lightTokens($h, $s, $l, $bL, $bC, $bH, $accentHex, $neutral),
+            'dark'  => self::darkTokens($h, $s, $l, $bL, $bC, $bH, $accentHex, $neutral),
         ];
     }
 
@@ -64,13 +71,11 @@ class ThemePalette
     // Light token map
     // -------------------------------------------------------------------------
 
-    private static function lightTokens(float $h, float $s, float $l, ?string $accentHex, string $neutral): array
+    private static function lightTokens(float $h, float $s, float $l, float $bL, float $bC, float $bH, ?string $accentHex, string $neutral): array
     {
-        // Primary: clamp into usable button band
-        $pL = max(30.0, min(55.0, $l));
-        $pS = max(40.0, $s);
-        $primaryHsl = self::fmt($h, $pS, $pL);
-        $primaryFg  = self::contrastFg($h, $pS, $pL);
+        // Primary (OKLCH): perceptually-uniform lightness band, brand chroma + hue.
+        $primaryHsl = self::oklchToHsl(self::clampF($bL, 0.45, 0.62), $bC, $bH);
+        $primaryFg  = self::contrastFgFromStr($primaryHsl);
 
         // Secondary: low-sat brand surface
         $secS = max(5.0, $s * 0.12);
@@ -99,7 +104,7 @@ class ThemePalette
         // Ring = primary hue
         $ringHsl = $primaryHsl;
 
-        $charts = self::chartTokens($h, $s, true);
+        $charts = self::chartTokens($bL, $bC, $bH, true);
 
         return array_merge([
             '--background'           => $bgHsl,
@@ -131,13 +136,11 @@ class ThemePalette
     // Dark token map
     // -------------------------------------------------------------------------
 
-    private static function darkTokens(float $h, float $s, float $l, ?string $accentHex, string $neutral): array
+    private static function darkTokens(float $h, float $s, float $l, float $bL, float $bC, float $bH, ?string $accentHex, string $neutral): array
     {
-        // Primary dark: lighten + slightly desaturate
-        $pL = max(60.0, min(80.0, $l + 20.0));
-        $pS = max(40.0, $s * 0.9);
-        $primaryHsl = self::fmt($h, $pS, $pL);
-        $primaryFg  = self::contrastFg($h, $pS, $pL);
+        // Primary dark (OKLCH): lighter band, slightly reduced chroma.
+        $primaryHsl = self::oklchToHsl(self::clampF($bL + 0.18, 0.70, 0.86), $bC * 0.9, $bH);
+        $primaryFg  = self::contrastFgFromStr($primaryHsl);
 
         // Secondary dark
         $secS = max(5.0, $s * 0.08);
@@ -164,7 +167,7 @@ class ThemePalette
 
         $ringHsl = $primaryHsl;
 
-        $charts = self::chartTokens($h, $s, false);
+        $charts = self::chartTokens($bL, $bC, $bH, false);
 
         return array_merge([
             '--background'           => $bgHsl,
@@ -193,7 +196,7 @@ class ThemePalette
     }
 
     // -------------------------------------------------------------------------
-    // Helpers
+    // Helpers — neutral / accent / contrast (HSL)
     // -------------------------------------------------------------------------
 
     /** Find the lightest muted-foreground L that still passes AA against the muted background. */
@@ -231,13 +234,14 @@ class ThemePalette
         return [$accentHsl, $accentFg];
     }
 
-    private static function chartTokens(float $h, float $s, bool $light): array
+    /** Five evenly-spaced chart colors at a perceptually-uniform lightness (OKLCH). */
+    private static function chartTokens(float $bL, float $bC, float $bH, bool $light): array
     {
-        $sat = max(60.0, $s);
-        $lit = $light ? 50.0 : 60.0; // light: slightly dark for contrast on white; dark: brighter on dark bg
+        $L = $light ? 0.62 : 0.72;          // perceptual lightness
+        $C = max(0.10, min(0.16, $bC));     // keep charts colorful even for low-chroma brands
         $tokens = [];
         for ($i = 0; $i < 5; $i++) {
-            $tokens[] = self::fmt(fmod($h + $i * 72, 360), $sat, $lit);
+            $tokens[] = self::oklchToHsl($L, $C, fmod($bH + $i * 72, 360));
         }
         return $tokens;
     }
@@ -271,6 +275,13 @@ class ThemePalette
             }
             return '222.2 47.4% 11.2%';
         }
+    }
+
+    /** contrastFg from an "H S% L%" string. */
+    private static function contrastFgFromStr(string $hsl): string
+    {
+        [$h, $s, $l] = self::parseHslStr($hsl);
+        return self::contrastFg($h, $s, $l);
     }
 
     private static function relLuminance(float $h, float $s, float $l): float
@@ -312,15 +323,151 @@ class ThemePalette
     /** Hex color → [H°, S%, L%] (1-decimal precision). */
     public static function hexToHsl(string $hex): array
     {
+        [$r, $g, $b] = self::hexToSrgb($hex);
+        [$h, $s, $l] = self::rgbToHsl($r, $g, $b);
+        return [$h, $s, $l];
+    }
+
+    private static function fmt(float $h, float $s, float $l): string
+    {
+        return round($h, 1) . ' ' . round($s, 1) . '% ' . round($l, 1) . '%';
+    }
+
+    private static function parseHslStr(string $hsl): array
+    {
+        $x = str_replace('%', '', $hsl);
+        return array_map('floatval', preg_split('/\s+/', trim($x)));
+    }
+
+    private static function clampF(float $v, float $lo, float $hi): float
+    {
+        return max($lo, min($hi, $v));
+    }
+
+    // -------------------------------------------------------------------------
+    // OKLCH ↔ sRGB (Björn Ottosson's OKLab)
+    // -------------------------------------------------------------------------
+
+    /** Hex → OKLCH [L (0-1), C, H°]. */
+    public static function hexToOklch(string $hex): array
+    {
+        [$r, $g, $b] = self::hexToSrgb($hex);
+        return self::srgbToOklch($r, $g, $b);
+    }
+
+    /** OKLCH → "H S% L%" HSL string, with chroma reduced until the color is in sRGB gamut. */
+    private static function oklchToHsl(float $L, float $C, float $H): string
+    {
+        [$r, $g, $b] = self::oklchToSrgbClamped($L, $C, $H);
+        [$h, $s, $l] = self::rgbToHsl($r, $g, $b);
+        return self::fmt($h, $s, $l);
+    }
+
+    /** Reduce chroma stepwise until the (L,C,H) maps inside sRGB, then clamp channels. */
+    private static function oklchToSrgbClamped(float $L, float $C, float $H): array
+    {
+        $C = max(0.0, $C);
+        for ($i = 0; $i <= 40; $i++) {
+            $c = $C * (1 - $i / 40);
+            [$r, $g, $b] = self::oklchToSrgb($L, $c, $H);
+            if (self::inGamut($r) && self::inGamut($g) && self::inGamut($b)) {
+                return [self::clamp01($r), self::clamp01($g), self::clamp01($b)];
+            }
+        }
+        [$r, $g, $b] = self::oklchToSrgb($L, 0.0, $H);
+        return [self::clamp01($r), self::clamp01($g), self::clamp01($b)];
+    }
+
+    private static function oklchToSrgb(float $L, float $C, float $Hdeg): array
+    {
+        $h  = deg2rad($Hdeg);
+        $a  = $C * cos($h);
+        $bb = $C * sin($h);
+
+        $l_ = $L + 0.3963377774 * $a + 0.2158037573 * $bb;
+        $m_ = $L - 0.1055613458 * $a - 0.0638541728 * $bb;
+        $s_ = $L - 0.0894841775 * $a - 1.2914855480 * $bb;
+
+        $l = $l_ ** 3;
+        $m = $m_ ** 3;
+        $s = $s_ ** 3;
+
+        $r = 4.0767416621 * $l - 3.3077115913 * $m + 0.2309699292 * $s;
+        $g = -1.2684380046 * $l + 2.6097574011 * $m - 0.3413193965 * $s;
+        $b = -0.0041960863 * $l - 0.7034186147 * $m + 1.7076147010 * $s;
+
+        return [self::linearToSrgb($r), self::linearToSrgb($g), self::linearToSrgb($b)];
+    }
+
+    private static function srgbToOklch(float $r, float $g, float $b): array
+    {
+        $lr = self::srgbToLinear($r);
+        $lg = self::srgbToLinear($g);
+        $lb = self::srgbToLinear($b);
+
+        $l = 0.4122214708 * $lr + 0.5363325363 * $lg + 0.0514459929 * $lb;
+        $m = 0.2119034982 * $lr + 0.6806995451 * $lg + 0.1073969566 * $lb;
+        $s = 0.0883024619 * $lr + 0.2817188376 * $lg + 0.6299787005 * $lb;
+
+        $l_ = self::cbrt($l);
+        $m_ = self::cbrt($m);
+        $s_ = self::cbrt($s);
+
+        $L  = 0.2104542553 * $l_ + 0.7936177850 * $m_ - 0.0040720468 * $s_;
+        $a  = 1.9779984951 * $l_ - 2.4285922050 * $m_ + 0.4505937099 * $s_;
+        $bb = 0.0259040371 * $l_ + 0.7827717662 * $m_ - 0.8086757660 * $s_;
+
+        $C = sqrt($a * $a + $bb * $bb);
+        $H = rad2deg(atan2($bb, $a));
+        if ($H < 0) $H += 360;
+
+        return [$L, $C, $H];
+    }
+
+    private static function srgbToLinear(float $c): float
+    {
+        return $c <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+    }
+
+    private static function linearToSrgb(float $c): float
+    {
+        // Negative or tiny values pass through linearly (no pow of a negative → no NaN);
+        // out-of-gamut results are caught by inGamut() and reduced.
+        if ($c <= 0.0031308) return 12.92 * $c;
+        return 1.055 * ($c ** (1 / 2.4)) - 0.055;
+    }
+
+    private static function cbrt(float $x): float
+    {
+        return $x < 0 ? -((-$x) ** (1 / 3)) : $x ** (1 / 3);
+    }
+
+    private static function inGamut(float $c): bool
+    {
+        return $c >= -0.001 && $c <= 1.001;
+    }
+
+    private static function clamp01(float $c): float
+    {
+        return max(0.0, min(1.0, $c));
+    }
+
+    private static function hexToSrgb(string $hex): array
+    {
         $hex = ltrim($hex, '#');
         if (strlen($hex) === 3) {
-            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         }
+        return [
+            hexdec(substr($hex, 0, 2)) / 255,
+            hexdec(substr($hex, 2, 2)) / 255,
+            hexdec(substr($hex, 4, 2)) / 255,
+        ];
+    }
 
-        $r = hexdec(substr($hex, 0, 2)) / 255;
-        $g = hexdec(substr($hex, 2, 2)) / 255;
-        $b = hexdec(substr($hex, 4, 2)) / 255;
-
+    /** sRGB (0-1) → [H°, S%, L%] (1-decimal precision). */
+    private static function rgbToHsl(float $r, float $g, float $b): array
+    {
         $max = max($r, $g, $b);
         $min = min($r, $g, $b);
         $l   = ($max + $min) / 2;
@@ -339,10 +486,5 @@ class ThemePalette
         }
 
         return [round($h * 360, 1), round($s * 100, 1), round($l * 100, 1)];
-    }
-
-    private static function fmt(float $h, float $s, float $l): string
-    {
-        return round($h, 1) . ' ' . round($s, 1) . '% ' . round($l, 1) . '%';
     }
 }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,6 +15,7 @@ import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     yet_to_start: 'default',
@@ -32,6 +32,7 @@ const PAYMENT_VARIANT = {
 
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -67,15 +68,15 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         );
     }
 
-    function remove(id) {
-        if (window.confirm(t('Delete this booking?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this booking?') })) {
             router.delete(route('booking.destroy', id));
         }
     }
 
-    function bulkDelete() {
+    async function bulkDelete() {
         if (!selected.length) return;
-        if (!window.confirm(`${t('Delete')} ${selected.length} ${t('selected booking(s)?')}`)) return;
+        if (!await confirmDialog({ title: `${t('Delete')} ${selected.length} ${t('selected booking(s)?')}` })) return;
         router.post(route('booking.bulk-destroy'), { ids: selected });
     }
 
@@ -100,7 +101,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     return (
         <div className="space-y-6 p-6">
             <div className="flex flex-wrap items-center gap-2 justify-between">
-                <h1 className="text-2xl font-semibold">{t('Bookings')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
                 <div className="flex flex-wrap gap-2">
                     {selected.length > 0 && can('edit booking') && (
                         <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
@@ -176,12 +177,8 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                 </div>
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle className="flex items-center gap-2">
-                        <Truck className="h-5 w-5" /> {t('All Bookings')}
-                    </CardTitle>
-                    <div className="relative w-full max-w-xs">
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
@@ -190,8 +187,9 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             className="pl-8"
                         />
                     </div>
-                </CardHeader>
-                <CardContent>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -243,12 +241,12 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[b.status] ?? 'secondary'}>
-                                            {statusLabel(b.status)}
+                                            {t(statusLabel(b.status))}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'}>
-                                            {payLabel(b.payment_status)}
+                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'} className="capitalize">
+                                            {t(payLabel(b.payment_status))}
                                         </Badge>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
@@ -285,8 +283,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         </TableBody>
                     </Table>
                     <Pagination paginator={bookings} />
-                </CardContent>
-            </Card>
+                </div>
         </div>
     );
 }

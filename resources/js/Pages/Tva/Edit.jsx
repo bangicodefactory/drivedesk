@@ -72,7 +72,7 @@ function TvaEdit({ tva }) {
 
     return (
         <div className="p-6 max-w-3xl mx-auto">
-            <h1 className="text-2xl font-semibold flex items-center gap-2 mb-6">
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2 mb-6">
                 <Pencil className="h-6 w-6" /> {t('Edit TVA')}
             </h1>
 
