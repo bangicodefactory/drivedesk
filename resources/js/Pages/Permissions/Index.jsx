@@ -1,5 +1,4 @@
 import { router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge }  from '@/components/ui/badge';
 import {
@@ -26,9 +25,7 @@ function PermissionsIndex({ permissions }) {
         <div className="space-y-6 p-6">
             <h1 className="text-3xl font-bold tracking-tight">{t('Permissions')}</h1>
 
-            <Card>
-                <CardHeader><CardTitle>{t('All permissions')}</CardTitle></CardHeader>
-                <CardContent>
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -66,8 +63,7 @@ function PermissionsIndex({ permissions }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }

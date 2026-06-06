@@ -1,5 +1,4 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, PenLine, Eye } from 'lucide-react';
@@ -34,9 +33,7 @@ function SignatureIndex({ signatures = [] }) {
                 )}
             </div>
 
-            <Card>
-                <CardHeader><CardTitle>{t('All Signatures')}</CardTitle></CardHeader>
-                <CardContent>
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -91,8 +88,7 @@ function SignatureIndex({ signatures = [] }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }
