@@ -10,9 +10,11 @@ import { Pencil, Trash2, Plus, Receipt, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -34,8 +36,8 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
         return () => clearTimeout(t);
     }, [search]);
 
-    function remove(id) {
-        if (window.confirm(t('Are you sure?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('expense.destroy', id));
         }
     }

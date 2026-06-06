@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = {
     pending:   'secondary',
@@ -14,17 +15,18 @@ const STATUS_VARIANT = {
 
 function BookingRequestShow({ booking }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    function confirm() {
-        if (window.confirm(t('Confirm this booking request?'))) {
+    async function confirm() {
+        if (await confirmDialog({ title: t('Confirm this booking request?') })) {
             router.post(route('booking_requests.approve', booking.id));
         }
     }
 
-    function refuse() {
-        if (window.confirm(t('Refuse this booking request?'))) {
+    async function refuse() {
+        if (await confirmDialog({ title: t('Refuse this booking request?') })) {
             router.post(route('booking_requests.refuse', booking.id));
         }
     }

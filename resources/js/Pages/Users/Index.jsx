@@ -10,16 +10,18 @@ import {
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function UsersIndex({ users }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const canCreate = auth.permissions.includes('create user');
     const canEdit   = auth.permissions.includes('edit user');
     const canDelete = auth.permissions.includes('delete user');
 
-    function remove(id) {
-        if (window.confirm(t('Delete this user?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this user?') })) {
             router.delete(route('users.destroy', id));
         }
     }

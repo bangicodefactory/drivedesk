@@ -10,12 +10,14 @@ import { Eye, Pencil, Trash2, Plus, Car, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/vehicle/index.blade.php.
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete vehicle') / Gate::check('manage vehicle') guards.
 function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
@@ -38,8 +40,8 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
         return () => clearTimeout(timer);
     }, [search]);
 
-    function remove(id) {
-        if (window.confirm(t('Are you sure?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Are you sure?') })) {
             router.delete(route('vehicle.destroy', id));
         }
     }

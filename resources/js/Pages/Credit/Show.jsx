@@ -6,13 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const STATUS_VARIANT = { 'payé': 'success', 'non payé': 'destructive' };
 
 function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth }) {
     const t = useTranslation();
-    function remove(id) {
-        if (window.confirm(t('Delete this credit?'))) {
+    const confirmDialog = useConfirm();
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this credit?') })) {
             router.delete(route('credit.destroy', id));
         }
     }

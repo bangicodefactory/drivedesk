@@ -8,14 +8,16 @@ import {
 import { Trash2 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function PermissionsIndex({ permissions }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
     const { auth } = usePage().props;
     const canDelete = auth.permissions.includes('delete permission');
 
-    function remove(id) {
-        if (window.confirm(t('Delete this permission?'))) {
+    async function remove(id) {
+        if (await confirmDialog({ title: t('Delete this permission?') })) {
             router.delete(route('permission.destroy', id));
         }
     }
