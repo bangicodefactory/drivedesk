@@ -115,20 +115,19 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 </Card>
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                    <CardTitle>{t('All Reminders')}</CardTitle>
-                    <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('Search reminders…')}
-                            className="pl-8"
-                        />
-                    </div>
-                </CardHeader>
-                <CardContent>
+            <div className="flex items-center justify-end">
+                <div className="relative w-full max-w-xs">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={t('Search reminders…')}
+                        className="pl-8"
+                    />
+                </div>
+            </div>
+
+            <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -213,8 +212,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                             ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }
