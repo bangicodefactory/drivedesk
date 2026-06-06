@@ -456,12 +456,14 @@ export default function AdminLayout({ children, breadcrumbs }) {
 
     return (
         <TooltipProvider>
-            <div className="flex h-screen overflow-hidden bg-background">
+            {/* print:* — collapse the app shell so a printed page (Booking /
+                RentalAgreement invoices) is just the document, not the chrome. */}
+            <div className="flex h-screen overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
 
                 {/* ── Desktop sidebar ── */}
                 <aside
                     className={cn(
-                        'hidden lg:flex flex-col border-r bg-card transition-[width] duration-300 ease-out',
+                        'hidden lg:flex flex-col border-r bg-card transition-[width] duration-300 ease-out print:hidden',
                         collapsed ? 'w-16' : 'w-60',
                     )}
                 >
@@ -481,10 +483,10 @@ export default function AdminLayout({ children, breadcrumbs }) {
                 </aside>
 
                 {/* ── Main area ── */}
-                <div className="flex flex-1 flex-col overflow-hidden">
+                <div className="flex flex-1 flex-col overflow-hidden print:block print:overflow-visible">
 
                     {/* TopBar */}
-                    <header className="flex h-14 items-center gap-3 border-b bg-card px-4">
+                    <header className="flex h-14 items-center gap-3 border-b bg-card px-4 print:hidden">
 
                         {/* Mobile hamburger → Sheet */}
                         <Sheet>
@@ -511,7 +513,7 @@ export default function AdminLayout({ children, breadcrumbs }) {
                     </header>
 
                     {/* Page content */}
-                    <main className="flex-1 overflow-y-auto">
+                    <main className="flex-1 overflow-y-auto print:overflow-visible">
                         <ConfirmProvider>
                             {children}
                         </ConfirmProvider>

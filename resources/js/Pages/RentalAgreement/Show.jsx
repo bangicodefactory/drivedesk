@@ -28,7 +28,7 @@ function Field({ label, value }) {
 function RentalAgreementShow({ agreement, settings, terms }) {
     const t = useTranslation();
     return (
-        <div className="space-y-6 p-6" id="agreement-print">
+        <div className="space-y-6 p-6 print:p-0" id="agreement-print">
 
             <div className="flex justify-end print:hidden">
                 <Button size="sm" variant="outline" onClick={() => window.print()}>
@@ -36,7 +36,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                 </Button>
             </div>
 
-            <Card>
+            <Card className="print:border-0 print:shadow-none">
                 <CardContent className="pt-6 space-y-6">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:justify-between gap-4">
