@@ -33,6 +33,8 @@ function BookingPlanning({ bookingData, vehicleData }) {
                     },
                 },
                 navLinks: true,
+                // Show only the event title (BOK-#### - client name), not the time.
+                displayEventTime: false,
                 resourceAreaWidth: '25%',
                 resourceAreaHeaderContent: t('Vehicles'),
                 resources: vehicleData,
