@@ -234,7 +234,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
 
                             <div className="space-y-1">
                                 <Label htmlFor="discount">{t('Discount')}</Label>
-                                <Input id="discount" type="number" step="any" min="0" placeholder={t('Enter discount')} {...register('discount')} />
+                                <Input id="discount" type="number" step="any" min="0" placeholder={t('Enter discount')} {...register('discount')} onBlur={() => recalculate(true)} />
                             </div>
 
                             <div className="space-y-1">
