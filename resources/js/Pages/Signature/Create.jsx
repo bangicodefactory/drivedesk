@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,31 @@ function SignatureCreate({ drivers }) {
     const [userId, setUserId] = useState('');
     const [isEmpty, setIsEmpty] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // The canvas is sized by CSS (responsive), but its drawing buffer must match
+    // the rendered size × devicePixelRatio or strokes blur and the pen drifts.
+    // Sync the buffer on mount and whenever the box resizes (window / sidebar).
+    useEffect(() => {
+        const canvas = sigCanvasRef.current?.getCanvas();
+        if (!canvas) return;
+
+        const sync = () => {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const w = Math.round(canvas.offsetWidth * ratio);
+            const h = Math.round(canvas.offsetHeight * ratio);
+            if (!w || !h || (canvas.width === w && canvas.height === h)) return;
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').scale(ratio, ratio); // setting width/height resets the transform
+            sigCanvasRef.current?.clear();
+            setIsEmpty(true);
+        };
+
+        sync();
+        const ro = new ResizeObserver(sync);
+        ro.observe(canvas);
+        return () => ro.disconnect();
+    }, []);
 
     function clear() {
         sigCanvasRef.current?.clear();
@@ -41,7 +66,7 @@ function SignatureCreate({ drivers }) {
     }
 
     return (
-        <div className="p-6 max-w-xl mx-auto space-y-6">
+        <div className="p-6 max-w-3xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                 <PenLine className="h-6 w-6" /> {t('Create Signature')}
             </h1>
@@ -69,15 +94,17 @@ function SignatureCreate({ drivers }) {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>{t('Signature')}</Label>
-                            <div className="border rounded-md overflow-hidden bg-white touch-none">
+                            <div className="flex items-center justify-between">
+                                <Label>{t('Signature')}</Label>
+                                <span className="text-xs text-muted-foreground">{t('Draw inside the box below')}</span>
+                            </div>
+                            <div className="rounded-lg border-2 border-dashed bg-white touch-none overflow-hidden">
                                 <SignatureCanvas
                                     ref={sigCanvasRef}
                                     penColor="black"
                                     backgroundColor="white"
                                     canvasProps={{
-                                        className: 'w-full',
-                                        style: { width: '100%', height: 200 },
+                                        className: 'block w-full h-72 sm:h-96 cursor-crosshair',
                                     }}
                                     onEnd={handleEnd}
                                 />
