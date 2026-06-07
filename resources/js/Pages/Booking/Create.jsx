@@ -55,7 +55,10 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
         return val ? val.replace('T', ' ') : '';
     }
 
-    function recalculate() {
+    // dayChange mirrors booking/create.blade.php: false = recompute from the
+    // vehicle's stock rate and auto-fill the per-day price (vehicle/date change);
+    // true = use the manually typed per-day price and keep it (price/addon/place edit).
+    function recalculate(dayChange = false) {
         if (!vehicleId || !startDt || !endDt) return;
         axios.get(route('vehicle.rate.calculation'), {
             params: {
@@ -66,6 +69,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                 pickup_place: getValues('pickup_address'),
                 drop_off_place: getValues('drop_off_address'),
                 daily_price: getValues('daily_price'),
+                daychange: dayChange ? 1 : 0,
             },
         }).then((r) => {
             const res = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
@@ -78,7 +82,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
             // Guard: don't let these setValue calls trigger the useEffect below
             apiWriting.current = true;
             setValue('amount', finalTotal);
-            if (res.daily_price) setValue('daily_price', res.daily_price);
+            // Auto-fill the per-day price from the vehicle's rate only when it's
+            // NOT a manual edit, so a typed override is preserved (Blade parity).
+            if (!dayChange && res.daily_price) setValue('daily_price', res.daily_price);
             setValue('details', JSON.stringify(res));
             apiWriting.current = false;
 
@@ -98,12 +104,21 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
         }).catch(() => {});
     }, [startDt, endDt]);
 
-    // Recalculate when vehicle / dates / addons / places change (NOT daily_price — API sets that)
+    // Vehicle/date change → recompute from the vehicle's stock rate and
+    // auto-fill the per-day price (Blade: #vehicle / date handlers, daychange != 1).
     useEffect(() => {
         if (apiWriting.current) return;
-        recalculate();
+        recalculate(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId]);
+    }, [vehicleId, startDt, endDt]);
+
+    // Addons / pickup / drop-off change → recompute but PRESERVE a manually
+    // entered per-day price (Blade: .addon / #pickup,#drop handlers, daychange = 1).
+    useEffect(() => {
+        if (apiWriting.current) return;
+        recalculate(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAddons, pickupId, dropoffId]);
 
     // Update total locally when discount changes (no API needed)
     useEffect(() => {
@@ -230,7 +245,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     step="any"
                                     min="0"
                                     {...register('daily_price')}
-                                    onBlur={() => recalculate()}
+                                    onBlur={() => recalculate(true)}
                                 />
                             </div>
 
