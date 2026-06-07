@@ -1214,5 +1214,6 @@
   "Failed to decode signature": "Échec du décodage de la signature",
   "Failed to save signature": "Échec de l'enregistrement de la signature",
   "Failed to save signature record": "Échec de la sauvegarde de l'enregistrement de signature",
-  "An error occurred while saving the signature": "Une erreur s'est produite lors de l'enregistrement de la signature"
+  "An error occurred while saving the signature": "Une erreur s'est produite lors de l'enregistrement de la signature",
+  "Draw inside the box below": "Dessinez dans la zone ci-dessous"
 }
