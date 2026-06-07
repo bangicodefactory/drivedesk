@@ -452,6 +452,7 @@ function FlashToaster() {
  * The `breadcrumbs` prop is an array of { label, href? } items.
  */
 export default function AdminLayout({ children, breadcrumbs }) {
+    const t = useTranslation();
     const [collapsed, setCollapsed] = useState(false);
 
     return (
@@ -515,7 +516,20 @@ export default function AdminLayout({ children, breadcrumbs }) {
                     {/* Page content */}
                     <main className="flex-1 overflow-y-auto print:overflow-visible">
                         <ConfirmProvider>
-                            {children}
+                            <div className="flex min-h-full flex-col">
+                                <div className="flex-1">{children}</div>
+                                <footer className="print:hidden border-t px-6 py-3 text-center text-xs text-muted-foreground">
+                                    {t('Developed by')}{' '}
+                                    <a
+                                        href="https://bangicode.ma/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-semibold text-foreground/80 underline-offset-2 transition-colors hover:text-primary hover:underline"
+                                    >
+                                        Bangicode
+                                    </a>
+                                </footer>
+                            </div>
                         </ConfirmProvider>
                     </main>
                 </div>

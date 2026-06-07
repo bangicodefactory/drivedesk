@@ -179,11 +179,24 @@ function Login({ status }) {
             </main>
 
             {/* ── Footer ────────────────────────────────────────────────────── */}
-            <footer className="relative z-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-8 py-4 text-xs text-white/40">
-                <span>© {year} {appName}</span>
-                <Link href="#" className="hover:text-white/70">{t('Security policy')}</Link>
-                <Link href="#" className="hover:text-white/70">{t('Terms')}</Link>
-                <Link href="#" className="hover:text-white/70">{t('Support')}</Link>
+            <footer className="relative z-10 flex flex-col items-center gap-1.5 px-8 py-4 text-xs text-white/40">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+                    <span>© {year} {appName}</span>
+                    <Link href="#" className="hover:text-white/70">{t('Security policy')}</Link>
+                    <Link href="#" className="hover:text-white/70">{t('Terms')}</Link>
+                    <Link href="#" className="hover:text-white/70">{t('Support')}</Link>
+                </div>
+                <div>
+                    {t('Developed by')}{' '}
+                    <a
+                        href="https://bangicode.ma/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-white/70 underline-offset-2 transition-colors hover:text-white hover:underline"
+                    >
+                        Bangicode
+                    </a>
+                </div>
             </footer>
         </div>
     );

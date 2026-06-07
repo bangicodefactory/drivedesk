@@ -1224,5 +1224,6 @@
     "Failed to save signature": "فشل حفظ التوقيع",
     "Failed to save signature record": "فشل حفظ سجل التوقيع",
     "An error occurred while saving the signature": "حدث خطأ أثناء حفظ التوقيع",
-    "Draw inside the box below": "ارسم داخل المربع أدناه"
+    "Draw inside the box below": "ارسم داخل المربع أدناه",
+    "Developed by": "تم التطوير بواسطة"
 }
