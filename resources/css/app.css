@@ -51,7 +51,16 @@
         --chart-3: 26 90.5% 37.1%;           /* #b45309 — tertiary amber */
         --chart-4: 222 52% 30%;              /* deep navy */
         --chart-5: 0 65% 52%;                /* warm red */
-    }
+        /* shadcn sidebar tokens */
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+}
 
     /* ── Aether Mobility — dark mode (native) ───────────────────────────────
      *
@@ -98,7 +107,16 @@
         --chart-3: 24.3 100% 76.3%;         /* #ffb786 — tertiary */
         --chart-4: 221.7 100% 83.9%;        /* #adc6ff — light blue */
         --chart-5: 6.4 100% 83.5%;          /* #ffb4ab — error red */
-    }
+        /* shadcn sidebar tokens */
+        --sidebar-background: 240 5.9% 10%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 224.3 76.3% 48%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+}
 }
 
 @layer base {
