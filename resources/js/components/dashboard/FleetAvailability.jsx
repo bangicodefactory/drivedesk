@@ -7,8 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 // LTR — timelines read left-to-right regardless of UI direction.
 const BAR_COLOR = {
     in_progress:  'bg-primary',
-    approved:     'bg-blue-500',
-    pending:      'bg-amber-500',
+    approved:     'bg-info',
+    pending:      'bg-warning',
     yet_to_start: 'bg-violet-500',
     completed:    'bg-muted-foreground/40',
 };
