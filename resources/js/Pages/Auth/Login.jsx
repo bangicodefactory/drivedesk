@@ -43,7 +43,7 @@ function Login({ status }) {
 
             {/* ── Top brand bar ────────────────────────────────────────────── */}
             <header className="relative z-10 flex items-center gap-2.5 px-8 py-5">
-                <Lock className="h-5 w-5 text-indigo-400" aria-hidden="true" />
+                <Lock className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span className="text-lg font-semibold tracking-tight text-white">
                     {appName}
                 </span>
@@ -84,7 +84,7 @@ function Login({ status }) {
                                 autoComplete="email"
                                 autoFocus
                                 placeholder={t('you@agency.com')}
-                                className="border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:border-indigo-400 focus:ring-indigo-400"
+                                className="border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
                                 {...register('email')}
                             />
                             {errors.email && (
@@ -100,7 +100,7 @@ function Login({ status }) {
                                 </Label>
                                 <Link
                                     href={route('password.request')}
-                                    className="text-xs text-indigo-300 hover:text-indigo-200"
+                                    className="text-xs text-primary hover:text-primary/80"
                                 >
                                     {t('Forgot password?')}
                                 </Link>
@@ -110,7 +110,7 @@ function Login({ status }) {
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     autoComplete="current-password"
-                                    className="border-white/20 bg-white/10 pr-10 text-white placeholder:text-white/40 focus:border-indigo-400 focus:ring-indigo-400"
+                                    className="border-white/20 bg-white/10 pr-10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
                                     {...register('password')}
                                 />
                                 <button
@@ -136,7 +136,7 @@ function Login({ status }) {
                                 id="remember"
                                 checked={watch('remember')}
                                 onCheckedChange={(v) => setValue('remember', !!v)}
-                                className="border-white/30 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-500"
+                                className="border-white/30 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                             />
                             <Label htmlFor="remember" className="cursor-pointer text-sm font-normal text-white/80">
                                 {t('Keep me signed in')}
@@ -164,7 +164,7 @@ function Login({ status }) {
                         {/* CTA */}
                         <Button
                             type="submit"
-                            className="w-full bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:ring-indigo-400"
+                            className="w-full"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? t('Signing in…') : t('Sign in to portal')}

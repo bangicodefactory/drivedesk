@@ -83,7 +83,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
-                            <AlertTriangle className="h-8 w-8 text-orange-500" />
+                            <AlertTriangle className="h-8 w-8 text-warning" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.urgent ?? 0}</p>
                                 <p className="text-sm text-muted-foreground">{t('Urgent')}</p>
@@ -94,7 +94,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
-                            <Clock className="h-8 w-8 text-blue-500" />
+                            <Clock className="h-8 w-8 text-info" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.upcoming ?? 0}</p>
                                 <p className="text-sm text-muted-foreground">{t('Upcoming')}</p>
@@ -105,7 +105,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
-                            <CheckCircle className="h-8 w-8 text-green-500" />
+                            <CheckCircle className="h-8 w-8 text-success" />
                             <div>
                                 <p className="text-2xl font-bold">{stats.completed ?? 0}</p>
                                 <p className="text-sm text-muted-foreground">{t('Completed')}</p>
@@ -174,7 +174,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                                     aria-label={t('Mark complete')}
                                                     title={t('Mark as completed')}
                                                 >
-                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                    <CheckCircle className="h-4 w-4 text-success" />
                                                 </Button>
                                             )}
                                             {can('edit reminder') && reminder.status !== 'completed' && (
@@ -185,7 +185,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                                     aria-label={t('Snooze')}
                                                     title={t('Snooze')}
                                                 >
-                                                    <Clock className="h-4 w-4 text-blue-600" />
+                                                    <Clock className="h-4 w-4 text-info" />
                                                 </Button>
                                             )}
                                             {can('edit reminder') && (
