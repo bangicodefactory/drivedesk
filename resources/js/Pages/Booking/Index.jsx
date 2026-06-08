@@ -103,8 +103,20 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
 
     return (
         <div className="space-y-6 p-6">
-            <div className="flex flex-wrap items-center gap-2 justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
+
+            {/* Search sits under the title on the left; actions face it on the
+                same row, kept on the right. */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={t('Search bookings…')}
+                            className="pl-8"
+                        />
+                    </div>
                 <div className="flex flex-wrap gap-2">
                     {selected.length > 0 && can('edit booking') && (
                         <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
@@ -178,18 +190,6 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         </Button>
                     )}
                 </div>
-            </div>
-
-            <div className="flex items-center justify-end">
-                <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder={t('Search bookings…')}
-                            className="pl-8"
-                        />
-                    </div>
             </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
