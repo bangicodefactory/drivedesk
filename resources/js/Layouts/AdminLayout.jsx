@@ -35,13 +35,25 @@ const LOCALES = [
 ];
 
 function LanguageSwitcher() {
-    const { auth } = usePage().props;
+    const { auth, branding } = usePage().props;
     const current = auth?.user?.lang || 'fr';
+    // Effective text direction for a locale (mirrors app.jsx applyDirection).
+    const isRtl = (lang) => lang === 'ar' || branding?.layoutDirection === 'rtlmode';
 
     function change(code) {
         if (code === current) return;
         // GET /language/{lang} persists user.lang + session and redirects back.
-        router.get(route('language.change', code), {}, { preserveScroll: true });
+        const url = route('language.change', code);
+        // Crossing the LTR↔RTL boundary flips the sidebar from one edge to the
+        // other. The shadcn sidebar (fixed rail + inset offset) can't re-lay-out
+        // that on an in-place SPA visit — the content ends up overlapped by the
+        // sidebar — so do a full reload to re-initialise the shell for the new
+        // direction. Same-direction switches (en↔fr) stay SPA.
+        if (isRtl(code) !== isRtl(current)) {
+            window.location.assign(url);
+            return;
+        }
+        router.get(url, {}, { preserveScroll: true });
     }
 
     return (
