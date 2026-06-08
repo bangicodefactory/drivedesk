@@ -91,8 +91,9 @@ export default function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild size="lg" tooltip={branding?.appName}>
                             <Link href={route('dashboard')}>
-                                <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-sidebar-primary/10">
-                                    <img src={branding?.logoUrl} alt={branding?.appName ?? 'Logo'} className="size-8 object-contain" />
+                                {/* White chip so the logo reads cleanly on the deep-brand sidebar. */}
+                                <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-1 ring-1 ring-black/5">
+                                    <img src={branding?.logoUrl} alt={branding?.appName ?? 'Logo'} className="size-full object-contain" />
                                 </div>
                                 {/* Collapse to a logo-only miniature: hide the app name when the
                                     rail is in icon mode (the lg button shrinks to !size-8 !p-0,
