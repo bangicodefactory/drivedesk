@@ -85,7 +85,9 @@ function UsersIndex({ users }) {
                                     <TableCell><Badge variant="outline">{u.type}</Badge></TableCell>
                                     <TableCell>{u.company_name ?? '—'}</TableCell>
                                     <TableCell>
-                                        <Badge variant={u.is_active ? 'default' : 'secondary'}>
+                                        {/* active=success (green), inactive=secondary (grey) —
+                                            matches the on/off convention used app-wide. */}
+                                        <Badge variant={u.is_active ? 'success' : 'secondary'}>
                                             {u.is_active ? t('Active') : t('Inactive')}
                                         </Badge>
                                     </TableCell>
