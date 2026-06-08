@@ -91,10 +91,13 @@ export default function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild size="lg" tooltip={branding?.appName}>
                             <Link href={route('dashboard')}>
-                                <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-md bg-sidebar-primary/10">
+                                <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-sidebar-primary/10">
                                     <img src={branding?.logoUrl} alt={branding?.appName ?? 'Logo'} className="size-8 object-contain" />
                                 </div>
-                                <span className="truncate font-semibold">{branding?.appName}</span>
+                                {/* Collapse to a logo-only miniature: hide the app name when the
+                                    rail is in icon mode (the lg button shrinks to !size-8 !p-0,
+                                    which the size-8 logo fills exactly). */}
+                                <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">{branding?.appName}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
