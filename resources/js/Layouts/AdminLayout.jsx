@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
@@ -17,11 +17,15 @@ import {
 import {
     SidebarInset, SidebarProvider, SidebarTrigger,
 } from '@/components/ui/sidebar';
+import {
+    Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
+    BreadcrumbPage, BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import AppSidebar from '@/components/AppSidebar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import { initials } from '@/lib/nav';
-import { LogOut, Languages, Check } from 'lucide-react';
+import { LogOut, Languages, Check, ChevronRight } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Language switcher
@@ -143,22 +147,37 @@ function UserMenu() {
 function Breadcrumbs({ items }) {
     const t = useTranslation();
     if (!items?.length) return null;
+    const last = items.length - 1;
 
     // Labels are passed in English; translate here (a real component, so the
     // hook is valid — never call useTranslation() inside a page's static
     // `.layout` function, which Inertia invokes outside React's render tree).
+    // The trailing crumb always renders as the current page; an interior crumb
+    // links only if it carries an href.
     return (
-        <nav aria-label="breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
-            {items.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-1">
-                    {i > 0 && <span className="select-none">/</span>}
-                    {crumb.href
-                        ? <Link href={crumb.href} className="hover:text-foreground transition-colors">{t(crumb.label)}</Link>
-                        : <span className="text-foreground font-medium">{t(crumb.label)}</span>
-                    }
-                </span>
-            ))}
-        </nav>
+        <Breadcrumb>
+            <BreadcrumbList>
+                {items.map((crumb, i) => (
+                    <Fragment key={i}>
+                        <BreadcrumbItem>
+                            {crumb.href && i !== last ? (
+                                <BreadcrumbLink asChild>
+                                    <Link href={crumb.href}>{t(crumb.label)}</Link>
+                                </BreadcrumbLink>
+                            ) : (
+                                <BreadcrumbPage>{t(crumb.label)}</BreadcrumbPage>
+                            )}
+                        </BreadcrumbItem>
+                        {i !== last && (
+                            // Flip the chevron under RTL so it still points "forward".
+                            <BreadcrumbSeparator>
+                                <ChevronRight className="rtl:rotate-180" />
+                            </BreadcrumbSeparator>
+                        )}
+                    </Fragment>
+                ))}
+            </BreadcrumbList>
+        </Breadcrumb>
     );
 }
 
