@@ -10,7 +10,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
 // Port of resources/views/notification/index.blade.php. Columns, badge states
-// (Enable/Disable) and the destroy route are preserved 1:1.
+// (Enable/Disable) and the destroy route are preserved 1:1. Badge colours use
+// the design-handoff semantic palette so the two states are easy to tell apart:
+// enabled=success (green), disabled=secondary (muted) — green-vs-grey reads
+// clearer than the old orange-vs-red and is colour-blind safe.
 function NotificationIndex({ notifications = [] }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
@@ -81,7 +84,7 @@ function NotificationIndex({ notifications = [] }) {
                                     <TableCell className="font-medium">{n.name}</TableCell>
                                     <TableCell>{n.subject}</TableCell>
                                     <TableCell>
-                                        <Badge variant={n.enabled_email === 1 ? 'default' : 'destructive'}>
+                                        <Badge variant={n.enabled_email === 1 ? 'success' : 'secondary'}>
                                             {n.enabled_email === 1 ? t('Enable') : t('Disable')}
                                         </Badge>
                                     </TableCell>
