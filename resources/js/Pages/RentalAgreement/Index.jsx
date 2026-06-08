@@ -11,11 +11,16 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
+// Colours from the design-handoff semantic palette so the lifecycle states are
+// distinct: draft=secondary (grey), pending=warning (amber), confirmed=info
+// (blue), active=success (green, the live state), completed=secondary (grey,
+// archived), cancelled=destructive (red). Previously active (outline) and
+// completed (secondary) read as the same muted tone.
 const STATUS_VARIANT = {
     draft: 'secondary',
-    pending: 'default',
-    confirmed: 'outline',
-    active: 'outline',
+    pending: 'warning',
+    confirmed: 'info',
+    active: 'success',
     completed: 'secondary',
     cancelled: 'destructive',
 };
