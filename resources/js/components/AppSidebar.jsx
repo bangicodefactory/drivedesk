@@ -11,14 +11,19 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNavSections } from '@/lib/nav';
 
-// Active when the current URL is under the item's route. Guarded because some
-// route names may be absent for a given client/permission set.
+// Active when the current path equals the item's route or is a sub-path of it
+// (so detail/edit pages keep the parent highlighted). Uses segment boundaries —
+// NOT a raw prefix — so '/booking' doesn't match '/booking_requests' and '/tva'
+// doesn't match '/tva-report'. Query/hash are stripped before comparing.
 function useIsActive() {
     const { url } = usePage();
+    const path = url.split(/[?#]/)[0];
     return (routeName) => {
         if (!routeName) return false;
-        try { return url.startsWith(new URL(route(routeName)).pathname); }
+        let p;
+        try { p = new URL(route(routeName)).pathname; }
         catch { return false; }
+        return path === p || path.startsWith(p + '/');
     };
 }
 
