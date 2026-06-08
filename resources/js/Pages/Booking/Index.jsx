@@ -108,7 +108,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             {/* Search sits under the title on the left; actions face it on the
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
-                <div className="relative w-full max-w-xs">
+                <div className="relative w-full max-w-xs min-w-0">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
@@ -117,9 +117,11 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             className="pl-8"
                         />
                     </div>
-                <div className="flex flex-wrap gap-2">
+                {/* All actions stay on the search bar's row (no wrap); the search
+                    shrinks to make room. */}
+                <div className="flex items-center gap-2 shrink-0">
                     {selected.length > 0 && can('edit booking') && (
-                        <Button variant="outline" size="sm" onClick={bulkMarkPaid}>
+                        <Button variant="success" size="sm" onClick={bulkMarkPaid}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             {t('Mark as Paid')} ({selected.length})
                         </Button>
