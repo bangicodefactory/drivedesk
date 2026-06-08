@@ -19,6 +19,7 @@ vi.mock('@/components/ui/sidebar', () => {
         Sidebar: pass, SidebarHeader: pass, SidebarContent: pass, SidebarFooter: pass,
         SidebarGroup: pass, SidebarGroupLabel: pass, SidebarMenu: pass, SidebarMenuItem: pass,
         SidebarMenuSub: pass, SidebarMenuSubItem: pass, SidebarRail: () => null,
+        SidebarMenuBadge: pass,
         SidebarMenuButton: btn, SidebarMenuSubButton: btn,
     };
 });

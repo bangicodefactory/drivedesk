@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
 import {
     Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
-    SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+    SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem,
     SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail,
 } from '@/components/ui/sidebar';
 import {
@@ -30,12 +30,24 @@ function useIsActive() {
 function NavLeaf({ item, isActive, t }) {
     return (
         <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive(item.route)} tooltip={t(item.label)}>
+            <SidebarMenuButton
+                asChild
+                isActive={isActive(item.route)}
+                tooltip={t(item.label)}
+                // Reserve room on the right so the label truncates before the badge.
+                className={item.badge ? 'pr-14' : undefined}
+            >
                 <Link href={route(item.route)}>
                     {item.icon && <item.icon />}
                     <span>{t(item.label)}</span>
                 </Link>
             </SidebarMenuButton>
+            {/* "Upcoming" tag for not-yet-shipped features (hidden when collapsed). */}
+            {item.badge && (
+                <SidebarMenuBadge className="bg-sidebar-foreground/15 px-1.5 text-[10px] font-semibold tracking-wide">
+                    {t(item.badge)}
+                </SidebarMenuBadge>
+            )}
         </SidebarMenuItem>
     );
 }
