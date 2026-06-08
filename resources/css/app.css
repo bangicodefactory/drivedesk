@@ -105,6 +105,28 @@
     }
 }
 
+/* ── Sidebar scrollbar ───────────────────────────────────────────────────────
+ * The sidebar content scrolls; on the filled (deep-brand) sidebar the default
+ * browser scrollbar reads as an out-of-place grey bar. Make it thin and tint it
+ * from the sidebar's own foreground so it blends on any sidebar background. */
+[data-sidebar="content"] {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-foreground) / 0.3) transparent;
+}
+[data-sidebar="content"]::-webkit-scrollbar {
+    width: 6px;
+}
+[data-sidebar="content"]::-webkit-scrollbar-track {
+    background: transparent;
+}
+[data-sidebar="content"]::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-foreground) / 0.3);
+    border-radius: 9999px;
+}
+[data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--sidebar-foreground) / 0.5);
+}
+
 /* ── Print ──────────────────────────────────────────────────────────────────
  * Printable documents (booking invoice, rental agreement) print as a clean A4
  * sheet; app chrome is hidden via print:* utilities. Here: page geometry + white. */
