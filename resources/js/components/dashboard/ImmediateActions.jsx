@@ -6,10 +6,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // Items needing attention: overdue returns + urgent/overdue maintenance
 // reminders. All sourced from HomeController::ownerDashboardExtras.
+// Colours mirror the Reminders page status badges so a state reads the same
+// everywhere: overdue=danger, urgent=warning, upcoming=info, completed=success.
 const STATUS_VARIANT = {
-    overdue: 'destructive',
-    urgent:  'destructive',
-    upcoming: 'secondary',
+    overdue:  'destructive',
+    urgent:   'warning',
+    upcoming: 'info',
+    completed: 'success',
 };
 
 const TYPE_ICON = { return: RotateCcw, maintenance: Wrench };
