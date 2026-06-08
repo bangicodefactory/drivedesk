@@ -37,18 +37,22 @@ const REPAIR_STATUS_LABELS = {
     on_hold: 'On Hold',
 };
 
+// Colours from the design-handoff semantic palette so each state is distinct:
+// completed/pass=success (green), in_progress=warning (amber), pending/on_hold=
+// secondary (grey), reject/needs_repair=destructive (red). Previously completed
+// and in_progress were both 'default' (orange) and hard to tell apart.
 function statusVariant(status) {
     if (status === 'pending' || status === 'on_hold') return 'secondary';
-    if (status === 'completed' || status === 'conditional_pass') return 'default';
-    if (status === 'in_progress') return 'default';
+    if (status === 'completed' || status === 'conditional_pass') return 'success';
+    if (status === 'in_progress') return 'warning';
     if (status === 'reject') return 'destructive';
     return 'outline';
 }
 
 function repairStatusVariant(status) {
     if (status === 'pending' || status === 'on_hold') return 'secondary';
-    if (status === 'completed') return 'default';
-    if (status === 'in_progress') return 'default';
+    if (status === 'completed') return 'success';
+    if (status === 'in_progress') return 'warning';
     if (status === 'needs_repair') return 'destructive';
     return 'outline';
 }
