@@ -17,17 +17,20 @@ import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
+// Colours mapped to the design-handoff semantic palette (info/warning/success/
+// danger) so each state is distinct: scheduled=blue, active=amber, done=green,
+// cancelled=red; paid=green, partial=amber, unpaid=red.
 const STATUS_VARIANT = {
-    yet_to_start: 'default',
-    on_going: 'secondary',
-    completed: 'outline',
+    yet_to_start: 'info',
+    on_going: 'warning',
+    completed: 'success',
     cancelled: 'destructive',
 };
 
 const PAYMENT_VARIANT = {
-    paye: 'outline',
+    paye: 'success',
     impaye: 'destructive',
-    partiellement_paye: 'secondary',
+    partiellement_paye: 'warning',
 };
 
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
