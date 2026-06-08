@@ -3,120 +3,94 @@
 @tailwind utilities;
 
 @layer base {
-    /* ── Aether Mobility design system — light mode ─────────────────────────
-     *
-     * Aether is a dark-native "digital cockpit" system (Electric Blue + Neon
-     * Mint on Midnight Carbon). Light mode here is a light counterpart built
-     * from the same brand hues (electric blue primary, cool-slate neutrals).
-     *
-     * Token → Aether source
-     * -----------------------------------------------------------------------
-     * --primary             primary (Electric Blue)  #2563eb (blue-600, AA w/ white)
-     * --secondary           cool-slate surface       #e8edf7
-     * --muted               surface-container        #eef2fb
-     * --muted-foreground    slate-600                #475569
-     * --accent              hover surface            #dbe7fe
-     * --foreground          on-surface (navy)        #0b1326
-     * --border              cool hairline            #d5deec
-     * -------------------------------------------------------------------- */
+    /* ── DIRECT ONDERWEG — "Bold Orange" design system (light) ──────────────
+     * Tokens mapped from design_handoff_booking_flow/tokens/colors.css.
+     * Brand orange #E5601E on warm-ink neutrals; status: success/danger/
+     * warning/info per the handoff. Values are "H S% L%" for hsl(var(--x)). */
     :root {
-        --background: 220 50% 97.6%;         /* #f6f8fc — cool slate-white */
-        --foreground: 222.2 55.1% 9.6%;      /* #0b1326 — midnight carbon navy */
-        --card: 0 0% 100%;                   /* #ffffff */
-        --card-foreground: 222.2 55.1% 9.6%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 222.2 55.1% 9.6%;
-        --primary: 221.2 83.2% 53.3%;        /* #2563eb — electric blue (AA 5.17:1) */
-        --primary-foreground: 0 0% 100%;
-        --secondary: 220 48.4% 93.9%;        /* #e8edf7 — light cool surface */
-        --secondary-foreground: 222.2 55.1% 9.6%;
-        --muted: 221.5 61.9% 95.9%;          /* #eef2fb — cool blue tint */
-        --muted-foreground: 215.3 19.3% 34.5%; /* #475569 — slate (AA 6.76:1) */
-        --accent: 219.4 94.6% 92.7%;         /* #dbe7fe — hover surface */
-        --accent-foreground: 222.2 55.1% 9.6%;
-        --destructive: 0 75% 42%;            /* #ba1a1a — error (WCAG AA with white) */
-        --destructive-foreground: 0 0% 100%;
-        --success: 142 76% 27%;
-        --success-foreground: 0 0% 100%;
-        --warning: 32 95% 30%;
-        --warning-foreground: 0 0% 100%;
-        --info: 221 83% 35%;
-        --info-foreground: 0 0% 100%;
-        --border: 216.5 37.7% 88%;           /* #d5deec — cool hairline */
-        --input: 216.5 37.7% 88%;
-        --ring: 221.2 83.2% 53.3%;           /* #2563eb — focus ring = primary */
-        --radius: 0.5rem;
-        --chart-1: 221.2 83.2% 53.3%;        /* electric blue */
-        --chart-2: 161.4 93.5% 30.4%;        /* #059669 — neon mint (deepened) */
-        --chart-3: 26 90.5% 37.1%;           /* #b45309 — tertiary amber */
-        --chart-4: 222 52% 30%;              /* deep navy */
-        --chart-5: 0 65% 52%;                /* warm red */
-        /* shadcn sidebar tokens */
-        --sidebar-background: 0 0% 98%;
-        --sidebar-foreground: 240 5.3% 26.1%;
-        --sidebar-primary: 240 5.9% 10%;
-        --sidebar-primary-foreground: 0 0% 98%;
-        --sidebar-accent: 240 4.8% 95.9%;
-        --sidebar-accent-foreground: 240 5.9% 10%;
-        --sidebar-border: 220 13% 91%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
-}
+        --background: 210 28.6% 97.3%; /* #F6F8FA */
+        --foreground: 217.5 11.4% 13.7%; /* #1F2227 */
+        --card: 0 0% 100%; /* #FFFFFF */
+        --card-foreground: 217.5 11.4% 13.7%; /* #1F2227 */
+        --popover: 0 0% 100%; /* #FFFFFF */
+        --popover-foreground: 217.5 11.4% 13.7%; /* #1F2227 */
+        --primary: 19.9 79.3% 50.8%; /* #E5601E */
+        --primary-foreground: 0 0% 100%; /* #FFFFFF */
+        --secondary: 210 21.4% 94.5%; /* #EEF1F4 */
+        --secondary-foreground: 217.5 11.4% 13.7%; /* #1F2227 */
+        --muted: 210 21.4% 94.5%; /* #EEF1F4 */
+        --muted-foreground: 216.7 9.1% 38.8%; /* #5A616C */
+        --accent: 25.3 100% 96.3%; /* #FFF4EC */
+        --accent-foreground: 15.3 90.2% 35.9%; /* #AE3309 */
+        --destructive: 0 67.9% 53.5%; /* #D93838 */
+        --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+        --success: 148.1 68.1% 36.9%; /* #1E9E5A */
+        --success-foreground: 0 0% 100%; /* #FFFFFF */
+        --warning: 36.5 90.2% 47.8%; /* #E8920C */
+        --warning-foreground: 220 9.7% 6.1%; /* #0E0F11 */
+        --info: 217.3 68.9% 46.7%; /* #2563C9 */
+        --info-foreground: 0 0% 100%; /* #FFFFFF */
+        --border: 215 16.2% 85.5%; /* #D4D9E0 */
+        --input: 215 16.2% 85.5%; /* #D4D9E0 */
+        --ring: 19.9 79.3% 50.8%; /* #E5601E */
+        --chart-1: 19.9 79.3% 50.8%; /* #E5601E */
+        --chart-2: 36.3 91.5% 53.9%; /* #F5A01E */
+        --chart-3: 148.1 68.1% 36.9%; /* #1E9E5A */
+        --chart-4: 217.3 68.9% 46.7%; /* #2563C9 */
+        --chart-5: 15.3 90.2% 35.9%; /* #AE3309 */
+        --sidebar-background: 0 0% 100%; /* #FFFFFF */
+        --sidebar-foreground: 218.2 11.1% 19.4%; /* #2C3037 */
+        --sidebar-primary: 19.9 79.3% 50.8%; /* #E5601E */
+        --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+        --sidebar-accent: 25.3 100% 96.3%; /* #FFF4EC */
+        --sidebar-accent-foreground: 15.3 90.2% 35.9%; /* #AE3309 */
+        --sidebar-border: 213.3 20% 91.2%; /* #E4E8ED */
+        --sidebar-ring: 19.9 79.3% 50.8%; /* #E5601E */
+        --radius: 0.625rem;
+    }
 
-    /* ── Aether Mobility — dark mode (native) ───────────────────────────────
-     *
-     * Token → Aether source
-     * -----------------------------------------------------------------------
-     * --background          surface               #0b1326  (Midnight Carbon)
-     * --foreground          on-surface            #dae2fd
-     * --card                surface-container     #171f33
-     * --primary             primary               #adc6ff  (light blue)
-     * --primary-foreground  on-primary            #002e6a
-     * --muted               surface-container-low #131b2e
-     * --muted-foreground    on-surface-variant    #c2c6d6
-     * --accent              surface-container-high#222a3d
-     * --border              outline-variant       #424754
-     * -------------------------------------------------------------------- */
+    /* ── "Bold Orange" — dark mode (derived: ink surfaces, same orange brand) ── */
     .dark {
-        --background: 222.2 55.1% 9.6%;      /* #0b1326 — midnight carbon */
-        --foreground: 226.3 89.7% 92.4%;     /* #dae2fd — cool near-white */
-        --card: 222.9 37.8% 14.5%;           /* #171f33 — surface-container */
-        --card-foreground: 226.3 89.7% 92.4%;
-        --popover: 222.9 37.8% 14.5%;
-        --popover-foreground: 226.3 89.7% 92.4%;
-        --primary: 221.7 100% 83.9%;         /* #adc6ff — light blue (M3 dark primary) */
-        --primary-foreground: 214 100% 20.8%;/* #002e6a — deep blue on-primary */
-        --secondary: 222.2 28.4% 18.6%;      /* #222a3d — elevated surface */
-        --secondary-foreground: 226.3 89.7% 92.4%;
-        --muted: 222.2 41.5% 12.7%;          /* #131b2e — surface-container-low */
-        --muted-foreground: 228 19.6% 80%;   /* #c2c6d6 — on-surface-variant */
-        --accent: 222.2 28.4% 18.6%;         /* #222a3d — hover surface */
-        --accent-foreground: 226.3 89.7% 92.4%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 40% 98%;
-        --success: 142 76% 20%;              /* WCAG AA: 7.5:1 against white */
-        --success-foreground: 0 0% 100%;
-        --warning: 32 90% 30%;               /* WCAG AA against white */
-        --warning-foreground: 0 0% 100%;
-        --info: 221 83% 35%;                 /* WCAG AA: 8.4:1 against white */
-        --info-foreground: 0 0% 100%;
-        --border: 223.3 12% 29.4%;           /* #424754 — outline-variant */
-        --input: 223.3 12% 29.4%;
-        --ring: 221.7 100% 83.9%;            /* #adc6ff */
-        --chart-1: 218.1 100% 65.1%;        /* #4d8eff — primary-container blue */
-        --chart-2: 155.4 68.6% 58.8%;       /* #4edea3 — neon mint */
-        --chart-3: 24.3 100% 76.3%;         /* #ffb786 — tertiary */
-        --chart-4: 221.7 100% 83.9%;        /* #adc6ff — light blue */
-        --chart-5: 6.4 100% 83.5%;          /* #ffb4ab — error red */
-        /* shadcn sidebar tokens */
-        --sidebar-background: 240 5.9% 10%;
-        --sidebar-foreground: 240 4.8% 95.9%;
-        --sidebar-primary: 224.3 76.3% 48%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 240 3.7% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 240 3.7% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
-}
+        --background: 220 9.7% 6.1%; /* #0E0F11 */
+        --foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --card: 217.5 11.4% 13.7%; /* #1F2227 */
+        --card-foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --popover: 217.5 11.4% 13.7%; /* #1F2227 */
+        --popover-foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --primary: 19.9 79.3% 50.8%; /* #E5601E */
+        --primary-foreground: 0 0% 100%; /* #FFFFFF */
+        --secondary: 218.2 11.1% 19.4%; /* #2C3037 */
+        --secondary-foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --muted: 220 12% 9.8%; /* #16181C */
+        --muted-foreground: 215.3 11.7% 71.6%; /* #AEB5BF */
+        --accent: 218.2 11.1% 19.4%; /* #2C3037 */
+        --accent-foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --destructive: 0 67.9% 53.5%; /* #D93838 */
+        --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+        --success: 148.1 68.1% 36.9%; /* #1E9E5A */
+        --success-foreground: 0 0% 100%; /* #FFFFFF */
+        --warning: 36.5 90.2% 47.8%; /* #E8920C */
+        --warning-foreground: 220 9.7% 6.1%; /* #0E0F11 */
+        --info: 217.3 68.9% 46.7%; /* #2563C9 */
+        --info-foreground: 0 0% 100%; /* #FFFFFF */
+        --border: 218.2 11.1% 19.4%; /* #2C3037 */
+        --input: 218.2 11.1% 19.4%; /* #2C3037 */
+        --ring: 19.9 79.3% 50.8%; /* #E5601E */
+        --chart-1: 20.9 89.3% 59.6%; /* #F47C3C */
+        --chart-2: 36.3 91.5% 53.9%; /* #F5A01E */
+        --chart-3: 149 58.6% 49.2%; /* #34C77B */
+        --chart-4: 219.7 82.2% 64.7%; /* #5B8DEF */
+        --chart-5: 0 100% 71%; /* #FF6B6B */
+        --sidebar-background: 220 12% 9.8%; /* #16181C */
+        --sidebar-foreground: 215.3 11.7% 71.6%; /* #AEB5BF */
+        --sidebar-primary: 19.9 79.3% 50.8%; /* #E5601E */
+        --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+        --sidebar-accent: 218.2 11.1% 19.4%; /* #2C3037 */
+        --sidebar-accent-foreground: 210 28.6% 97.3%; /* #F6F8FA */
+        --sidebar-border: 218.2 11.1% 19.4%; /* #2C3037 */
+        --sidebar-ring: 19.9 79.3% 50.8%; /* #E5601E */
+        --radius: 0.625rem;
+    }
 }
 
 @layer base {
@@ -130,10 +104,8 @@
 }
 
 /* ── Print ──────────────────────────────────────────────────────────────────
- * Printable documents (the booking invoice and the rental agreement) print as
- * a clean A4 sheet. The app chrome (sidebar, top bar, action buttons) is hidden
- * via print:* utilities in AdminLayout and on the pages; here we just set the
- * page geometry and force a white background. */
+ * Printable documents (booking invoice, rental agreement) print as a clean A4
+ * sheet; app chrome is hidden via print:* utilities. Here: page geometry + white. */
 @media print {
     @page {
         size: A4;
