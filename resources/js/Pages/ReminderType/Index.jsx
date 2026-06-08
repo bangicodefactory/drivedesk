@@ -33,20 +33,13 @@ function ReminderTypeIndex({ types = [] }) {
 
     return (
         <div className="space-y-6 p-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Bell className="h-6 w-6" /> {t('Reminder Type')}
-                </h1>
-                {can('manage reminder') && (
-                    <Button size="sm" asChild>
-                        <Link href={route('reminder-type.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
-                        </Link>
-                    </Button>
-                )}
-            </div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                <Bell className="h-6 w-6" /> {t('Reminder Type')}
+            </h1>
 
-            <div className="flex items-center justify-end">
+            {/* Search sits under the title on the left; actions face it on the
+                same row, kept on the right. */}
+            <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -56,6 +49,13 @@ function ReminderTypeIndex({ types = [] }) {
                             className="pl-8"
                         />
                     </div>
+                {can('manage reminder') && (
+                    <Button size="sm" asChild>
+                        <Link href={route('reminder-type.create')}>
+                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
