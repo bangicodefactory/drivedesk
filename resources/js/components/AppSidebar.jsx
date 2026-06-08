@@ -56,7 +56,15 @@ function NavParent({ item, isActive, t }) {
                     <SidebarMenuSub>
                         {item.children.map((child) => (
                             <SidebarMenuSubItem key={child.route}>
-                                <SidebarMenuSubButton asChild isActive={isActive(child.route)}>
+                                {/* Labels are plain text (not a <span>), so the primitive's
+                                    truncate doesn't apply — long ones wrap. Override the fixed
+                                    h-7 with h-auto + padding so a wrapped label shows in full
+                                    instead of being clipped by overflow-hidden. */}
+                                <SidebarMenuSubButton
+                                    asChild
+                                    isActive={isActive(child.route)}
+                                    className="h-auto min-h-7 py-1.5 leading-snug"
+                                >
                                     <Link href={route(child.route)}>{t(child.label)}</Link>
                                 </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
