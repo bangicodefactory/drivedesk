@@ -38,14 +38,16 @@
         --chart-3: 148.1 68.1% 36.9%; /* #1E9E5A */
         --chart-4: 217.3 68.9% 46.7%; /* #2563C9 */
         --chart-5: 15.3 90.2% 35.9%; /* #AE3309 */
-        --sidebar-background: 0 0% 100%; /* #FFFFFF */
-        --sidebar-foreground: 218.2 11.1% 19.4%; /* #2C3037 */
-        --sidebar-primary: 19.9 79.3% 50.8%; /* #E5601E */
+        /* Filled brand sidebar (design-handoff "Bold Orange" ramp): deep
+           orange fill, warm-cream inactive text, lighter-orange active panel. */
+        --sidebar-background: 15 88% 20%; /* #5E1C06 orange-900 — deep brand fill */
+        --sidebar-foreground: 23 100% 91%; /* #FFE3D1 orange-100 — warm light (inactive) */
+        --sidebar-primary: 19.9 79.3% 50.8%; /* #E5601E brand */
         --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-        --sidebar-accent: 25.3 100% 96.3%; /* #FFF4EC */
-        --sidebar-accent-foreground: 15.3 90.2% 35.9%; /* #AE3309 */
-        --sidebar-border: 213.3 20% 91.2%; /* #E4E8ED */
-        --sidebar-ring: 19.9 79.3% 50.8%; /* #E5601E */
+        --sidebar-accent: 15 90% 36%; /* #AE3309 orange-700 — active/hover panel */
+        --sidebar-accent-foreground: 0 0% 100%; /* #FFFFFF */
+        --sidebar-border: 15 89% 27%; /* #842708 orange-800 — subtle divider */
+        --sidebar-ring: 19.9 79.3% 50.8%; /* #E5601E brand */
         --radius: 0.625rem;
     }
 
