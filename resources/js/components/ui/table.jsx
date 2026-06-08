@@ -13,7 +13,17 @@ const Table = React.forwardRef(({ className, ...props }, ref) => (
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead
+    ref={ref}
+    // Design-handoff table header: a brand-tinted band that tracks the branding
+    // theme (--primary, set by ThemePalette::derive()), with small, uppercase,
+    // letter-spaced labels. The tint sits on the th cells so row hover can't
+    // bleed through.
+    className={cn(
+      "[&_tr]:border-b [&_th]:h-10 [&_th]:bg-primary/10 [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider",
+      className
+    )}
+    {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
