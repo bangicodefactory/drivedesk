@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -68,7 +69,7 @@ function Company({ settings, timezones }) {
             timezone:                       settings?.timezone                       ?? '',
         },
     });
-    const { register, setValue, formState: { errors, isSubmitting } } = form;
+    const { register, setValue, watch, formState: { errors, isSubmitting } } = form;
     const t = useTranslation();
 
     const tzList = timezones ? Object.entries(timezones) : [];
@@ -162,36 +163,40 @@ function Company({ settings, timezones }) {
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>{t('System Date Format')}</Label>
-                                <div className="space-y-1.5">
-                                    {DATE_FORMATS.map(({ value, label }) => (
-                                        <label key={value} className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                value={value}
-                                                {...register('company_date_format')}
-                                                className="accent-primary"
-                                            />
-                                            <span className="text-sm">{label}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                                <RadioGroup
+                                    value={watch('company_date_format')}
+                                    onValueChange={(v) => setValue('company_date_format', v, { shouldDirty: true })}
+                                    className="space-y-1.5"
+                                >
+                                    {DATE_FORMATS.map(({ value, label }) => {
+                                        const id = `dfmt-${value.replace(/[^a-zA-Z0-9]/g, '')}`;
+                                        return (
+                                            <div key={value} className="flex items-center gap-2">
+                                                <RadioGroupItem id={id} value={value} />
+                                                <Label htmlFor={id} className="cursor-pointer text-sm font-normal">{label}</Label>
+                                            </div>
+                                        );
+                                    })}
+                                </RadioGroup>
                             </div>
 
                             <div className="space-y-2">
                                 <Label>{t('System Time Format')}</Label>
-                                <div className="space-y-1.5">
-                                    {TIME_FORMATS.map(({ value, label }) => (
-                                        <label key={value} className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                value={value}
-                                                {...register('company_time_format')}
-                                                className="accent-primary"
-                                            />
-                                            <span className="text-sm">{label}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                                <RadioGroup
+                                    value={watch('company_time_format')}
+                                    onValueChange={(v) => setValue('company_time_format', v, { shouldDirty: true })}
+                                    className="space-y-1.5"
+                                >
+                                    {TIME_FORMATS.map(({ value, label }) => {
+                                        const id = `tfmt-${value.replace(/[^a-zA-Z0-9]/g, '')}`;
+                                        return (
+                                            <div key={value} className="flex items-center gap-2">
+                                                <RadioGroupItem id={id} value={value} />
+                                                <Label htmlFor={id} className="cursor-pointer text-sm font-normal">{label}</Label>
+                                            </div>
+                                        );
+                                    })}
+                                </RadioGroup>
                             </div>
                         </div>
 
