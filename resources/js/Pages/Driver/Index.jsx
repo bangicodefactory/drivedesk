@@ -66,9 +66,7 @@ function DriverIndex({ drivers = [] }) {
             <div className="rounded-xl border bg-card overflow-hidden">
                     <Table>
                         <TableHeader>
-                            {/* Design-handoff table header: sunken muted band (#EEF1F4) with
-                                small, uppercase, letter-spaced muted labels. */}
-                            <TableRow className="bg-muted/70 hover:bg-muted/70 [&>th]:h-10 [&>th]:text-xs [&>th]:font-semibold [&>th]:uppercase [&>th]:tracking-wider">
+                            <TableRow>
                                 <TableHead>{t('ID')}</TableHead>
                                 <TableHead>{t('Driver')}</TableHead>
                                 <TableHead>{t('Email')}</TableHead>
