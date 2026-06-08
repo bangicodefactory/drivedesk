@@ -47,7 +47,7 @@ const NAV_OWNER = [
         { label: 'Drivers',          route: 'driver.index',           icon: UserCircle,    permission: 'manage driver' },
         { label: 'Vehicles',         route: 'vehicle.index',          icon: Car,           permission: 'manage vehicle' },
         { label: 'Bookings',         route: 'booking.index',          icon: CalendarCheck, permission: 'manage booking' },
-        { label: 'Booking Requests', route: 'booking_requests.index', icon: ClipboardList, permission: 'manage booking' },
+        { label: 'Booking Requests', route: 'booking_requests.index', icon: ClipboardList, permission: 'manage booking', badge: 'Upcoming' },
         { label: 'Planning',         route: 'planning',               icon: Calendar,      permission: 'manage planning' },
         { label: 'Expenses',         route: 'expense.index',          icon: ReceiptText,   permission: 'manage expense' },
         { label: 'Reminders',        route: 'reminder.index',         icon: BellRing,      permission: 'manage reminder' },
