@@ -15,7 +15,7 @@ class HandleInertiaRequests extends Middleware
 
     // Precomputed HSL values for each theme color (primary, primary-foreground)
     private const PRIMARY_MAP = [
-        'color1' => ['221.2 83.2% 53.3%', '0 0% 100%'], // Aether Mobility electric blue #2563eb (default)
+        'color1' => ['19.9 79.3% 50.8%', '0 0% 100%'], // DIRECT ONDERWEG brand orange #E5601E (default)
         'color2' => ['262.8 89.7% 50.6%', '210 40% 98%'],
         'color3' => ['201.7 100.0% 50.2%', '210 40% 98%'],
         'color4' => ['354.3 70.5% 53.5%', '210 40% 98%'],
@@ -179,12 +179,12 @@ class HandleInertiaRequests extends Middleware
         }
 
         // If theme_color is explicitly set, honour it (preserves existing agency choices).
-        // When no theme_color is set at all, use the Aether Mobility default (#2563eb).
+        // When no theme_color is set at all, use the DIRECT ONDERWEG brand default (#E5601E).
         if (!empty($s['theme_color'])) {
             return self::PRIMARY_MAP[$s['theme_color']] ?? self::PRIMARY_MAP['color1'];
         }
 
-        return ['221.2 83.2% 53.3%', '0 0% 100%']; // Aether Mobility primary #2563eb
+        return ['19.9 79.3% 50.8%', '0 0% 100%']; // DIRECT ONDERWEG brand orange #E5601E
     }
 
     private function hexToHsl(string $hex): array

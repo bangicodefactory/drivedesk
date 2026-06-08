@@ -96,6 +96,8 @@ function derivePalette(brandHex) {
 // ── Brand preset swatches (carrying PRIMARY_MAP forward) ─────────────────────
 
 const PRESETS = [
+    { label: 'Brand',    hex: '#E5601E' },   // DIRECT ONDERWEG orange (default)
+    { label: 'Amber',    hex: '#F5A01E' },
     { label: 'Ocean',    hex: '#2563EB' },
     { label: 'Violet',   hex: '#7C3AED' },
     { label: 'Sky',      hex: '#0EA5E9' },

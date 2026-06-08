@@ -19,3 +19,4 @@ run-tickets.ps1
 /_review_done.txt
 /_review_fetch.txt
 /.claude/worktrees/
+/design_handoff_booking_flow
