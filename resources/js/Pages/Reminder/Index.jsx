@@ -12,11 +12,14 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
+// Badge colours mirror the summary cards above the table so a status reads
+// the same in both places: overdue=danger, urgent=warning, upcoming=info,
+// completed=success.
 function statusVariant(status) {
     if (status === 'overdue') return 'destructive';
     if (status === 'urgent') return 'warning';
-    if (status === 'upcoming') return 'default';
-    if (status === 'completed') return 'secondary';
+    if (status === 'upcoming') return 'info';
+    if (status === 'completed') return 'success';
     return 'outline';
 }
 
