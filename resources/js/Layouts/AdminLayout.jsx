@@ -144,7 +144,7 @@ function UserMenu() {
 // Breadcrumbs
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Breadcrumbs({ items }) {
+export function Breadcrumbs({ items }) {
     const t = useTranslation();
     if (!items?.length) return null;
     const last = items.length - 1;
@@ -152,20 +152,23 @@ function Breadcrumbs({ items }) {
     // Labels are passed in English; translate here (a real component, so the
     // hook is valid — never call useTranslation() inside a page's static
     // `.layout` function, which Inertia invokes outside React's render tree).
-    // The trailing crumb always renders as the current page; an interior crumb
-    // links only if it carries an href.
+    // Only the trailing crumb is the current page (BreadcrumbPage carries
+    // aria-current="page", so exactly one per nav). Interior crumbs link when
+    // they carry an href, otherwise render as a plain non-current label.
     return (
         <Breadcrumb>
             <BreadcrumbList>
                 {items.map((crumb, i) => (
                     <Fragment key={i}>
                         <BreadcrumbItem>
-                            {crumb.href && i !== last ? (
+                            {i === last ? (
+                                <BreadcrumbPage>{t(crumb.label)}</BreadcrumbPage>
+                            ) : crumb.href ? (
                                 <BreadcrumbLink asChild>
                                     <Link href={crumb.href}>{t(crumb.label)}</Link>
                                 </BreadcrumbLink>
                             ) : (
-                                <BreadcrumbPage>{t(crumb.label)}</BreadcrumbPage>
+                                <span>{t(crumb.label)}</span>
                             )}
                         </BreadcrumbItem>
                         {i !== last && (
