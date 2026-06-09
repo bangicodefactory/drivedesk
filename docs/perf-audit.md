@@ -634,9 +634,16 @@ Index migration drafted in
 §4/§7). Covers **F-15 / F-16 / F-17**. F-18 / F-19 / F-20 are code/ops
 follow-ups — create dedicated tickets when scheduled (no number assigned yet).
 
-**Status:** F-18 **fixed** — `perf: trim rental-agreement list query` (the list
-now selects only displayed columns + eager-loads driver/vehicle, dropping the
-`terms_condition`/`description` TEXT blobs and the per-row N+1). F-19 / F-20 open.
+**Status:**
+- F-18 **fixed** — `perf: trim rental-agreement list query` (selects only the
+  displayed columns + eager-loads driver/vehicle, dropping the
+  `terms_condition`/`description` TEXT blobs and the per-row N+1).
+- F-19 **fixed** — the index shipped with F-17 (`lh_parent_created_idx`); the
+  retention side is now a nightly `model:prune` (`LoggedHistory` is
+  `MassPrunable`, scheduled 02:30) deleting rows older than
+  `config('audit.logged_history_retention_days')` (default 180). Bounds the
+  activity log so it can't grow without limit.
+- F-20 (LIKE search) open. F-21 **fixed** (PR #122/#123). F-22 open.
 
 > Before/after `EXPLAIN` numbers from the local production copy are recorded in
 > that PR's description once the migration is benchmarked.
