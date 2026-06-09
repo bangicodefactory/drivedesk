@@ -641,8 +641,9 @@ follow-ups — create dedicated tickets when scheduled (no number assigned yet).
 - F-19 **fixed** — the index shipped with F-17 (`lh_parent_created_idx`); the
   retention side is now a nightly `model:prune` (`LoggedHistory` is
   `MassPrunable`, scheduled 02:30) deleting rows older than
-  `config('audit.logged_history_retention_days')` (default 180). Bounds the
-  activity log so it can't grow without limit.
+  `config('audit.logged_history_retention_days')` (default 365 — keeps a year of
+  the who-did-what accountability trail; override via `LOGGED_HISTORY_RETENTION_DAYS`).
+  Bounds the activity log so it can't grow without limit.
 - F-20 (LIKE search) open. F-21 **fixed** (PR #122/#123). F-22 open.
 
 > Before/after `EXPLAIN` numbers from the local production copy are recorded in
