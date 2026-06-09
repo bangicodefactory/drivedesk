@@ -15,6 +15,7 @@ import { Eye, Pencil, Trash2, Download, RefreshCw, Receipt } from 'lucide-react'
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import Pagination from '@/components/Pagination';
 
 const MONTHS = [
     { value: '01', label: 'January' }, { value: '02', label: 'February' },
@@ -72,7 +73,8 @@ function TvaIndex({ tvas, filters }) {
     }
 
     function toggleAll(e) {
-        setSelected(e.target.checked ? tvas.map((t) => t.id) : []);
+        // Select-all applies to the current page (server-side pagination).
+        setSelected(e.target.checked ? tvas.data.map((t) => t.id) : []);
     }
 
     function toggleOne(id) {
@@ -213,7 +215,7 @@ function TvaIndex({ tvas, filters }) {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                        <span>{t('Invoices')} ({tvas.length})</span>
+                        <span>{t('Invoices')} ({tvas.total})</span>
                         {selected.length > 0 && (
                             <Button size="sm" variant="outline" onClick={bulkDownload}>
                                 <Download className="mr-2 h-4 w-4" /> {t('Download Selected')} ({selected.length})
@@ -228,7 +230,7 @@ function TvaIndex({ tvas, filters }) {
                                 <TableHead style={{ width: 32 }}>
                                     <input type="checkbox"
                                         onChange={toggleAll}
-                                        checked={selected.length === tvas.length && tvas.length > 0}
+                                        checked={selected.length === tvas.data.length && tvas.data.length > 0}
                                     />
                                 </TableHead>
                                 <TableHead>{t('Facture N°')}</TableHead>
@@ -243,14 +245,14 @@ function TvaIndex({ tvas, filters }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {tvas.length === 0 && (
+                            {tvas.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                         {t('No invoices found')}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {tvas.map((t) => (
+                            {tvas.data.map((t) => (
                                 <TableRow key={t.id}>
                                     <TableCell>
                                         <input type="checkbox"
@@ -297,6 +299,7 @@ function TvaIndex({ tvas, filters }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination paginator={tvas} />
                 </CardContent>
             </Card>
         </div>
