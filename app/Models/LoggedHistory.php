@@ -24,13 +24,13 @@ class LoggedHistory extends Model
 
     /**
      * F-19 (perf-audit): the activity log grows unbounded. Prune entries older
-     * than the configured retention window (default 180 days) via the scheduled
+     * than the configured retention window (default 365 days) via the scheduled
      * `model:prune` command (App\Console\Kernel). MassPrunable issues a chunked
      * DELETE — no model events, nothing loaded into memory.
      */
     public function prunable()
     {
-        $days = (int) config('audit.logged_history_retention_days', 180);
+        $days = (int) config('audit.logged_history_retention_days', 365);
 
         return static::where('created_at', '<=', now()->subDays($days));
     }
