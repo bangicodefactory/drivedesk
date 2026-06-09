@@ -103,6 +103,12 @@ To read it from the old server: `grep ^APP_KEY= /path/to/old/.env`.
    (e.g. `certbot --nginx -d directonderweg.com -d www.directonderweg.com`).
 4. **Retire `.ma`:** add a 301 redirect from `directonderweg.ma` →
    `https://directonderweg.com` (keep `.ma`'s cert until DNS/redirect settle).
+5. **Scheduler cron (required):** the server must run Laravel's scheduler, or
+   none of the scheduled commands fire — reminder status/recurring jobs **and**
+   the nightly `logged_histories` prune (F-19). Add one cron entry:
+   `* * * * * cd <DEPLOY_PATH> && php artisan schedule:run >> /dev/null 2>&1`.
+   (A queue worker for `redis` is also expected — `deploy.yml` runs
+   `php artisan queue:restart` on each deploy.)
 
 ---
 
