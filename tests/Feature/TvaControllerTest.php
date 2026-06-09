@@ -103,6 +103,41 @@ class TvaControllerTest extends TestCase
             );
     }
 
+    public function test_index_pagination_preserves_filter_on_later_pages(): void
+    {
+        // withQueryString() must keep the filter on page 2 (and the id tiebreaker
+        // keeps paging deterministic). 30 invoices in 2024 → page 2 has the last 5.
+        Tva::factory()->withInvoice()->count(30)->create([
+            'parent_id' => $this->owner->id, 'facture_date' => '2024-05-10',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_year' => '2024', 'page' => 2]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.current_page', 2)
+                ->where('tvas.total', 30)
+                ->has('tvas.data', 5)
+            );
+    }
+
+    public function test_index_provides_all_matching_ids_for_select_all(): void
+    {
+        // all_ids spans every matching row (not just the page) so "select all"
+        // can drive a full-set bulk download.
+        Tva::factory()->withInvoice()->count(30)->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas.data', 25)
+                ->has('all_ids', 30)
+            );
+    }
+
     public function test_index_filters_by_from_date(): void
     {
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
@@ -274,7 +309,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.edit', $tva))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Edit')
                 ->has('tva.id')
                 ->has('tva.facture_number')
@@ -303,7 +338,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.show', $tva))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Show')
                 ->has('tva.id')
                 ->has('tva.facture_number')
@@ -328,7 +363,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['to_date' => '2025-03-01']))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas.data', 1)
             );
@@ -342,7 +377,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['filter_month' => '1']))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas.data', 1)
             );
@@ -356,7 +391,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['filter_year' => '2024']))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas.data', 1)
             );
@@ -370,7 +405,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['filter_day' => '2025-06-01']))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas.data', 1)
             );
@@ -390,7 +425,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index', ['driver_name' => 'Alice']))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas.data', 1)
             );
@@ -474,7 +509,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.report'))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Report')
                 ->has('monthlyStats')
                 ->has('yearlyStats')
@@ -516,7 +551,7 @@ class TvaControllerTest extends TestCase
         $response = $this->actingAs($this->owner)
             ->get(route('tva.report', ['year' => $year]))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Report')
                 ->where('yearlyStats.total_invoices', 2)
                 ->has('topClients', 1)
@@ -532,7 +567,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.report', ['year' => 1999]))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Report')
                 ->where('yearlyStats.total_invoices', 0)
                 ->where('yearlyStats.total_tva_amount', 0)
@@ -552,7 +587,7 @@ class TvaControllerTest extends TestCase
         $this->actingAs($this->owner)
             ->get(route('tva.index'))
             ->assertOk()
-            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
                 ->has('tvas')
             );

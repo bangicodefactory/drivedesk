@@ -38,7 +38,7 @@ const MONTHS_FR = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => currentYear - i);
 
-function TvaIndex({ tvas, filters }) {
+function TvaIndex({ tvas, filters, all_ids = [] }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
     const { auth } = usePage().props;
@@ -73,8 +73,9 @@ function TvaIndex({ tvas, filters }) {
     }
 
     function toggleAll(e) {
-        // Select-all applies to the current page (server-side pagination).
-        setSelected(e.target.checked ? tvas.data.map((t) => t.id) : []);
+        // Select-all spans every page that matches the current filters (all_ids),
+        // so bulk download can cover the whole filtered set, not just this page.
+        setSelected(e.target.checked ? all_ids : []);
     }
 
     function toggleOne(id) {
@@ -230,7 +231,8 @@ function TvaIndex({ tvas, filters }) {
                                 <TableHead style={{ width: 32 }}>
                                     <input type="checkbox"
                                         onChange={toggleAll}
-                                        checked={selected.length === tvas.data.length && tvas.data.length > 0}
+                                        checked={selected.length === all_ids.length && all_ids.length > 0}
+                                        ref={(el) => { if (el) el.indeterminate = selected.length > 0 && selected.length < all_ids.length; }}
                                     />
                                 </TableHead>
                                 <TableHead>{t('Facture N°')}</TableHead>

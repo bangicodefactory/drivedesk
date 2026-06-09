@@ -60,11 +60,17 @@ class TvaController extends Controller
             });
         }
 
+        // All matching ids (scoped, same filters) so the list's "select all" can
+        // cover every page, not just the current 25, for bulk download.
+        $allIds = (clone $query)->pluck('id');
+
         // F-21 (perf-audit): paginate server-side instead of loading every row
         // (the whole tenant result — 1k+ rows — was previously sent to the client).
-        // withQueryString() keeps the active filters on the pagination links.
+        // withQueryString() keeps the active filters on the pagination links; the
+        // id tiebreaker makes paging deterministic when facture_date ties (common).
         $tvas = $query->with(['booking', 'booking.drivers'])
             ->orderByDesc('facture_date')
+            ->orderByDesc('id')
             ->paginate(25)
             ->withQueryString();
 
@@ -81,6 +87,7 @@ class TvaController extends Controller
                 'montant_ttc'       => $t->montant_ttc,
             ]),
             'filters' => $request->only(['from_date', 'to_date', 'driver_name', 'filter_day', 'filter_month', 'filter_year']),
+            'all_ids' => $allIds,
         ]);
     }
     public function create()
