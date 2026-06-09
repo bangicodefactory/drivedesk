@@ -36,6 +36,13 @@ class Kernel extends ConsoleKernel
             $controller = new \App\Http\Controllers\ReminderController();
             $controller->sendDailyReminderSummary();
         })->dailyAt('08:00');
+
+        // F-19 (perf-audit): prune old activity-log rows nightly so
+        // logged_histories stays bounded (retention via config/audit.php).
+        $schedule->command('model:prune', ['--model' => [\App\Models\LoggedHistory::class]])
+            ->dailyAt('02:30')
+            ->withoutOverlapping()
+            ->runInBackground();
     }
     /**
      * Register the commands for the application.
