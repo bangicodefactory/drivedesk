@@ -636,3 +636,40 @@ code/ops follow-ups (suggest BAN-241 / 242 / 243).
 
 > Before/after `EXPLAIN` numbers from the local production copy are recorded in
 > that PR's description once the migration is benchmarked.
+
+### Page-level benchmark (2026-06-09) — what the indexes actually move
+
+The index migration was applied to the local production copy and benchmarked
+end-to-end. To remove the local dev-server boot floor (`php artisan serve` has
+**no opcache**, so every request reparses the app — TTFB ~2.0 s, identical for a
+no-DB route like `/login`), the built-in server was run with opcache +
+`config:cache` (the same boot path production already uses). Numbers are warm,
+5-sample medians.
+
+| Page | Index OFF | Index ON | Δ |
+|------|-----------|----------|---|
+| `/booking` (1.4k-row table) | 352 ms | **311 ms** | ~40 ms (~12% faster) |
+| `/tva` (10.6k-row table; 1,231 for the tenant) | 2,392 ms | **2,338 ms** | ~54 ms (~2% faster) |
+
+Query layer (measured directly, `IGNORE INDEX` vs index): TVA report
+**60 → 6.6 ms (~9×)**, bookings list **22.9 → 4.4 ms (~5×)**.
+
+**Takeaways:** the indexes give a clean query-layer win and prevent full-table
+scans that degrade under data growth + concurrency, but on a *single* request
+they are a small slice of total time. The benchmark surfaced two findings that
+dominate more than the indexes do:
+
+### F-21: TVA index page loads the full result set + N+1
+- **Page / endpoint:** `GET /tva` (`TvaController@index`).
+- **Symptom:** ~2.3 s TTFB **even with the index and opcache** — the index is not the bottleneck. The page builds the whole tenant result (1,231 rows for this tenant; 10.6k total) and renders all of it, with per-row relation access (booking/driver) → N+1.
+- **Evidence:** dropping/adding the indexes moved this page only ~2% (2,392 → 2,338 ms); the floor is the row count + N+1, not the filter scan.
+- **Fix sketch:** `paginate(25)` the TVA list (as F-04/F-06/F-07 did for bookings/vehicles/expenses) and eager-load the displayed relations (`with([...])`). Mirrors the existing pagination pattern.
+- **Estimated effort:** S–M. **Estimated impact:** the single biggest win on the TVA screen — multi-second → sub-second. **Risk:** low. **Priority:** P1
+
+### F-22: duplicate route names block `route:cache` in production
+- **Symptom:** `php artisan route:cache` throws `LogicException: Unable to prepare route [settings/account] for serialization. Another route has already been assigned name [setting.account].` Production therefore cannot use route caching (a real boot-time speedup), and `php artisan optimize` fails midway.
+- **Likely cause:** GET and POST routes share a name (e.g. `settings/account` GET + POST both named `setting.account`; same pattern on `setting.general`, etc. in `routes/web.php`).
+- **Fix sketch:** give the write (POST) routes distinct names (e.g. `setting.account.update`) and update the corresponding `route()` references. **NOTE:** route-name changes are a §4 frozen-surface change — must be a separate, explicit ticket, not bundled into the migration.
+- **Estimated effort:** S (mechanical) but touches the frozen route surface. **Estimated impact:** enables `route:cache` (faster prod boot). **Risk:** medium (route-name change — verify every `route('setting.*')` call site). **Priority:** P2
+
+F-21 → suggest BAN-244; F-22 → suggest BAN-245 (route-surface ticket, scheduled with care per §4).
