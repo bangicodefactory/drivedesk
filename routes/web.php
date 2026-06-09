@@ -97,38 +97,43 @@ Route::group(
     ],
     function () {
         Route::get('settings/account', [SettingController::class, 'account'])->name('setting.account');
-        Route::post('settings/account', [SettingController::class, 'accountData'])->name('setting.account');
+        // perf-audit F-22: the settings write (POST) routes share their GET's URI
+        // and previously duplicated the GET's name, which made `route:cache` throw.
+        // They now carry NO name — the GET keeps `setting.X`, and forms post to
+        // `route('setting.X')` (the GET URL), which matches these POSTs by path +
+        // verb. URIs and the GET names are unchanged.
+        Route::post('settings/account', [SettingController::class, 'accountData']);
         Route::delete('settings/account/delete', [SettingController::class, 'accountDelete'])->name('setting.account.delete');
 
         Route::get('settings/password', [SettingController::class, 'password'])->name('setting.password');
-        Route::post('settings/password', [SettingController::class, 'passwordData'])->name('setting.password');
+        Route::post('settings/password', [SettingController::class, 'passwordData']);
 
         Route::get('settings/general', [SettingController::class, 'general'])->name('setting.general');
-        Route::post('settings/general', [SettingController::class, 'generalData'])->name('setting.general');
+        Route::post('settings/general', [SettingController::class, 'generalData']);
 
         Route::get('settings/smtp', [SettingController::class, 'smtp'])->name('setting.smtp');
-        Route::post('settings/smtp', [SettingController::class, 'smtpData'])->name('setting.smtp');
+        Route::post('settings/smtp', [SettingController::class, 'smtpData']);
 
         Route::get('settings/smtp-test', [SettingController::class, 'smtpTest'])->name('setting.smtp.test');
         Route::post('settings/smtp-test', [SettingController::class, 'smtpTestMailSend'])->name('setting.smtp.testing');
 
         Route::get('settings/payment', [SettingController::class, 'payment'])->name('setting.payment');
-        Route::post('settings/payment', [SettingController::class, 'paymentData'])->name('setting.payment');
+        Route::post('settings/payment', [SettingController::class, 'paymentData']);
 
         Route::get('settings/company', [SettingController::class, 'company'])->name('setting.company');
-        Route::post('settings/company', [SettingController::class, 'companyData'])->name('setting.company');
+        Route::post('settings/company', [SettingController::class, 'companyData']);
 
 
         Route::post('theme/settings', [SettingController::class, 'themeSettings'])->name('theme.settings');
 
         Route::get('settings/site-seo', [SettingController::class, 'siteSEO'])->name('setting.site.seo');
-        Route::post('settings/site-seo', [SettingController::class, 'siteSEOData'])->name('setting.site.seo');
+        Route::post('settings/site-seo', [SettingController::class, 'siteSEOData']);
 
         Route::get('settings/google-recaptcha', [SettingController::class, 'googleRecaptcha'])->name('setting.google.recaptcha');
-        Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData'])->name('setting.google.recaptcha');
+        Route::post('settings/google-recaptcha', [SettingController::class, 'googleRecaptchaData']);
 
         Route::get('settings/branding', [SettingController::class, 'branding'])->name('setting.branding');
-        Route::post('settings/branding', [SettingController::class, 'brandingData'])->name('setting.branding');
+        Route::post('settings/branding', [SettingController::class, 'brandingData']);
 
         Route::post('settings/store-signature', [SettingController::class, 'storeSignature'])->name('AdminSignature.store');
     }

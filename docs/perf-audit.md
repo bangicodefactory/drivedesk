@@ -644,7 +644,13 @@ follow-ups — create dedicated tickets when scheduled (no number assigned yet).
   `config('audit.logged_history_retention_days')` (default 365 — keeps a year of
   the who-did-what accountability trail; override via `LOGGED_HISTORY_RETENTION_DAYS`).
   Bounds the activity log so it can't grow without limit.
-- F-20 (LIKE search) open. F-21 **fixed** (PR #122/#123). F-22 open.
+- F-21 **fixed** (PR #122/#123).
+- F-22 **fixed** — the 9 duplicate `setting.*` GET/POST route names blocked
+  `route:cache`. The write (POST) routes are now anonymous (the GET keeps the
+  name; forms post to `route('setting.X')` = the same URI), so `route:cache`
+  succeeds with no URL/verb/GET-name changes. Verified: `route:cache` passes,
+  zero duplicate names, `SettingControllerTest` green.
+- F-20 (leading-wildcard `LIKE` search) **open** — only matters at scale.
 
 > Before/after `EXPLAIN` numbers from the local production copy are recorded in
 > that PR's description once the migration is benchmarked.
