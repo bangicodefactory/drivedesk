@@ -630,9 +630,13 @@ unbounded per that tenant.
 
 Index migration drafted in
 `database/migrations/2026_06_09_000000_add_tenant_and_fk_indexes.php`
-(PR `perf: tenant-scoped + FK indexes` — **not merged**, pending approval +
-benchmark per §4/§7). Covers **F-15 / F-16 / F-17**. F-18 / F-19 / F-20 are
-code/ops follow-ups (suggest BAN-241 / 242 / 243).
+(PR `perf: tenant-scoped + FK indexes`, **merged** after benchmark approval per
+§4/§7). Covers **F-15 / F-16 / F-17**. F-18 / F-19 / F-20 are code/ops
+follow-ups — create dedicated tickets when scheduled (no number assigned yet).
+
+**Status:** F-18 **fixed** — `perf: trim rental-agreement list query` (the list
+now selects only displayed columns + eager-loads driver/vehicle, dropping the
+`terms_condition`/`description` TEXT blobs and the per-row N+1). F-19 / F-20 open.
 
 > Before/after `EXPLAIN` numbers from the local production copy are recorded in
 > that PR's description once the migration is benchmarked.
@@ -672,4 +676,7 @@ dominate more than the indexes do:
 - **Fix sketch:** give the write (POST) routes distinct names (e.g. `setting.account.update`) and update the corresponding `route()` references. **NOTE:** route-name changes are a §4 frozen-surface change — must be a separate, explicit ticket, not bundled into the migration.
 - **Estimated effort:** S (mechanical) but touches the frozen route surface. **Estimated impact:** enables `route:cache` (faster prod boot). **Risk:** medium (route-name change — verify every `route('setting.*')` call site). **Priority:** P2
 
-F-21 → suggest BAN-244; F-22 → suggest BAN-245 (route-surface ticket, scheduled with care per §4).
+F-21 and F-22 are open follow-ups — create dedicated tickets when scheduled
+(F-22 is a route-surface change, handled with care per §4). No ticket numbers
+assigned here (earlier drafts referenced BAN-241…245, which are unrelated
+existing issues — corrected).
