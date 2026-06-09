@@ -545,3 +545,94 @@ Phase 7 query counts are from static analysis / test assertions. p50 requires li
 ---
 
 _Phase 7 complete as of 2026-06-02. Open findings (F-05, F-08, F-11) to be scheduled as BAN-238/239/240 in the next planning cycle. Live p50/p95 measurements require a Telescope-enabled run against production-shaped data — see `docs/perf-audit-plan.md`._
+
+---
+
+## Database Index Audit — 2026-06-09 (production-data analysis)
+
+**Branch:** `dev`
+**Method:** the `directonderweg` **production** database was imported into a local
+MySQL copy (38 tables; ~10.6k TVAs, 1.5k bookings, 1.4k rental agreements, 1k
+drivers/users). `EXPLAIN` was run on representative tenant-scoped queries and
+`information_schema` was used to enumerate existing indexes.
+**Scope:** schema/index findings only — distinct from the code-level findings
+F-01…F-14. **Report-only** per §7; the proposed index migration ships as a
+separate, approved `perf:` PR per §4.
+
+### Headline
+
+The app is **multi-tenant** — every list/report query is scoped by `parent_id`
+(the owning agency) — yet **`parent_id` is unindexed on every major table**.
+Existing indexes are essentially just primary keys plus a few auto-generated FK
+indexes (`bookings.tva_id`, `reminders.id_vehicle`, `reminders.reminder_type_id`,
+`signatures.user_id`, `users.email`). Result: every list and report does a
+**full table scan** that grows with *total* rows across all tenants, not just the
+current tenant's.
+
+### Evidence (`EXPLAIN`, real data)
+
+| Representative query | type | key | rows scanned | Extra |
+|---|---|---|---|---|
+| `tvas WHERE parent_id=? AND year=? AND month=? AND deleted_at IS NULL` | `ALL` | `NULL` | **10,592** | Using where |
+| `bookings WHERE parent_id=? ORDER BY created_at DESC LIMIT 10` | `ALL` | `NULL` | **1,364** | Using where; **Using filesort** |
+
+One tenant already owns all 10,711 TVA rows, so the report scan is effectively
+unbounded per that tenant.
+
+### Findings
+
+### F-15: `parent_id` unindexed on all tenant-scoped tables
+- **Page / endpoint:** every list/index (bookings, drivers, vehicles, credits, expenses, inspections, reminders, rental agreements, users) and the dashboard.
+- **Symptom:** full table scan on each load; cost grows with total rows across all tenants, not just the current tenant's.
+- **Likely cause:** no index on `parent_id` on bookings, booking_payments, credits, drivers, expenses, inspections, logged_histories, reminders, rental_agreements, tvas, users, vehicles.
+- **Evidence:** `information_schema.statistics` shows only PK + a few FK indexes; EXPLAIN `type: ALL`, `key: NULL` (table above).
+- **Fix sketch:** composite indexes leading with `parent_id` (see proposed migration). Additive — no schema/data change.
+- **Estimated effort:** S (one migration).
+- **Estimated impact:** list/report queries go from O(all rows) full scan to an index range scan over the tenant's rows; compounds as data grows.
+- **Risk:** low — additive indexes; brief lock on `ADD INDEX` (online DDL on MySQL 5.7+/8 for these sizes; use a window if a future table is very large).
+- **Priority:** P0
+
+### F-16: TVA report — full scan of the largest table
+- **Page / endpoint:** TVA index + report (`TvaController`), filtered by `parent_id` + `year` + `month`.
+- **Symptom:** scans all 10,592 TVA rows per report load; `tvas` also uses `SoftDeletes`, so `deleted_at IS NULL` is appended to every query.
+- **Likely cause:** no composite `(parent_id, year, month)`; no FK index on `tvas.booking_id`.
+- **Evidence:** EXPLAIN `type: ALL`, rows 10,592, key `NULL`.
+- **Fix sketch:** `tvas (parent_id, year, month)` + `tvas (booking_id)`. Add `deleted_at` to the composite only if profiling shows residual cost.
+- **Estimated effort:** S.
+- **Estimated impact:** report query becomes an index range scan (a few rows) — the single biggest query win in the app.
+- **Risk:** low.
+- **Priority:** P0
+
+### F-17: foreign-key join columns unindexed
+- **Endpoints:** anything joining bookings↔tvas↔payments, drivers↔users, and the audit log.
+- **Likely cause:** `tvas.booking_id`, `booking_payments.booking_id`, `drivers.user_id`, `logged_histories.parent_id`/`user_id` have no index.
+- **Fix sketch:** FK indexes (see migration); `logged_histories (parent_id, created_at)`.
+- **Estimated effort:** S. **Estimated impact:** removes per-join scans. **Risk:** low. **Priority:** P1
+
+### F-18: `rental_agreements` fat-row `SELECT *`
+- **Page / endpoint:** rental agreements list.
+- **Symptom:** 6.5 MB for 1,359 rows (~4.8 KB/row) because of `terms_condition` + `description` (`TEXT`); the list pulls these big columns it doesn't render.
+- **Fix sketch:** select only the columns the list needs (or move the large text to a side table). **Code-level**, not an index.
+- **Estimated effort:** S–M. **Estimated impact:** less I/O + memory per list load. **Risk:** low. **Priority:** P2
+
+### F-19: `logged_histories` unbounded growth
+- **Symptom:** audit-log table grows without bound (1.8k rows and climbing); no index for its queries.
+- **Fix sketch:** `(parent_id, created_at)` index **and** a retention/prune policy (delete > N months, or a scheduled prune job).
+- **Estimated effort:** S (index) + S (prune job). **Estimated impact:** prevents slow degradation. **Risk:** low. **Priority:** P2
+
+### F-20: search uses leading-wildcard `LIKE '%term%'`
+- **Page / endpoint:** driver/booking/vehicle search boxes.
+- **Symptom:** leading-wildcard `LIKE` can't use a B-tree index → full scan on search.
+- **Fix sketch:** fine at current sizes; if drivers/bookings grow large, add `FULLTEXT` indexes or a dedicated search path.
+- **Estimated effort:** M. **Estimated impact:** only matters at scale. **Risk:** low. **Priority:** P3
+
+### Proposed fix
+
+Index migration drafted in
+`database/migrations/2026_06_09_000000_add_tenant_and_fk_indexes.php`
+(PR `perf: tenant-scoped + FK indexes` — **not merged**, pending approval +
+benchmark per §4/§7). Covers **F-15 / F-16 / F-17**. F-18 / F-19 / F-20 are
+code/ops follow-ups (suggest BAN-241 / 242 / 243).
+
+> Before/after `EXPLAIN` numbers from the local production copy are recorded in
+> that PR's description once the migration is benchmarked.
