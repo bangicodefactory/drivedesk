@@ -60,11 +60,16 @@ class TvaController extends Controller
             });
         }
 
-        // Retrieve all (let DataTables handle client-side paging). If dataset grows large, switch to server-side.
-        $tvas = $query->with(['booking', 'booking.drivers'])->orderByDesc('facture_date')->get();
+        // F-21 (perf-audit): paginate server-side instead of loading every row
+        // (the whole tenant result — 1k+ rows — was previously sent to the client).
+        // withQueryString() keeps the active filters on the pagination links.
+        $tvas = $query->with(['booking', 'booking.drivers'])
+            ->orderByDesc('facture_date')
+            ->paginate(25)
+            ->withQueryString();
 
         return Inertia::render('Tva/Index', [
-            'tvas' => $tvas->map(fn($t) => [
+            'tvas' => $tvas->through(fn($t) => [
                 'id'                => $t->id,
                 'facture_number'    => $t->facture_number,
                 'booking_id_display'=> $t->booking && isset($t->booking->booking_id)

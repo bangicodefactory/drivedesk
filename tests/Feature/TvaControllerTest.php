@@ -85,6 +85,24 @@ class TvaControllerTest extends TestCase
             ->assertOk();
     }
 
+    public function test_index_paginates_results(): void
+    {
+        // F-21: the list is server-side paginated (25/page) instead of loading all rows.
+        Tva::factory()->withInvoice()->count(30)->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->has('tvas.data', 25)
+                ->where('tvas.total', 30)
+                ->where('tvas.per_page', 25)
+                ->where('tvas.current_page', 1)
+                ->where('tvas.last_page', 2)
+            );
+    }
+
     public function test_index_filters_by_from_date(): void
     {
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
@@ -95,7 +113,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
@@ -312,7 +330,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
@@ -326,7 +344,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
@@ -340,7 +358,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
@@ -354,7 +372,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
@@ -374,7 +392,7 @@ class TvaControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Tva/Index')
-                ->has('tvas', 1)
+                ->has('tvas.data', 1)
             );
     }
 
