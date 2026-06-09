@@ -13,6 +13,6 @@ return [
     |
     */
 
-    'logged_history_retention_days' => env('LOGGED_HISTORY_RETENTION_DAYS', 180),
+    'logged_history_retention_days' => env('LOGGED_HISTORY_RETENTION_DAYS', 365),
 
 ];
