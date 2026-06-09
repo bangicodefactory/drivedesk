@@ -21,7 +21,15 @@ class RentalAgreementController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage rental agreement')) {
-            $agreements = RentalAgreement::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
+            // F-18 (perf-audit): select only the columns the list renders so we
+            // don't pull the large terms_condition/description TEXT blobs, and
+            // eager-load driver/vehicle to kill the per-row N+1. Output shape is
+            // unchanged.
+            $agreements = RentalAgreement::where('parent_id', parentId())
+                ->select(['id', 'agreement_id', 'date', 'rental_start_date', 'rental_end_date', 'rental_duration', 'status', 'driver', 'vehicle', 'created_at'])
+                ->with(['drivers:id,name', 'vehicles:id,name,license_plate'])
+                ->orderBy('created_at', 'desc')
+                ->get();
             return Inertia::render('RentalAgreement/Index', [
                 'agreements' => $agreements->map(fn($a) => [
                     'id'                => $a->id,
