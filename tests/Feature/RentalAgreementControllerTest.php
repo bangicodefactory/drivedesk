@@ -128,6 +128,26 @@ class RentalAgreementControllerTest extends TestCase
             ->assertOk();
     }
 
+    public function test_index_returns_agreements_with_resolved_relations(): void
+    {
+        // F-18: the list now selects a subset of columns + eager-loads relations.
+        // Lock in that the DTO shape and the driver/vehicle lookups still resolve.
+        $agreement = $this->makeAgreement();
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Index')
+                ->has('agreements', 1)
+                ->where('agreements.0.driver_name', $this->driver->name)
+                ->where('agreements.0.vehicle_label', $this->vehicle->name . ' - ' . $this->vehicle->license_plate)
+                ->where('agreements.0.status', $agreement->status)
+                ->has('agreements.0.agreement_id')
+                ->has('agreements.0.encrypted_id')
+            );
+    }
+
     // ── RentalAgreementController::store ──────────────────────────────────────
 
     public function test_store_creates_agreement_and_redirects(): void
