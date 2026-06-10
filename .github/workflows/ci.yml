@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [feat/modernization, dev, main]
   workflow_dispatch:
+  # Reusable: deploy.yml calls this suite as its release gate, so a tag can
+  # only ship after the full per-client matrix is green on that exact SHA.
+  workflow_call:
 
 jobs:
   test:
