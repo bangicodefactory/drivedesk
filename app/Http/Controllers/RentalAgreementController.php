@@ -18,20 +18,36 @@ use Inertia\Inertia;
 class RentalAgreementController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         if (\Auth::user()->can('manage rental agreement')) {
             // F-18 (perf-audit): select only the columns the list renders so we
             // don't pull the large terms_condition/description TEXT blobs, and
-            // eager-load driver/vehicle to kill the per-row N+1. Output shape is
-            // unchanged.
+            // eager-load driver/vehicle to kill the per-row N+1.
+            // F-21 follow-up: the prod list is unbounded (1.7k+ rows, ~1.4s);
+            // paginate + server-side search so we ship one page at a time. Row
+            // shape is unchanged — only the envelope is now a paginator.
+            $search = trim((string) $request->get('search', ''));
             $agreements = RentalAgreement::where('parent_id', parentId())
                 ->select(['id', 'agreement_id', 'date', 'rental_start_date', 'rental_end_date', 'rental_duration', 'status', 'driver', 'vehicle', 'created_at'])
                 ->with(['drivers:id,name', 'vehicles:id,name,license_plate'])
+                ->when($search !== '', function ($q) use ($search) {
+                    $q->where(function ($w) use ($search) {
+                        $w->where('agreement_id', 'like', "%{$search}%")
+                            ->orWhereHas('drivers', function ($d) use ($search) {
+                                $d->where('name', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('vehicles', function ($v) use ($search) {
+                                $v->where('name', 'like', "%{$search}%")
+                                    ->orWhere('license_plate', 'like', "%{$search}%");
+                            });
+                    });
+                })
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->paginate(25)
+                ->withQueryString();
             return Inertia::render('RentalAgreement/Index', [
-                'agreements' => $agreements->map(fn($a) => [
+                'agreements' => $agreements->through(fn($a) => [
                     'id'                => $a->id,
                     'encrypted_id'      => Crypt::encrypt($a->id),
                     'agreement_id'      => rentalAgreementPrefix() . $a->agreement_id,
@@ -44,6 +60,7 @@ class RentalAgreementController extends Controller
                     'status'            => $a->status,
                 ]),
                 'statuses' => collect(RentalAgreement::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
+                'filters'  => ['search' => $search],
             ]);
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
