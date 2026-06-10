@@ -694,3 +694,42 @@ F-21 and F-22 are open follow-ups — create dedicated tickets when scheduled
 (F-22 is a route-surface change, handled with care per §4). No ticket numbers
 assigned here (earlier drafts referenced BAN-241…245, which are unrelated
 existing issues — corrected).
+
+## Chrome DevTools page benchmark — 2026-06-10 (production-data copy)
+
+Re-ran the page-level benchmark on the local production copy (tenant 7:
+1,760 agreements / 1,058 drivers / 1,519 bookings), Chrome DevTools MCP +
+in-page `fetch()` timing, 5-sample medians, warm, opcache + `config:cache`,
+Debugbar/Telescope off. It surfaced one dominant finding (F-23, below).
+Server time per page **after** F-23 is neutralized locally:
+
+| Page | Median (SSR timeout present) | Median (SSR disabled) |
+|------|------------------------------|------------------------|
+| `/role` (tiny table, floor) | 2,209 ms | **164 ms** |
+| `/rental-agreement` | 2,268 ms | **221 ms** |
+| `/dashboard` | 2,338 ms | **264 ms** |
+| `/booking` | 2,322 ms | **272 ms** |
+| `/vehicle` | 2,362 ms | **279 ms** |
+| `/driver` | 2,346 ms | **333 ms** |
+| `/tva` | 2,507 ms | **458 ms** |
+| `/planning` | 2,881 ms | **848 ms** |
+
+Client side (DevTools performance trace, dashboard): document complete
+~440 ms, CLS 0.00, no LCP/render-blocking insights flagged once F-23 was
+removed. `/tva` (F-21) and `/planning` are now the slowest pages and the
+next obvious targets; everything else sits in the 160–330 ms band.
+
+### F-23: Inertia SSR enabled with no SSR server — every full-page load eats a ~2 s timeout
+- **Page / endpoint:** every full-document request (first visit, hard refresh, external link). Inertia XHR navigations are unaffected (`X-Inertia` responses skip SSR).
+- **Symptom:** a uniform ~2.05 s added to TTFB on all authed pages locally, regardless of page weight (`/role` with a handful of rows costs the same as `/booking` with 1.5k).
+- **Evidence:** bisected request pipeline: Inertia JSON response for `/role` = ~125 ms; full HTML for the same route = ~2,200 ms. In-process A/B: `view('app', …)->render()` = 2,135 ms with `inertia.ssr.enabled=true`, **106 ms** with it false. `config/inertia.php` defaults `INERTIA_SSR_ENABLED` to **true**; no SSR bundle exists (`bootstrap/ssr/` absent) and no SSR service listens on `127.0.0.1:13714`, so the gateway burns a connection timeout and silently falls back to client-side rendering (`throw_on_error=false`). The `ensure_bundle_exists=true` guard did **not** prevent the dispatch.
+- **Production relevance:** `deploy.yml` does not set `INERTIA_SSR_ENABLED`, so the prod `.env` also has SSR enabled with no SSR service. On Linux a refused loopback connection typically fails in <1 ms (vs Windows' multi-second behavior measured here), so the prod penalty is likely small — but it is a live misconfiguration, and worst-case (firewall DROP instead of REJECT) it becomes seconds per page load.
+- **Fix sketch:** set `INERTIA_SSR_ENABLED=false` explicitly in every deploy environment (added to the new-host runbook's env vars), or flip the config default to `false` until an SSR service is actually provisioned. One env var; no code change.
+- **Estimated effort:** XS. **Estimated impact:** locally ~2 s off every full-page load (measured); prod: removes a latent misconfig. **Risk:** none (SSR currently never succeeds anyway). **Priority:** P1 (config hygiene; measured dominant cost in local profiling)
+
+> Local `.env` now carries `INERTIA_SSR_ENABLED=false` (uncommitted) so future
+> local profiling isn't polluted by the timeout. Benchmark server:
+> `php -S` from `public/` with opcache + `config:cache` (note: launch the
+> built-in server with **cwd = `public/`** — the vendor `server.php` router
+> resolves static files via `getcwd()`, and a project-root cwd silently routes
+> every built asset through Laravel).

@@ -128,6 +128,15 @@ Set them under **Repo → Settings → Environments → `production-directonderw
 | `SSH_PORT` | `22` (or custom) |
 | `DEPLOY_PATH` | Absolute app path on the **new** host (e.g. `/var/www/directonderweg`) |
 
+> ⚠️ **Inertia SSR must be explicitly disabled** until an SSR service is
+> actually provisioned: `config/inertia.php` defaults `INERTIA_SSR_ENABLED`
+> to `true`, and with no SSR server listening every full-page load pays a
+> connection attempt to `127.0.0.1:13714` before falling back (perf-audit
+> F-23 — measured ~2 s/request on Windows; small but nonzero on Linux).
+> `deploy.yml` does not currently write this var — add
+> `INERTIA_SSR_ENABLED=false` to the generated `.env` in `deploy.yml`
+> (separate PR) before the first deploy.
+
 > **Auth on the new domain works automatically.** This is a same-origin
 > Inertia + Sanctum app; `config/sanctum.php` derives its stateful domains from
 > `APP_URL` and `SESSION_DOMAIN` defaults to the current host. Setting
