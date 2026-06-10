@@ -105,7 +105,7 @@ function RentalAgreementIndex({ agreements = { data: [] }, statuses, filters = {
                             {agreements.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                                        {agreements.total === 0 ? t('No rental agreements yet') : t('No rental agreements match your search')}
+                                        {search ? t('No rental agreements match your search') : t('No rental agreements yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
