@@ -28,19 +28,29 @@ class RentalAgreementController extends Controller
             // paginate + server-side search so we ship one page at a time. Row
             // shape is unchanged — only the envelope is now a paginator.
             $search = trim((string) $request->get('search', ''));
+            // Status labels the search term matches (the old client-side filter
+            // searched the status *label*, e.g. typing "active"/"completed").
+            // Match the English label or the raw key, then filter by those keys.
+            $statusKeys = collect(RentalAgreement::$status)
+                ->filter(fn ($label, $key) => $search !== '' && (stripos($label, $search) !== false || stripos($key, $search) !== false))
+                ->keys()
+                ->all();
             $agreements = RentalAgreement::where('parent_id', parentId())
                 ->select(['id', 'agreement_id', 'date', 'rental_start_date', 'rental_end_date', 'rental_duration', 'status', 'driver', 'vehicle', 'created_at'])
                 ->with(['drivers:id,name', 'vehicles:id,name,license_plate'])
-                ->when($search !== '', function ($q) use ($search) {
-                    $q->where(function ($w) use ($search) {
-                        $w->where('agreement_id', 'like', "%{$search}%")
+                ->when($search !== '', function ($q) use ($search, $statusKeys) {
+                    $q->where(function ($w) use ($search, $statusKeys) {
+                        // Match the *displayed* agreement ID (prefix + number) so
+                        // searching "RAG-1827" works like the old client filter.
+                        $w->whereRaw('CONCAT(?, agreement_id) LIKE ?', [rentalAgreementPrefix(), "%{$search}%"])
                             ->orWhereHas('drivers', function ($d) use ($search) {
                                 $d->where('name', 'like', "%{$search}%");
                             })
                             ->orWhereHas('vehicles', function ($v) use ($search) {
                                 $v->where('name', 'like', "%{$search}%")
                                     ->orWhere('license_plate', 'like', "%{$search}%");
-                            });
+                            })
+                            ->when(! empty($statusKeys), fn ($s) => $s->orWhereIn('status', $statusKeys));
                     });
                 })
                 ->orderBy('created_at', 'desc')
