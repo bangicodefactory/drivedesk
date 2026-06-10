@@ -93,7 +93,7 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                             {drivers.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {drivers.total === 0 ? t('No drivers yet') : t('No drivers match your search')}
+                                        {search ? t('No drivers match your search') : t('No drivers yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
