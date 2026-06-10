@@ -21,6 +21,13 @@ deploy = push a `vX.Y.Z` tag, which runs `.github/workflows/deploy.yml` against
 No application **code** changes are required; this is host provisioning + a
 data copy + Environment configuration.
 
+> **Deploying to Namecheap shared hosting (cPanel)?** Use the simplified
+> step-by-step companion guide instead:
+> [`docs/deploy-namecheap-cpanel.md`](deploy-namecheap-cpanel.md). It adapts
+> §1/§6 for no-root cPanel hosting (SSH port 21098, AutoSSL, PHP selector,
+> no Redis → §2.1 values, cPanel cron). This runbook remains the source of
+> truth for *what* must happen and *why*; the companion only changes *how*.
+
 ---
 
 ## 0. Prerequisites / decisions
