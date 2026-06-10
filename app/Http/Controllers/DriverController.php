@@ -17,19 +17,34 @@ use Inertia\Inertia;
 
 class DriverController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (\Auth::user()->can('manage driver')) {
-            $drivers = User::where('parent_id', parentId())
-                ->where('type', 'driver')
-                ->with('drivers')  // Eager load the drivers relationship
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } else {
+        if (! \Auth::user()->can('manage driver')) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $payload = $drivers->map(function ($user) {
+        // Paginate server-side (the list previously loaded every driver — 1k+ rows
+        // for a busy tenant) and move the search server-side so it spans all pages.
+        $search = trim((string) $request->get('search', ''));
+
+        $drivers = User::where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->with('drivers')  // Eager load the driver profile (avoids per-row N+1)
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($w) use ($search) {
+                    $w->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone_number', 'like', "%{$search}%")
+                        ->orWhereHas('drivers', function ($d) use ($search) {
+                            $d->where('license_number', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(25)
+            ->withQueryString();
+
+        $payload = $drivers->through(function ($user) {
             $data = $user->toArray();
             $driver = $user->drivers;
             $data['driver_id_display'] = !empty($driver) ? driverPrefix() . $driver->driver_id : null;
@@ -38,7 +53,11 @@ class DriverController extends Controller
             $data['expiration_date_display'] = !empty($driver) && !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
             return $data;
         });
-        return Inertia::render('Driver/Index', ['drivers' => $payload]);
+
+        return Inertia::render('Driver/Index', [
+            'drivers' => $payload,
+            'filters' => ['search' => $search],
+        ]);
     }
 
 

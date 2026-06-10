@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, FileText, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
@@ -25,7 +26,7 @@ const STATUS_VARIANT = {
     cancelled: 'destructive',
 };
 
-function RentalAgreementIndex({ agreements, statuses }) {
+function RentalAgreementIndex({ agreements = { data: [] }, statuses, filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
     const { auth } = usePage().props;
@@ -39,13 +40,24 @@ function RentalAgreementIndex({ agreements, statuses }) {
         }
     }
 
-    const [query, setQuery] = useState('');
-    const q = query.trim().toLowerCase();
-    const filtered = q
-        ? agreements.filter((a) =>
-            [a.agreement_id, a.driver_name, a.vehicle_label, statusLabel(a.status)]
-                .some((v) => String(v ?? '').toLowerCase().includes(q)))
-        : agreements;
+    // Server-side search (the list is paginated, so filter on the server to
+    // cover all pages). Debounced reload.
+    const [search, setSearch] = useState(filters.search ?? '');
+    const isFirst = useRef(true);
+    useEffect(() => {
+        if (isFirst.current) {
+            isFirst.current = false;
+            return;
+        }
+        const timer = setTimeout(() => {
+            router.get(
+                route('rental-agreement.index'),
+                search ? { search } : {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     return (
         <div className="space-y-6 p-6">
@@ -57,8 +69,8 @@ function RentalAgreementIndex({ agreements, statuses }) {
                 <div className="relative w-full max-w-xs">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('Search agreements…')}
                             className="pl-8"
                         />
@@ -90,14 +102,14 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filtered.length === 0 && (
+                            {agreements.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                                        {agreements.length === 0 ? t('No rental agreements yet') : t('No rental agreements match your search')}
+                                        {search ? t('No rental agreements match your search') : t('No rental agreements yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {filtered.map((a) => (
+                            {agreements.data.map((a) => (
                                 <TableRow key={a.id}>
                                     <TableCell className="font-mono text-sm">{a.agreement_id}</TableCell>
                                     <TableCell>{a.driver_name}</TableCell>
@@ -144,6 +156,9 @@ function RentalAgreementIndex({ agreements, statuses }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <div className="px-4 pb-3">
+                        <Pagination paginator={agreements} />
+                    </div>
                 </div>
         </div>
     );

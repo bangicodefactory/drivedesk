@@ -73,8 +73,10 @@ class InertiaDriverTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Driver/Index')
-                ->has('drivers', 1)
-                ->has('drivers.0.driver_id_display')
+                // The list is now paginated, so rows live under `drivers.data`.
+                ->has('drivers.data', 1)
+                ->has('drivers.data.0.driver_id_display')
+                ->etc()
             );
     }
 

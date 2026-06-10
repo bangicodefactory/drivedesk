@@ -131,7 +131,9 @@ class RentalAgreementControllerTest extends TestCase
     public function test_index_returns_agreements_with_resolved_relations(): void
     {
         // F-18: the list now selects a subset of columns + eager-loads relations.
-        // Lock in that the DTO shape and the driver/vehicle lookups still resolve.
+        // F-21 follow-up: the list is now paginated, so the rows live under
+        // `agreements.data`. Lock in that the DTO shape and the driver/vehicle
+        // lookups still resolve.
         $agreement = $this->makeAgreement();
 
         $this->actingAs($this->owner)
@@ -139,12 +141,39 @@ class RentalAgreementControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('RentalAgreement/Index')
-                ->has('agreements', 1)
-                ->where('agreements.0.driver_name', $this->driver->name)
-                ->where('agreements.0.vehicle_label', $this->vehicle->name . ' - ' . $this->vehicle->license_plate)
-                ->where('agreements.0.status', $agreement->status)
-                ->has('agreements.0.agreement_id')
-                ->has('agreements.0.encrypted_id')
+                ->has('agreements.data', 1)
+                ->where('agreements.data.0.driver_name', $this->driver->name)
+                ->where('agreements.data.0.vehicle_label', $this->vehicle->name . ' - ' . $this->vehicle->license_plate)
+                ->where('agreements.data.0.status', $agreement->status)
+                ->has('agreements.data.0.agreement_id')
+                ->has('agreements.data.0.encrypted_id')
+                ->etc()
+            );
+    }
+
+    public function test_index_search_filters_by_driver_name(): void
+    {
+        // F-21 follow-up: server-side search across agreement_id, driver name,
+        // and vehicle name/plate. A non-matching query returns no rows.
+        $this->makeAgreement();
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.index', ['search' => 'no-such-driver-xyz']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Index')
+                ->has('agreements.data', 0)
+                ->where('filters.search', 'no-such-driver-xyz')
+                ->etc()
+            );
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.index', ['search' => $this->driver->name]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Index')
+                ->has('agreements.data', 1)
+                ->etc()
             );
     }
 

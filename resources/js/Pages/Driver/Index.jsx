@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, Users, Search } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
@@ -14,7 +15,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 // Action buttons are gated by the shared auth.permissions slugs, mirroring the
 // Blade @can('show|edit|delete driver') / Gate::check('manage|create driver')
 // guards. Prop name `drivers` matches the controller compact('drivers').
-function DriverIndex({ drivers = [] }) {
+function DriverIndex({ drivers = { data: [] }, filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
     const { auth } = usePage().props;
@@ -28,13 +29,24 @@ function DriverIndex({ drivers = [] }) {
 
     const showActions = can('show driver') || can('edit driver') || can('delete driver');
 
-    const [query, setQuery] = useState('');
-    const q = query.trim().toLowerCase();
-    const filtered = q
-        ? drivers.filter((d) =>
-            [d.name, d.email, d.phone_number, d.license_number, d.driver_id_display]
-                .some((v) => String(v ?? '').toLowerCase().includes(q)))
-        : drivers;
+    // Server-side search (the list is paginated, so filter on the server to cover
+    // all pages). Debounced reload.
+    const [search, setSearch] = useState(filters.search ?? '');
+    const isFirst = useRef(true);
+    useEffect(() => {
+        if (isFirst.current) {
+            isFirst.current = false;
+            return;
+        }
+        const timer = setTimeout(() => {
+            router.get(
+                route('driver.index'),
+                search ? { search } : {},
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     return (
         <div className="space-y-6 p-6">
@@ -48,8 +60,8 @@ function DriverIndex({ drivers = [] }) {
                 <div className="relative w-full max-w-xs">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('Search drivers…')}
                         className="pl-8"
                     />
@@ -78,14 +90,14 @@ function DriverIndex({ drivers = [] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filtered.length === 0 && (
+                            {drivers.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {drivers.length === 0 ? t('No drivers yet') : t('No drivers match your search')}
+                                        {search ? t('No drivers match your search') : t('No drivers yet')}
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {filtered.map((d) => (
+                            {drivers.data.map((d) => (
                                 <TableRow key={d.id}>
                                     <TableCell className="font-mono text-sm">{d.driver_id_display ?? '-'}</TableCell>
                                     <TableCell>{d.name}</TableCell>
@@ -127,6 +139,9 @@ function DriverIndex({ drivers = [] }) {
                             ))}
                         </TableBody>
                     </Table>
+                    <div className="px-4 pb-3">
+                        <Pagination paginator={drivers} />
+                    </div>
             </div>
         </div>
     );

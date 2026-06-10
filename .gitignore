@@ -20,3 +20,6 @@ run-tickets.ps1
 /_review_fetch.txt
 /.claude/worktrees/
 /design_handoff_booking_flow
+# Local database dumps (may contain production / customer data — never commit)
+*.sql
+/bangspbp_car_directonderweg.sql
