@@ -87,6 +87,38 @@ class DriverControllerTest extends TestCase
         $this->actingAs($this->owner)->get(route('driver.index'))->assertOk();
     }
 
+    public function test_index_search_matches_displayed_driver_id_and_license(): void
+    {
+        // Restore parity with the old client-side filter, which searched the
+        // displayed (prefixed) driver ID and the license number.
+        $match = User::factory()->driver()->create(['name' => 'Match Driver', 'parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => 700001, 'user_id' => $match->id, 'license_number' => 'LIC-7777', 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        $other = User::factory()->driver()->create(['name' => 'Other Driver', 'parent_id' => $this->owner->id]);
+        Driver::create(['driver_id' => 700002, 'user_id' => $other->id, 'license_number' => 'ZZZ-0000', 'gender' => 'Male', 'parent_id' => $this->owner->id]);
+
+        // By the displayed driver ID (prefix + driver_id).
+        $displayedId = driverPrefix() . '700001';
+        $this->actingAs($this->owner)
+            ->get(route('driver.index', ['search' => $displayedId]))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->has('drivers.data', 1)
+                ->where('drivers.data.0.driver_id_display', $displayedId)
+                ->etc()
+            );
+
+        // By license number.
+        $this->actingAs($this->owner)
+            ->get(route('driver.index', ['search' => 'LIC-7777']))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->has('drivers.data', 1)
+                ->where('drivers.data.0.license_number', 'LIC-7777')
+                ->etc()
+            );
+    }
+
     // ── DriverController::store ───────────────────────────────────────────────
 
     public function test_store_creates_driver_and_redirects(): void
