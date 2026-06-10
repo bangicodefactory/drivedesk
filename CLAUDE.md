@@ -61,9 +61,15 @@ client-side error state.
 
 ## 2. Branching & commits
 
-- The migration lives on **`feat/modernization`**, branched off `dev`.
+- **`dev` is the integration branch** (and what the client runs).
+  Work happens on **short-lived topic branches off `dev`**, named
+  `type/short-description` (e.g. `perf/paginate-driver-lists`,
+  `docs/deploy-runbook`, `ci/deploy-gate-directonderweg`), merged back
+  via PR once CI is green, then **deleted** (local + remote).
+  *(The original long-lived `feat/modernization` branch is retired —
+  fully merged and deleted in June 2026.)*
 - **Never commit directly to `dev`** or `main`. If you're on `dev`,
-  stop and switch back to `feat/modernization`.
+  stop and create a topic branch first.
 - Keep commits **small and atomic**, one logical concern each.
   Use the format `type(BAN-N): <imperative short summary>`.
   Examples of good commit messages:
@@ -246,8 +252,9 @@ When you (Claude) work on this repo:
 
 - **Start each session by reading `CLAUDE.md`, `docs/migration-plan.md`,
   and `docs/test-plan.md`.** They tell you what phase we're in.
-- **Confirm the current branch is `feat/modernization`** before
-  writing files. If not, stop and tell the user.
+- **Confirm you are on a topic branch (not `dev` or `main`)** before
+  writing files. If you're on `dev`, create a `type/short-description`
+  branch first (see §2).
 - **Before any non-trivial change, restate the goal back to the user
   in one sentence** so we both agree on scope.
 - **Default to small PRs.** If a task would be more than ~400 lines
@@ -329,9 +336,10 @@ must follow.
 ### 10.3 Git / GitHub strategy
 
 - **Trunk-based.** `main` is the only long-lived development branch
-  post-migration. The current migration is on `feat/modernization`;
-  it merges to `dev`, then `dev` is promoted to `main` once we
-  unify the world.
+  post-migration. Today, work flows as short-lived topic branches →
+  PR → `dev` (the branch the client runs); `dev` is promoted to
+  `main` once we unify the world. The old `feat/modernization`
+  staging branch is retired (merged + deleted, June 2026).
 - **Tags ship.** Releases are tagged `vMAJOR.MINOR.PATCH` on `main`.
   Each client deploy uses a specific tag. A client can stay one tag
   behind for as long as they need to (no code branch required).
@@ -374,5 +382,7 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/perf-audit-plan.md` — how to run the perf audit
 - `docs/perf-audit.md` — (output, created during Phase 0) the findings
 - `docs/client-configurability.md` — multi-client architecture deep-dive
+- `docs/deploy-directonderweg-com.md` — new-host deploy runbook (source of truth)
+- `docs/deploy-namecheap-cpanel.md` — simplified cPanel/Namecheap companion guide
 
-Last updated: 2026-05-15.
+Last updated: 2026-06-10.
