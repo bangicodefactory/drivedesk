@@ -52,7 +52,11 @@ server**.
 sudo apt update
 sudo apt install -y nginx mysql-server redis-server git unzip certbot python3-certbot-nginx \
   php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl \
-  php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl php8.3-tokenizer
+  php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl php8.3-tokenizer php8.3-redis
+# php8.3-redis is REQUIRED if you use the redis drivers (§2): composer.json
+# requires neither predis nor ext-redis, so without the extension the first
+# request dies with `Class "Redis" not found`. Skip it (and redis-server) only
+# if you take the §2.1 no-Redis path.
 # Composer
 curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer
 ```
