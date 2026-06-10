@@ -36,7 +36,12 @@ class DriverController extends Controller
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone_number', 'like', "%{$search}%")
                         ->orWhereHas('drivers', function ($d) use ($search) {
-                            $d->where('license_number', 'like', "%{$search}%");
+                            // Match license number and the *displayed* driver ID.
+                            // The display is driverPrefix() . driver_id, so match
+                            // that same concatenation to keep the old client-side
+                            // filter's reach (e.g. searching "DRV-7" still works).
+                            $d->where('license_number', 'like', "%{$search}%")
+                                ->orWhereRaw('CONCAT(?, driver_id) LIKE ?', [driverPrefix(), "%{$search}%"]);
                         });
                 });
             })

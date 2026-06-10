@@ -177,6 +177,35 @@ class RentalAgreementControllerTest extends TestCase
             );
     }
 
+    public function test_index_search_matches_status_label_and_displayed_id(): void
+    {
+        // Restore parity with the old client-side filter, which searched the
+        // status *label* and the *displayed* (prefixed) agreement ID.
+        $active = $this->makeAgreement(['status' => 'active', 'agreement_id' => 9001]);
+        $this->makeAgreement(['status' => 'cancelled', 'agreement_id' => 9002]);
+
+        // Searching the status label "Active" returns only the active row.
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.index', ['search' => 'Active']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('agreements.data', 1)
+                ->where('agreements.data.0.status', 'active')
+                ->etc()
+            );
+
+        // Searching the displayed agreement ID (prefix + number) finds that row.
+        $displayedId = rentalAgreementPrefix() . $active->agreement_id;
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.index', ['search' => $displayedId]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('agreements.data', 1)
+                ->where('agreements.data.0.agreement_id', $displayedId)
+                ->etc()
+            );
+    }
+
     // ── RentalAgreementController::store ──────────────────────────────────────
 
     public function test_store_creates_agreement_and_redirects(): void
