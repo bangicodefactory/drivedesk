@@ -44,7 +44,11 @@ const schema = z.object({
 
 const str = (v) => (v != null ? String(v) : '');
 
-function DriverEdit({ driver = {}, user = {}, gender = {} }) {
+function DriverEdit({ driver, user = {}, gender = {} }) {
+    // The controller sends driver: null (not undefined) when the user has no
+    // driver profile, so a default parameter alone doesn't protect the
+    // driver.* reads below.
+    driver = driver ?? {};
     const t = useTranslation();
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
@@ -52,7 +56,10 @@ function DriverEdit({ driver = {}, user = {}, gender = {} }) {
             last_name: user.last_name ?? '',
             email: user.email ?? '',
             phone_number: user.phone_number ?? '',
-            gender: str(user.gender),
+            // Gender lives on the drivers table, not users — reading user.gender
+            // (always undefined) left the select empty and every save NULLed the
+            // stored value.
+            gender: str(driver.gender),
             age: str(driver.age),
             birth_date: driver.birth_date ?? '',
             address: driver.address ?? '',
