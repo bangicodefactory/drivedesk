@@ -214,7 +214,9 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\TelescopeServiceProvider::class,
+        // TelescopeServiceProvider is registered conditionally in
+        // AppServiceProvider — Telescope is a dev dependency, so production
+        // (composer install --no-dev) must not reference its classes.
 
         /* Setup Wizard */
 
