@@ -83,7 +83,10 @@ class TvaController extends Controller
                                         : null,
                 'driver_name'       => $t->client_name ?? optional(optional($t->booking)->drivers)->name,
                 'designation'       => $t->designation,
-                'facture_date'      => $t->facture_date?->format('Y-m-d'),
+                // Display in the tenant's configured System Date Format
+                // (company_date_format) — the Blade list used dateFormat() here;
+                // the port had hardcoded Y-m-d, ignoring the setting.
+                'facture_date'      => $t->facture_date ? dateFormat($t->facture_date) : null,
                 'montant_ttc'       => $t->montant_ttc,
             ]),
             'filters' => $request->only(['from_date', 'to_date', 'driver_name', 'filter_day', 'filter_month', 'filter_year']),
