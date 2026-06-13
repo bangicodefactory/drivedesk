@@ -17,12 +17,9 @@ on:
           - staging-directonderweg
           - production-directonderweg
 
-# One deploy at a time per release target. Later runs queue (no
-# cancel-in-progress): a deploy must never be killed mid-SSH-script.
-# Keyed on the dispatch env, else the tag (each release tag is unique).
-concurrency:
-  group: deploy-${{ inputs.environment || github.ref_name }}
-  cancel-in-progress: false
+# NOTE: deploy serialization is set on the `deploy` job (keyed on the resolved
+# target environment) — not here — so two releases to the SAME client queue,
+# while releases to different clients run independently.
 
 jobs:
   # Resolve which client/environment this run targets:
@@ -38,17 +35,30 @@ jobs:
     outputs:
       target_env: ${{ steps.r.outputs.target_env }}
     steps:
+      - uses: actions/checkout@v4
       - id: r
         run: |
           if [ -n "${{ inputs.environment }}" ]; then
+            # Manual dispatch: the environment is picked from the curated
+            # choice list, which is itself the allowlist.
             TARGET="${{ inputs.environment }}"
           else
             REF="${GITHUB_REF_NAME}"
             if [[ "$REF" == */v* ]]; then
-              TARGET="production-${REF%%/*}"
+              CLIENT="${REF%%/*}"
             else
-              TARGET="production-directonderweg"
+              CLIENT="directonderweg"   # legacy: plain vX.Y.Z
             fi
+            # Guard: only deploy clients that actually exist in the codebase.
+            # config/clients/<client>.php is the source of truth, so a stray
+            # "<word>/vX" tag (e.g. feature/v2) fails here instead of spinning
+            # up an empty environment — and onboarding still needs no change
+            # to this workflow beyond the client's committed config.
+            if [ ! -f "config/clients/${CLIENT}.php" ]; then
+              echo "::error::No config/clients/${CLIENT}.php — '${CLIENT}' is not an onboarded client. A <client>/vX.Y.Z tag must match a committed client config."
+              exit 1
+            fi
+            TARGET="production-${CLIENT}"
           fi
           echo "Resolved target environment: $TARGET"
           echo "target_env=$TARGET" >> "$GITHUB_OUTPUT"
@@ -63,6 +73,13 @@ jobs:
     name: Deploy to ${{ needs.resolve.outputs.target_env }}
     needs: [resolve, test]
     runs-on: ubuntu-latest
+
+    # One deploy at a time per target environment. Later runs queue (no
+    # cancel-in-progress): a deploy must never be killed mid-SSH-script, and
+    # two releases to the same client must not interleave on the same host.
+    concurrency:
+      group: deploy-${{ needs.resolve.outputs.target_env }}
+      cancel-in-progress: false
 
     environment:
       name: ${{ needs.resolve.outputs.target_env }}
