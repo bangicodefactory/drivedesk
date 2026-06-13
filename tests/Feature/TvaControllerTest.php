@@ -138,6 +138,30 @@ class TvaControllerTest extends TestCase
             );
     }
 
+    public function test_index_formats_facture_date_with_company_date_format(): void
+    {
+        // The list DATE column must follow the tenant's System Date Format
+        // (company_date_format), not a hardcoded ISO format. The Blade list
+        // used dateFormat(); the Inertia port had regressed to Y-m-d.
+        \App\Models\Setting::create([
+            'name' => 'company_date_format', 'value' => 'd/m/Y', 'parent_id' => $this->owner->id,
+        ]);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        Tva::factory()->withInvoice()->create([
+            'parent_id' => $this->owner->id, 'facture_date' => '2025-03-09',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.data.0.facture_date', '09/03/2025') // not 2025-03-09
+                ->etc()
+            );
+    }
+
     public function test_index_filters_by_from_date(): void
     {
         Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'parent_id' => $this->owner->id]);
