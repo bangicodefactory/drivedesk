@@ -3,7 +3,8 @@ name: Deploy
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*'      # legacy / directonderweg:  vX.Y.Z
+      - '*/v*'    # client-scoped:            <client>/vX.Y.Z  (e.g. acme/v1.0.4)
   workflow_dispatch:
     inputs:
       environment:
@@ -12,16 +13,46 @@ on:
         default: 'staging-directonderweg'
         type: choice
         options:
+          # Add <staging|production>-<client> here as each client onboards.
           - staging-directonderweg
           - production-directonderweg
 
-# One deploy at a time per target environment. Later runs queue (no
+# One deploy at a time per release target. Later runs queue (no
 # cancel-in-progress): a deploy must never be killed mid-SSH-script.
+# Keyed on the dispatch env, else the tag (each release tag is unique).
 concurrency:
-  group: deploy-${{ inputs.environment || 'production-directonderweg' }}
+  group: deploy-${{ inputs.environment || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
+  # Resolve which client/environment this run targets:
+  #   • workflow_dispatch       → the chosen `environment` input
+  #   • tag  <client>/vX.Y.Z     → production-<client>
+  #   • tag  vX.Y.Z              → production-directonderweg (legacy default)
+  # The deploy job's `environment:` then pulls that client's own secrets/vars,
+  # so adding a client is just a new config + a new GitHub Environment — no
+  # change to this workflow.
+  resolve:
+    name: Resolve target environment
+    runs-on: ubuntu-latest
+    outputs:
+      target_env: ${{ steps.r.outputs.target_env }}
+    steps:
+      - id: r
+        run: |
+          if [ -n "${{ inputs.environment }}" ]; then
+            TARGET="${{ inputs.environment }}"
+          else
+            REF="${GITHUB_REF_NAME}"
+            if [[ "$REF" == */v* ]]; then
+              TARGET="production-${REF%%/*}"
+            else
+              TARGET="production-directonderweg"
+            fi
+          fi
+          echo "Resolved target environment: $TARGET"
+          echo "target_env=$TARGET" >> "$GITHUB_OUTPUT"
+
   # Release gate: the full per-client CI matrix must be green on this exact
   # SHA before anything touches the server. A red suite blocks the tag.
   test:
@@ -29,16 +60,15 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   deploy:
-    # Tag push → production; workflow_dispatch → use the input choice.
-    name: Deploy to ${{ inputs.environment || 'production-directonderweg' }}
-    needs: test
+    name: Deploy to ${{ needs.resolve.outputs.target_env }}
+    needs: [resolve, test]
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ inputs.environment || 'production-directonderweg' }}
+      name: ${{ needs.resolve.outputs.target_env }}
 
     env:
-      TARGET_ENV: ${{ inputs.environment || 'production-directonderweg' }}
+      TARGET_ENV: ${{ needs.resolve.outputs.target_env }}
 
     steps:
       - name: Checkout
