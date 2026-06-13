@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        client: [directonderweg]   # extend as clients onboard
+        client: [directonderweg, drivedesk]   # extend as clients onboard
         php: ['8.4']
 
     services:
