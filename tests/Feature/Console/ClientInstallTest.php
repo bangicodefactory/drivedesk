@@ -10,6 +10,10 @@ class ClientInstallTest extends TestCase
 {
     use RefreshDatabase;
 
+    // These tests exercise the command against a fixed client. Pin --client so
+    // they're deterministic regardless of the CI matrix's ambient APP_CLIENT —
+    // without it, client:install installs the active client (e.g. drivedesk)
+    // and the directonderweg assertions break.
     public function test_seeds_branding_on_first_run(): void
     {
         config(['clients.directonderweg.branding_seed' => [
@@ -17,7 +21,7 @@ class ClientInstallTest extends TestCase
             'theme_color' => 'color1',
         ]]);
 
-        $this->artisan('client:install')
+        $this->artisan('client:install', ['--client' => 'directonderweg'])
             ->assertSuccessful()
             ->expectsOutputToContain('Seeded');
 
@@ -31,14 +35,14 @@ class ClientInstallTest extends TestCase
             'app_name' => 'Direct Onderweg',
         ]]);
 
-        $this->artisan('client:install')->assertSuccessful();
+        $this->artisan('client:install', ['--client' => 'directonderweg'])->assertSuccessful();
 
         // Admin manually changes the value.
         Setting::where('name', 'app_name')->where('parent_id', 1)
             ->update(['value' => 'Custom Name']);
 
         // Second run must not overwrite the admin's edit.
-        $this->artisan('client:install')
+        $this->artisan('client:install', ['--client' => 'directonderweg'])
             ->assertSuccessful()
             ->expectsOutputToContain('Skipped');
 
@@ -49,7 +53,7 @@ class ClientInstallTest extends TestCase
     {
         config(['clients.directonderweg.branding_seed' => []]);
 
-        $this->artisan('client:install')
+        $this->artisan('client:install', ['--client' => 'directonderweg'])
             ->assertSuccessful()
             ->expectsOutputToContain('Nothing to do');
     }
