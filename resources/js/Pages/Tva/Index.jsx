@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -134,11 +135,11 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
                         <div className="space-y-1">
                             <Label>{t('From Date')}</Label>
-                            <Input type="date" value={f.from_date} onChange={(e) => setF({ ...f, from_date: e.target.value })} />
+                            <DatePicker value={f.from_date} onChange={(v) => setF({ ...f, from_date: v })} />
                         </div>
                         <div className="space-y-1">
                             <Label>{t('To Date')}</Label>
-                            <Input type="date" value={f.to_date} onChange={(e) => setF({ ...f, to_date: e.target.value })} />
+                            <DatePicker value={f.to_date} onChange={(v) => setF({ ...f, to_date: v })} />
                         </div>
                         <div className="space-y-1">
                             <Label>{t('Driver Name')}</Label>
@@ -146,7 +147,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                         </div>
                         <div className="space-y-1">
                             <Label>{t('Day')}</Label>
-                            <Input type="date" value={f.filter_day} onChange={(e) => setF({ ...f, filter_day: e.target.value })} />
+                            <DatePicker value={f.filter_day} onChange={(v) => setF({ ...f, filter_day: v })} />
                         </div>
                         <div className="space-y-1">
                             <Label>{t('Month')}</Label>
