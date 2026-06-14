@@ -21,6 +21,7 @@ return [
         'multi_branch'    => true,
         'tva_renumber'    => true,
         'signatures'      => true,
+        'demo_gateway'    => true,   // DriveDesk is the product's demo gateway
     ],
 
     /*
