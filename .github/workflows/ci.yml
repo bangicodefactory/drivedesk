@@ -56,7 +56,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip
+          # pcov is listed in extensions AND set as the coverage driver: a
+          # runner-image PHP-patch bump can leave `coverage: pcov` alone unable
+          # to load the driver ("No coverage driver detected" → 0% → --min gate
+          # fails). Installing it explicitly makes the driver deterministic.
+          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip, pcov
           coverage: pcov
 
       - name: Cache Composer dependencies
