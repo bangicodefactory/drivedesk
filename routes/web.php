@@ -63,6 +63,12 @@ Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request
     return back()->with('status', 'Subscribed with ' . $data['email']);
 })->name('newsletter.subscribe');
 
+// "Book a demo" form on the demo-gateway landing — guarded so the endpoint only
+// exists for clients that expose the marketing landing (drivedesk). 404 otherwise.
+Route::post('/demo-request', [\App\Http\Controllers\DemoRequestController::class, 'store'])
+    ->middleware('feature:demo_gateway')
+    ->name('demo.request');
+
 
 Route::get('home', [HomeController::class, 'index'])->name('home')->middleware(
     [

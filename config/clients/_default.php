@@ -16,6 +16,9 @@ return [
         'multi_branch'    => false,
         'tva_renumber'    => true,
         'signatures'      => true,
+        // Public marketing landing + "Book a demo" gateway at /. Off for normal
+        // tenants (the app is internal-only); on for demo/showcase clients.
+        'demo_gateway'    => false,
     ],
 
     /*
