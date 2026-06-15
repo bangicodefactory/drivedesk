@@ -104,6 +104,13 @@ jobs:
         run: php artisan client:install
 
       - name: Run tests with coverage
+        # Force Xdebug into coverage mode at runtime. setup-php sets
+        # xdebug.mode=coverage in php.ini, but the runner's XDEBUG_MODE env var
+        # overrides the ini and (mid image-rollout) intermittently leaves it
+        # unset → "Unable to get coverage using Xdebug" → 0% → gate fails. The
+        # explicit env makes coverage deterministic across all runners.
+        env:
+          XDEBUG_MODE: coverage
         run: php artisan test --coverage --min=80
 
       - name: Frontend tests (Vitest)
