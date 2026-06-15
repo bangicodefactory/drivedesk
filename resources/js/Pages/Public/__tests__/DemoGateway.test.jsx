@@ -12,6 +12,7 @@ const post = vi.fn((url, data, opts) => {
 vi.mock('@inertiajs/react', () => ({
     usePage: vi.fn(() => ({ props: { flash: {} } })),
     Head: ({ children }) => <>{children}</>,
+    Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
     router: { post: (...args) => post(...args) },
 }));
 
