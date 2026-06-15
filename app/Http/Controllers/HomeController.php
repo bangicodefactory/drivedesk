@@ -67,9 +67,14 @@ class HomeController extends Controller
                 ]);
             }
         } else {
+            // App not yet installed → hand off to the rachidlaasri installer.
+            // Was `header('location:install'); die;` — a hard die() that tore
+            // down the PHP process before Laravel could emit a response (and, in
+            // tests under coverage, killed the run before the coverage report was
+            // written — see #145). A framework redirect to the same target
+            // (/install) is behaviourally identical without killing the process.
             if (!file_exists(setup())) {
-                header('location:install');
-                die;
+                return redirect('install');
             }
             // Demo/showcase clients (feature 'demo_gateway') serve a public
             // marketing landing at / with a "Book a demo" form. Every other

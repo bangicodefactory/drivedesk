@@ -20,17 +20,15 @@ class DemoGatewayTest extends TestCase
     {
         parent::setUp();
 
-        // HomeController@index's guest branch runs `if (!file_exists(setup()))
-        // { header('location:install'); die; }` before anything else — the
-        // legacy rachidlaasri installer guard. `setup()` is storage/installed,
-        // which a fresh CI checkout does not have, so a guest GET / hits `die`
-        // and kills the PHPUnit process mid-run — *before* it writes the
-        // --coverage-php report, which surfaces as "Unable to get coverage using
-        // Xdebug" → 0% → the --min gate fails. These are the first tests to
-        // exercise the guest / branch, so they must put the app in its normal
-        // installed state. Production/CI always run installed; this just matches
-        // that. Created here, removed in tearDown so we never leave a stray
-        // marker on a dev box that wasn't installed.
+        // HomeController@index's guest branch hands off to the installer when
+        // the app isn't installed — `setup()` is storage/installed, which a
+        // fresh CI checkout lacks. Without the marker a guest GET / redirects to
+        // /install instead of reaching the demo-gateway / login branches these
+        // tests assert. Production/CI always run installed; create the marker to
+        // match that, removing it in tearDown if we created it so we never leave
+        // a stray marker on a dev box that wasn't installed. (That guard used to
+        // be header('location:install'); die; — replaced by a redirect in #145;
+        // the die() previously killed the coverage run from this very test.)
         $marker = setup();
         if (! file_exists($marker)) {
             @mkdir(dirname($marker), 0755, true);
