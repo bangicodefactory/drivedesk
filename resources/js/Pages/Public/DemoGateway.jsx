@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import { z } from 'zod';
 import { useZodForm } from '@/hooks/useZodForm';
 import {
@@ -93,9 +93,9 @@ function DemoModal({ open, onOpenChange }) {
                                 Once your demo is confirmed, we'll email you a username and password
                                 for your DriveDesk workspace. Already have your credentials?
                             </p>
-                            <a href={route('login')} style={{ marginTop: 14, background: C.grad, color: '#fff', textDecoration: 'none', borderRadius: 999, padding: '12px 22px', fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                            <Link href={route('login')} style={{ marginTop: 14, background: C.grad, color: '#fff', textDecoration: 'none', borderRadius: 999, padding: '12px 22px', fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                                 Go to login <ArrowRight size={17} />
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 ) : (
@@ -143,7 +143,7 @@ export default function DemoGateway() {
                 <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Gauge size={36} /><Wordmark /></div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <a href={route('login')} style={{ color: C.muted, textDecoration: 'none', fontSize: 15, fontWeight: 700 }}>Log in</a>
+                        <Link href={route('login')} style={{ color: C.muted, textDecoration: 'none', fontSize: 15, fontWeight: 700 }}>Log in</Link>
                         <button onClick={book} style={{ ...pillBtn, padding: '11px 22px', fontSize: 15 }}>Book a demo</button>
                     </div>
                 </div>
