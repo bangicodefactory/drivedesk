@@ -56,12 +56,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          # pcov is listed in extensions AND set as the coverage driver: a
-          # runner-image PHP-patch bump can leave `coverage: pcov` alone unable
-          # to load the driver ("No coverage driver detected" → 0% → --min gate
-          # fails). Installing it explicitly makes the driver deterministic.
-          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip, pcov
-          coverage: pcov
+          extensions: pdo_mysql, mbstring, bcmath, exif, pcntl, zip
+          # Use Xdebug for coverage: a runner PHP 8.4 patch bump regressed pcov
+          # so it reports "enabled" at setup but PHPUnit sees "No coverage driver
+          # detected" at runtime (→ 0% → the --min=80 gate fails on every PR).
+          # Xdebug is detected reliably; slower, but coverage runs once per job.
+          coverage: xdebug
 
       - name: Cache Composer dependencies
         uses: actions/cache@v4
