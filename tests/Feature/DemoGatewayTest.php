@@ -29,6 +29,11 @@ class DemoGatewayTest extends TestCase
         // a stray marker on a dev box that wasn't installed. (That guard used to
         // be header('location:install'); die; — replaced by a redirect in #145;
         // the die() previously killed the coverage run from this very test.)
+        //
+        // NOTE: storage/installed is a process-global file; InstallerGuardTest
+        // *removes* it to assert the not-installed path. Safe under the
+        // single-process `php artisan test` we run today, but these two classes
+        // would race if the suite is ever switched to --parallel.
         $marker = setup();
         if (! file_exists($marker)) {
             @mkdir(dirname($marker), 0755, true);
