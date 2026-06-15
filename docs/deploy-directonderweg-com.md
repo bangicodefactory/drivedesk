@@ -188,6 +188,35 @@ Leave `REDIS_HOST`/`REDIS_PORT` unset.
 > request** instead of failing quietly in the background. Make sure `MAIL_*` is
 > solid before choosing `sync`.
 
+### 2.2 SMTP is mandatory for the demo gateway (DriveDesk)
+
+Clients with `demo_gateway` enabled (today: **DriveDesk**) expose the public
+"Book a demo" form on `/`, which emails the product inbox **`admin@bangicode.ma`**
+on submit. Unlike every other mailable, `App\Mail\DemoRequest` is **not**
+`ShouldQueue` — it sends **inline in the request regardless of
+`QUEUE_CONNECTION`**. So a missing or wrong `MAIL_*` config is **always a
+user-facing 500 on the demo form**, not a silent background failure. (This bit
+locally: `MAIL_USERNAME`/`MAIL_PASSWORD` were `null` → SMTP `530 Authentication
+required` → 500.)
+
+For a client deploy with the gateway on, all of these must be set and verified
+**before** go-live:
+
+| Var / Secret | Notes |
+| --- | --- |
+| `MAIL_MAILER` | `smtp` (must **not** be `log` in production) |
+| `MAIL_HOST` | SMTP host that can send as the `MAIL_FROM_ADDRESS` domain |
+| `MAIL_PORT` | `587` (STARTTLS) or `465` (TLS) |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | **Real** SMTP credentials — never `null` |
+| `MAIL_ENCRYPTION` | `tls` (or `ssl` for port 465) |
+| `MAIL_FROM_ADDRESS` | A mailbox the SMTP account is allowed to send from |
+
+> The recipient `admin@bangicode.ma` is hard-coded in
+> `DemoRequestController::RECIPIENT` (the product owner's inbox), so it does not
+> need an env var — but the **sender** (`MAIL_*`) must be able to deliver to it.
+> Smoke-test after deploy: open `/`, submit the demo form, confirm a non-error
+> success state and that the email arrives.
+
 ---
 
 ## 3. ⚠️ Reuse the old `APP_KEY` (do not generate a new one)
