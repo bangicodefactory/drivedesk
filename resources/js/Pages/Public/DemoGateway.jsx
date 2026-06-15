@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import { z } from 'zod';
 import { useZodForm } from '@/hooks/useZodForm';
 import {
@@ -88,6 +88,15 @@ function DemoModal({ open, onOpenChange }) {
                         <p style={{ color: C.muted, marginTop: 8, fontSize: 15 }}>
                             {flash?.success ?? 'Thanks! We\'ll be in touch shortly to schedule your demo.'}
                         </p>
+                        <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.line}` }}>
+                            <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.55 }}>
+                                Once your demo is confirmed, we'll email you a username and password
+                                for your DriveDesk workspace. Already have your credentials?
+                            </p>
+                            <Link href={route('login')} style={{ marginTop: 14, background: C.grad, color: '#fff', textDecoration: 'none', borderRadius: 999, padding: '12px 22px', fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                Go to login <ArrowRight size={17} />
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <>
@@ -133,7 +142,10 @@ export default function DemoGateway() {
             <nav style={{ position: 'sticky', top: 0, zIndex: 30, backdropFilter: 'blur(14px)', background: 'rgba(14,15,17,.72)', borderBottom: `1px solid ${C.line}` }}>
                 <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Gauge size={36} /><Wordmark /></div>
-                    <button onClick={book} style={{ ...pillBtn, padding: '11px 22px', fontSize: 15 }}>Book a demo</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                        <Link href={route('login')} style={{ color: C.muted, textDecoration: 'none', fontSize: 15, fontWeight: 700 }}>Log in</Link>
+                        <button onClick={book} style={{ ...pillBtn, padding: '11px 22px', fontSize: 15 }}>Book a demo</button>
+                    </div>
                 </div>
             </nav>
 
