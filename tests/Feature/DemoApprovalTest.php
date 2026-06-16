@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -66,6 +67,44 @@ class DemoApprovalTest extends TestCase
         }
 
         return $user;
+    }
+
+    // ── index (super-admin listing) ──────────────────────────────────────────
+
+    public function test_super_admin_sees_only_pending_demo_rows_on_the_index(): void
+    {
+        $this->asClient('drivedesk');
+        $this->makePending('a@atlascars.ma');
+        $this->makePending('b@atlascars.ma');
+
+        $this->actingAs($this->superAdmin)
+            ->get(route('demo-requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('DemoRequests/Index')
+                ->has('requests', 2)
+                ->has('requests.0', fn (Assert $r) => $r
+                    ->hasAll(['id', 'name', 'email', 'company', 'phone', 'created_at'])
+                )
+            );
+    }
+
+    public function test_index_is_forbidden_for_non_super_admin(): void
+    {
+        $this->asClient('drivedesk');
+
+        $this->actingAs($this->owner)
+            ->get(route('demo-requests.index'))
+            ->assertForbidden();
+    }
+
+    public function test_index_is_404_on_a_non_demo_client(): void
+    {
+        $this->asClient('directonderweg');
+
+        $this->actingAs($this->superAdmin)
+            ->get(route('demo-requests.index'))
+            ->assertNotFound();
     }
 
     // ── store provisions a pending user ───────────────────────────────────────
