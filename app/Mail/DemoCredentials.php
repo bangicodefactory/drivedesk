@@ -26,7 +26,10 @@ class DemoCredentials extends Mailable
         // A standard Breeze reset link — the prospect sets their own password and
         // is then a normal (active, verified) workspace user.
         $this->url = route('password.reset', ['token' => $token, 'email' => $user->email]);
-        $this->appName = config('app.name', 'DriveDesk');
+        // Prefer the client's canonical product name (config/clients/<client>.php)
+        // over the APP_NAME env, so the email reads "DriveDesk" regardless of how
+        // the deploy set APP_NAME.
+        $this->appName = config('client.name') ?: config('app.name', 'DriveDesk');
     }
 
     public function build()
