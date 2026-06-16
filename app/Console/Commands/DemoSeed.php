@@ -30,7 +30,8 @@ use Illuminate\Support\Facades\DB;
 class DemoSeed extends Command
 {
     protected $signature = 'demo:seed
-        {--force : Run even when the active client is not a demo client (dangerous — injects fake data)}';
+        {--force : Run even when the active client is not a demo client (dangerous — injects fake data)}
+        {--if-demo : On a non-demo client, skip quietly (exit 0) instead of failing — for unconditional deploy/scheduler use}';
 
     protected $description = 'Seed/refresh showcase data for a demo client. Re-anchors dates to today. Refuses on non-demo clients unless --force.';
 
@@ -56,6 +57,15 @@ class DemoSeed extends Command
     {
         if (! feature('demo_gateway') && ! $this->option('force')) {
             $client = config('app.client', 'directonderweg');
+
+            // --if-demo: deploy/scheduler call this on every client unconditionally;
+            // on a real client it's a clean no-op, not a deploy-breaking error.
+            if ($this->option('if-demo')) {
+                $this->info("Skipping demo:seed — client '{$client}' is not a demo client.");
+
+                return self::SUCCESS;
+            }
+
             $this->error("Refusing to run: client '{$client}' is not a demo client (feature 'demo_gateway' is off).");
             $this->line('  demo:seed injects fake showcase data — never run it against a real client.');
             $this->line('  Use --force only if you are certain this deployment should hold demo data.');
