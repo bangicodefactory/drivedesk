@@ -66,7 +66,10 @@ Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request
 // "Book a demo" form on the demo-gateway landing — guarded so the endpoint only
 // exists for clients that expose the marketing landing (drivedesk). 404 otherwise.
 Route::post('/demo-request', [\App\Http\Controllers\DemoRequestController::class, 'store'])
-    ->middleware('feature:demo_gateway')
+    // Public, unauthenticated form that creates a pending user + sends mail —
+    // rate-limit per IP so bots can't flood the inbox or spam pending rows
+    // (BAN-251). 5/min is generous for a real prospect.
+    ->middleware(['feature:demo_gateway', 'throttle:5,1'])
     ->name('demo.request');
 
 // Super-admin review of pending demo requests (BAN-249). A pending request is an

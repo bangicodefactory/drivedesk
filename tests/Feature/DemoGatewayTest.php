@@ -115,4 +115,17 @@ class DemoGatewayTest extends TestCase
 
         Mail::assertNothingSent();
     }
+
+    public function test_demo_request_is_rate_limited(): void
+    {
+        Mail::fake();
+        $this->asClient('drivedesk');
+
+        // throttle:5,1 — five succeed, the sixth from the same IP is throttled.
+        for ($i = 0; $i < 5; $i++) {
+            $this->post(route('demo.request'), $this->valid)->assertRedirect();
+        }
+
+        $this->post(route('demo.request'), $this->valid)->assertStatus(429);
+    }
 }
