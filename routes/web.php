@@ -75,6 +75,8 @@ Route::post('/demo-request', [\App\Http\Controllers\DemoRequestController::class
 // (404); super-admin-only + the pending-row invariant are enforced in the
 // controller. The listing page is added separately.
 Route::middleware(['auth', 'feature:demo_gateway'])->group(function () {
+    Route::get('demo-requests', [\App\Http\Controllers\DemoApprovalController::class, 'index'])
+        ->name('demo-requests.index');
     Route::post('demo-requests/{user}/approve', [\App\Http\Controllers\DemoApprovalController::class, 'approve'])
         ->name('demo-requests.approve');
     Route::post('demo-requests/{user}/decline', [\App\Http\Controllers\DemoApprovalController::class, 'decline'])
