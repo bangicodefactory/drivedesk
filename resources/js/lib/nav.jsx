@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, Shield, CreditCard, Wrench, Receipt,
-    Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell, UserCircle,
+    Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell, UserCircle, Inbox,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,6 +28,10 @@ const NAV_SUPER_ADMIN = [
     ]},
     { section: 'Users', items: [
         { label: 'Users', route: 'users.index', icon: Users, permission: 'manage user' },
+    ]},
+    // Demo gateway only (drivedesk): pending "Book a demo" requests to approve.
+    { section: 'Demo', feature: 'demo_gateway', items: [
+        { label: 'Demo requests', route: 'demo-requests.index', icon: Inbox, feature: 'demo_gateway' },
     ]},
     { section: 'System', items: [
         // Super admin bypasses Gate checks in Blade — no permission guard on children

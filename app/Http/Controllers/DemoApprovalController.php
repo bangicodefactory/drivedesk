@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
+use Inertia\Inertia;
 
 /**
  * Super-admin actions on pending demo requests (BAN-249).
@@ -25,6 +26,28 @@ use Illuminate\Support\Facades\Password;
  */
 class DemoApprovalController extends Controller
 {
+    /**
+     * Super-admin list of pending demo requests (inactive demo-tenant managers).
+     */
+    public function index(Request $request)
+    {
+        abort_unless(Auth::user()?->type === 'super admin', 403);
+
+        $requests = $this->pendingQuery()
+            ->orderByDesc('created_at')
+            ->get(['id', 'name', 'email', 'company_name', 'phone_number', 'created_at'])
+            ->map(fn (User $u) => [
+                'id'         => $u->id,
+                'name'       => $u->name,
+                'email'      => $u->email,
+                'company'    => $u->company_name,
+                'phone'      => $u->phone_number,
+                'created_at' => optional($u->created_at)->toIso8601String(),
+            ]);
+
+        return Inertia::render('DemoRequests/Index', ['requests' => $requests]);
+    }
+
     public function approve(Request $request, User $user)
     {
         $this->guard($user);
@@ -63,13 +86,25 @@ class DemoApprovalController extends Controller
     {
         abort_unless(Auth::user()?->type === 'super admin', 403);
 
-        $ownerId = optional(User::where('type', 'owner')->first())->id;
-
         abort_unless(
             $user->type === 'manager'
                 && (int) $user->is_active === 0
-                && (int) $user->parent_id === (int) $ownerId,
+                && (int) $user->parent_id === (int) $this->demoOwnerId(),
             404
         );
+    }
+
+    private function demoOwnerId(): ?int
+    {
+        return optional(User::where('type', 'owner')->first())->id;
+    }
+
+    /** Pending demo requests = inactive `manager` sub-users of the demo tenant. */
+    private function pendingQuery()
+    {
+        return User::query()
+            ->where('type', 'manager')
+            ->where('is_active', 0)
+            ->where('parent_id', $this->demoOwnerId());
     }
 }
