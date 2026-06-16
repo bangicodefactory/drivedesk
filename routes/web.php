@@ -69,6 +69,18 @@ Route::post('/demo-request', [\App\Http\Controllers\DemoRequestController::class
     ->middleware('feature:demo_gateway')
     ->name('demo.request');
 
+// Super-admin review of pending demo requests (BAN-249). A pending request is an
+// inactive `manager` sub-user of the demo tenant (no demo_requests table — schema
+// frozen, §4). `feature:demo_gateway` keeps these endpoints off real clients
+// (404); super-admin-only + the pending-row invariant are enforced in the
+// controller. The listing page is added separately.
+Route::middleware(['auth', 'feature:demo_gateway'])->group(function () {
+    Route::post('demo-requests/{user}/approve', [\App\Http\Controllers\DemoApprovalController::class, 'approve'])
+        ->name('demo-requests.approve');
+    Route::post('demo-requests/{user}/decline', [\App\Http\Controllers\DemoApprovalController::class, 'decline'])
+        ->name('demo-requests.decline');
+});
+
 
 Route::get('home', [HomeController::class, 'index'])->name('home')->middleware(
     [
