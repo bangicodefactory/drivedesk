@@ -31,6 +31,20 @@ class DemoSeedCommandTest extends TestCase
         $this->assertSame(0, Vehicle::count());
     }
 
+    public function test_if_demo_skips_gracefully_on_a_non_demo_client(): void
+    {
+        $this->asClient('directonderweg'); // demo_gateway off
+
+        // Deploy/scheduler call demo:seed --if-demo unconditionally; on a real
+        // client it must be a clean no-op (exit 0), not a deploy-breaking error.
+        $this->artisan('demo:seed --if-demo')
+            ->expectsOutputToContain('Skipping demo:seed')
+            ->assertSuccessful();
+
+        $this->assertSame(0, Booking::count());
+        $this->assertSame(0, Vehicle::count());
+    }
+
     public function test_it_seeds_showcase_data_on_a_demo_client(): void
     {
         $this->asClient('drivedesk'); // demo_gateway on

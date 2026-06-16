@@ -217,6 +217,32 @@ For a client deploy with the gateway on, all of these must be set and verified
 > Smoke-test after deploy: open `/`, submit the demo form, confirm a non-error
 > success state and that the email arrives.
 
+### 2.3 Demo showcase data seeds and refreshes itself
+
+A demo client (`demo_gateway` on) needs realistic content — fleet, bookings,
+payments, reminders, TVA — to show off the product. That is **automated**, so a
+demo deploy is never empty:
+
+- **On every deploy**, `deploy.yml` runs `php artisan demo:seed --if-demo` right
+  after `client:install`. `--if-demo` makes it a **clean no-op on real clients**
+  (e.g. `directonderweg`) and a full seed/refresh on demo clients. It's
+  best-effort: a failure logs a warning but never aborts the deploy or rolls
+  back (demo data is non-critical).
+- **Nightly** (`03:30`, via the Laravel scheduler — needs the host cron running
+  `schedule:run`, same as the reminder jobs), `demo:seed --if-demo` runs again to
+  **re-anchor the time-relative data to "today"** so the demo never ages, and to
+  reset the sandbox to a pristine state each day.
+
+`demo:seed` is idempotent and **gated to `feature('demo_gateway')`** — it refuses
+to run against a real client unless `--force`, so it can't inject fake data into
+production by accident. To seed/refresh a demo manually: `php artisan demo:seed`.
+
+> ⚠️ The nightly run **wipes the demo client's transactional data** (bookings,
+> payments, expenses, reminders, agreements, credits, TVA — scoped to the demo
+> owner) and reseeds it. That's intentional (fresh sandbox daily) but means any
+> changes made in the demo are discarded overnight. Catalog data (vehicles,
+> places, addons) is preserved. Change the cadence in `app/Console/Kernel.php`.
+
 ---
 
 ## 3. ⚠️ Reuse the old `APP_KEY` (do not generate a new one)
