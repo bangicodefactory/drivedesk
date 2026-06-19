@@ -34,6 +34,16 @@ class Driver extends Authenticatable implements CanBeSigned
         'ICE_company'
 
     ];
+
+    /**
+     * The driver's active blacklist row, if any (BAN-252). Linked on the driver's
+     * user_id (the id Booking/RentalAgreement store in `driver`).
+     */
+    public function activeBlacklist()
+    {
+        return $this->hasOne(DriverBlacklist::class, 'driver_user_id', 'user_id')
+            ->whereNull('lifted_at');
+    }
     // public function getSignatureRoute(): string
     // {
     //     // Implement the method to return the signature route

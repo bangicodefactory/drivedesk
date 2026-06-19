@@ -154,6 +154,10 @@ class DefaultDataUsersTableSeeder extends Seeder
                     'guard_name' => 'web',
                 ],
                 [
+                    'name' => 'manage driver blacklist',
+                    'guard_name' => 'web',
+                ],
+                [
                     'name' => 'manage vehicle type',
                     'guard_name' => 'web',
                 ],
@@ -507,6 +511,7 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit driver'],
                 ['name' => 'delete driver'],
                 ['name' => 'show driver'],
+                ['name' => 'manage driver blacklist'],
                 ['name' => 'manage vehicle type'],
                 ['name' => 'create vehicle type'],
                 ['name' => 'edit vehicle type'],
@@ -614,6 +619,7 @@ class DefaultDataUsersTableSeeder extends Seeder
                 ['name' => 'edit driver'],
                 ['name' => 'delete driver'],
                 ['name' => 'show driver'],
+                ['name' => 'manage driver blacklist'],
                 ['name' => 'manage vehicle type'],
                 ['name' => 'create vehicle type'],
                 ['name' => 'edit vehicle type'],
