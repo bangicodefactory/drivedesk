@@ -12,10 +12,13 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { confirmBlacklist } from '@/lib/blacklist';
 
 function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
     const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
+    const confirm = useConfirm();
     const { register, handleSubmit, setValue, watch, formState: { isSubmitting } } = useForm({
         defaultValues: {
             driver: '',
@@ -33,11 +36,18 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
         },
     });
 
-    function onSubmit(data) {
+    async function onSubmit(data) {
+        const driver2 = data.driver2 === 'none' ? '' : data.driver2;
+
+        // Blacklist warning (BAN-252): check both drivers; let the owner decide.
+        const { proceed, acknowledge } = await confirmBlacklist(drivers, [data.driver, driver2], confirm, t);
+        if (!proceed) return;
+
         router.post(route('rental-agreement.store'), {
             ...data,
-            driver2: data.driver2 === 'none' ? '' : data.driver2,
+            driver2,
             create_booking: data.create_booking ? 1 : 0,
+            acknowledge_blacklist: acknowledge ? 1 : 0,
         });
     }
 
