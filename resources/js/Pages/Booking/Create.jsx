@@ -15,6 +15,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { confirmBlacklist } from '@/lib/blacklist';
+import { BlacklistNotice } from '@/components/BlacklistNotice';
 import axios from 'axios';
 
 function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, addons }) {
@@ -201,6 +202,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     ariaLabel={t('Driver')}
                                 />
                                 {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
+                                <BlacklistNotice drivers={drivers} selectedIds={[watch('driver')]} />
                             </div>
 
                             <div className="space-y-1">
