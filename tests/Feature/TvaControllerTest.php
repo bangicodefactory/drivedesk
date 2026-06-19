@@ -633,4 +633,48 @@ class TvaControllerTest extends TestCase
 
         // No payments exist, so no TVAs created, but the route should succeed
     }
+
+    // ── bulkDownload (facture PDF generation) ──────────────────────────────────
+
+    /**
+     * Smoke test the facture PDF path (BAN-255): the logo lives on the `public`
+     * disk (storage/app/public/upload/logo). The generator now searches there, so
+     * a facture for a tenant with a real logo file renders without error and
+     * returns a downloadable zip. (Guards the PDF path + the logo-resolution
+     * block; the embedded image itself is verified manually.)
+     */
+    public function test_bulk_download_generates_facture_pdf_with_logo_present(): void
+    {
+        // Place a real logo at the canonical public-disk path the fix searches.
+        $logoDir = storage_path('app/public/upload/logo');
+        if (! is_dir($logoDir)) {
+            mkdir($logoDir, 0755, true);
+        }
+        $logoFile = $logoDir . '/2_logo.png'; // the generator's default filename
+        $created = ! file_exists($logoFile);
+        if ($created) {
+            // 1x1 transparent PNG.
+            file_put_contents($logoFile, base64_decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+            ));
+        }
+
+        try {
+            $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+            $response = $this->actingAs($this->owner)
+                ->post(route('tva.bulk.download'), ['invoice_ids' => [$tva->id]]);
+
+            $response->assertOk();
+            $this->assertStringContainsString(
+                'application/',
+                strtolower($response->headers->get('content-type') ?? ''),
+                'Expected a file download response from bulkDownload.'
+            );
+        } finally {
+            if ($created && file_exists($logoFile)) {
+                @unlink($logoFile);
+            }
+        }
+    }
 }
