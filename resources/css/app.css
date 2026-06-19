@@ -131,9 +131,13 @@
  * Printable documents (booking invoice, rental agreement) print as a clean A4
  * sheet; app chrome is hidden via print:* utilities. Here: page geometry + white. */
 @media print {
+    /* margin:0 leaves the browser no room to print its header/footer (the page
+     * title, date, URL and page numbers). The printable documents supply their
+     * own page margin via padding (print:p-[14mm] on #agreement-print /
+     * #invoice-print), so the sheet still has clean white margins. */
     @page {
         size: A4;
-        margin: 14mm;
+        margin: 0;
     }
 
     html,
