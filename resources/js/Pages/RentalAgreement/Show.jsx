@@ -37,9 +37,12 @@ function RentalAgreementShow({ agreement, settings, terms }) {
             </div>
 
             <Card className="print:border-0 print:shadow-none">
-                <CardContent className="pt-6 space-y-6">
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row md:justify-between gap-4">
+                <CardContent className="pt-6 space-y-6 print:space-y-3">
+                    {/* Header — keep the company block (logo + text) and the
+                        IF/RC/Patente/ICE block on the same row when printing.
+                        (The print content width sits just under the `md` breakpoint,
+                        so md:flex-row alone would stack them — force the row.) */}
+                    <div className="flex flex-col md:flex-row md:justify-between gap-4 print:flex-row print:justify-between print:items-start">
                         <div className="flex items-start gap-4">
                             {settings?.company_logo && (
                                 <img
@@ -155,11 +158,13 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     <Separator />
 
-                    {/* Terms & Conditions */}
-                    <div>
-                        <h5 className="font-semibold text-primary mb-3">{t('Terms & Conditions')}</h5>
+                    {/* Terms & Conditions — start on a fresh page and shrink the
+                        type for print so the full terms fit on a single page
+                        (was overflowing onto a third page). */}
+                    <div className="print:break-before-page">
+                        <h5 className="font-semibold text-primary mb-3 print:mb-2">{t('Terms & Conditions')}</h5>
                         <div
-                            className="text-sm prose prose-sm max-w-none"
+                            className="text-sm leading-relaxed max-w-none print:text-[9.5px] print:leading-snug"
                             dangerouslySetInnerHTML={{ __html: terms }}
                         />
                     </div>
