@@ -164,7 +164,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                     <div className="print:break-before-page print:pt-[14mm]">
                         <h5 className="font-semibold text-primary mb-3 print:mb-3">{t('Terms & Conditions')}</h5>
                         <div
-                            className="text-sm leading-relaxed max-w-none print:text-[13px] print:leading-relaxed"
+                            className="text-sm leading-relaxed max-w-none print:text-[13px] print:leading-[1.45]"
                             dangerouslySetInnerHTML={{ __html: terms }}
                         />
                     </div>
