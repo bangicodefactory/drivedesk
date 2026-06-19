@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Models\DriverBlacklist;
 use App\Models\Notification;
 use App\Models\Place;
 use App\Models\RentalAgreement;
@@ -87,11 +88,18 @@ class RentalAgreementController extends Controller
                 ->where('type', 'driver')
                 ->orderBy('id', 'desc') // last added first (id is monotonic; created_at can tie)
                 ->get();
+            // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
 
             $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'      => $drivers->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values(),
+                'drivers'      => $drivers->map(fn($u) => [
+                    'id'               => $u->id,
+                    'name'             => $u->name,
+                    'blacklisted'      => $blacklists->has($u->id),
+                    'blacklist_reason' => optional($blacklists->get($u->id))->reason,
+                ])->values(),
                 'statuses'     => collect(RentalAgreement::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
                 'defaultTerms' => $defaultTerms,
             ]);
@@ -122,6 +130,19 @@ class RentalAgreementController extends Controller
                 return back()->withErrors($validator);
             }
 
+            // Blacklist check (BAN-252): both driver and the optional driver2.
+            // Warn-and-override — block unless acknowledged; the React picker
+            // surfaces the warning so this is the server-side safety net.
+            $driverIds = array_values(array_filter([$request->driver, $request->driver2]));
+            $blacklists = DriverBlacklist::where('parent_id', parentId())
+                ->whereIn('driver_user_id', $driverIds)
+                ->whereNull('lifted_at')
+                ->get();
+            if ($blacklists->isNotEmpty() && !$request->boolean('acknowledge_blacklist')) {
+                return back()->withInput()
+                    ->with('error', __('Blacklisted driver(s): ') . $blacklists->pluck('reason')->implode('; '));
+            }
+
                     // Combine date and time
         $start_datetime = $request->rental_start_date . ' ' . $request->rental_start_time;
         $end_datetime = $request->rental_end_date . ' ' . $request->rental_end_time;
@@ -143,6 +164,11 @@ class RentalAgreementController extends Controller
             $rentalAgreement->status = $request->status;
             $rentalAgreement->parent_id = parentId();
             $rentalAgreement->save();
+
+            // Record an override per blacklisted driver if the owner proceeded.
+            foreach ($blacklists as $bl) {
+                $bl->recordOverride('rental_agreement', $rentalAgreement->id, (int) $bl->driver_user_id);
+            }
 
             $user = User::find($request->driver);
             $module = 'new_agreement';

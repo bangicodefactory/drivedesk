@@ -6,6 +6,7 @@ use App\Models\Addon;
 use App\Models\Booking;
 use App\Models\BookingPayment;
 use App\Models\Driver;
+use App\Models\DriverBlacklist;
 use App\Models\Notification;
 use App\Models\Place;
 use App\Models\User;
@@ -78,7 +79,14 @@ class BookingController extends Controller
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
                 ->limit(500)->get();
-            $driversDropdown = $drivers->pluck('name', 'id')->toArray();
+            // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $driversProp = $drivers->map(fn($d) => [
+                'id'               => $d->id,
+                'name'             => $d->name,
+                'blacklisted'      => $blacklists->has($d->id),
+                'blacklist_reason' => optional($blacklists->get($d->id))->reason,
+            ])->values();
 
 
             $status = Booking::$status;
@@ -89,7 +97,7 @@ class BookingController extends Controller
 
             return Inertia::render('Booking/Create', [
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'  => collect($driversDropdown)->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
+                'drivers'  => $driversProp,
                 'statuses' => collect(Booking::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
                 'places'   => $places->map(fn($p) => ['id' => $p->id, 'name' => $p->name]),
                 'addons'   => $addon->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
@@ -269,6 +277,18 @@ class BookingController extends Controller
             return redirect()->back()->with('error', $messages->first());
         }
 
+        // 🔹 Blacklist check (BAN-252): warn-and-override. If the driver is
+        // blacklisted and the owner hasn't acknowledged, block; the React picker
+        // surfaces the warning so this only fires as the server-side safety net.
+        $blacklist = DriverBlacklist::where('parent_id', parentId())
+            ->where('driver_user_id', $request->driver)
+            ->whereNull('lifted_at')
+            ->first();
+        if ($blacklist && !$request->boolean('acknowledge_blacklist')) {
+            return redirect()->back()->withInput()
+                ->with('error', __('This driver is blacklisted: ') . $blacklist->reason);
+        }
+
         // 🔹 Vehicle details
         $vehicle_detail = Vehicle::find($request->vehicle);
 
@@ -307,6 +327,11 @@ class BookingController extends Controller
         $booking->parent_id = parentId();
         $booking->daily_price_final = $request->daily_price ?? 0;
         $booking->save();
+
+        // Record the override if the owner proceeded past a blacklist warning.
+        if ($blacklist) {
+            $blacklist->recordOverride('booking', $booking->id, (int) $request->driver);
+        }
 
         // 🔹 User & driver
         $user = User::find($request->driver);
