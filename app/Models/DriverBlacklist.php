@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * A driver (keyed by the driver's users.id) flagged for a tenant, with the
@@ -37,6 +38,24 @@ class DriverBlacklist extends Model
     public function scopeActive($query)
     {
         return $query->whereNull('lifted_at');
+    }
+
+    /**
+     * Append a "proceed anyway" override to the audit (BAN-252): who proceeded,
+     * when, on which booking/contract, for which driver, and the reason at the time.
+     */
+    public function recordOverride(string $contextType, int $contextId, int $driverUserId): void
+    {
+        $this->overrides = array_merge($this->overrides ?? [], [[
+            'by_user_id'      => Auth::id(),
+            'by_user_name'    => optional(Auth::user())->name,
+            'at'              => now()->toDateTimeString(),
+            'context_type'    => $contextType,
+            'context_id'      => $contextId,
+            'driver_user_id'  => $driverUserId,
+            'reason_snapshot' => $this->reason,
+        ]]);
+        $this->save();
     }
 
     /**

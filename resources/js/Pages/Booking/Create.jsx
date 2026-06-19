@@ -13,11 +13,14 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { confirmBlacklist } from '@/lib/blacklist';
 import axios from 'axios';
 
 function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, addons }) {
     const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
+    const confirm = useConfirm();
 
     const { register, handleSubmit, watch, setValue, getValues, formState: { isSubmitting } } = useForm({
         defaultValues: {
@@ -139,12 +142,16 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
         );
     }
 
-    function onSubmit(data) {
+    async function onSubmit(data) {
+        // Blacklist warning (BAN-252): let the owner decide; the server enforces.
+        const { proceed, acknowledge } = await confirmBlacklist(drivers, [data.driver], confirm, t);
+        if (!proceed) return; // declined → keep the form, post nothing
         router.post(route('booking.store'), {
             ...data,
             start_date_time: formatDt(data.start_date_time),
             end_date_time: formatDt(data.end_date_time),
             addon: selectedAddons,
+            acknowledge_blacklist: acknowledge ? 1 : 0,
         });
     }
 
