@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Driver;
+use App\Models\DriverBlacklist;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -49,13 +50,22 @@ class DriverController extends Controller
             ->paginate(25)
             ->withQueryString();
 
-        $payload = $drivers->through(function ($user) {
+        // Batch-load active blacklists for just this page's drivers (BAN-252).
+        $blacklists = DriverBlacklist::activeFor(
+            $drivers->getCollection()->pluck('id')->all(),
+            parentId()
+        );
+
+        $payload = $drivers->through(function ($user) use ($blacklists) {
             $data = $user->toArray();
             $driver = $user->drivers;
             $data['driver_id_display'] = !empty($driver) ? driverPrefix() . $driver->driver_id : null;
             $data['license_number'] = !empty($driver) && !empty($driver->license_number) ? $driver->license_number : null;
             $data['issue_date_display'] = !empty($driver) && !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
             $data['expiration_date_display'] = !empty($driver) && !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
+            $bl = $blacklists->get($user->id);
+            $data['is_blacklisted'] = (bool) $bl;
+            $data['blacklist_reason'] = $bl?->reason;
             return $data;
         });
 
@@ -299,10 +309,81 @@ class DriverController extends Controller
             $driverPayload['issue_date_display'] = !empty($driver->issue_date) ? dateFormat($driver->issue_date) : null;
             $driverPayload['expiration_date_display'] = !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
         }
+        // Blacklist status for the badge + action (BAN-252).
+        $blacklist = DriverBlacklist::where('parent_id', parentId())
+            ->where('driver_user_id', $user->id)
+            ->whereNull('lifted_at')
+            ->first();
+
         return Inertia::render('Driver/Show', [
             'driver' => $driverPayload,
             'user' => $user->toArray(),
+            'is_blacklisted'   => (bool) $blacklist,
+            'blacklist_reason' => $blacklist?->reason,
+            'blacklisted_at'   => $blacklist ? dateFormat($blacklist->created_at) : null,
         ]);
+    }
+
+    /**
+     * Blacklist a driver with a reason (BAN-252). {user} is the driver's user id.
+     */
+    public function blacklist(Request $request, $user)
+    {
+        if (! \Auth::user()->can('manage driver blacklist')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $request->validate(['reason' => 'required|string|max:2000']);
+
+        // Tenant guard: only this tenant's drivers.
+        $driverUser = User::where('id', $user)
+            ->where('parent_id', parentId())
+            ->where('type', 'driver')
+            ->first();
+        if (! $driverUser) {
+            return redirect()->back()->with('error', __('Driver not found.'));
+        }
+
+        // Idempotent: don't stack active rows for the same driver.
+        $exists = DriverBlacklist::where('parent_id', parentId())
+            ->where('driver_user_id', $driverUser->id)
+            ->whereNull('lifted_at')
+            ->exists();
+        if ($exists) {
+            return redirect()->back()->with('error', __('Driver is already blacklisted.'));
+        }
+
+        DriverBlacklist::create([
+            'driver_user_id' => $driverUser->id,
+            'parent_id'      => parentId(),
+            'reason'         => $request->reason,
+            'blacklisted_by' => \Auth::id(),
+        ]);
+
+        return redirect()->back()->with('success', __('Driver blacklisted.'));
+    }
+
+    /**
+     * Lift a driver's blacklist (BAN-252). Keeps the row for history.
+     */
+    public function unblacklist(Request $request, $user)
+    {
+        if (! \Auth::user()->can('manage driver blacklist')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $blacklist = DriverBlacklist::where('parent_id', parentId())
+            ->where('driver_user_id', $user)
+            ->whereNull('lifted_at')
+            ->first();
+
+        if (! $blacklist) {
+            return redirect()->back()->with('error', __('Driver is not blacklisted.'));
+        }
+
+        $blacklist->update(['lifted_at' => now(), 'lifted_by' => \Auth::id()]);
+
+        return redirect()->back()->with('success', __('Driver removed from blacklist.'));
     }
 
 
