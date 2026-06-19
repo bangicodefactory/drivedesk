@@ -213,6 +213,10 @@ Route::group(
     function () {
 
         Route::get('driver/new/create', [DriverController::class, 'newCreate'])->name('driver.new.create');
+        // Blacklist actions (BAN-252) — {user} is the driver's user id. Declared
+        // before the resource so the literal paths aren't shadowed by {driver}.
+        Route::post('driver/{user}/blacklist', [DriverController::class, 'blacklist'])->name('driver.blacklist');
+        Route::post('driver/{user}/unblacklist', [DriverController::class, 'unblacklist'])->name('driver.unblacklist');
         Route::resource('driver', DriverController::class);
     }
 );

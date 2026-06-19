@@ -5,9 +5,15 @@ import { Input } from '@/components/ui/input';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Plus, Users, Search } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Users, Search, Ban, ShieldCheck } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
+import { Badge } from '@/components/ui/badge';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
@@ -27,7 +33,31 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
         }
     }
 
-    const showActions = can('show driver') || can('edit driver') || can('delete driver');
+    // Blacklist a driver (BAN-252): capture a reason in a small dialog (useConfirm
+    // only returns a boolean, so it can't collect text).
+    const [blacklistDriver, setBlacklistDriver] = useState(null);
+    const [reason, setReason] = useState('');
+
+    function submitBlacklist() {
+        if (!reason.trim() || !blacklistDriver) return;
+        router.post(route('driver.blacklist', blacklistDriver.id), { reason }, {
+            preserveScroll: true,
+            onSuccess: () => { setBlacklistDriver(null); setReason(''); },
+        });
+    }
+
+    async function liftBlacklist(d) {
+        const ok = await confirmDialog({
+            title: t('Remove from blacklist?'),
+            description: d.name,
+            confirmText: t('Remove from blacklist'),
+            destructive: false,
+        });
+        if (ok) router.post(route('driver.unblacklist', d.id), {}, { preserveScroll: true });
+    }
+
+    const canBlacklist = can('manage driver blacklist');
+    const showActions = can('show driver') || can('edit driver') || can('delete driver') || canBlacklist;
 
     // Server-side search (the list is paginated, so filter on the server to cover
     // all pages). Debounced reload.
@@ -100,7 +130,16 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                             {drivers.data.map((d) => (
                                 <TableRow key={d.id}>
                                     <TableCell className="font-mono text-sm">{d.driver_id_display ?? '-'}</TableCell>
-                                    <TableCell>{d.name}</TableCell>
+                                    <TableCell>
+                                        <span className="inline-flex items-center gap-2">
+                                            {d.name}
+                                            {d.is_blacklisted && (
+                                                <Badge variant="destructive" title={d.blacklist_reason || ''}>
+                                                    {t('Blacklisted')}
+                                                </Badge>
+                                            )}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>{d.email || '-'}</TableCell>
                                     <TableCell>{d.phone_number || '-'}</TableCell>
                                     <TableCell>{d.license_number || '-'}</TableCell>
@@ -121,6 +160,29 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
+                                            )}
+                                            {canBlacklist && (
+                                                d.is_blacklisted ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-emerald-600 hover:text-emerald-600"
+                                                        onClick={() => liftBlacklist(d)}
+                                                        aria-label={t('Remove from blacklist')}
+                                                    >
+                                                        <ShieldCheck className="h-4 w-4" />
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => { setBlacklistDriver(d); setReason(''); }}
+                                                        aria-label={t('Blacklist')}
+                                                    >
+                                                        <Ban className="h-4 w-4" />
+                                                    </Button>
+                                                )
                                             )}
                                             {can('delete driver') && (
                                                 <Button
@@ -143,6 +205,34 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                         <Pagination paginator={drivers} />
                     </div>
             </div>
+
+            {/* Blacklist reason dialog */}
+            <Dialog open={!!blacklistDriver} onOpenChange={(o) => { if (!o) { setBlacklistDriver(null); setReason(''); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('Blacklist driver')}</DialogTitle>
+                        <DialogDescription>{blacklistDriver?.name}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        <Label htmlFor="blacklist-reason">{t('Reason')}</Label>
+                        <Textarea
+                            id="blacklist-reason"
+                            rows={4}
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder={t('Why is this driver being blacklisted?')}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => { setBlacklistDriver(null); setReason(''); }}>
+                            {t('Cancel')}
+                        </Button>
+                        <Button variant="destructive" disabled={!reason.trim()} onClick={submitBlacklist}>
+                            {t('Blacklist')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

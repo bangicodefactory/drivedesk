@@ -1,7 +1,15 @@
-import { Download } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Download, Ban, ShieldCheck } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -71,10 +79,63 @@ function FileDetail({ label, name, dir, className = '' }) {
     );
 }
 
-function DriverShow({ driver = {}, user = {} }) {
+function DriverShow({ driver = {}, user = {}, is_blacklisted = false, blacklist_reason = null, blacklisted_at = null }) {
     const t = useTranslation();
+    const confirmDialog = useConfirm();
+    const { auth } = usePage().props;
+    const canBlacklist = auth.permissions.includes('manage driver blacklist');
+
+    const [open, setOpen] = useState(false);
+    const [reason, setReason] = useState('');
+
+    function submitBlacklist() {
+        if (!reason.trim()) return;
+        router.post(route('driver.blacklist', user.id), { reason }, {
+            preserveScroll: true,
+            onSuccess: () => { setOpen(false); setReason(''); },
+        });
+    }
+
+    async function liftBlacklist() {
+        const ok = await confirmDialog({
+            title: t('Remove from blacklist?'),
+            description: user.name,
+            confirmText: t('Remove from blacklist'),
+            destructive: false,
+        });
+        if (ok) router.post(route('driver.unblacklist', user.id), {}, { preserveScroll: true });
+    }
+
     return (
         <div className="space-y-6 p-6">
+            {(is_blacklisted || canBlacklist) && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        {is_blacklisted ? (
+                            <>
+                                <Badge variant="destructive">{t('Blacklisted')}</Badge>
+                                <span className="text-sm text-muted-foreground">
+                                    {blacklist_reason}{blacklisted_at ? ` · ${blacklisted_at}` : ''}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-sm text-muted-foreground">{t('Not blacklisted')}</span>
+                        )}
+                    </div>
+                    {canBlacklist && (
+                        is_blacklisted ? (
+                            <Button variant="outline" size="sm" onClick={liftBlacklist}>
+                                <ShieldCheck className="mr-2 h-4 w-4" /> {t('Remove from blacklist')}
+                            </Button>
+                        ) : (
+                            <Button variant="destructive" size="sm" onClick={() => { setReason(''); setOpen(true); }}>
+                                <Ban className="mr-2 h-4 w-4" /> {t('Blacklist')}
+                            </Button>
+                        )
+                    )}
+                </div>
+            )}
+
             <Card>
                 <CardHeader>
                     <CardTitle>{t('Details')}</CardTitle>
@@ -103,6 +164,33 @@ function DriverShow({ driver = {}, user = {} }) {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setReason(''); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('Blacklist driver')}</DialogTitle>
+                        <DialogDescription>{user.name}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        <Label htmlFor="blacklist-reason">{t('Reason')}</Label>
+                        <Textarea
+                            id="blacklist-reason"
+                            rows={4}
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder={t('Why is this driver being blacklisted?')}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => { setOpen(false); setReason(''); }}>
+                            {t('Cancel')}
+                        </Button>
+                        <Button variant="destructive" disabled={!reason.trim()} onClick={submitBlacklist}>
+                            {t('Blacklist')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

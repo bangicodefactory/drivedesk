@@ -11,7 +11,7 @@ beforeEach(() => {
 const permissionsRef = { current: [] };
 vi.mock('@inertiajs/react', () => ({
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
-    router: { delete: vi.fn(), get: vi.fn() },
+    router: { delete: vi.fn(), get: vi.fn(), post: vi.fn() },
     usePage: () => ({ props: { auth: { permissions: permissionsRef.current } } }),
 }));
 
@@ -80,6 +80,29 @@ describe('Driver/Index', () => {
         expect(screen.getByLabelText('Details')).toBeInTheDocument();
         expect(screen.getByLabelText('Edit')).toBeInTheDocument();
         expect(screen.getByLabelText('Delete')).toBeInTheDocument();
+    });
+
+    it('shows a Blacklisted badge for blacklisted drivers', () => {
+        permissionsRef.current = ['manage driver'];
+        render(<DriverIndex drivers={paginate([{ ...driver, is_blacklisted: true, blacklist_reason: 'Damage' }])} />);
+        expect(screen.getByText('Blacklisted')).toBeInTheDocument();
+    });
+
+    it('shows the blacklist action only with manage driver blacklist permission', () => {
+        permissionsRef.current = ['manage driver'];
+        const { rerender } = render(<DriverIndex drivers={paginate([driver])} />);
+        expect(screen.queryByLabelText('Blacklist')).not.toBeInTheDocument();
+
+        permissionsRef.current = ['manage driver blacklist'];
+        rerender(<DriverIndex drivers={paginate([driver])} />);
+        expect(screen.getByLabelText('Blacklist')).toBeInTheDocument();
+    });
+
+    it('shows un-blacklist (not blacklist) for an already-blacklisted driver', () => {
+        permissionsRef.current = ['manage driver blacklist'];
+        render(<DriverIndex drivers={paginate([{ ...driver, is_blacklisted: true }])} />);
+        expect(screen.getByLabelText('Remove from blacklist')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Blacklist')).not.toBeInTheDocument();
     });
 
     it('falls back to a dash for missing optional fields', () => {
