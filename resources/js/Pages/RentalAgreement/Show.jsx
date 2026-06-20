@@ -28,7 +28,7 @@ function Field({ label, value }) {
 function RentalAgreementShow({ agreement, settings, terms }) {
     const t = useTranslation();
     return (
-        <div className="space-y-6 p-6 print:p-0" id="agreement-print">
+        <div className="space-y-6 p-6 print:p-[14mm]" id="agreement-print">
 
             <div className="flex justify-end print:hidden">
                 <Button size="sm" variant="outline" onClick={() => window.print()}>
@@ -158,13 +158,13 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     <Separator />
 
-                    {/* Terms & Conditions — start on a fresh page and shrink the
-                        type for print so the full terms fit on a single page
-                        (was overflowing onto a third page). */}
-                    <div className="print:break-before-page">
-                        <h5 className="font-semibold text-primary mb-3 print:mb-2">{t('Terms & Conditions')}</h5>
+                    {/* Terms & Conditions — start on its own page (page 2) and size
+                        the type to comfortably fill that page (print:pt gives the
+                        page-2 top margin, since @page margin is 0). */}
+                    <div className="print:break-before-page print:pt-[14mm]">
+                        <h5 className="font-semibold text-primary mb-3 print:mb-3">{t('Terms & Conditions')}</h5>
                         <div
-                            className="text-sm leading-relaxed max-w-none print:text-[9.5px] print:leading-snug"
+                            className="text-sm leading-relaxed max-w-none print:text-[13px] print:leading-[1.45]"
                             dangerouslySetInnerHTML={{ __html: terms }}
                         />
                     </div>

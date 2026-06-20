@@ -132,7 +132,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
     }
 
     return (
-        <div className="space-y-6 p-6 print:p-0" id="invoice-print">
+        <div className="space-y-6 p-6 print:p-[14mm]" id="invoice-print">
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 justify-end print:hidden">
