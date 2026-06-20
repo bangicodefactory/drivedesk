@@ -347,6 +347,8 @@ class VehicleControllerTest extends TestCase
             ]));
 
         $response->assertOk();
+        // Documented contract: degrade to an empty result rather than 500.
+        $this->assertSame([], json_decode($response->getContent(), true));
     }
 
     public function test_available_vehicle_excludes_booked_vehicles(): void
@@ -455,6 +457,24 @@ class VehicleControllerTest extends TestCase
                 'addons'          => [$addon->id],
             ]))
             ->assertOk();
+    }
+
+    public function test_vehicle_rate_calculation_with_malformed_dates_does_not_500(): void
+    {
+        // Sibling of JAVASCRIPT-4: vehicleRateCalculation() does new DateTime()
+        // on the dates, which throws on unparseable input. Must degrade, not 500.
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 80]);
+
+        $response = $this->actingAs($this->owner)
+            ->getJson(route('vehicle.rate.calculation', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => 'not a date at all',
+                'end_date_time'   => 'also not a date',
+                'daychange'       => 0,
+            ]));
+
+        $response->assertOk();
+        $this->assertSame([], json_decode($response->getContent(), true));
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
