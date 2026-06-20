@@ -267,6 +267,16 @@ class VehicleController extends Controller
 
 
         if (!empty($vehicle) && !empty($start_date_time) && !empty($end_date_time)) {
+            // vehicleRateCalculation() runs new DateTime() on these dates, which
+            // throws on unparseable input. Bail gracefully instead of letting it
+            // surface as an unhandled 500 (JAVASCRIPT-4 sibling path).
+            try {
+                new \DateTime($start_date_time);
+                new \DateTime($end_date_time);
+            } catch (\Exception $e) {
+                return json_encode([]);
+            }
+
             $daily_rate = !empty($vehicle->daily_rate) && ($vehicle->daily_rate > 0) ? $vehicle->daily_rate : 0;
             $data = vehicleRateCalculation($daily_rate, $start_date_time, $end_date_time);
 
