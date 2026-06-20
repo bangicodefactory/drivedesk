@@ -151,6 +151,13 @@ jobs:
 
       - name: Build frontend assets
         run: npm run build
+        env:
+          # Browser-side Sentry (BAN-261). Stays a no-op until SENTRY_JS_DSN is
+          # set for the environment; release/environment mirror the backend tags
+          # so frontend + backend issues line up per deploy.
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_JS_DSN }}
+          VITE_SENTRY_ENVIRONMENT: ${{ vars.SENTRY_ENVIRONMENT }}
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
 
       - name: Copy .env and built assets to server
         uses: appleboy/scp-action@v0.1.7
