@@ -17,6 +17,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import Pagination from '@/components/Pagination';
+import axios from 'axios';
 
 const MONTHS = [
     { value: '01', label: 'January' }, { value: '02', label: 'February' },
@@ -46,6 +47,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
     const can = (p) => auth.permissions.includes(p);
 
     const [selected, setSelected] = useState([]);
+    const [downloading, setDownloading] = useState(false);
 
     // Filter state — mirrors current URL params
     const [f, setF] = useState({
@@ -83,23 +85,37 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
         setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
     }
 
-    function bulkDownload() {
-        if (!selected.length) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = route('tva.bulk.download');
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden'; csrf.name = '_token';
-        csrf.value = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-        form.appendChild(csrf);
-        selected.forEach((id) => {
-            const inp = document.createElement('input');
-            inp.type = 'hidden'; inp.name = 'invoice_ids[]'; inp.value = id;
-            form.appendChild(inp);
-        });
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+    // Download via axios so the request carries the always-fresh XSRF-TOKEN
+    // cookie (X-XSRF-TOKEN header) — same mechanism as the rest of the app. The
+    // previous hand-built <form> POST read a static <meta> CSRF token that goes
+    // stale in the SPA (the <head> isn't re-rendered on Inertia navigations),
+    // causing a 419 Page Expired (BAN-256).
+    async function bulkDownload() {
+        if (!selected.length || downloading) return;
+        setDownloading(true);
+        try {
+            const res = await axios.post(
+                route('tva.bulk.download'),
+                { invoice_ids: selected },
+                { responseType: 'blob' },
+            );
+            const disposition = res.headers['content-disposition'] ?? '';
+            const match = /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(disposition);
+            const filename = match ? decodeURIComponent(match[1]) : 'invoices.zip';
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            window.alert(t('Could not generate the invoices. Please try again.'));
+        } finally {
+            setDownloading(false);
+        }
     }
 
     function generateTva(e) {
@@ -219,8 +235,9 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                     <CardTitle className="flex items-center justify-between">
                         <span>{t('Invoices')} ({tvas.total})</span>
                         {selected.length > 0 && (
-                            <Button size="sm" variant="outline" onClick={bulkDownload}>
-                                <Download className="mr-2 h-4 w-4" /> {t('Download Selected')} ({selected.length})
+                            <Button size="sm" variant="outline" onClick={bulkDownload} disabled={downloading}>
+                                <Download className="mr-2 h-4 w-4" />
+                                {downloading ? t('Preparing…') : `${t('Download Selected')} (${selected.length})`}
                             </Button>
                         )}
                     </CardTitle>
