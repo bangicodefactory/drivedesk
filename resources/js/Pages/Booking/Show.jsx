@@ -120,6 +120,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
     const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+    const confirmDialog = useConfirm();
 
     async function deletePayment(pid) {
         if (await confirmDialog({ title: t('Delete this payment?') })) {
