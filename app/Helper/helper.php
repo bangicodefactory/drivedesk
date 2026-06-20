@@ -757,25 +757,25 @@ if (!function_exists('defaultDriverCreate')) {
                     $booking=Booking::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($booking->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{booking_date}', '{start_date}', '{end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{pickup_address}', '{drop_address}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,$vehicle->types->type,$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
                 }
                 if ($notification->module == 'booking_status') {
                     $booking=Booking::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($booking->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{booking_date}', '{start_date}', '{end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{pickup_address}', '{drop_address}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,$vehicle->types->type,$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
                 }
                 if ($notification->module == 'new_agreement') {
                     $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,$vehicle->types->type,$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
                 }
                 if ($notification->module == 'agreement_status') {
                     $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,$vehicle->types->type,$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
                 }
 
                 $return['subject'] = str_replace($search, $replace, $notification->subject);
