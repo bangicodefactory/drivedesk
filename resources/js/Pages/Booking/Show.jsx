@@ -35,7 +35,6 @@ const PAYMENT_VARIANT = {
 
 function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }) {
     const t = useTranslation();
-    const confirmDialog = useConfirm();
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
         date: new Date().toISOString().slice(0, 10),
@@ -120,6 +119,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
     const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+    const confirmDialog = useConfirm();
 
     async function deletePayment(pid) {
         if (await confirmDialog({ title: t('Delete this payment?') })) {
