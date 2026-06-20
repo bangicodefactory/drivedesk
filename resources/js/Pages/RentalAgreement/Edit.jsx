@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 function splitDateTime(datetime) {
     if (!datetime) return { date: '', time: '' };
@@ -20,6 +21,7 @@ function splitDateTime(datetime) {
 function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
     const t = useTranslation();
     const { errors: serverErrors } = usePage().props;
+    const confirm = useConfirm();
 
     const start = splitDateTime(agreement.rental_start_date);
     const end = splitDateTime(agreement.rental_end_date);
@@ -40,7 +42,20 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
         },
     });
 
-    function onSubmit(data) {
+    async function onSubmit(data) {
+        // Date-order guard (BAN-259): block end-before-start with a modal,
+        // mirroring the server's after_or_equal rule (date-level; ISO date
+        // strings compare chronologically).
+        if (data.rental_start_date && data.rental_end_date
+            && data.rental_end_date < data.rental_start_date) {
+            await confirm({
+                title: t('Invalid dates'),
+                description: t('The rental end date cannot be before the start date.'),
+                confirmText: t('OK'),
+            });
+            return;
+        }
+
         router.put(route('rental-agreement.update', agreement.id), {
             ...data,
             driver2: data.driver2 === 'none' ? '' : data.driver2,
