@@ -58,6 +58,8 @@ describe('Booking/Show — payment history delete confirmation', () => {
 
         await waitFor(() => expect(confirmMock).toHaveBeenCalledWith({ title: 'Delete this payment?' }));
         await waitFor(() => expect(router.delete).toHaveBeenCalledTimes(1));
+        // Targets the right booking + payment id (route('booking.payment.destroy', [1, 10])).
+        expect(router.delete).toHaveBeenCalledWith('/booking.payment.destroy/1/10');
     });
 
     it('does not delete when the user cancels the confirmation', async () => {
