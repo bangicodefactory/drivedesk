@@ -333,6 +333,24 @@ class VehicleControllerTest extends TestCase
             ->assertOk();
     }
 
+    public function test_available_vehicle_with_malformed_dates_does_not_500(): void
+    {
+        // Regression for JAVASCRIPT-4: a malformed date string reaching
+        // Carbon::createFromFormat('Y/m/d H:i', ...) used to throw an
+        // unhandled InvalidFormatException and crash the request with a 500.
+        Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $response = $this->actingAs($this->owner)
+            ->getJson(route('available.vehicle', [
+                'start_date_time' => '2026-06-20 09:00', // wrong separator + no padding match
+                'end_date_time'   => 'not a date at all',
+            ]));
+
+        $response->assertOk();
+        // Documented contract: degrade to an empty result rather than 500.
+        $this->assertSame([], json_decode($response->getContent(), true));
+    }
+
     public function test_available_vehicle_excludes_booked_vehicles(): void
     {
         $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
@@ -439,6 +457,24 @@ class VehicleControllerTest extends TestCase
                 'addons'          => [$addon->id],
             ]))
             ->assertOk();
+    }
+
+    public function test_vehicle_rate_calculation_with_malformed_dates_does_not_500(): void
+    {
+        // Sibling of JAVASCRIPT-4: vehicleRateCalculation() does new DateTime()
+        // on the dates, which throws on unparseable input. Must degrade, not 500.
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'daily_rate' => 80]);
+
+        $response = $this->actingAs($this->owner)
+            ->getJson(route('vehicle.rate.calculation', [
+                'vahicle_id'      => $vehicle->id,
+                'start_date_time' => 'not a date at all',
+                'end_date_time'   => 'also not a date',
+                'daychange'       => 0,
+            ]));
+
+        $response->assertOk();
+        $this->assertSame([], json_decode($response->getContent(), true));
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
