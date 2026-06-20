@@ -339,8 +339,14 @@ class VehicleController extends Controller
         $start_date_time = $request->start_date_time;
         $end_date_time = $request->end_date_time;
         if (!empty($start_date_time) && !empty($end_date_time)) {
-            $startDateTime = Carbon::createFromFormat('Y/m/d H:i', $start_date_time);
-            $endDateTime = Carbon::createFromFormat('Y/m/d H:i', $end_date_time);
+            try {
+                $startDateTime = Carbon::createFromFormat('Y/m/d H:i', $start_date_time);
+                $endDateTime = Carbon::createFromFormat('Y/m/d H:i', $end_date_time);
+            } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+                // Malformed date input (JAVASCRIPT-4): degrade gracefully to an
+                // empty result instead of throwing an unhandled 500.
+                return json_encode([]);
+            }
 
             $startDateTimeStr = $startDateTime->format('Y-m-d H:i:s');
             $endDateTimeStr = $endDateTime->format('Y-m-d H:i:s');
