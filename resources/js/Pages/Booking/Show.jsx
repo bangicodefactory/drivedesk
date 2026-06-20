@@ -35,7 +35,6 @@ const PAYMENT_VARIANT = {
 
 function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }) {
     const t = useTranslation();
-    const confirmDialog = useConfirm();
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
         date: new Date().toISOString().slice(0, 10),
