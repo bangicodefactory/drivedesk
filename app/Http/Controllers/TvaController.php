@@ -140,12 +140,19 @@ class TvaController extends Controller
                 $settings = settings();
                 $logoFile = $settings['company_logo'] ?? '2_logo.png'; // Updated default logo name
 
-                // Try multiple possible logo paths
+                // Try multiple possible logo paths. The canonical location is the
+                // `public` disk: storage/app/public/upload/logo/<file> (served to the
+                // React templates via the public/storage symlink as
+                // /storage/upload/logo/<file>). The previous list omitted it, so the
+                // facture logo never resolved and the template printed the literal
+                // "LOGO" placeholder. List it first; keep the legacy paths as fallbacks.
                 $possiblePaths = [
+                    storage_path('app/public/upload/logo/' . $logoFile),
+                    public_path('storage/upload/logo/' . $logoFile),
                     storage_path('upload/logo/' . $logoFile),
                     storage_path('app/upload/logo/' . $logoFile),
                     public_path('storage/logo/' . $logoFile),
-                    public_path('upload/logo/' . $logoFile)
+                    public_path('upload/logo/' . $logoFile),
                 ];
 
                 $logoPath = null;
