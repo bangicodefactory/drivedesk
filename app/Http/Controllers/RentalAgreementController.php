@@ -118,7 +118,7 @@ class RentalAgreementController extends Controller
                 [
                     'vehicle' => 'required',
                     'rental_start_date' => 'required',
-                    'rental_end_date' => 'required',
+                    'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',
                     'rental_start_time' => 'required',
                     'rental_end_time' => 'required',
@@ -363,7 +363,7 @@ class RentalAgreementController extends Controller
                 [
                     'vehicle' => 'required',
                     'rental_start_date' => 'required',
-                    'rental_end_date' => 'required',
+                    'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',
                     'rental_start_time' => 'required',
                     'rental_end_time' => 'required',

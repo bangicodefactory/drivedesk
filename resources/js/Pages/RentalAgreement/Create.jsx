@@ -38,6 +38,19 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
     });
 
     async function onSubmit(data) {
+        // Date-order guard (BAN-259): block end-before-start with a modal,
+        // mirroring the server's after_or_equal rule (date-level; ISO date
+        // strings compare chronologically).
+        if (data.rental_start_date && data.rental_end_date
+            && data.rental_end_date < data.rental_start_date) {
+            await confirm({
+                title: t('Invalid dates'),
+                description: t('The rental end date cannot be before the start date.'),
+                confirmText: t('OK'),
+            });
+            return;
+        }
+
         const driver2 = data.driver2 === 'none' ? '' : data.driver2;
 
         // Blacklist warning (BAN-252): check both drivers; let the owner decide.
