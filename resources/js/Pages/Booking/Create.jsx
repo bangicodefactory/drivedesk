@@ -15,6 +15,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { confirmBlacklist } from '@/lib/blacklist';
+import { formatDt } from '@/lib/datetime';
 import { BlacklistNotice } from '@/components/BlacklistNotice';
 import axios from 'axios';
 
@@ -55,9 +56,6 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
     // Ref guard: prevents recalculate from re-firing when it sets daily_price
     const apiWriting = useRef(false);
 
-    function formatDt(val) {
-        return val ? val.replace('T', ' ') : '';
-    }
 
     // dayChange mirrors booking/create.blade.php: false = recompute from the
     // vehicle's stock rate and auto-fill the per-day price (vehicle/date change);
