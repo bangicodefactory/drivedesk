@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\Common;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -80,5 +81,12 @@ class MessageReplaceVehicleTypeTest extends TestCase
             'vehicle' => $vehicle->id,
             'driver'  => $this->driver->id,
         ]);
+
+        // The {vehicle_type} placeholder must render as "-" (the fallback), not
+        // blank and not a crash.
+        Mail::assertSent(Common::class, function (Common $mail) {
+            return str_contains($mail->data['subject'] ?? '', 'Agreement for -')
+                && str_contains($mail->data['message'] ?? '', 'Vehicle type: -');
+        });
     }
 }
