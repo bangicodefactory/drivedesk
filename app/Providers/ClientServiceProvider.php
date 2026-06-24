@@ -44,9 +44,13 @@ class ClientServiceProvider extends ServiceProvider
         // raw slug ('directonderweg') and even Str::studly() ('Directonderweg')
         // produce the wrong casing for 'DirectOnderweg', which silently no-ops the
         // overlay on case-sensitive filesystems (BAN-179 regression → Sentry
-        // DIRECTONDERWEG-3).
+        // DIRECTONDERWEG-3). Only trust the segment when the class actually lives
+        // under App\Clients\<Dir>; a provider class registered elsewhere would
+        // otherwise yield a garbage dir, so fall back to the studly slug.
         $segments        = explode('\\', ltrim($clientProvider, '\\'));
-        $this->clientDir = $segments[2] ?? Str::studly($this->client);
+        $this->clientDir = (($segments[0] ?? null) === 'App' && ($segments[1] ?? null) === 'Clients')
+            ? ($segments[2] ?? Str::studly($this->client))
+            : Str::studly($this->client);
 
         if (class_exists($clientProvider)) {
             $this->app->register($clientProvider);
