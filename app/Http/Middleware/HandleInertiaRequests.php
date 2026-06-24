@@ -39,6 +39,10 @@ class HandleInertiaRequests extends Middleware
             'flash'        => [
                 'success' => $request->session()->get('success'),
                 'error'   => $request->session()->get('error'),
+                // Per-row skip report from the booking Excel import (parity with
+                // the old Blade modal, which re-rendered these rows on a partial
+                // import). Consumed by Booking/Index.jsx; null on every other page.
+                'import_skipped' => $request->session()->get('import_skipped'),
             ],
         ];
     }
