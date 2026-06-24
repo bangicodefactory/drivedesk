@@ -36,8 +36,13 @@ const PAYMENT_VARIANT = {
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+
+    // Rows the server skipped on a partial Excel import (parity with the old
+    // Blade modal). Flashed by BookingController@importExcel, shared through
+    // HandleInertiaRequests; present only on the render right after an import.
+    const importSkipped = flash?.import_skipped ?? null;
 
     // Server-side search (paginated list — filter on the server to cover all pages).
     const [search, setSearch] = useState(filters.search ?? '');
@@ -60,6 +65,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
+    const importFileRef = useRef(null);
 
     function toggleAll(e) {
         setSelected(e.target.checked ? bookings.data.map((b) => b.id) : []);
@@ -94,9 +100,25 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         e.preventDefault();
         if (!importFile) return;
         router.post(route('booking.import'), { file: importFile }, {
-            onSuccess: () => setImportOpen(false),
+            // Close only on a clean import. When the server skipped rows, the
+            // redirect carries flash.import_skipped and the effect below reopens
+            // the dialog so the user sees exactly which rows failed and why.
+            onSuccess: (page) => {
+                // Clear both the state and the (uncontrolled) file input element,
+                // so a partial import that keeps the dialog open doesn't show a
+                // stale filename whose re-submit would silently no-op.
+                setImportFile(null);
+                if (importFileRef.current) importFileRef.current.value = '';
+                if (!page.props.flash?.import_skipped?.length) setImportOpen(false);
+            },
         });
     }
+
+    // Reopen the import dialog whenever the server reports skipped rows, so the
+    // per-row error report is shown (matches the old Blade reopen_import_modal).
+    useEffect(() => {
+        if (importSkipped?.length) setImportOpen(true);
+    }, [importSkipped]);
 
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
     const payLabel = (s) => paymentStatuses?.find((x) => x.value === s)?.label ?? s;
@@ -150,6 +172,41 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
                                     <form onSubmit={submitImport} className="space-y-4">
+                                        {importSkipped?.length > 0 && (
+                                            <div className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                                                <strong className="text-sm">
+                                                    {importSkipped.length} {t('ligne(s) non importée(s):')}
+                                                </strong>
+                                                <div className="mt-2 max-h-60 overflow-auto">
+                                                    <Table className="text-xs">
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="h-auto px-2 py-1">#{t('Ligne')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('NOM & PRENOM')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('IMMATRICULATION')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('DATE DEBUT')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('DATE RETOUR')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('Erreur(s)')}</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {importSkipped.map((s, i) => (
+                                                                <TableRow key={i}>
+                                                                    <TableCell className="px-2 py-1">{s.row}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.nom}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.plaque}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.debut}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.retour}</TableCell>
+                                                                    <TableCell className="px-2 py-1 text-red-600">
+                                                                        {(s.errors ?? []).join(' | ')}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </div>
+                                        )}
                                         <p className="text-sm text-muted-foreground">
                                             {t('Upload an .xlsx or .xls file. Download the')}{' '}
                                             <a href={route('booking.template')} target="_blank" className="underline">
@@ -161,6 +218,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                             <Label htmlFor="importFile">{t('Excel File')}</Label>
                                             <Input
                                                 id="importFile"
+                                                ref={importFileRef}
                                                 type="file"
                                                 accept=".xlsx,.xls,.csv"
                                                 required

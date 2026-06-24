@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Inertia\Testing\AssertableInertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
@@ -122,7 +123,37 @@ class BookingExcelTest extends TestCase
 
         $this->actingAs($this->owner)
             ->post(route('booking.import'), ['file' => $file])
-            ->assertRedirect(route('booking.index'));
+            ->assertRedirect(route('booking.index'))
+            // The controller must flash the per-row skip report so the UI can
+            // show which rows failed (consumed via the Inertia flash prop below).
+            ->assertSessionHas('import_skipped');
+    }
+
+    public function test_skipped_rows_are_shared_to_inertia_as_flash_prop(): void
+    {
+        // Booking/Index is gated by `manage booking`.
+        Permission::firstOrCreate(['name' => 'manage booking', 'guard_name' => 'web']);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        $this->owner->givePermissionTo('manage booking');
+
+        $skipped = [[
+            'row'    => 2,
+            'nom'    => 'INVALID ROW',
+            'plaque' => 'ZZ-0000-ZZ',
+            'debut'  => 'not-a-date',
+            'retour' => 'also-bad',
+            'errors' => ["date début invalide 'not-a-date'"],
+        ]];
+
+        $this->actingAs($this->owner)
+            ->withSession(['import_skipped' => $skipped])
+            ->get(route('booking.index'))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Booking/Index')
+                ->where('flash.import_skipped.0.row', 2)
+                ->where('flash.import_skipped.0.plaque', 'ZZ-0000-ZZ')
+                ->where('flash.import_skipped.0.errors.0', "date début invalide 'not-a-date'")
+            );
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
