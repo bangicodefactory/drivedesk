@@ -65,6 +65,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
+    const importFileRef = useRef(null);
 
     function toggleAll(e) {
         setSelected(e.target.checked ? bookings.data.map((b) => b.id) : []);
@@ -103,7 +104,11 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             // redirect carries flash.import_skipped and the effect below reopens
             // the dialog so the user sees exactly which rows failed and why.
             onSuccess: (page) => {
+                // Clear both the state and the (uncontrolled) file input element,
+                // so a partial import that keeps the dialog open doesn't show a
+                // stale filename whose re-submit would silently no-op.
                 setImportFile(null);
+                if (importFileRef.current) importFileRef.current.value = '';
                 if (!page.props.flash?.import_skipped?.length) setImportOpen(false);
             },
         });
@@ -173,32 +178,32 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                                     {importSkipped.length} {t('ligne(s) non importée(s):')}
                                                 </strong>
                                                 <div className="mt-2 max-h-60 overflow-auto">
-                                                    <table className="w-full border-collapse text-xs">
-                                                        <thead>
-                                                            <tr className="text-left">
-                                                                <th className="border px-1 py-0.5">#{t('Ligne')}</th>
-                                                                <th className="border px-1 py-0.5">NOM &amp; PRENOM</th>
-                                                                <th className="border px-1 py-0.5">IMMATRICULATION</th>
-                                                                <th className="border px-1 py-0.5">DATE DEBUT</th>
-                                                                <th className="border px-1 py-0.5">DATE RETOUR</th>
-                                                                <th className="border px-1 py-0.5">{t('Erreur(s)')}</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
+                                                    <Table className="text-xs">
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="h-auto px-2 py-1">#{t('Ligne')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('NOM & PRENOM')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('IMMATRICULATION')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('DATE DEBUT')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('DATE RETOUR')}</TableHead>
+                                                                <TableHead className="h-auto px-2 py-1">{t('Erreur(s)')}</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
                                                             {importSkipped.map((s, i) => (
-                                                                <tr key={i}>
-                                                                    <td className="border px-1 py-0.5">{s.row}</td>
-                                                                    <td className="border px-1 py-0.5">{s.nom}</td>
-                                                                    <td className="border px-1 py-0.5">{s.plaque}</td>
-                                                                    <td className="border px-1 py-0.5">{s.debut}</td>
-                                                                    <td className="border px-1 py-0.5">{s.retour}</td>
-                                                                    <td className="border px-1 py-0.5 text-red-600">
+                                                                <TableRow key={i}>
+                                                                    <TableCell className="px-2 py-1">{s.row}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.nom}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.plaque}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.debut}</TableCell>
+                                                                    <TableCell className="px-2 py-1">{s.retour}</TableCell>
+                                                                    <TableCell className="px-2 py-1 text-red-600">
                                                                         {(s.errors ?? []).join(' | ')}
-                                                                    </td>
-                                                                </tr>
+                                                                    </TableCell>
+                                                                </TableRow>
                                                             ))}
-                                                        </tbody>
-                                                    </table>
+                                                        </TableBody>
+                                                    </Table>
                                                 </div>
                                             </div>
                                         )}
@@ -213,6 +218,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                             <Label htmlFor="importFile">{t('Excel File')}</Label>
                                             <Input
                                                 id="importFile"
+                                                ref={importFileRef}
                                                 type="file"
                                                 accept=".xlsx,.xls,.csv"
                                                 required
