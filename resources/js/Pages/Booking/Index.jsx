@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -9,13 +8,15 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { MonthPicker } from '@/components/ui/month-picker';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { cn } from '@/lib/utils';
 
 // Colours mapped to the design-handoff semantic palette (info/warning/success/
 // danger) so each state is distinct: scheduled=blue, active=amber, done=green,
@@ -33,6 +34,34 @@ const PAYMENT_VARIANT = {
     partiellement_paye: 'warning',
 };
 
+// Tonal status pill. Two adjacent columns of solid, fully-saturated badges read
+// as a wall of colour; a faint tinted background with a coloured dot keeps each
+// state scannable while the data, not the chrome, leads. The dot carries the
+// hue so the label can stay high-contrast foreground text (coloured text on a
+// 10% tint fails WCAG AA, amber worst at ~2.3:1) — the colour is a redundant
+// cue on top of the always-present text.
+const TONE = {
+    success: { bg: 'bg-success/10', dot: 'bg-success' },
+    warning: { bg: 'bg-warning/10', dot: 'bg-warning' },
+    info: { bg: 'bg-info/10', dot: 'bg-info' },
+    destructive: { bg: 'bg-destructive/10', dot: 'bg-destructive' },
+    secondary: { bg: 'bg-muted', dot: 'bg-muted-foreground' },
+};
+
+function StatusPill({ tone = 'secondary', className, children }) {
+    const c = TONE[tone] ?? TONE.secondary;
+    return (
+        <span className={cn(
+            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium text-foreground',
+            c.bg,
+            className,
+        )}>
+            <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', c.dot)} aria-hidden="true" />
+            {children}
+        </span>
+    );
+}
+
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
@@ -44,8 +73,11 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     // HandleInertiaRequests; present only on the render right after an import.
     const importSkipped = flash?.import_skipped ?? null;
 
-    // Server-side search (paginated list — filter on the server to cover all pages).
+    // Server-side filters (paginated list — filter on the server to cover all
+    // pages). search is free-text; month is a YYYY-MM picker. Both are sent
+    // together so changing one preserves the other.
     const [search, setSearch] = useState(filters.search ?? '');
+    const [month, setMonth] = useState(filters.month ?? '');
     const isFirst = useRef(true);
     useEffect(() => {
         if (isFirst.current) {
@@ -53,14 +85,17 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             return;
         }
         const timer = setTimeout(() => {
+            const params = {};
+            if (search) params.search = search;
+            if (month) params.month = month;
             router.get(
                 route('booking.index'),
-                search ? { search } : {},
+                params,
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [search]);
+    }, [search, month]);
 
     const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
@@ -123,14 +158,22 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
     const payLabel = (s) => paymentStatuses?.find((x) => x.value === s)?.label ?? s;
 
+    // Column count drives the empty-state colSpan; both the leading checkbox and
+    // the trailing action column are permission-gated, so it can't be hardcoded.
+    const hasActions = can('edit booking') || can('delete booking') || can('show booking');
+    const colCount = 6 + (can('delete booking') ? 1 : 0) + (hasActions ? 1 : 0);
+
     return (
         <div className="space-y-6 p-6">
             <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
 
-            {/* Search sits under the title on the left; actions face it on the
-                same row, kept on the right. */}
-            <div className="flex items-center justify-between gap-2">
-                <div className="relative w-full max-w-xs min-w-0">
+            {/* Filters (search + month) on the left, actions on the right. The
+                whole bar wraps when space runs short — so the action buttons
+                that appear once rows are selected push to a second line rather
+                than squeezing the search/filter controls. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative w-full sm:w-72">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
@@ -139,21 +182,33 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             className="pl-8"
                         />
                     </div>
-                {/* All actions stay on the search bar's row (no wrap); the search
-                    shrinks to make room. */}
-                <div className="flex items-center gap-2 shrink-0">
-                    {selected.length > 0 && can('edit booking') && (
-                        <Button variant="success" size="sm" onClick={bulkMarkPaid}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            {t('Mark as Paid')} ({selected.length})
-                        </Button>
-                    )}
-                    {selected.length > 0 && can('delete booking') && (
-                        <Button variant="destructive" size="sm" onClick={bulkDelete}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {t('Delete Selected')} ({selected.length})
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <MonthPicker
+                            value={month}
+                            onChange={setMonth}
+                            aria-label={t('Filter by month…')}
+                            title={t('Filter by month…')}
+                            className="w-[11.5rem]"
+                        />
+                        {month && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('Clear')}
+                                title={t('Clear')}
+                                onClick={() => setMonth('')}
+                                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+                {/* Page-level actions only — these stay put. Bulk actions for a
+                    selection live in a contextual bar on the table (below), so
+                    selecting rows never reflows this toolbar. */}
+                <div className="flex flex-wrap items-center gap-2">
                     {can('create booking') && (
                         <>
                             <Button variant="outline" size="sm" asChild>
@@ -260,6 +315,40 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
+                    {/* Contextual selection bar: appears only with a selection and
+                        carries the bulk actions, so the top toolbar never moves.
+                        Sits on the table it acts on, tinted to read as a mode. */}
+                    {selected.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-2.5 duration-200 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                    {selected.length} {t('booking(s) selected')}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setSelected([])}
+                                >
+                                    {t('Deselect all')}
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {can('edit booking') && (
+                                    <Button variant="success" size="sm" onClick={bulkMarkPaid}>
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        {t('Mark as Paid')}
+                                    </Button>
+                                )}
+                                {can('delete booking') && (
+                                    <Button variant="destructive" size="sm" onClick={bulkDelete}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {t('Delete Selected')}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -285,14 +374,29 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         </TableHeader>
                         <TableBody>
                             {bookings.data.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {search ? t('No bookings match your search') : t('No bookings yet')}
+                                <TableRow className="hover:bg-transparent">
+                                    <TableCell colSpan={colCount} className="py-14 text-center">
+                                        <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted">
+                                                <Truck className="h-5 w-5" />
+                                            </div>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {search || month ? t('No bookings match your search') : t('No bookings yet')}
+                                            </p>
+                                            <p className="text-sm">
+                                                {search || month
+                                                    ? t('Try a different search or month.')
+                                                    : t('Create a booking or import them from Excel to get started.')}
+                                            </p>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )}
                             {bookings.data.map((b) => (
-                                <TableRow key={b.id}>
+                                <TableRow
+                                    key={b.id}
+                                    data-state={selected.includes(b.id) ? 'selected' : undefined}
+                                >
                                     {can('delete booking') && (
                                         <TableCell>
                                             <Checkbox
@@ -302,22 +406,24 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                             />
                                         </TableCell>
                                     )}
-                                    <TableCell className="font-mono text-sm">{b.booking_id}</TableCell>
-                                    <TableCell>{b.driver_name}</TableCell>
-                                    <TableCell>{b.vehicle_label}</TableCell>
-                                    <TableCell className="text-sm">
-                                        <div>{b.start_date} {b.start_time}</div>
+                                    <TableCell className="font-mono text-sm font-medium">{b.booking_id}</TableCell>
+                                    <TableCell className="font-medium">{b.driver_name}</TableCell>
+                                    <TableCell className="text-muted-foreground">{b.vehicle_label}</TableCell>
+                                    <TableCell className="whitespace-nowrap text-sm tabular-nums">
+                                        <div className="font-medium">
+                                            {b.start_date} <span className="font-normal text-muted-foreground">{b.start_time}</span>
+                                        </div>
                                         <div className="text-muted-foreground">{b.end_date} {b.end_time}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={STATUS_VARIANT[b.status] ?? 'secondary'}>
+                                        <StatusPill tone={STATUS_VARIANT[b.status]}>
                                             {t(statusLabel(b.status))}
-                                        </Badge>
+                                        </StatusPill>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'} className="capitalize">
+                                        <StatusPill tone={PAYMENT_VARIANT[b.payment_status]} className="capitalize">
                                             {t(payLabel(b.payment_status))}
-                                        </Badge>
+                                        </StatusPill>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
                                         <TableCell className="text-right space-x-1">
