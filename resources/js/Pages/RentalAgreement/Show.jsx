@@ -35,7 +35,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
     // between the two clients' nl2br'd term lengths.
     const denseTerms = (terms?.length ?? 0) > 2400;
     return (
-        <div className="space-y-6 p-6 print:p-[14mm]" id="agreement-print">
+        <div className="space-y-6 p-6 print:px-[14mm] print:pb-[14mm] print:pt-[8mm]" id="agreement-print">
 
             <div className="flex justify-end print:hidden">
                 <Button size="sm" variant="outline" onClick={() => window.print()}>
@@ -44,7 +44,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
             </div>
 
             <Card className="print:border-0 print:shadow-none">
-                <CardContent className="pt-6 space-y-6 print:space-y-3">
+                <CardContent className="pt-6 space-y-6 print:pt-2 print:space-y-2">
                     {/* Header — keep the company block (logo + text) and the
                         IF/RC/Patente/ICE block on the same row when printing.
                         (The print content width sits just under the `md` breakpoint,
@@ -55,7 +55,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                                 <img
                                     src={`/storage/upload/logo/${settings.company_logo}`}
                                     alt={t('logo')}
-                                    className="h-16 w-auto object-contain"
+                                    className="h-16 w-auto object-contain print:h-12"
                                 />
                             )}
                             <ul className="space-y-1 text-sm">
@@ -76,7 +76,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     {/* Agreement details */}
                     <div>
-                        <h5 className="font-semibold text-primary mb-3">{t('Agreement')}</h5>
+                        <h5 className="font-semibold text-primary mb-3 print:mb-1.5">{t('Agreement')}</h5>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <Field label={t('Agreement ID')} value={agreement.agreement_id} />
                             <Field label={t('Agreement Date')} value={agreement.date} />
@@ -96,7 +96,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     {/* Driver 1 */}
                     <div>
-                        <h5 className="font-semibold text-primary mb-3">{t('Driver')}</h5>
+                        <h5 className="font-semibold text-primary mb-3 print:mb-1.5">{t('Driver')}</h5>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <Field label={t('Name')} value={agreement.driver1?.name} />
                             <Field label={t('License Number')} value={agreement.driver1?.license_number} />
@@ -112,7 +112,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                         <>
                             <Separator />
                             <div>
-                                <h5 className="font-semibold text-primary mb-3">{t('Driver 2')}</h5>
+                                <h5 className="font-semibold text-primary mb-3 print:mb-1.5">{t('Driver 2')}</h5>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                     <Field label={t('Name')} value={agreement.driver2?.name} />
                                     <Field label={t('License Number')} value={agreement.driver2?.license_number} />
@@ -129,7 +129,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     {/* Vehicle */}
                     <div>
-                        <h5 className="font-semibold text-primary mb-3">{t('Vehicle')}</h5>
+                        <h5 className="font-semibold text-primary mb-3 print:mb-1.5">{t('Vehicle')}</h5>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <Field label={t('Vehicle')} value={agreement.vehicle_name} />
                             <Field label={t('Model')} value={agreement.vehicle_model} />
@@ -141,7 +141,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     {/* Signatures */}
                     <div>
-                        <h5 className="font-semibold mb-3">{t('Signatures')}</h5>
+                        <h5 className="font-semibold mb-3 print:mb-1.5">{t('Signatures')}</h5>
                         <div className="grid grid-cols-3 gap-6">
                             <div>
                                 <p className="text-sm font-medium mb-2">{t('Signature')}</p>
@@ -149,14 +149,14 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                             <div>
                                 <p className="text-sm font-medium mb-2">{t('Signature Client 1')}</p>
                                 {agreement.driver1_signature
-                                    ? <img src={agreement.driver1_signature} alt={t('Driver 1 signature')} loading="lazy" className="max-w-[150px] max-h-[80px] border-none block" />
+                                    ? <img src={agreement.driver1_signature} alt={t('Driver 1 signature')} loading="lazy" className="max-w-[150px] max-h-[80px] border-none block print:max-h-[56px]" />
                                     : <div className="border-b border-black w-40 h-8" />
                                 }
                             </div>
                             <div>
                                 <p className="text-sm font-medium mb-2">{t('Signature Client 2')}</p>
                                 {agreement.driver2_signature
-                                    ? <img src={agreement.driver2_signature} alt={t('Driver 2 signature')} loading="lazy" className="max-w-[150px] max-h-[80px] border-none block" />
+                                    ? <img src={agreement.driver2_signature} alt={t('Driver 2 signature')} loading="lazy" className="max-w-[150px] max-h-[80px] border-none block print:max-h-[56px]" />
                                     : <div className="border-b border-black w-40 h-8" />
                                 }
                             </div>
