@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Printer } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { cn } from '@/lib/utils';
 
 const STATUS_VARIANT = {
     draft: 'secondary',
@@ -27,6 +28,12 @@ function Field({ label, value }) {
 
 function RentalAgreementShow({ agreement, settings, terms }) {
     const t = useTranslation();
+    // Long terms (e.g. the directonderweg client, ~3.1k chars) overflow the
+    // dedicated terms page onto a 3rd page; shorter ones (drivedesk, ~1.9k) fit.
+    // Flow long terms into two print columns so they fit one page → 2 pages
+    // total, while short terms stay single-column (unchanged). Threshold sits
+    // between the two clients' nl2br'd term lengths.
+    const denseTerms = (terms?.length ?? 0) > 2400;
     return (
         <div className="space-y-6 p-6 print:p-[14mm]" id="agreement-print">
 
@@ -160,11 +167,16 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
                     {/* Terms & Conditions — start on its own page (page 2) and size
                         the type to comfortably fill that page (print:pt gives the
-                        page-2 top margin, since @page margin is 0). */}
+                        page-2 top margin, since @page margin is 0). Long terms flow
+                        into two columns so they fit that single page (→ 2 pages
+                        total); short terms stay single-column. */}
                     <div className="print:break-before-page print:pt-[14mm]">
                         <h5 className="font-semibold text-primary mb-3 print:mb-3">{t('Terms & Conditions')}</h5>
                         <div
-                            className="text-sm leading-relaxed max-w-none print:text-[13px] print:leading-[1.45]"
+                            className={cn(
+                                'text-sm leading-relaxed max-w-none print:text-[13px] print:leading-[1.45]',
+                                denseTerms && 'print:columns-2 print:[column-gap:1.5rem]',
+                            )}
                             dangerouslySetInnerHTML={{ __html: terms }}
                         />
                     </div>
