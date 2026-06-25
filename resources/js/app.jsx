@@ -3,6 +3,12 @@ import '@fontsource-variable/nunito'; // self-hosted brand typeface (replaces Go
 import { createInertiaApp, router } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';
+import * as Sentry from '@sentry/react';
+import { initSentry } from '@/lib/sentry';
+
+// Browser-side error reporting. No-op without VITE_SENTRY_DSN (local/dev stay
+// silent); complements sentry-laravel, which only sees backend errors.
+initSentry();
 
 // Injects or updates a <style id="brand-dark"> element with .dark-scoped vars.
 function injectDarkVars(darkMap) {
@@ -68,13 +74,17 @@ createInertiaApp({
         const initialTheme = branding?.layoutMode === 'darkmode' ? 'dark' : 'light';
 
         createRoot(el).render(
-            <ThemeProvider
-                attribute="class"
-                defaultTheme={initialTheme}
-                enableSystem={false}
+            <Sentry.ErrorBoundary
+                fallback={<div className="p-6 text-center text-sm text-muted-foreground">Something went wrong. Please reload the page.</div>}
             >
-                <App {...props} />
-            </ThemeProvider>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme={initialTheme}
+                    enableSystem={false}
+                >
+                    <App {...props} />
+                </ThemeProvider>
+            </Sentry.ErrorBoundary>
         );
     },
 });
