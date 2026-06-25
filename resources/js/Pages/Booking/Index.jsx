@@ -9,9 +9,10 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { MonthPicker } from '@/components/ui/month-picker';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,11 +37,20 @@ const PAYMENT_VARIANT = {
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
-    // Server-side search (paginated list — filter on the server to cover all pages).
+    // Rows the server skipped on a partial Excel import (parity with the old
+    // Blade modal). Flashed by BookingController@importExcel, shared through
+    // HandleInertiaRequests; present only on the render right after an import.
+    const importSkipped = flash?.import_skipped ?? null;
+
+    // Server-side filters (paginated list — filter on the server to cover all
+    // pages). search is free-text; month is a YYYY-MM picker. Both are sent
+    // together so changing one preserves the other.
     const [search, setSearch] = useState(filters.search ?? '');
+    const [month, setMonth] = useState(filters.month ?? '');
+    const [selected, setSelected] = useState([]);
     const isFirst = useRef(true);
     useEffect(() => {
         if (isFirst.current) {
@@ -48,18 +58,25 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             return;
         }
         const timer = setTimeout(() => {
+            const params = {};
+            if (search) params.search = search;
+            if (month) params.month = month;
+            // Drop the selection: the rows it referred to may be filtered out of
+            // the new result set, and the bulk actions act on `selected` by id —
+            // keeping it would let "Mark as Paid"/"Delete" hit off-screen rows.
+            setSelected([]);
             router.get(
                 route('booking.index'),
-                search ? { search } : {},
+                params,
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 300);
         return () => clearTimeout(timer);
-    }, [search]);
+    }, [search, month]);
 
-    const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
+    const importFileRef = useRef(null);
 
     function toggleAll(e) {
         setSelected(e.target.checked ? bookings.data.map((b) => b.id) : []);
@@ -94,21 +111,45 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         e.preventDefault();
         if (!importFile) return;
         router.post(route('booking.import'), { file: importFile }, {
-            onSuccess: () => setImportOpen(false),
+            // Close only on a clean import. When the server skipped rows, the
+            // redirect carries flash.import_skipped and the effect below reopens
+            // the dialog so the user sees exactly which rows failed and why.
+            onSuccess: (page) => {
+                // Clear both the state and the (uncontrolled) file input element,
+                // so a partial import that keeps the dialog open doesn't show a
+                // stale filename whose re-submit would silently no-op.
+                setImportFile(null);
+                if (importFileRef.current) importFileRef.current.value = '';
+                if (!page.props.flash?.import_skipped?.length) setImportOpen(false);
+            },
         });
     }
 
+    // Reopen the import dialog whenever the server reports skipped rows, so the
+    // per-row error report is shown (matches the old Blade reopen_import_modal).
+    useEffect(() => {
+        if (importSkipped?.length) setImportOpen(true);
+    }, [importSkipped]);
+
     const statusLabel = (s) => statuses?.find((x) => x.value === s)?.label ?? s;
     const payLabel = (s) => paymentStatuses?.find((x) => x.value === s)?.label ?? s;
+
+    // Column count drives the empty-state colSpan; both the leading checkbox and
+    // the trailing action column are permission-gated, so it can't be hardcoded.
+    const hasActions = can('edit booking') || can('delete booking') || can('show booking');
+    const colCount = 6 + (can('delete booking') ? 1 : 0) + (hasActions ? 1 : 0);
 
     return (
         <div className="space-y-6 p-6">
             <h1 className="text-3xl font-bold tracking-tight">{t('Bookings')}</h1>
 
-            {/* Search sits under the title on the left; actions face it on the
-                same row, kept on the right. */}
-            <div className="flex items-center justify-between gap-2">
-                <div className="relative w-full max-w-xs min-w-0">
+            {/* Filters (search + month) on the left, actions on the right. The
+                whole bar wraps when space runs short — so the action buttons
+                that appear once rows are selected push to a second line rather
+                than squeezing the search/filter controls. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative w-full sm:w-72">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
@@ -117,21 +158,33 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                             className="pl-8"
                         />
                     </div>
-                {/* All actions stay on the search bar's row (no wrap); the search
-                    shrinks to make room. */}
-                <div className="flex items-center gap-2 shrink-0">
-                    {selected.length > 0 && can('edit booking') && (
-                        <Button variant="success" size="sm" onClick={bulkMarkPaid}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            {t('Mark as Paid')} ({selected.length})
-                        </Button>
-                    )}
-                    {selected.length > 0 && can('delete booking') && (
-                        <Button variant="destructive" size="sm" onClick={bulkDelete}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {t('Delete Selected')} ({selected.length})
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <MonthPicker
+                            value={month}
+                            onChange={setMonth}
+                            aria-label={t('Filter by month…')}
+                            title={t('Filter by month…')}
+                            className="w-[11.5rem]"
+                        />
+                        {month && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('Clear')}
+                                title={t('Clear')}
+                                onClick={() => setMonth('')}
+                                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+                {/* Page-level actions only — these stay put. Bulk actions for a
+                    selection live in a contextual bar on the table (below), so
+                    selecting rows never reflows this toolbar. */}
+                <div className="flex flex-wrap items-center gap-2">
                     {can('create booking') && (
                         <>
                             <Button variant="outline" size="sm" asChild>
@@ -145,33 +198,76 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <Upload className="mr-2 h-4 w-4" /> {t('Import Excel')}
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
+                                <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl">
+                                    <DialogHeader className="border-b px-6 py-4 text-left">
                                         <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
-                                    <form onSubmit={submitImport} className="space-y-4">
-                                        <p className="text-sm text-muted-foreground">
-                                            {t('Upload an .xlsx or .xls file. Download the')}{' '}
-                                            <a href={route('booking.template')} target="_blank" className="underline">
-                                                {t('template')}
-                                            </a>{' '}
-                                            {t('to see the required format.')}
-                                        </p>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="importFile">{t('Excel File')}</Label>
-                                            <Input
-                                                id="importFile"
-                                                type="file"
-                                                accept=".xlsx,.xls,.csv"
-                                                required
-                                                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
-                                            />
+                                    <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
+                                        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="importFile">{t('Excel File')}</Label>
+                                                <Input
+                                                    id="importFile"
+                                                    ref={importFileRef}
+                                                    type="file"
+                                                    accept=".xlsx,.xls,.csv"
+                                                    required
+                                                    onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+                                                />
+                                                <p className="text-sm text-muted-foreground">
+                                                    {t('Upload an .xlsx or .xls file. Download the')}{' '}
+                                                    <a href={route('booking.template')} target="_blank" className="font-medium text-primary underline underline-offset-2">
+                                                        {t('template')}
+                                                    </a>{' '}
+                                                    {t('to see the required format.')}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-md border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                                                <strong className="font-semibold text-foreground">{t('Format attendu (10 colonnes):')}</strong>
+                                                <p className="mt-1 font-mono leading-relaxed">
+                                                    NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
+                                                </p>
+                                            </div>
+                                            {importSkipped?.length > 0 && (
+                                                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-amber-300 bg-amber-50">
+                                                    <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-3 py-2 text-amber-900">
+                                                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                                                        <strong className="text-sm font-semibold">
+                                                            {importSkipped.length} {t('ligne(s) non importée(s):')}
+                                                        </strong>
+                                                    </div>
+                                                    <div className="min-h-0 flex-1 overflow-auto">
+                                                        <Table className="text-xs">
+                                                            <TableHeader className="sticky top-0 z-10 bg-amber-100">
+                                                                <TableRow className="hover:bg-transparent">
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">#{t('Ligne')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('NOM & PRENOM')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('IMMATRICULATION')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('DATE DEBUT')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('DATE RETOUR')}</TableHead>
+                                                                    <TableHead className="h-auto w-1/2 min-w-[18rem] px-2 py-1.5 text-amber-900">{t('Erreur(s)')}</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {importSkipped.map((s, i) => (
+                                                                    <TableRow key={i} className="border-amber-200">
+                                                                        <TableCell className="px-2 py-1.5 font-medium tabular-nums">{s.row}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5">{s.nom}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap">{s.plaque}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.debut}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.retour}</TableCell>
+                                                                        <TableCell className="w-1/2 min-w-[18rem] px-2 py-1.5 text-red-600">
+                                                                            {(s.errors ?? []).join(' | ')}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-muted-foreground bg-muted p-3 rounded">
-                                            <strong>{t('Format attendu (10 colonnes):')}</strong><br />
-                                            NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
-                                        </div>
-                                        <div className="flex justify-end gap-2">
+                                        <div className="flex justify-end gap-2 border-t px-6 py-4">
                                             <Button type="button" variant="outline" onClick={() => setImportOpen(false)}>
                                                 {t('Cancel')}
                                             </Button>
@@ -195,6 +291,40 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
+                    {/* Contextual selection bar: appears only with a selection and
+                        carries the bulk actions, so the top toolbar never moves.
+                        Sits on the table it acts on, tinted to read as a mode. */}
+                    {selected.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-2.5 duration-200 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                    {selected.length} {t('booking(s) selected')}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setSelected([])}
+                                >
+                                    {t('Deselect all')}
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {can('edit booking') && (
+                                    <Button variant="success" size="sm" onClick={bulkMarkPaid}>
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        {t('Mark as Paid')}
+                                    </Button>
+                                )}
+                                {can('delete booking') && (
+                                    <Button variant="destructive" size="sm" onClick={bulkDelete}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {t('Delete Selected')}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -220,14 +350,29 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         </TableHeader>
                         <TableBody>
                             {bookings.data.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                        {search ? t('No bookings match your search') : t('No bookings yet')}
+                                <TableRow className="hover:bg-transparent">
+                                    <TableCell colSpan={colCount} className="py-14 text-center">
+                                        <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted">
+                                                <Truck className="h-5 w-5" />
+                                            </div>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {search || month ? t('No bookings match your filters') : t('No bookings yet')}
+                                            </p>
+                                            <p className="text-sm">
+                                                {search || month
+                                                    ? t('Try a different search or month.')
+                                                    : t('Create a booking or import them from Excel to get started.')}
+                                            </p>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )}
                             {bookings.data.map((b) => (
-                                <TableRow key={b.id}>
+                                <TableRow
+                                    key={b.id}
+                                    data-state={selected.includes(b.id) ? 'selected' : undefined}
+                                >
                                     {can('delete booking') && (
                                         <TableCell>
                                             <Checkbox
@@ -237,11 +382,13 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                             />
                                         </TableCell>
                                     )}
-                                    <TableCell className="font-mono text-sm">{b.booking_id}</TableCell>
-                                    <TableCell>{b.driver_name}</TableCell>
-                                    <TableCell>{b.vehicle_label}</TableCell>
-                                    <TableCell className="text-sm">
-                                        <div>{b.start_date} {b.start_time}</div>
+                                    <TableCell className="font-mono text-sm font-medium">{b.booking_id}</TableCell>
+                                    <TableCell className="font-medium">{b.driver_name}</TableCell>
+                                    <TableCell className="text-muted-foreground">{b.vehicle_label}</TableCell>
+                                    <TableCell className="whitespace-nowrap text-sm tabular-nums">
+                                        <div className="font-medium">
+                                            {b.start_date} <span className="font-normal text-muted-foreground">{b.start_time}</span>
+                                        </div>
                                         <div className="text-muted-foreground">{b.end_date} {b.end_time}</div>
                                     </TableCell>
                                     <TableCell>
