@@ -250,6 +250,9 @@ class RentalAgreementControllerTest extends TestCase
             'vehicle'    => $this->vehicle->id,
             'driver'     => $this->driver->id,
             'parent_id'  => $this->owner->id,
+            // Must be the enum key, not the 'Yet to Start' display label, so the
+            // booking matches status filters and the badge mapping.
+            'status'     => 'yet_to_start',
         ]);
     }
 

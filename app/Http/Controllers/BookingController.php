@@ -35,6 +35,11 @@ class BookingController extends Controller
 
         $search = trim((string) $request->get('search', ''));
 
+        // Month filter: only accept a well-formed YYYY-MM so an arbitrary value
+        // can't reach whereYear/whereMonth; anything else is ignored (= no filter).
+        $month = trim((string) $request->get('month', ''));
+        $monthValid = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1;
+
         $bookings = Booking::where('parent_id', '=', parentId())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
@@ -45,12 +50,16 @@ class BookingController extends Controller
                         });
                 });
             })
+            ->when($monthValid, function ($q) use ($month) {
+                [$year, $mon] = explode('-', $month);
+                $q->whereYear('start_date', $year)->whereMonth('start_date', $mon);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(25)
             ->withQueryString();
 
         return Inertia::render('Booking/Index', [
-            'filters' => ['search' => $search],
+            'filters' => ['search' => $search, 'month' => $monthValid ? $month : ''],
             'bookings' => $bookings->through(fn($b) => [
                 'id'             => $b->id,
                 'encrypted_id'   => Crypt::encrypt($b->id),
