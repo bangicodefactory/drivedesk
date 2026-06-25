@@ -78,6 +78,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     // together so changing one preserves the other.
     const [search, setSearch] = useState(filters.search ?? '');
     const [month, setMonth] = useState(filters.month ?? '');
+    const [selected, setSelected] = useState([]);
     const isFirst = useRef(true);
     useEffect(() => {
         if (isFirst.current) {
@@ -88,6 +89,10 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             const params = {};
             if (search) params.search = search;
             if (month) params.month = month;
+            // Drop the selection: the rows it referred to may be filtered out of
+            // the new result set, and the bulk actions act on `selected` by id —
+            // keeping it would let "Mark as Paid"/"Delete" hit off-screen rows.
+            setSelected([]);
             router.get(
                 route('booking.index'),
                 params,
@@ -97,7 +102,6 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         return () => clearTimeout(timer);
     }, [search, month]);
 
-    const [selected, setSelected] = useState([]);
     const [importOpen, setImportOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
     const importFileRef = useRef(null);
@@ -381,7 +385,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                                 <Truck className="h-5 w-5" />
                                             </div>
                                             <p className="text-sm font-medium text-foreground">
-                                                {search || month ? t('No bookings match your search') : t('No bookings yet')}
+                                                {search || month ? t('No bookings match your filters') : t('No bookings yet')}
                                             </p>
                                             <p className="text-sm">
                                                 {search || month
