@@ -91,6 +91,38 @@ class BookingControllerTest extends TestCase
             );
     }
 
+    public function test_index_filters_by_month(): void
+    {
+        $this->makeBooking(['start_date' => '2026-05-10']);
+        $this->makeBooking(['start_date' => '2026-05-20']);
+        $this->makeBooking(['start_date' => '2026-06-15']);
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.index', ['month' => '2026-05']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Index')
+                ->where('filters.month', '2026-05')
+                ->where('bookings.total', 2)
+            );
+    }
+
+    public function test_index_ignores_invalid_month(): void
+    {
+        $this->makeBooking(['start_date' => '2026-05-10']);
+        $this->makeBooking(['start_date' => '2026-06-15']);
+
+        // A malformed month must be ignored (filter not applied), never reach
+        // the query builder, and echo back as empty in the filters prop.
+        $this->actingAs($this->owner)
+            ->get(route('booking.index', ['month' => '2026-13']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.month', '')
+                ->where('bookings.total', 2)
+            );
+    }
+
     public function test_store_requires_auth(): void
     {
         $this->post(route('booking.store'))->assertRedirect(route('login'));
