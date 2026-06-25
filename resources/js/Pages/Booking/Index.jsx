@@ -172,7 +172,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
                                     <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
-                                        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+                                        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
                                             <div className="space-y-1.5">
                                                 <Label htmlFor="importFile">{t('Excel File')}</Label>
                                                 <Input
@@ -198,14 +198,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                                 </p>
                                             </div>
                                             {importSkipped?.length > 0 && (
-                                                <div className="overflow-hidden rounded-md border border-amber-300 bg-amber-50">
+                                                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-amber-300 bg-amber-50">
                                                     <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-3 py-2 text-amber-900">
                                                         <AlertTriangle className="h-4 w-4 shrink-0" />
                                                         <strong className="text-sm font-semibold">
                                                             {importSkipped.length} {t('ligne(s) non importée(s):')}
                                                         </strong>
                                                     </div>
-                                                    <div className="max-h-64 overflow-auto">
+                                                    <div className="min-h-0 flex-1 overflow-auto">
                                                         <Table className="text-xs">
                                                             <TableHeader className="sticky top-0 z-10 bg-amber-100">
                                                                 <TableRow className="hover:bg-transparent">
@@ -221,7 +221,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                                                 {importSkipped.map((s, i) => (
                                                                     <TableRow key={i} className="border-amber-200">
                                                                         <TableCell className="px-2 py-1.5 font-medium tabular-nums">{s.row}</TableCell>
-                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap">{s.nom}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5">{s.nom}</TableCell>
                                                                         <TableCell className="px-2 py-1.5 whitespace-nowrap">{s.plaque}</TableCell>
                                                                         <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.debut}</TableCell>
                                                                         <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.retour}</TableCell>
