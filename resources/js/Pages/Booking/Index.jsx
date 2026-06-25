@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -16,7 +17,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { cn } from '@/lib/utils';
 
 // Colours mapped to the design-handoff semantic palette (info/warning/success/
 // danger) so each state is distinct: scheduled=blue, active=amber, done=green,
@@ -33,34 +33,6 @@ const PAYMENT_VARIANT = {
     impaye: 'destructive',
     partiellement_paye: 'warning',
 };
-
-// Tonal status pill. Two adjacent columns of solid, fully-saturated badges read
-// as a wall of colour; a faint tinted background with a coloured dot keeps each
-// state scannable while the data, not the chrome, leads. The dot carries the
-// hue so the label can stay high-contrast foreground text (coloured text on a
-// 10% tint fails WCAG AA, amber worst at ~2.3:1) — the colour is a redundant
-// cue on top of the always-present text.
-const TONE = {
-    success: { bg: 'bg-success/10', dot: 'bg-success' },
-    warning: { bg: 'bg-warning/10', dot: 'bg-warning' },
-    info: { bg: 'bg-info/10', dot: 'bg-info' },
-    destructive: { bg: 'bg-destructive/10', dot: 'bg-destructive' },
-    secondary: { bg: 'bg-muted', dot: 'bg-muted-foreground' },
-};
-
-function StatusPill({ tone = 'secondary', className, children }) {
-    const c = TONE[tone] ?? TONE.secondary;
-    return (
-        <span className={cn(
-            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium text-foreground',
-            c.bg,
-            className,
-        )}>
-            <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', c.dot)} aria-hidden="true" />
-            {children}
-        </span>
-    );
-}
 
 function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const t = useTranslation();
@@ -420,14 +392,14 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <div className="text-muted-foreground">{b.end_date} {b.end_time}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <StatusPill tone={STATUS_VARIANT[b.status]}>
+                                        <Badge variant={STATUS_VARIANT[b.status] ?? 'secondary'}>
                                             {t(statusLabel(b.status))}
-                                        </StatusPill>
+                                        </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <StatusPill tone={PAYMENT_VARIANT[b.payment_status]} className="capitalize">
+                                        <Badge variant={PAYMENT_VARIANT[b.payment_status] ?? 'secondary'} className="capitalize">
                                             {t(payLabel(b.payment_status))}
-                                        </StatusPill>
+                                        </Badge>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
                                         <TableCell className="text-right space-x-1">
