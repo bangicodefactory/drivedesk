@@ -216,7 +216,10 @@ class RentalAgreementController extends Controller
                     ?? 0;
                 $booking->pickup_address = $defaultPlaceId;
                 $booking->drop_off_address = $defaultPlaceId;
-                $booking->status = 'Yet to Start';
+                // Enum key, not the display label: every other code path uses
+                // 'yet_to_start' (Booking::$status). Writing the label here
+                // produced a status no filter/badge mapping recognised.
+                $booking->status = 'yet_to_start';
                 $booking->payment_status = 'impaye';
                 $booking->notes = null;
 
