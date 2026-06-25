@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, Plus, Upload, Download, Truck, Search, CheckCircle2, AlertTriangle } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -167,69 +167,76 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <Upload className="mr-2 h-4 w-4" /> {t('Import Excel')}
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
+                                <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl">
+                                    <DialogHeader className="border-b px-6 py-4 text-left">
                                         <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
-                                    <form onSubmit={submitImport} className="space-y-4">
-                                        {importSkipped?.length > 0 && (
-                                            <div className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">
-                                                <strong className="text-sm">
-                                                    {importSkipped.length} {t('ligne(s) non importée(s):')}
-                                                </strong>
-                                                <div className="mt-2 max-h-60 overflow-auto">
-                                                    <Table className="text-xs">
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="h-auto px-2 py-1">#{t('Ligne')}</TableHead>
-                                                                <TableHead className="h-auto px-2 py-1">{t('NOM & PRENOM')}</TableHead>
-                                                                <TableHead className="h-auto px-2 py-1">{t('IMMATRICULATION')}</TableHead>
-                                                                <TableHead className="h-auto px-2 py-1">{t('DATE DEBUT')}</TableHead>
-                                                                <TableHead className="h-auto px-2 py-1">{t('DATE RETOUR')}</TableHead>
-                                                                <TableHead className="h-auto px-2 py-1">{t('Erreur(s)')}</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {importSkipped.map((s, i) => (
-                                                                <TableRow key={i}>
-                                                                    <TableCell className="px-2 py-1">{s.row}</TableCell>
-                                                                    <TableCell className="px-2 py-1">{s.nom}</TableCell>
-                                                                    <TableCell className="px-2 py-1">{s.plaque}</TableCell>
-                                                                    <TableCell className="px-2 py-1">{s.debut}</TableCell>
-                                                                    <TableCell className="px-2 py-1">{s.retour}</TableCell>
-                                                                    <TableCell className="px-2 py-1 text-red-600">
-                                                                        {(s.errors ?? []).join(' | ')}
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
+                                    <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
+                                        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="importFile">{t('Excel File')}</Label>
+                                                <Input
+                                                    id="importFile"
+                                                    ref={importFileRef}
+                                                    type="file"
+                                                    accept=".xlsx,.xls,.csv"
+                                                    required
+                                                    onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+                                                />
+                                                <p className="text-sm text-muted-foreground">
+                                                    {t('Upload an .xlsx or .xls file. Download the')}{' '}
+                                                    <a href={route('booking.template')} target="_blank" className="font-medium text-primary underline underline-offset-2">
+                                                        {t('template')}
+                                                    </a>{' '}
+                                                    {t('to see the required format.')}
+                                                </p>
                                             </div>
-                                        )}
-                                        <p className="text-sm text-muted-foreground">
-                                            {t('Upload an .xlsx or .xls file. Download the')}{' '}
-                                            <a href={route('booking.template')} target="_blank" className="underline">
-                                                {t('template')}
-                                            </a>{' '}
-                                            {t('to see the required format.')}
-                                        </p>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="importFile">{t('Excel File')}</Label>
-                                            <Input
-                                                id="importFile"
-                                                ref={importFileRef}
-                                                type="file"
-                                                accept=".xlsx,.xls,.csv"
-                                                required
-                                                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
-                                            />
+                                            <div className="rounded-md border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                                                <strong className="font-semibold text-foreground">{t('Format attendu (10 colonnes):')}</strong>
+                                                <p className="mt-1 font-mono leading-relaxed">
+                                                    NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
+                                                </p>
+                                            </div>
+                                            {importSkipped?.length > 0 && (
+                                                <div className="overflow-hidden rounded-md border border-amber-300 bg-amber-50">
+                                                    <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-3 py-2 text-amber-900">
+                                                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                                                        <strong className="text-sm font-semibold">
+                                                            {importSkipped.length} {t('ligne(s) non importée(s):')}
+                                                        </strong>
+                                                    </div>
+                                                    <div className="max-h-64 overflow-auto">
+                                                        <Table className="text-xs">
+                                                            <TableHeader className="sticky top-0 z-10 bg-amber-100">
+                                                                <TableRow className="hover:bg-transparent">
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">#{t('Ligne')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('NOM & PRENOM')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('IMMATRICULATION')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('DATE DEBUT')}</TableHead>
+                                                                    <TableHead className="h-auto px-2 py-1.5 text-amber-900">{t('DATE RETOUR')}</TableHead>
+                                                                    <TableHead className="h-auto w-1/2 min-w-[18rem] px-2 py-1.5 text-amber-900">{t('Erreur(s)')}</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {importSkipped.map((s, i) => (
+                                                                    <TableRow key={i} className="border-amber-200">
+                                                                        <TableCell className="px-2 py-1.5 font-medium tabular-nums">{s.row}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap">{s.nom}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap">{s.plaque}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.debut}</TableCell>
+                                                                        <TableCell className="px-2 py-1.5 whitespace-nowrap tabular-nums">{s.retour}</TableCell>
+                                                                        <TableCell className="w-1/2 min-w-[18rem] px-2 py-1.5 text-red-600">
+                                                                            {(s.errors ?? []).join(' | ')}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-muted-foreground bg-muted p-3 rounded">
-                                            <strong>{t('Format attendu (10 colonnes):')}</strong><br />
-                                            NOM &amp; PRENOM | DATE DEBUT | HEURE | LA MARQUE | IMMATRICULATION | DATE RETOUR | HEURE RETOUR | PERIODE | PRIX | METHOD
-                                        </div>
-                                        <div className="flex justify-end gap-2">
+                                        <div className="flex justify-end gap-2 border-t px-6 py-4">
                                             <Button type="button" variant="outline" onClick={() => setImportOpen(false)}>
                                                 {t('Cancel')}
                                             </Button>
