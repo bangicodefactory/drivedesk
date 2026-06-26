@@ -610,6 +610,27 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('vehicles', ['license_plate' => 'AA-123-BB', 'parent_id' => $this->owner->id]);
     }
 
+    public function test_import_reuses_vehicle_when_plate_differs_only_by_nbsp(): void
+    {
+        // Pre-existing vehicle; the import row's plate carries a leading
+        // non-breaking space (as pasted from Excel). It must reuse the vehicle,
+        // not create a duplicate (IST-229).
+        $this->makeBooking(); // ensures $this->vehicle exists for the owner
+        $existing = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'license_plate' => 'NB-555-SP']);
+        $before = Vehicle::where('parent_id', $this->owner->id)->count();
+
+        $file = $this->makeImportFile([
+            ['Nora Space', '2026-06-01', '09:00', 'Seat', "\u{00a0}NB-555-SP", '2026-06-03', '18:00', '2', '250', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $this->assertSame($before, Vehicle::where('parent_id', $this->owner->id)->count(), 'NBSP plate variant must not create a duplicate vehicle');
+        $this->assertSame(1, Vehicle::where('parent_id', $this->owner->id)->where('license_plate', 'NB-555-SP')->count());
+    }
+
     public function test_import_two_new_drivers_with_colliding_emails_get_unique_emails(): void
     {
         // "Ali O'Brien" and "Ali O Brien" both normalise to ali.o.brien@import.local
