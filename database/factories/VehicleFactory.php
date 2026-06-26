@@ -20,7 +20,9 @@ class VehicleFactory extends Factory
             'engine_type'                   => $this->faker->randomElement(['V4', 'V6', 'V8']),
             'engine_no'                     => $this->faker->bothify('ENG-####??'),
             'registration_expiry_date'      => now()->addYear()->format('Y-m-d'),
-            'license_plate'                 => strtoupper($this->faker->bothify('??-####-??')),
+            // unique() so factory-built vehicles never collide on the
+            // (parent_id, license_plate) unique index (IST-229).
+            'license_plate'                 => strtoupper($this->faker->unique()->bothify('??-####-??')),
             'document'                      => null,
             'daily_rate'                    => $this->faker->randomFloat(2, 30, 300),
             'year_of_ﬁrst_immatriculation' => $this->faker->numberBetween(2000, 2024),
