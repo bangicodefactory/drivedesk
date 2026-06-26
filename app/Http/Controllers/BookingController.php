@@ -91,6 +91,7 @@ class BookingController extends Controller
             $drivers = User::where('parent_id', parentId())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc') // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
             $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
@@ -461,7 +462,7 @@ class BookingController extends Controller
 
             // All drivers for the tenant (newest first); see create() — a capped
             // slice made older drivers unfindable in the picker (BAN-266).
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get()->pluck('name', 'id');
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;

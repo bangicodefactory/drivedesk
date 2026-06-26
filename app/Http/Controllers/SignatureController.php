@@ -45,7 +45,8 @@ class SignatureController extends Controller
 
         $drivers = User::where('parent_id', parentId())
                    ->where('type', 'driver')
-                   ->orderBy('created_at', 'desc')
+                   ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+                   ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                    ->get();
         $gender = User::$gender;
 
