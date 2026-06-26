@@ -110,7 +110,7 @@ class VehicleController extends Controller
             $vehicle->engine_type = $request->engine_type;
             $vehicle->engine_no = !empty($request->engine_no) ? $request->engine_no : null;
             $vehicle->registration_expiry_date = !empty($request->registration_expiry_date) ? $request->registration_expiry_date : null;
-            $vehicle->license_plate = trim((string) $request->license_plate);
+            $vehicle->license_plate = Vehicle::normalizePlate($request->license_plate);
             $vehicle->document = $request->document;
             if (!empty($request->picture)) {
                 $pictureFilenameWithExt = $request->file('picture')->getClientOriginalName();
@@ -218,7 +218,7 @@ class VehicleController extends Controller
             $vehicle->engine_type = $request->engine_type;
             $vehicle->engine_no = !empty($request->engine_no) ? $request->engine_no : null;
             $vehicle->registration_expiry_date = !empty($request->registration_expiry_date) ? $request->registration_expiry_date : null;
-            $vehicle->license_plate = trim((string) $request->license_plate);
+            $vehicle->license_plate = Vehicle::normalizePlate($request->license_plate);
             $vehicle->daily_rate = $request->daily_rate;
             $vehicle->year_of_ﬁrst_immatriculation = !empty($request->year_of_ﬁrst_immatriculation) ? $request->year_of_ﬁrst_immatriculation : 0;
             $vehicle->gearbox = $request->gearbox;
@@ -278,15 +278,19 @@ class VehicleController extends Controller
      */
     private function licensePlateExists(?string $plate, ?int $ignoreId = null): bool
     {
-        $normalized = strtolower(trim((string) $plate));
-        if ($normalized === '') {
+        $key = Vehicle::plateKey($plate);
+        if ($key === '') {
             return false;
         }
 
+        // Compare on the normalized key in PHP rather than SQL: a plain
+        // LOWER(TRIM()) can't strip the non-breaking spaces that slip in via
+        // imports, so it would miss visually-identical plates. Vehicle counts
+        // per tenant are small, so loading them to compare is cheap.
         return Vehicle::where('parent_id', parentId())
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-            ->whereRaw('LOWER(TRIM(license_plate)) = ?', [$normalized])
-            ->exists();
+            ->get(['id', 'license_plate'])
+            ->contains(fn ($v) => Vehicle::plateKey($v->license_plate) === $key);
     }
 
     public function getVehicleRateCalculation(Request $request)

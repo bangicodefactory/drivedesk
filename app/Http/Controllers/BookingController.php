@@ -817,7 +817,7 @@ class BookingController extends Controller
 
         // Cache already-loaded drivers and vehicles to avoid duplicate DB hits per row
         $driversCache  = User::where('parent_id', $pid)->where('type', 'driver')->get()->keyBy(fn($u) => strtolower(trim($u->name)));
-        $vehiclesCache = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => strtolower(trim($v->license_plate)));
+        $vehiclesCache = Vehicle::where('parent_id', $pid)->get()->keyBy(fn($v) => Vehicle::plateKey($v->license_plate));
 
         // Pre-fetch counters and email set to eliminate per-row queries
         $nextDriverId   = (Driver::where('parent_id', $pid)->max('driver_id') ?? 0) + 1;
@@ -926,14 +926,16 @@ class BookingController extends Controller
                 }
                 $driver = $driversCache[$driverKey];
 
-                // Auto-create vehicle if not found
-                $plateKey = strtolower($licensePlate);
+                // Auto-create vehicle if not found. Key on the normalized plate
+                // so NBSP/whitespace variants from the spreadsheet reuse the
+                // existing vehicle instead of creating a duplicate (IST-229).
+                $plateKey = Vehicle::plateKey($licensePlate);
                 if (!isset($vehiclesCache[$plateKey])) {
                     $newVehicle             = new Vehicle();
                     $newVehicle->vehicle_id = $nextVehicleId++;
                     $newVehicle->name         = $marque ?: $licensePlate;
                     $newVehicle->model        = $marque ?: null;
-                    $newVehicle->license_plate = $licensePlate;
+                    $newVehicle->license_plate = Vehicle::normalizePlate($licensePlate);
                     $newVehicle->parent_id    = $pid;
                     $newVehicle->save();
 

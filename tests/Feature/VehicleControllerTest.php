@@ -197,6 +197,31 @@ class VehicleControllerTest extends TestCase
         $this->assertDatabaseHas('vehicles', ['id' => $b->id, 'license_plate' => 'BB-222-BB']);
     }
 
+    public function test_store_rejects_plate_differing_only_by_non_breaking_space(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'license_plate' => 'AB-1234-CD']);
+
+        // Same plate but with a leading non-breaking space (as pasted from Excel):
+        // trim() wouldn't catch it; the normalized guard must.
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['license_plate' => "\u{00a0}AB-1234-CD"]))
+            ->assertRedirect()
+            ->assertSessionHasErrors('license_plate');
+
+        $this->assertSame(1, Vehicle::where('parent_id', $this->owner->id)->count());
+    }
+
+    public function test_store_normalizes_plate_stripping_unicode_whitespace(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['license_plate' => "\u{00a0}XY-9999-ZZ "]))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+
+        // Stored value has the NBSP/whitespace stripped.
+        $this->assertDatabaseHas('vehicles', ['parent_id' => $this->owner->id, 'license_plate' => 'XY-9999-ZZ']);
+    }
+
     // ── VehicleController::destroy ────────────────────────────────────────────
 
     public function test_destroy_deletes_vehicle(): void
