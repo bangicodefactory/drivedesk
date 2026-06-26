@@ -148,6 +148,55 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    // ── IST-229: duplicate license-plate guard ───────────────────────────────
+
+    public function test_store_rejects_duplicate_license_plate(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'license_plate' => 'AB-1234-CD']);
+
+        // Same plate, different case + surrounding whitespace must still collide.
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['license_plate' => '  ab-1234-cd  ']))
+            ->assertRedirect()
+            ->assertSessionHasErrors('license_plate');
+
+        $this->assertSame(1, Vehicle::where('parent_id', $this->owner->id)->count());
+    }
+
+    public function test_store_allows_same_plate_for_a_different_tenant(): void
+    {
+        $other = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        Vehicle::factory()->create(['parent_id' => $other->id, 'license_plate' => 'AB-1234-CD']);
+
+        // The plate is taken by another tenant — uniqueness is per-tenant, so allowed.
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['license_plate' => 'AB-1234-CD']))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['parent_id' => $this->owner->id, 'license_plate' => 'AB-1234-CD']);
+    }
+
+    public function test_update_rejects_another_vehicles_plate_but_allows_keeping_own(): void
+    {
+        $a = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'license_plate' => 'AA-111-AA']);
+        $b = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'license_plate' => 'BB-222-BB']);
+
+        // Taking vehicle A's plate must fail and leave B unchanged.
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $b), $this->validPayload(['license_plate' => 'AA-111-AA']))
+            ->assertRedirect()
+            ->assertSessionHasErrors('license_plate');
+        $this->assertDatabaseHas('vehicles', ['id' => $b->id, 'license_plate' => 'BB-222-BB']);
+
+        // Keeping its own plate (with stray whitespace) must pass and be trimmed.
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $b), $this->validPayload(['license_plate' => '  BB-222-BB  ']))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+        $this->assertDatabaseHas('vehicles', ['id' => $b->id, 'license_plate' => 'BB-222-BB']);
+    }
+
     // ── VehicleController::destroy ────────────────────────────────────────────
 
     public function test_destroy_deletes_vehicle(): void
