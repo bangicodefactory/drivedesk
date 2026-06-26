@@ -204,22 +204,29 @@ class BookingControllerTest extends TestCase
             );
     }
 
-    public function test_create_returns_all_drivers_ordered_by_name(): void
+    public function test_create_returns_all_drivers_newest_first(): void
     {
         // Regression for BAN-266: the picker filters client-side, so the create
         // page must send every driver (not a capped slice that hid older ones),
-        // ordered by name. setUp's driver + two more = 3.
-        $this->driver->update(['name' => 'MMM Driver']);
-        User::factory()->driver()->create(['parent_id' => $this->owner->id, 'name' => 'ZZZ Driver']);
-        User::factory()->driver()->create(['parent_id' => $this->owner->id, 'name' => 'AAA Driver']);
+        // ordered newest-first. created_at isn't fillable, so set it directly
+        // (not via mass assignment) to keep the order deterministic.
+        $this->driver->name = 'Old One';
+        $this->driver->created_at = '2025-01-01 00:00:00';
+        $this->driver->save();
+        $mid = User::factory()->driver()->create(['parent_id' => $this->owner->id, 'name' => 'Mid One']);
+        $mid->created_at = '2025-06-01 00:00:00';
+        $mid->save();
+        $new = User::factory()->driver()->create(['parent_id' => $this->owner->id, 'name' => 'New One']);
+        $new->created_at = '2025-12-01 00:00:00';
+        $new->save();
 
         $this->actingAs($this->owner)
             ->get(route('booking.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->has('drivers', 3)
-                ->where('drivers.0.name', 'AAA Driver')
-                ->where('drivers.2.name', 'ZZZ Driver')
+                ->where('drivers.0.name', 'New One')  // most recently created first
+                ->where('drivers.2.name', 'Old One')
             );
     }
 
