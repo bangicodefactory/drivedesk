@@ -270,7 +270,8 @@ class DriverController extends Controller
             if (isset($request->direct_create)) {
                 if (!empty($driver)) {
                     $driverList = User::where('type', 'driver')->where('parent_id', parentId())
-                        ->orderBy('created_at', 'desc')
+                        ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+                        ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                         ->get()
                         ->pluck('name', 'id');
 
