@@ -84,10 +84,15 @@ class BookingController extends Controller
         if (\Auth::user()->can('create booking')) {
             $vehicles = Vehicle::where('parent_id', parentId())->limit(500)->get();
 
+            // Load every driver for the tenant (newest first). The driver
+            // SearchableSelect filters client-side, so a capped slice made older
+            // drivers unfindable once a tenant had >500 of them (BAN-266).
+            // Server-side search is the follow-up for larger scale.
             $drivers = User::where('parent_id', parentId())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
-                ->limit(500)->get();
+                ->orderBy('id', 'desc') // tie-break: imported drivers share a created_at
+                ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
             $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
             $driversProp = $drivers->map(fn($d) => [
@@ -455,7 +460,9 @@ class BookingController extends Controller
             $booking->start_date_time = date('Y/m/d H:i', strtotime($booking->start_date . ' ' . $booking->start_time));
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->limit(500)->get()->pluck('name', 'id');
+            // All drivers for the tenant (newest first); see create() — a capped
+            // slice made older drivers unfindable in the picker (BAN-266).
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get()->pluck('name', 'id');
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
