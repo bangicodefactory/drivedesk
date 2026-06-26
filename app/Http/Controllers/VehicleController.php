@@ -93,6 +93,15 @@ class VehicleController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+            // Reject a plate that already exists for this tenant (case/whitespace
+            // insensitive). Guards against the duplicate-vehicle data the picker
+            // surfaced (IST-229); the field error wires into the form.
+            if ($this->licensePlateExists($request->license_plate)) {
+                return redirect()->back()
+                    ->withErrors(['license_plate' => __('A vehicle with this license plate already exists.')])
+                    ->withInput();
+            }
+
             $vehicle = new Vehicle();
             $vehicle->vehicle_id = $this->vehicleNumber();
             $vehicle->type = $request->type;
@@ -101,7 +110,7 @@ class VehicleController extends Controller
             $vehicle->engine_type = $request->engine_type;
             $vehicle->engine_no = !empty($request->engine_no) ? $request->engine_no : null;
             $vehicle->registration_expiry_date = !empty($request->registration_expiry_date) ? $request->registration_expiry_date : null;
-            $vehicle->license_plate = $request->license_plate;
+            $vehicle->license_plate = trim((string) $request->license_plate);
             $vehicle->document = $request->document;
             if (!empty($request->picture)) {
                 $pictureFilenameWithExt = $request->file('picture')->getClientOriginalName();
@@ -195,13 +204,21 @@ class VehicleController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
+            // Reject a plate already used by ANOTHER vehicle for this tenant
+            // (case/whitespace insensitive); keeping this vehicle's own plate is fine.
+            if ($this->licensePlateExists($request->license_plate, $vehicle->id)) {
+                return redirect()->back()
+                    ->withErrors(['license_plate' => __('A vehicle with this license plate already exists.')])
+                    ->withInput();
+            }
+
             $vehicle->type = $request->type;
             $vehicle->name = $request->name;
             $vehicle->model = $request->model;
             $vehicle->engine_type = $request->engine_type;
             $vehicle->engine_no = !empty($request->engine_no) ? $request->engine_no : null;
             $vehicle->registration_expiry_date = !empty($request->registration_expiry_date) ? $request->registration_expiry_date : null;
-            $vehicle->license_plate = $request->license_plate;
+            $vehicle->license_plate = trim((string) $request->license_plate);
             $vehicle->daily_rate = $request->daily_rate;
             $vehicle->year_of_ﬁrst_immatriculation = !empty($request->year_of_ﬁrst_immatriculation) ? $request->year_of_ﬁrst_immatriculation : 0;
             $vehicle->gearbox = $request->gearbox;
@@ -252,6 +269,24 @@ class VehicleController extends Controller
     {
         $max = Vehicle::where('parent_id', parentId())->max('vehicle_id');
         return ($max ?? 0) + 1;
+    }
+
+    /**
+     * Does another vehicle in this tenant already use this license plate?
+     * Comparison is case- and whitespace-insensitive so "73738/A/44" and
+     * " 73738/a/44 " collide. Pass $ignoreId on edit to exclude the row itself.
+     */
+    private function licensePlateExists(?string $plate, ?int $ignoreId = null): bool
+    {
+        $normalized = strtolower(trim((string) $plate));
+        if ($normalized === '') {
+            return false;
+        }
+
+        return Vehicle::where('parent_id', parentId())
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->whereRaw('LOWER(TRIM(license_plate)) = ?', [$normalized])
+            ->exists();
     }
 
     public function getVehicleRateCalculation(Request $request)
