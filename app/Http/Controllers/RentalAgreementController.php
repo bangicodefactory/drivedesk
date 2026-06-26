@@ -86,7 +86,8 @@ class RentalAgreementController extends Controller
 
             $drivers = User::where('parent_id', parentId())
                 ->where('type', 'driver')
-                ->orderBy('id', 'desc') // last added first (id is monotonic; created_at can tie)
+                ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+                ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
             $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
@@ -331,7 +332,7 @@ class RentalAgreementController extends Controller
         if (\Auth::user()->can('edit rental agreement')) {
             $vehicles = Vehicle::where('parent_id', parentId())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->get();
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
 
             $status = RentalAgreement::$status;
 

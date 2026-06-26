@@ -36,7 +36,8 @@ class CreditController extends Controller
 
         $drivers = User::where('parent_id', parentId())
             ->where('type', 'driver')
-            ->orderBy('name')
+            ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+            ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
             ->get();
 
         return Inertia::render('Credit/Index', [
@@ -118,7 +119,8 @@ class CreditController extends Controller
 
         $drivers = User::where('parent_id', parentId())
             ->where('type', 'driver')
-            ->orderBy('name')
+            ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+            ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
             ->get();
         $statuses = Credit::$statuses;
 
@@ -170,7 +172,8 @@ class CreditController extends Controller
 
         $drivers = User::where('parent_id', parentId())
             ->where('type', 'driver')
-            ->orderBy('name')
+            ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+            ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
             ->get();
         $statuses = Credit::$statuses;
 
@@ -238,7 +241,8 @@ class CreditController extends Controller
             ->when($q, function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%");
             })
-            ->orderBy('name')
+            ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
+            ->orderBy('id', 'desc')
             ->limit(20)
             ->get(['id', 'name', 'email']);
 
