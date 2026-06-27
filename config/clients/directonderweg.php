@@ -47,7 +47,7 @@ return [
      */
     'terms' => [
         'rental_agreement' => <<<'EOD'
-Entreprise : DirectonderwegAdresse\n
+Entreprise : Directonderweg\n
 Adresse: Rzini 3, RDC EL HANI BOUJARRAH SOUFLA, Tétouan 93030\n
 ICE : 002895399000019\n
 Article 1 : Objet du contrat\n
