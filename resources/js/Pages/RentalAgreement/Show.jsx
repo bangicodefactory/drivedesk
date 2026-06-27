@@ -34,8 +34,13 @@ function RentalAgreementShow({ agreement, settings, terms }) {
     // total, while short terms stay single-column (unchanged). Threshold sits
     // between the two clients' nl2br'd term lengths.
     const denseTerms = (terms?.length ?? 0) > 2400;
+    // No print bottom-padding on the container: it would trail *after* the terms
+    // block and, when the 2-column terms (directonderweg) reach near the page-2
+    // bottom, the extra 14mm spills onto a blank 3rd page. The terms never reach
+    // the sheet edge in the 2-page case, so the natural whitespace serves as the
+    // bottom margin. (BAN-260 — don't re-add print:pb-* on #agreement-print.)
     return (
-        <div className="space-y-6 p-6 print:px-[14mm] print:pb-[14mm] print:pt-[8mm]" id="agreement-print">
+        <div className="space-y-6 p-6 print:px-[14mm] print:pt-[8mm]" id="agreement-print">
 
             <div className="flex justify-end print:hidden">
                 <Button size="sm" variant="outline" onClick={() => window.print()}>
