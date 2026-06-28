@@ -9,19 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import axios from 'axios';
+// Shared formatter emits the "Y/m/d H:i" the backend parses with
+// Carbon::createFromFormat — the old local helper left dashes, which Carbon
+// rejected (JAVASCRIPT-4), so the rate/availability calls here silently failed.
+import { formatDt } from '@/lib/datetime';
 
 // Convert "YYYY/MM/DD HH:MM" or "YYYY-MM-DD HH:MM" to "YYYY-MM-DDTHH:MM"
 function toDatetimeLocal(val) {
     if (!val) return '';
     return val.replace(/\//g, '-').replace(' ', 'T').slice(0, 16);
-}
-
-function formatDt(val) {
-    return val ? val.replace('T', ' ') : '';
 }
 
 function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, places, addons }) {
@@ -49,6 +50,9 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
     const [selectedAddons, setSelectedAddons] = useState(existingAddons);
     const [priceBreakdown, setPriceBreakdown] = useState(null);
+    // Vehicle dropdown options. Seeded with the server's initial available list
+    // (computed for the saved dates) and refreshed whenever the dates change.
+    const [availableVehicles, setAvailableVehicles] = useState(initialVehicles);
 
     const startDt = watch('start_date_time');
     const endDt = watch('end_date_time');
@@ -91,6 +95,39 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
         recalculate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId]);
+
+    // Refresh the available-vehicle list whenever the dates change, mirroring the
+    // create page. `booking_id` is passed so THIS booking isn't counted as a
+    // conflict with itself. The request is aborted when the dates change again,
+    // so a slow earlier response can't overwrite a newer one with a stale list.
+    useEffect(() => {
+        if (!startDt || !endDt) return;
+        const controller = new AbortController();
+        axios.get(route('available.vehicle'), {
+            params: {
+                start_date_time: formatDt(startDt),
+                end_date_time: formatDt(endDt),
+                booking_id: booking.id,
+            },
+            signal: controller.signal,
+        }).then((r) => {
+            const data = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+            const list = Object.entries(data).map(([id, label]) => ({ id: String(id), label }));
+            // Keep the *currently-selected* vehicle in the list even if the new
+            // window makes it conflict, so the picker never blanks out and
+            // silently submits a hidden id. Use the live form value (the user may
+            // have changed it) and recover its label from the previous/initial
+            // lists. `prev` from the functional updater avoids a stale closure.
+            const currentId = String(getValues('vehicle') ?? '');
+            setAvailableVehicles((prev) => {
+                if (!currentId || list.some((v) => v.id === currentId)) return list;
+                const known = [...prev, ...initialVehicles].find((v) => String(v.id) === currentId);
+                return known ? [{ id: currentId, label: known.label }, ...list] : list;
+            });
+        }).catch(() => {});
+        return () => controller.abort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [startDt, endDt]);
 
     useEffect(() => {
         if (!priceBreakdown) return;
@@ -142,14 +179,14 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
                             <div className="space-y-1">
                                 <Label>{t('Vehicle')}</Label>
-                                <Select defaultValue={String(booking.vehicle ?? '')} onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
-                                    <SelectContent>
-                                        {initialVehicles.map((v) => (
-                                            <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    options={availableVehicles.map((v) => ({ value: String(v.id), label: v.label }))}
+                                    value={vehicleId}
+                                    onChange={(v) => setValue('vehicle', v)}
+                                    placeholder={t('Select Vehicle')}
+                                    searchPlaceholder={t('Search vehicle…')}
+                                    ariaLabel={t('Vehicle')}
+                                />
                             </div>
 
                             <div className="space-y-1">
