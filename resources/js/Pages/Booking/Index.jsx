@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
+import axios from 'axios';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -51,12 +53,19 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [month, setMonth] = useState(filters.month ?? '');
     const [selected, setSelected] = useState([]);
+    const [loadingAll, setLoadingAll] = useState(false);
     const isFirst = useRef(true);
+    // Tracks the in-flight "select all matching" request so a filter change can
+    // cancel it — otherwise a late response would repopulate the selection with
+    // ids from the *previous* filter, over the new result set.
+    const matchingReq = useRef(null);
     useEffect(() => {
         if (isFirst.current) {
             isFirst.current = false;
             return;
         }
+        // Filter changed: drop any in-flight all-matching fetch from the old filter.
+        matchingReq.current?.abort();
         const timer = setTimeout(() => {
             const params = {};
             if (search) params.search = search;
@@ -87,6 +96,42 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
         );
     }
+
+    // Pre-Inertia parity: the old client-side DataTable held every row in the
+    // DOM, so "select all" reached the whole filtered list, not just one page.
+    // Here the list is server-paginated, so fetch the ids for the active
+    // search/month filter and select them all. The selection feeds the same
+    // bulk endpoints, which re-check delete/edit permission server-side.
+    async function selectAllMatching() {
+        matchingReq.current?.abort();
+        const controller = new AbortController();
+        matchingReq.current = controller;
+        setLoadingAll(true);
+        try {
+            const { data } = await axios.get(route('booking.matching-ids'), {
+                params: {
+                    ...(search ? { search } : {}),
+                    ...(month ? { month } : {}),
+                },
+                signal: controller.signal,
+            });
+            setSelected(data.ids ?? []);
+        } catch (err) {
+            // A filter change aborts this request on purpose — ignore that; only
+            // surface real failures (network error, non-2xx, malformed body).
+            if (!axios.isCancel(err)) toast.error(t('Could not select all matching bookings.'));
+        } finally {
+            if (matchingReq.current === controller) matchingReq.current = null;
+            setLoadingAll(false);
+        }
+    }
+
+    // Every row on the current page is selected. Drives the header checkbox and
+    // gates the "select all matching" prompt (shown only once the page is full
+    // and more matching rows exist beyond it).
+    const allOnPageSelected =
+        bookings.data.length > 0 && bookings.data.every((b) => selected.includes(b.id));
+    const canSelectAllMatching = allOnPageSelected && selected.length < bookings.total;
 
     async function remove(id) {
         if (await confirmDialog({ title: t('Delete this booking?') })) {
@@ -296,10 +341,21 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         Sits on the table it acts on, tinted to read as a mode. */}
                     {selected.length > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-2.5 duration-200 animate-in fade-in slide-in-from-top-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm font-medium">
                                     {selected.length} {t('booking(s) selected')}
                                 </span>
+                                {canSelectAllMatching && (
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="h-8 px-1"
+                                        onClick={selectAllMatching}
+                                        disabled={loadingAll}
+                                    >
+                                        {t('Select all matching')} ({bookings.total})
+                                    </Button>
+                                )}
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -333,7 +389,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <Checkbox
                                             aria-label={t('Select all bookings')}
                                             onCheckedChange={(v) => toggleAll({ target: { checked: v === true } })}
-                                            checked={selected.length === bookings.data.length && bookings.data.length > 0}
+                                            checked={allOnPageSelected}
                                         />
                                     </TableHead>
                                 )}
