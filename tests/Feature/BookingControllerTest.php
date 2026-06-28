@@ -439,6 +439,44 @@ class BookingControllerTest extends TestCase
         $this->get(route('booking.matching-ids'))->assertRedirect(route('login'));
     }
 
+    public function test_bulk_destroy_only_deletes_callers_own_bookings_and_tva(): void
+    {
+        // Security regression (BAN-268): ids are client-supplied. A crafted list
+        // mixing the caller's own booking with another tenant's must delete ONLY
+        // the caller's booking + its TVA, never the other tenant's rows.
+        $mine   = $this->makeBooking();
+        $myTva  = Tva::factory()->create(['booking_id' => $mine->id]);
+
+        $other     = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $theirs    = $this->makeBooking(['parent_id' => $other->id]);
+        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-destroy'), ['ids' => [$mine->id, $theirs->id]])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // Caller's own rows gone…
+        $this->assertDatabaseMissing('bookings', ['id' => $mine->id]);
+        $this->assertSoftDeleted('tvas', ['id' => $myTva->id]);
+
+        // …the other tenant's rows untouched.
+        $this->assertDatabaseHas('bookings', ['id' => $theirs->id]);
+        $this->assertDatabaseHas('tvas', ['id' => $theirTva->id, 'deleted_at' => null]);
+    }
+
+    public function test_bulk_destroy_requires_delete_booking_permission(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $booking = $this->makeBooking();
+
+        $this->actingAs($noPerms)
+            ->post(route('booking.bulk-destroy'), ['ids' => [$booking->id]])
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id]);
+    }
+
     // ── BookingController::paymentStore ──────────────────────────────────────
 
     public function test_payment_store_creates_payment_and_marks_partially_paid(): void
