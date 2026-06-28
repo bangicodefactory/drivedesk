@@ -25,10 +25,11 @@ function injectDarkVars(darkMap) {
     el.textContent = `.dark {\n${rules}\n}`;
 }
 
-// RTL applies when the active locale is Arabic, or when the admin has set the
-// layout_direction setting to rtlmode. Locale takes precedence.
+// RTL applies when the active locale is Arabic (MSA 'ar' or Moroccan Darija
+// 'ary'), or when the admin has set the layout_direction setting to rtlmode.
+// Locale takes precedence.
 function applyDirection(locale, branding) {
-    const rtl = locale === 'ar' || branding?.layoutDirection === 'rtlmode';
+    const rtl = (locale || '').startsWith('ar') || branding?.layoutDirection === 'rtlmode';
     document.documentElement.dir = rtl ? 'rtl' : 'ltr';
     document.documentElement.lang = locale || 'en';
 }
