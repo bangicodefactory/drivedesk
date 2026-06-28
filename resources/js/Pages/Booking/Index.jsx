@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
+import axios from 'axios';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -53,11 +55,17 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [selected, setSelected] = useState([]);
     const [loadingAll, setLoadingAll] = useState(false);
     const isFirst = useRef(true);
+    // Tracks the in-flight "select all matching" request so a filter change can
+    // cancel it — otherwise a late response would repopulate the selection with
+    // ids from the *previous* filter, over the new result set.
+    const matchingReq = useRef(null);
     useEffect(() => {
         if (isFirst.current) {
             isFirst.current = false;
             return;
         }
+        // Filter changed: drop any in-flight all-matching fetch from the old filter.
+        matchingReq.current?.abort();
         const timer = setTimeout(() => {
             const params = {};
             if (search) params.search = search;
@@ -95,19 +103,25 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     // search/month filter and select them all. The selection feeds the same
     // bulk endpoints, which re-check delete/edit permission server-side.
     async function selectAllMatching() {
+        matchingReq.current?.abort();
+        const controller = new AbortController();
+        matchingReq.current = controller;
         setLoadingAll(true);
         try {
-            const params = new URLSearchParams();
-            if (search) params.set('search', search);
-            if (month) params.set('month', month);
-            const res = await fetch(`${route('booking.matching-ids')}?${params.toString()}`, {
-                headers: { Accept: 'application/json' },
-                credentials: 'same-origin',
+            const { data } = await axios.get(route('booking.matching-ids'), {
+                params: {
+                    ...(search ? { search } : {}),
+                    ...(month ? { month } : {}),
+                },
+                signal: controller.signal,
             });
-            if (!res.ok) return;
-            const data = await res.json();
             setSelected(data.ids ?? []);
+        } catch (err) {
+            // A filter change aborts this request on purpose — ignore that; only
+            // surface real failures (network error, non-2xx, malformed body).
+            if (!axios.isCancel(err)) toast.error(t('Could not select all matching bookings.'));
         } finally {
+            if (matchingReq.current === controller) matchingReq.current = null;
             setLoadingAll(false);
         }
     }

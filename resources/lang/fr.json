@@ -114,6 +114,7 @@
   "Pending": "En attente",
   "In Progress": "En cours",
   "Completed": "Complété",
+  "Could not select all matching bookings.": "Impossible de sélectionner toutes les réservations correspondantes.",
   "Daily": "Tous les jours",
   "Total": "Total",
   "Automatic": "Automatique",
