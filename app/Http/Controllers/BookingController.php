@@ -685,8 +685,21 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('No bookings selected.'));
         }
 
-        Tva::whereIn('booking_id', $ids)->delete();
-        Booking::whereIn('id', $ids)->delete();
+        // Scope to the caller's tenant before deleting: the request carries
+        // arbitrary client-supplied ids, so resolve which ones the tenant
+        // actually owns and only delete those (and their TVA rows). Without
+        // this, a crafted id list could delete another tenant's bookings —
+        // bulkMarkPaid already scopes the same way.
+        $ownedIds = Booking::whereIn('id', $ids)
+            ->where('parent_id', parentId())
+            ->pluck('id');
+
+        if ($ownedIds->isEmpty()) {
+            return redirect()->back()->with('error', __('No bookings selected.'));
+        }
+
+        Tva::whereIn('booking_id', $ownedIds)->delete();
+        Booking::whereIn('id', $ownedIds)->delete();
 
         return redirect()->route('booking.index')->with('success', __('Selected bookings successfully deleted.'));
     }
