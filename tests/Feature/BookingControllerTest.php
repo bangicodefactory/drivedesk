@@ -364,6 +364,81 @@ class BookingControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    // ── BookingController::matchingIds (select-all-across-pages) ──────────────
+
+    public function test_matching_ids_returns_every_id_for_month_across_pages(): void
+    {
+        // 30 May bookings span two paginated pages (25/page); 5 June bookings
+        // must be excluded. matchingIds returns the whole filtered set, the
+        // pre-Inertia "select all" reach the page-only checkbox lost.
+        $may = collect(range(1, 30))->map(fn () => $this->makeBooking(['start_date' => '2026-05-10'])->id);
+        $this->makeBooking(['start_date' => '2026-06-15']);
+        $this->makeBooking(['start_date' => '2026-06-16']);
+        $this->makeBooking(['start_date' => '2026-06-17']);
+        $this->makeBooking(['start_date' => '2026-06-18']);
+        $this->makeBooking(['start_date' => '2026-06-19']);
+
+        $res = $this->actingAs($this->owner)
+            ->getJson(route('booking.matching-ids', ['month' => '2026-05']))
+            ->assertOk()
+            ->assertJsonCount(30, 'ids');
+
+        $this->assertEqualsCanonicalizing($may->all(), $res->json('ids'));
+    }
+
+    public function test_matching_ids_respects_search_filter(): void
+    {
+        // Search matches on the booking's driver name (the orWhereHas branch).
+        $named = User::factory()->driver()->create(['parent_id' => $this->owner->id, 'name' => 'Zsearchdriver']);
+        $hit   = $this->makeBooking(['driver' => $named->id]);
+        $this->makeBooking(); // default driver, unrelated name
+
+        $this->actingAs($this->owner)
+            ->getJson(route('booking.matching-ids', ['search' => 'Zsearchdriver']))
+            ->assertOk()
+            ->assertExactJson(['ids' => [$hit->id]]);
+    }
+
+    public function test_matching_ids_scoped_to_tenant(): void
+    {
+        $mine = $this->makeBooking();
+
+        $other = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->makeBooking(['parent_id' => $other->id]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('booking.matching-ids'))
+            ->assertOk()
+            ->assertExactJson(['ids' => [$mine->id]]);
+    }
+
+    public function test_matching_ids_ignores_invalid_month(): void
+    {
+        // A malformed month must be ignored (no filter), so every booking is
+        // returned — mirrors index()'s handling of the same input.
+        $this->makeBooking(['start_date' => '2026-05-10']);
+        $this->makeBooking(['start_date' => '2026-06-15']);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('booking.matching-ids', ['month' => '2026-13']))
+            ->assertOk()
+            ->assertJsonCount(2, 'ids');
+    }
+
+    public function test_matching_ids_denied_without_manage_booking_permission(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->getJson(route('booking.matching-ids'))
+            ->assertStatus(403);
+    }
+
+    public function test_matching_ids_requires_auth(): void
+    {
+        $this->get(route('booking.matching-ids'))->assertRedirect(route('login'));
+    }
+
     // ── BookingController::paymentStore ──────────────────────────────────────
 
     public function test_payment_store_creates_payment_and_marks_partially_paid(): void

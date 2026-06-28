@@ -51,6 +51,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [month, setMonth] = useState(filters.month ?? '');
     const [selected, setSelected] = useState([]);
+    const [loadingAll, setLoadingAll] = useState(false);
     const isFirst = useRef(true);
     useEffect(() => {
         if (isFirst.current) {
@@ -87,6 +88,36 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
         );
     }
+
+    // Pre-Inertia parity: the old client-side DataTable held every row in the
+    // DOM, so "select all" reached the whole filtered list, not just one page.
+    // Here the list is server-paginated, so fetch the ids for the active
+    // search/month filter and select them all. The selection feeds the same
+    // bulk endpoints, which re-check delete/edit permission server-side.
+    async function selectAllMatching() {
+        setLoadingAll(true);
+        try {
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (month) params.set('month', month);
+            const res = await fetch(`${route('booking.matching-ids')}?${params.toString()}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            setSelected(data.ids ?? []);
+        } finally {
+            setLoadingAll(false);
+        }
+    }
+
+    // Every row on the current page is selected. Drives the header checkbox and
+    // gates the "select all matching" prompt (shown only once the page is full
+    // and more matching rows exist beyond it).
+    const allOnPageSelected =
+        bookings.data.length > 0 && bookings.data.every((b) => selected.includes(b.id));
+    const canSelectAllMatching = allOnPageSelected && selected.length < bookings.total;
 
     async function remove(id) {
         if (await confirmDialog({ title: t('Delete this booking?') })) {
@@ -296,10 +327,21 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                         Sits on the table it acts on, tinted to read as a mode. */}
                     {selected.length > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-primary/5 px-4 py-2.5 duration-200 animate-in fade-in slide-in-from-top-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm font-medium">
                                     {selected.length} {t('booking(s) selected')}
                                 </span>
+                                {canSelectAllMatching && (
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="h-8 px-1"
+                                        onClick={selectAllMatching}
+                                        disabled={loadingAll}
+                                    >
+                                        {t('Select all matching')} ({bookings.total})
+                                    </Button>
+                                )}
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -333,7 +375,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                         <Checkbox
                                             aria-label={t('Select all bookings')}
                                             onCheckedChange={(v) => toggleAll({ target: { checked: v === true } })}
-                                            checked={selected.length === bookings.data.length && bookings.data.length > 0}
+                                            checked={allOnPageSelected}
                                         />
                                     </TableHead>
                                 )}

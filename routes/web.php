@@ -280,6 +280,8 @@ Route::group(
         Route::get('booking/template/download', [BookingController::class, 'downloadTemplate'])->name('booking.template');
         Route::post('booking/bulk-destroy', [BookingController::class, 'bulkDestroy'])->name('booking.bulk-destroy');
         Route::post('booking/bulk-mark-paid', [BookingController::class, 'bulkMarkPaid'])->name('booking.bulk-mark-paid');
+        // Must precede the resource route so the literal path isn't captured by booking/{booking} (show).
+        Route::get('booking/matching-ids', [BookingController::class, 'matchingIds'])->name('booking.matching-ids');
         Route::resource('booking', BookingController::class);
         Route::post('/booking_requests/{id}/approve', [RequestBookingController::class, 'confirmBooking'])->name('booking_requests.approve');
         Route::post('/booking_requests/{id}/refuse', [RequestBookingController::class, 'refuseBooking'])
