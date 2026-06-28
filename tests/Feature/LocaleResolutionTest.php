@@ -29,7 +29,7 @@ class LocaleResolutionTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('locale', 'ary')
                 // Proves lang/ary.json is the resolved bundle, not the English fallback.
-                ->where('translations.find_car_button', 'قلب على طوموبيل')
+                ->where('translations.dg_book', 'احجز ديمو')
             );
     }
 
