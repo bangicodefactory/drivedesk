@@ -27,20 +27,33 @@ use Spatie\Permission\Models\Role;
 class BookingController extends Controller
 {
 
-    public function index(Request $request)
+    /**
+     * Normalise the booking-list filters from the request.
+     *
+     * Returns [$search, $month] where $month is '' unless it is a well-formed
+     * YYYY-MM (so an arbitrary value can't reach whereYear/whereMonth).
+     *
+     * @return array{0:string,1:string}
+     */
+    private function bookingFilters(Request $request): array
     {
-        if (! \Auth::user()->can('manage booking')) {
-            return redirect()->back()->with('error', __('Permission Denied.'));
-        }
-
         $search = trim((string) $request->get('search', ''));
-
-        // Month filter: only accept a well-formed YYYY-MM so an arbitrary value
-        // can't reach whereYear/whereMonth; anything else is ignored (= no filter).
-        $month = trim((string) $request->get('month', ''));
+        $month  = trim((string) $request->get('month', ''));
         $monthValid = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1;
 
-        $bookings = Booking::where('parent_id', '=', parentId())
+        return [$search, $monthValid ? $month : ''];
+    }
+
+    /**
+     * Base query for the booking list, scoped to the tenant and the active
+     * search/month filters. Shared by index() (paginated rows) and
+     * matchingIds() (all ids for the same filter) so the two can't drift.
+     */
+    private function filteredBookings(Request $request)
+    {
+        [$search, $month] = $this->bookingFilters($request);
+
+        return Booking::where('parent_id', '=', parentId())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
                     $w->where('booking_id', 'like', "%{$search}%")
@@ -50,16 +63,27 @@ class BookingController extends Controller
                         });
                 });
             })
-            ->when($monthValid, function ($q) use ($month) {
+            ->when($month !== '', function ($q) use ($month) {
                 [$year, $mon] = explode('-', $month);
                 $q->whereYear('start_date', $year)->whereMonth('start_date', $mon);
             })
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'desc');
+    }
+
+    public function index(Request $request)
+    {
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        [$search, $month] = $this->bookingFilters($request);
+
+        $bookings = $this->filteredBookings($request)
             ->paginate(25)
             ->withQueryString();
 
         return Inertia::render('Booking/Index', [
-            'filters' => ['search' => $search, 'month' => $monthValid ? $month : ''],
+            'filters' => ['search' => $search, 'month' => $month],
             'bookings' => $bookings->through(fn($b) => [
                 'id'             => $b->id,
                 'encrypted_id'   => Crypt::encrypt($b->id),
@@ -683,6 +707,26 @@ class BookingController extends Controller
             ->update(['payment_status' => 'paye']);
 
         return redirect()->route('booking.index')->with('success', __('Selected bookings marked as paid.'));
+    }
+
+    /**
+     * Return every booking id matching the current list filters (search/month),
+     * across all pages. Backs the React "Select all N matching" affordance so a
+     * bulk action can act on the whole filtered set — the pre-Inertia behaviour,
+     * where the client-side DataTable held every row in the DOM. The ids feed
+     * the existing bulk endpoints, which enforce their own delete/edit
+     * permission; this read-only endpoint is gated on the same `manage booking`
+     * permission as the list itself and stays scoped to the tenant.
+     */
+    public function matchingIds(Request $request)
+    {
+        if (! \Auth::user()->can('manage booking')) {
+            abort(403);
+        }
+
+        return response()->json([
+            'ids' => $this->filteredBookings($request)->pluck('id'),
+        ]);
     }
 
     public function downloadTemplate()
