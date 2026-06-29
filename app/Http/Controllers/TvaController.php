@@ -473,18 +473,17 @@ class TvaController extends Controller
         $setting = settings();
         $createdCount = 0;
 
-        // Continue numbering globally
-        $lastNumber = (int) $request->tva_number;
-        
-        if ($lastNumber <= 0) {
-            $lastFacture = Tva::orderByDesc('id')->first();
-            $lastNumber = 0;
-            if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-                $lastNumber = (int)$matches[0];
-            }
-        }
-
-        $factureCounter = $lastNumber;
+        // Per-year numbering: invoice numbers reset to 1 at the start of each
+        // year and continue from the highest number already issued *within the
+        // selected year*. The current month's records were soft-deleted above,
+        // so they don't count toward the running total when a month is
+        // regenerated. Scoped to the owner (parent_id) so each business keeps
+        // its own sequence; in a single-business database this is the whole set.
+        //
+        // NOTE: months generated out of order continue from the year's max
+        // rather than slotting in chronologically — use the Renumber tool to
+        // re-sequence a year by date afterwards.
+        $factureCounter = $this->lastFactureNumberForYear($monthStart->year);
 
         foreach ($payments as $payment) {
             $booking = Booking::with('drivers')->find($payment->booking_id);
@@ -564,6 +563,35 @@ class TvaController extends Controller
         }
 
         return redirect()->back()->with('success', "{$deletedCount} TVA supprimées. {$createdCount} TVA(s) générées pour " . $monthStart->format('F Y'));
+    }
+
+    /**
+     * Highest invoice number already issued within the given year, scoped to
+     * the current owner (parent_id). Returns 0 when the year has no invoices,
+     * so the first invoice of a fresh year becomes 1.
+     *
+     * Trailing digits are extracted so legacy/manually-edited numbers like
+     * "FACT-12" still participate; the max is computed in PHP because the
+     * column is a string and won't sort numerically in SQL.
+     */
+    private function lastFactureNumberForYear(int $year): int
+    {
+        $numbers = Tva::query()
+            ->when(
+                \Auth::check() && function_exists('parentId') && parentId(),
+                fn ($q) => $q->where('parent_id', parentId())
+            )
+            ->whereYear('facture_date', $year)
+            ->pluck('facture_number');
+
+        $max = 0;
+        foreach ($numbers as $number) {
+            if (preg_match('/\d+$/', (string) $number, $matches)) {
+                $max = max($max, (int) $matches[0]);
+            }
+        }
+
+        return $max;
     }
 
     public function report(Request $request)
