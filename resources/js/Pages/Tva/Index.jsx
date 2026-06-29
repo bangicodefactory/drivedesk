@@ -62,7 +62,6 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
     // Generate monthly TVA state
     const [genYear, setGenYear]   = useState(String(currentYear));
     const [genMonth, setGenMonth] = useState('01');
-    const [genNumber, setGenNumber] = useState('');
 
     function applyFilters() {
         router.get(route('tva.index'), Object.fromEntries(
@@ -122,7 +121,6 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
         e.preventDefault();
         router.post(route('tva.generate'), {
             month: `${genYear}-${genMonth}`,
-            tva_number: genNumber,
         });
     }
 
@@ -218,11 +216,6 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                     {MONTHS_FR.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                        </div>
-                        <div className="space-y-1">
-                            <Label>{t('Numéro de TVA')}</Label>
-                            <Input type="number" placeholder={t('Numéro de TVA')} className="w-40"
-                                value={genNumber} onChange={(e) => setGenNumber(e.target.value)} />
                         </div>
                         <Button type="submit">{t('Générer TVA')}</Button>
                     </form>
