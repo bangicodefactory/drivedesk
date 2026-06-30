@@ -962,7 +962,7 @@ class BookingController extends Controller
                     $startAt = Carbon::parse($startDateParsed . ' ' . $startTimeFmt);
                     $endAt   = Carbon::parse($endDateParsed . ' ' . $endTimeFmt);
                     if ($startAt >= $endAt) {
-                        $errors[] = __('Start date :start must be before end date :end', [
+                        $errors[] = __('Start date (:start) must be before end date (:end)', [
                             'start' => $startDateParsed . ' ' . $startTimeFmt,
                             'end'   => $endDateParsed . ' ' . $endTimeFmt,
                         ]);
@@ -1083,8 +1083,8 @@ class BookingController extends Controller
         }
 
         $msg = $imported > 0
-            ? "{$imported} réservation(s) importée(s) avec succès."
-            : "Aucune réservation importée.";
+            ? __(':count booking(s) imported successfully.', ['count' => $imported])
+            : __('No bookings imported.');
 
         return redirect()->route('booking.index')->with('success', $msg);
     }
