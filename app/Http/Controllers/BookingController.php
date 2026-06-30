@@ -78,15 +78,14 @@ class BookingController extends Controller
 
         [$search, $month] = $this->bookingFilters($request);
 
-        $query = $this->filteredBookings($request);
+        // When a month is selected, show the month's bookings on one page
+        // (capped at 300 to keep the query and payload bounded); otherwise keep
+        // the default 25 per page. The paginator shape is unchanged, so the
+        // list and <Pagination> need no changes — <Pagination> hides itself
+        // when everything fits on one page.
+        $perPage = $month !== '' ? 300 : 25;
 
-        // When a month is selected, show every matching booking on a single
-        // page (no pagination); otherwise keep the default 25 per page. Using
-        // the full count as the page size preserves the paginator shape the
-        // frontend consumes, so the list and <Pagination> need no changes.
-        $perPage = $month !== '' ? max($query->count(), 1) : 25;
-
-        $bookings = $query
+        $bookings = $this->filteredBookings($request)
             ->paginate($perPage)
             ->withQueryString();
 

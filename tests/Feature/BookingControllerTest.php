@@ -126,7 +126,7 @@ class BookingControllerTest extends TestCase
     public function test_index_shows_all_bookings_on_one_page_when_month_selected(): void
     {
         // 30 May bookings would span two pages at 25/page; selecting the month
-        // must return them all on a single page (no pagination).
+        // returns them all on a single page (page size capped at 300).
         collect(range(1, 30))->each(fn () => $this->makeBooking(['start_date' => '2026-05-10']));
         $this->makeBooking(['start_date' => '2026-06-15']); // other month, excluded
 
@@ -136,7 +136,7 @@ class BookingControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Booking/Index')
                 ->where('bookings.total', 30)
-                ->where('bookings.per_page', 30)
+                ->where('bookings.per_page', 300) // capped page size, not 25
                 ->where('bookings.last_page', 1)
                 ->has('bookings.data', 30)
             );
