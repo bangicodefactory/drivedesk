@@ -839,4 +839,42 @@ class BookingControllerTest extends TestCase
             ->post(route('booking.import'), ['file' => $file])
             ->assertSessionHas('error');
     }
+
+    public function test_import_skips_rows_where_start_is_not_before_end(): void
+    {
+        // Row 1: return date before start (day/month swapped) → must be skipped.
+        // Row 2: valid → must be imported. Proves the guard is per-row and that
+        // a skipped row creates no driver/vehicle/booking.
+        $file = $this->makeImportFile([
+            ['Swap Victim',  '2026-05-01', '09:00', 'Seat', 'SW-001-AP', '2026-03-05', '18:00', '2', '800', 'cash'],
+            ['Valid Client', '2026-05-01', '09:00', 'Seat', 'VL-002-AP', '2026-05-03', '18:00', '2', '800', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('import_skipped');
+
+        // Swapped row imported nothing…
+        $this->assertDatabaseMissing('users', ['name' => 'Swap Victim']);
+        $this->assertDatabaseMissing('vehicles', ['license_plate' => 'SW-001-AP']);
+        // …valid row went through.
+        $this->assertDatabaseHas('users', ['name' => 'Valid Client', 'parent_id' => $this->owner->id]);
+        $this->assertDatabaseHas('vehicles', ['license_plate' => 'VL-002-AP', 'parent_id' => $this->owner->id]);
+    }
+
+    public function test_import_allows_same_day_rental_when_return_time_is_later(): void
+    {
+        // Same calendar day is valid as long as the return time is after pickup.
+        $file = $this->makeImportFile([
+            ['Same Day', '2026-05-10', '09:00', 'Seat', 'SD-003-AP', '2026-05-10', '18:00', '1', '300', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['license_plate' => 'SD-003-AP', 'parent_id' => $this->owner->id]);
+    }
 }

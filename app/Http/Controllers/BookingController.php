@@ -941,6 +941,21 @@ class BookingController extends Controller
                     $errors[] = "date retour invalide '{$endDate}'";
                 }
 
+                $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
+                $endTimeFmt   = $this->parseExcelTime($endTime) ?? '00:00:00';
+
+                // The rental must end after it starts. This rejects rows whose
+                // start is not before the end — e.g. day/month-swapped dates (a
+                // May return parsed as March) that would otherwise import
+                // silently with a zero/negative duration.
+                if ($startDateParsed && $endDateParsed) {
+                    $startAt = Carbon::parse($startDateParsed . ' ' . $startTimeFmt);
+                    $endAt   = Carbon::parse($endDateParsed . ' ' . $endTimeFmt);
+                    if ($startAt >= $endAt) {
+                        $errors[] = "la date de début ({$startDateParsed} {$startTimeFmt}) doit être avant la date de retour ({$endDateParsed} {$endTimeFmt})";
+                    }
+                }
+
                 if (!empty($errors)) {
                     $skipped[] = [
                         'row'    => $lineNum,
@@ -1007,8 +1022,6 @@ class BookingController extends Controller
                 }
                 $vehicle = $vehiclesCache[$plateKey];
 
-                $startTimeFmt  = $this->parseExcelTime($startTime) ?? '00:00:00';
-                $endTimeFmt    = $this->parseExcelTime($endTime) ?? '00:00:00';
                 $amount        = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
                 $paymentMethod = !empty($method) ? trim((string) $method) : null;
 
