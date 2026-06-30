@@ -877,4 +877,40 @@ class BookingControllerTest extends TestCase
 
         $this->assertDatabaseHas('vehicles', ['license_plate' => 'SD-003-AP', 'parent_id' => $this->owner->id]);
     }
+
+    public function test_import_parses_slash_dates_as_day_first(): void
+    {
+        // Slash dates are read day-first (d/m/Y), the import locale. "01/06/2026"
+        // is 1 June (not 6 Jan), and "13/05/2026" → 13 May (IST-231).
+        $file = $this->makeImportFile([
+            ['Day First', '01/06/2026', '09:00', 'Seat', 'DF-010-AP', '13/06/2026', '18:00', '12', '700', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('bookings', [
+            'parent_id'  => $this->owner->id,
+            'start_date' => '2026-06-01', // 1 June, not 6 January
+            'end_date'   => '2026-06-13',
+        ]);
+    }
+
+    public function test_import_rejects_us_month_day_dates(): void
+    {
+        // A US m/d/Y value with day > 12 ("06/20/2026") is not valid d/m/Y, so it
+        // is rejected as an invalid date rather than silently swapped (IST-231).
+        $file = $this->makeImportFile([
+            ['US Format', '06/20/2026', '09:00', 'Seat', 'US-011-AP', '06/25/2026', '18:00', '5', '500', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('import_skipped');
+
+        $this->assertDatabaseMissing('vehicles', ['license_plate' => 'US-011-AP']);
+    }
 }

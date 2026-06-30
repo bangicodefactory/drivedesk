@@ -925,20 +925,20 @@ class BookingController extends Controller
             try {
                 // Validate required fields before auto-creating
                 if (empty($driverName)) {
-                    $errors[] = "NOM & PRENOM est vide";
+                    $errors[] = __('The NOM & PRENOM column is empty');
                 }
                 if (empty($licensePlate)) {
-                    $errors[] = "IMMATRICULATION est vide";
+                    $errors[] = __('The IMMATRICULATION column is empty');
                 }
 
                 $startDateParsed = $this->parseExcelDate($startDate);
                 $endDateParsed   = $this->parseExcelDate($endDate);
 
                 if (!$startDateParsed) {
-                    $errors[] = "date début invalide '{$startDate}'";
+                    $errors[] = __('Invalid start date :value', ['value' => $startDate]);
                 }
                 if (!$endDateParsed) {
-                    $errors[] = "date retour invalide '{$endDate}'";
+                    $errors[] = __('Invalid end date :value', ['value' => $endDate]);
                 }
 
                 $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
@@ -952,7 +952,10 @@ class BookingController extends Controller
                     $startAt = Carbon::parse($startDateParsed . ' ' . $startTimeFmt);
                     $endAt   = Carbon::parse($endDateParsed . ' ' . $endTimeFmt);
                     if ($startAt >= $endAt) {
-                        $errors[] = "la date de début ({$startDateParsed} {$startTimeFmt}) doit être avant la date de retour ({$endDateParsed} {$endTimeFmt})";
+                        $errors[] = __('Start date (:start) must be before end date (:end)', [
+                            'start' => $startDateParsed . ' ' . $startTimeFmt,
+                            'end'   => $endDateParsed . ' ' . $endTimeFmt,
+                        ]);
                     }
                 }
 
@@ -1070,8 +1073,8 @@ class BookingController extends Controller
         }
 
         $msg = $imported > 0
-            ? "{$imported} réservation(s) importée(s) avec succès."
-            : "Aucune réservation importée.";
+            ? __(':count booking(s) imported successfully.', ['count' => $imported])
+            : __('No bookings imported.');
 
         return redirect()->route('booking.index')->with('success', $msg);
     }
@@ -1082,7 +1085,7 @@ class BookingController extends Controller
             return null;
         }
 
-        // Numeric: Excel serial date
+        // Numeric: Excel serial date (unambiguous).
         if (is_numeric($value)) {
             try {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)->format('Y-m-d');
@@ -1093,8 +1096,13 @@ class BookingController extends Controller
 
         $value = trim((string) $value);
 
-        // Try common date formats
-        foreach (['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y'] as $fmt) {
+        // String dates are interpreted as the import locale, day-first (d/m/Y),
+        // matching the booking template. We deliberately do NOT fall back to the
+        // American m/d/Y order: an ambiguous value like "01/06/2026" always means
+        // 1 June (not 6 Jan), and a US-style value with day > 12 (e.g. "06/20/2026")
+        // is rejected as invalid rather than silently swapped (IST-231). Use a real
+        // Excel date cell or ISO YYYY-MM-DD for anything outside this format.
+        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y'] as $fmt) {
             $parsed = \DateTime::createFromFormat($fmt, $value);
             if ($parsed && $parsed->format($fmt) === $value) {
                 return $parsed->format('Y-m-d');
