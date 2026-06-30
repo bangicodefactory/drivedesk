@@ -925,30 +925,30 @@ class BookingController extends Controller
             try {
                 // Validate required fields before auto-creating
                 if (empty($driverName)) {
-                    $errors[] = "NOM & PRENOM est vide";
+                    $errors[] = __('The NOM & PRENOM column is empty');
                 }
                 if (empty($licensePlate)) {
-                    $errors[] = "IMMATRICULATION est vide";
+                    $errors[] = __('The IMMATRICULATION column is empty');
                 }
 
                 $startDateParsed = $this->parseExcelDate($startDate);
                 $endDateParsed   = $this->parseExcelDate($endDate);
 
                 if (!$startDateParsed) {
-                    $errors[] = "date début invalide '{$startDate}'";
+                    $errors[] = __('Invalid start date :value', ['value' => $startDate]);
                 }
                 if (!$endDateParsed) {
-                    $errors[] = "date retour invalide '{$endDate}'";
+                    $errors[] = __('Invalid end date :value', ['value' => $endDate]);
                 }
 
                 // Reject genuinely ambiguous string dates (parse validly as both
                 // d/m/Y and m/d/Y to different days) instead of silently guessing
                 // the locale — the cause of the day/month-swapped imports (IST-231).
                 if ($startDateParsed && $this->isAmbiguousDateString($startDate)) {
-                    $errors[] = "date début ambiguë '{$startDate}' — utilisez AAAA-MM-JJ";
+                    $errors[] = __('Ambiguous start date :value, use YYYY-MM-DD', ['value' => $startDate]);
                 }
                 if ($endDateParsed && $this->isAmbiguousDateString($endDate)) {
-                    $errors[] = "date retour ambiguë '{$endDate}' — utilisez AAAA-MM-JJ";
+                    $errors[] = __('Ambiguous end date :value, use YYYY-MM-DD', ['value' => $endDate]);
                 }
 
                 $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
@@ -962,7 +962,10 @@ class BookingController extends Controller
                     $startAt = Carbon::parse($startDateParsed . ' ' . $startTimeFmt);
                     $endAt   = Carbon::parse($endDateParsed . ' ' . $endTimeFmt);
                     if ($startAt >= $endAt) {
-                        $errors[] = "la date de début ({$startDateParsed} {$startTimeFmt}) doit être avant la date de retour ({$endDateParsed} {$endTimeFmt})";
+                        $errors[] = __('Start date :start must be before end date :end', [
+                            'start' => $startDateParsed . ' ' . $startTimeFmt,
+                            'end'   => $endDateParsed . ' ' . $endTimeFmt,
+                        ]);
                     }
                 }
 

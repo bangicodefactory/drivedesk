@@ -1,4 +1,11 @@
 {
+  "The NOM & PRENOM column is empty": "NOM & PRENOM est vide",
+  "The IMMATRICULATION column is empty": "IMMATRICULATION est vide",
+  "Invalid start date :value": "date début invalide ':value'",
+  "Invalid end date :value": "date retour invalide ':value'",
+  "Ambiguous start date :value, use YYYY-MM-DD": "date début ambiguë ':value' — utilisez AAAA-MM-JJ",
+  "Ambiguous end date :value, use YYYY-MM-DD": "date retour ambiguë ':value' — utilisez AAAA-MM-JJ",
+  "Start date :start must be before end date :end": "la date de début :start doit être avant la date de retour :end",
   "Blacklisted": "Sur liste noire",
   "Blacklist": "Mettre sur liste noire",
   "Blacklist driver": "Mettre le conducteur sur liste noire",
