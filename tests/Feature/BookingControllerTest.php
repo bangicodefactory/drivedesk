@@ -123,6 +123,40 @@ class BookingControllerTest extends TestCase
             );
     }
 
+    public function test_index_shows_all_bookings_on_one_page_when_month_selected(): void
+    {
+        // 30 May bookings would span two pages at 25/page; selecting the month
+        // returns them all on a single page (page size capped at 300).
+        collect(range(1, 30))->each(fn () => $this->makeBooking(['start_date' => '2026-05-10']));
+        $this->makeBooking(['start_date' => '2026-06-15']); // other month, excluded
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.index', ['month' => '2026-05']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Index')
+                ->where('bookings.total', 30)
+                ->where('bookings.per_page', 300) // capped page size, not 25
+                ->where('bookings.last_page', 1)
+                ->has('bookings.data', 30)
+            );
+    }
+
+    public function test_index_still_paginates_when_no_month_selected(): void
+    {
+        // Without a month filter the list keeps the default 25/page pagination.
+        collect(range(1, 30))->each(fn () => $this->makeBooking());
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('bookings.per_page', 25)
+                ->where('bookings.last_page', 2)
+                ->has('bookings.data', 25)
+            );
+    }
+
     public function test_store_requires_auth(): void
     {
         $this->post(route('booking.store'))->assertRedirect(route('login'));
