@@ -458,8 +458,19 @@ class TvaController extends Controller
             'month' => 'required|date_format:Y-m',
         ]);
 
-        $monthStart = Carbon::createFromFormat('Y-m', $request->month)->startOfMonth();
+        // The leading "!" resets all unspecified fields (day, time) to their
+        // defaults, so the day becomes 01. Without it, createFromFormat carries
+        // *today's* day-of-month and a short target month overflows — e.g. on
+        // the 30th, "2024-02" parses as 2024-02-30 → rolls over to 2024-03-01,
+        // generating the wrong month.
+        $monthStart = Carbon::createFromFormat('!Y-m', $request->month)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
+
+        // Everything below runs in one transaction so a mid-loop failure can't
+        // leave a month half-deleted / half-regenerated, and so the per-year
+        // counter reads are serialised under lockForUpdate against a concurrent
+        // generation. (Hard uniqueness still needs the DB unique index — IST-230.)
+        return \DB::transaction(function () use ($monthStart, $monthEnd) {
         // 1. Delete existing TVA records in the selected month (facture_date within month)
         $deleteQuery = Tva::whereYear('facture_date', $monthStart->year)
             ->whereMonth('facture_date', $monthStart->month);
@@ -477,18 +488,33 @@ class TvaController extends Controller
         // year and continue from the highest number already issued *within the
         // selected year*. The current month's records were soft-deleted above,
         // so they don't count toward the running total when a month is
-        // regenerated. Scoped to the owner (parent_id) so each business keeps
-        // its own sequence; in a single-business database this is the whole set.
+        // regenerated.
+        //
+        // The sequence is keyed by the BOOKING's parent_id (the business the
+        // invoice belongs to), NOT the generating user's parentId(). This makes
+        // numbering independent of who runs generation — an owner, an employee,
+        // or a super admin all continue the same per-business sequence. A single
+        // run can legitimately span multiple businesses, so we keep one counter
+        // per parent_id, seeded lazily the first time each business is seen.
         //
         // NOTE: months generated out of order continue from the year's max
         // rather than slotting in chronologically — use the Renumber tool to
         // re-sequence a year by date afterwards.
-        $factureCounter = $this->lastFactureNumberForYear($monthStart->year);
+        $factureCounters = [];
 
         foreach ($payments as $payment) {
             $booking = Booking::with('drivers')->find($payment->booking_id);
             if (!$booking) {
                 continue;
+            }
+
+            // Counter key = the business this invoice belongs to (may be null
+            // for legacy bookings with no parent). Seed from that business's
+            // own year-max the first time we encounter it.
+            $bookingParentId = $booking->parent_id ?? null;
+            $counterKey = $bookingParentId ?? '__null__';
+            if (!array_key_exists($counterKey, $factureCounters)) {
+                $factureCounters[$counterKey] = $this->lastFactureNumberForYear($monthStart->year, $bookingParentId);
             }
 
             // Driver / client
@@ -525,18 +551,19 @@ class TvaController extends Controller
             $tvaAmount = round($paymentTtc - $totalHt, 2);
             $unitPriceHt = $totalDays > 0 ? round($paymentTtc / $totalDays, 2) : $paymentTtc; // spread across days
 
-            $factureCounter++;
-            $factureNumber = $factureCounter;
+            $factureCounters[$counterKey]++;
+            $factureNumber = $factureCounters[$counterKey];
 
             $tva = new Tva();
             $tva->booking_id = $booking->id;
-            if (isset($booking->parent_id)) {
-                $tva->parent_id = $booking->parent_id;
-            }
+            $tva->parent_id = $bookingParentId;
             $tva->month = $monthStart->month;
             $tva->year = $monthStart->year;
             $tva->facture_number = $factureNumber;
-            $tva->facture_date = $payment->date ?? now();
+            // Fall back to the generated month (not now()) so the invoice's year
+            // always matches the counter's year; the BETWEEN query above already
+            // excludes null-date payments, so this is purely defensive.
+            $tva->facture_date = $payment->date ?? $monthStart->toDateString();
             $tva->client_name = $driverName;
             $tva->client_address = $driverAddress;
             $tva->company_name = $setting['company_name'];
@@ -563,25 +590,31 @@ class TvaController extends Controller
         }
 
         return redirect()->back()->with('success', "{$deletedCount} TVA supprimées. {$createdCount} TVA(s) générées pour " . $monthStart->format('F Y'));
+        });
     }
 
     /**
-     * Highest invoice number already issued within the given year, scoped to
-     * the current owner (parent_id). Returns 0 when the year has no invoices,
-     * so the first invoice of a fresh year becomes 1.
+     * Highest invoice number already issued within the given year for one
+     * business (parent_id). Returns 0 when that business has no invoices in the
+     * year, so its first invoice of a fresh year becomes 1. A null $parentId
+     * matches legacy rows that were never assigned a parent.
      *
-     * Trailing digits are extracted so legacy/manually-edited numbers like
-     * "FACT-12" still participate; the max is computed in PHP because the
-     * column is a string and won't sort numerically in SQL.
+     * Scoped by the BOOKING's parent_id (passed in), never the session user, so
+     * numbering does not depend on who triggers generation. lockForUpdate
+     * serialises the read against a concurrent generation inside the same
+     * transaction (best-effort; the DB unique index in IST-230 is the real
+     * guarantee). Trailing digits are extracted so legacy/manually-edited
+     * numbers like "FACT-12" still participate; the max is computed in PHP
+     * because the column is a string and won't sort numerically in SQL.
      */
-    private function lastFactureNumberForYear(int $year): int
+    private function lastFactureNumberForYear(int $year, $parentId): int
     {
         $numbers = Tva::query()
-            ->when(
-                \Auth::check() && function_exists('parentId') && parentId(),
-                fn ($q) => $q->where('parent_id', parentId())
-            )
+            ->where(fn ($q) => $parentId === null
+                ? $q->whereNull('parent_id')
+                : $q->where('parent_id', $parentId))
             ->whereYear('facture_date', $year)
+            ->lockForUpdate()
             ->pluck('facture_number');
 
         $max = 0;
