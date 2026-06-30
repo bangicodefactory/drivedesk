@@ -78,8 +78,15 @@ class BookingController extends Controller
 
         [$search, $month] = $this->bookingFilters($request);
 
+        // When a month is selected, show the month's bookings on one page
+        // (capped at 300 to keep the query and payload bounded); otherwise keep
+        // the default 25 per page. The paginator shape is unchanged, so the
+        // list and <Pagination> need no changes — <Pagination> hides itself
+        // when everything fits on one page.
+        $perPage = $month !== '' ? 300 : 25;
+
         $bookings = $this->filteredBookings($request)
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Booking/Index', [
