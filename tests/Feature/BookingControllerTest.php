@@ -877,4 +877,37 @@ class BookingControllerTest extends TestCase
 
         $this->assertDatabaseHas('vehicles', ['license_plate' => 'SD-003-AP', 'parent_id' => $this->owner->id]);
     }
+
+    public function test_import_skips_ambiguous_string_dates(): void
+    {
+        // "05/03/2026" parses as both 5 Mar and 3 May — reject rather than guess
+        // (IST-231). Both dates here are ambiguous, so the row must be skipped.
+        $file = $this->makeImportFile([
+            ['Ambiguous', '05/03/2026', '09:00', 'Seat', 'AM-009-AP', '08/03/2026', '18:00', '3', '300', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('import_skipped');
+
+        $this->assertDatabaseMissing('vehicles', ['license_plate' => 'AM-009-AP']);
+    }
+
+    public function test_import_accepts_unambiguous_slash_dates(): void
+    {
+        // 13/05 and 20/05 can only be d/m/Y (no month 13/20) → unambiguous, import.
+        $file = $this->makeImportFile([
+            ['Clear Date', '13/05/2026', '09:00', 'Seat', 'CL-010-AP', '20/05/2026', '18:00', '7', '700', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['license_plate' => 'CL-010-AP', 'parent_id' => $this->owner->id]);
+        // Stored as 13 May → 20 May (d/m/Y), not m/d.
+        $this->assertDatabaseHas('bookings', ['parent_id' => $this->owner->id, 'start_date' => '2026-05-13', 'end_date' => '2026-05-20']);
+    }
 }
