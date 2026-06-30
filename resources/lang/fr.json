@@ -1,4 +1,8 @@
 {
+  ":count booking(s) marked as paid.": ":count réservation(s) marquée(s) comme payée(s).",
+  ":count already fully paid": ":count déjà entièrement payée(s)",
+  ":count skipped (cash over 5000)": ":count ignorée(s) (espèces > 5000)",
+  "Each unpaid booking will be recorded as paid for its remaining balance with the method below.": "Chaque réservation non payée sera enregistrée comme payée pour son solde restant avec la méthode ci-dessous.",
   "The NOM & PRENOM column is empty": "NOM & PRENOM est vide",
   "The IMMATRICULATION column is empty": "IMMATRICULATION est vide",
   "Invalid start date :value": "date début invalide ':value'",

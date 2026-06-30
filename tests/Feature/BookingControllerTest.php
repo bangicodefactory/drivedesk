@@ -511,6 +511,116 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id]);
     }
 
+    // ── BookingController::bulkMarkPaid (IST-233) ────────────────────────────
+
+    public function test_bulk_mark_paid_records_payment_and_facture_per_booking(): void
+    {
+        // Company settings the facture generation reads.
+        foreach (['company_name' => 'Co', 'company_address' => 'Addr', 'ice' => 'I', 'rc' => 'R', 'if' => 'F'] as $n => $v) {
+            \App\Models\Setting::create(['name' => $n, 'value' => $v, 'parent_id' => $this->owner->id]);
+        }
+        $a = $this->makeBooking(['amount' => 600, 'payment_status' => 'impaye']);
+        $b = $this->makeBooking(['amount' => 400, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), [
+                'ids'            => [$a->id, $b->id],
+                'payment_method' => 'Virement bancaire',
+                'date'           => now()->format('Y-m-d'),
+            ])
+            ->assertRedirect(route('booking.index'))
+            ->assertSessionHas('success');
+
+        // Each booking: a payment for its full balance, a facture, status paye.
+        foreach ([[$a->id, 600], [$b->id, 400]] as [$id, $amount]) {
+            $this->assertDatabaseHas('booking_payments', [
+                'booking_id' => $id, 'amount' => $amount, 'payment_method' => 'Virement bancaire',
+            ]);
+            $this->assertDatabaseHas('bookings', ['id' => $id, 'payment_status' => 'paye']);
+            $this->assertDatabaseHas('tvas', ['booking_id' => $id, 'parent_id' => $this->owner->id, 'deleted_at' => null]);
+        }
+    }
+
+    public function test_bulk_mark_paid_skips_fully_paid_bookings(): void
+    {
+        foreach (['company_name' => 'Co', 'company_address' => 'Addr', 'ice' => 'I', 'rc' => 'R', 'if' => 'F'] as $n => $v) {
+            \App\Models\Setting::create(['name' => $n, 'value' => $v, 'parent_id' => $this->owner->id]);
+        }
+        $paid = $this->makeBooking(['amount' => 500, 'payment_status' => 'paye']);
+        BookingPayment::factory()->create(['booking_id' => $paid->id, 'parent_id' => $this->owner->id, 'amount' => 500]);
+        $unpaid = $this->makeBooking(['amount' => 300, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), [
+                'ids' => [$paid->id, $unpaid->id], 'payment_method' => 'Carte',
+            ])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // The fully-paid booking gets NO new payment (still exactly 1).
+        $this->assertSame(1, BookingPayment::where('booking_id', $paid->id)->count());
+        // The unpaid one is now paid with a recorded payment.
+        $this->assertDatabaseHas('booking_payments', ['booking_id' => $unpaid->id, 'amount' => 300]);
+        $this->assertDatabaseHas('bookings', ['id' => $unpaid->id, 'payment_status' => 'paye']);
+    }
+
+    public function test_bulk_mark_paid_skips_cash_over_5000(): void
+    {
+        $big = $this->makeBooking(['amount' => 6000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), [
+                'ids' => [$big->id], 'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Over the cash limit → no payment recorded, status unchanged.
+        $this->assertSame(0, BookingPayment::where('booking_id', $big->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $big->id, 'payment_status' => 'impaye']);
+    }
+
+    public function test_bulk_mark_paid_requires_payment_method(): void
+    {
+        $booking = $this->makeBooking(['payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), ['ids' => [$booking->id]])
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertSame(0, BookingPayment::where('booking_id', $booking->id)->count());
+    }
+
+    public function test_bulk_mark_paid_requires_create_booking_payment_permission(): void
+    {
+        // Bulk now creates payments + factures, so 'edit booking' alone is NOT
+        // enough — it requires 'create booking payment' like the single flow.
+        $editOnly = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $editOnly->givePermissionTo('edit booking');
+        $booking = $this->makeBooking(['payment_status' => 'impaye']);
+
+        $this->actingAs($editOnly)
+            ->post(route('booking.bulk-mark-paid'), ['ids' => [$booking->id], 'payment_method' => 'Carte'])
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, BookingPayment::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'impaye']);
+    }
+
+    public function test_bulk_mark_paid_only_touches_callers_bookings(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $foreign = Booking::factory()->create(['parent_id' => $otherOwner->id, 'amount' => 500, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), [
+                'ids' => [$foreign->id], 'payment_method' => 'Carte',
+            ])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Cross-tenant booking untouched.
+        $this->assertSame(0, BookingPayment::where('booking_id', $foreign->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $foreign->id, 'payment_status' => 'impaye']);
+    }
+
     // ── BookingController::paymentStore ──────────────────────────────────────
 
     public function test_payment_store_creates_payment_and_marks_partially_paid(): void

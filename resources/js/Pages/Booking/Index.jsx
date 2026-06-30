@@ -11,6 +11,9 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { MonthPicker } from '@/components/ui/month-picker';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,7 +39,7 @@ const PAYMENT_VARIANT = {
     partiellement_paye: 'warning',
 };
 
-function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
+function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = [], filters = {} }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
     const { auth, flash } = usePage().props;
@@ -54,6 +57,11 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
     const [month, setMonth] = useState(filters.month ?? '');
     const [selected, setSelected] = useState([]);
     const [loadingAll, setLoadingAll] = useState(false);
+    // Bulk "mark as paid" — opens a dialog to pick the payment method (and date)
+    // before recording a payment + facture per selected booking.
+    const [markPaidOpen, setMarkPaidOpen] = useState(false);
+    const [payMethod, setPayMethod] = useState(paymentMethods?.[0]?.value ?? '');
+    const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
     const isFirst = useRef(true);
     // Tracks the in-flight "select all matching" request so a filter change can
     // cancel it — otherwise a late response would repopulate the selection with
@@ -145,10 +153,15 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
         router.post(route('booking.bulk-destroy'), { ids: selected });
     }
 
-    function bulkMarkPaid() {
-        if (!selected.length) return;
-        router.post(route('booking.bulk-mark-paid'), { ids: selected }, {
-            onSuccess: () => setSelected([]),
+    function submitMarkPaid(e) {
+        e.preventDefault();
+        if (!selected.length || !payMethod) return;
+        router.post(route('booking.bulk-mark-paid'), {
+            ids: selected,
+            payment_method: payMethod,
+            date: payDate,
+        }, {
+            onSuccess: () => { setSelected([]); setMarkPaidOpen(false); },
         });
     }
 
@@ -366,11 +379,55 @@ function BookingIndex({ bookings, statuses, paymentStatuses, filters = {} }) {
                                 </Button>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                {can('edit booking') && (
-                                    <Button variant="success" size="sm" onClick={bulkMarkPaid}>
-                                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                                        {t('Mark as Paid')}
-                                    </Button>
+                                {can('create booking payment') && (
+                                    <Dialog
+                                        open={markPaidOpen}
+                                        onOpenChange={(o) => {
+                                            // Reset to a fresh date + default method each time the
+                                            // dialog opens, so a prior unsubmitted choice can't carry over.
+                                            if (o) {
+                                                setPayDate(new Date().toISOString().slice(0, 10));
+                                                setPayMethod(paymentMethods?.[0]?.value ?? '');
+                                            }
+                                            setMarkPaidOpen(o);
+                                        }}
+                                    >
+                                        <DialogTrigger asChild>
+                                            <Button variant="success" size="sm">
+                                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                {t('Mark as Paid')}
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>{t('Mark as Paid')}</DialogTitle>
+                                            </DialogHeader>
+                                            <form onSubmit={submitMarkPaid} className="space-y-4">
+                                                <p className="text-sm text-muted-foreground">
+                                                    {selected.length} {t('booking(s) selected')}. {t('Each unpaid booking will be recorded as paid for its remaining balance with the method below.')}
+                                                </p>
+                                                <div className="space-y-1">
+                                                    <Label htmlFor="mp-date">{t('Date')}</Label>
+                                                    <Input id="mp-date" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label>{t('Method')}</Label>
+                                                    <Select value={payMethod} onValueChange={setPayMethod}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {paymentMethods.map((m) => (
+                                                                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button type="button" variant="outline" onClick={() => setMarkPaidOpen(false)}>{t('Close')}</Button>
+                                                    <Button type="submit" variant="success" disabled={!payMethod}>{t('Mark as Paid')}</Button>
+                                                </div>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
                                 )}
                                 {can('delete booking') && (
                                     <Button variant="destructive" size="sm" onClick={bulkDelete}>
