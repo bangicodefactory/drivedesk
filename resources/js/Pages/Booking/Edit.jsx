@@ -62,6 +62,10 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
     const discount = watch('discount');
 
     const apiWriting = useRef(false);
+    // Unlike create, edit loads a SAVED per-day price/amount. Skip the first
+    // vehicle/date effect so opening a booking doesn't overwrite that saved
+    // price with the vehicle's stock rate — only recompute on a real change.
+    const isFirstRateEffect = useRef(true);
 
     // dayChange mirrors create: false = recompute from the vehicle's stock rate
     // and auto-fill the per-day price (vehicle/date change); true = keep the
@@ -98,6 +102,9 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
     // Vehicle/date change → recompute from the vehicle's stock rate and auto-fill
     // the per-day price.
     useEffect(() => {
+        // Preserve the saved price/amount on initial load; recompute only when
+        // the user actually changes the vehicle or dates afterwards.
+        if (isFirstRateEffect.current) { isFirstRateEffect.current = false; return; }
         if (apiWriting.current) return;
         recalculate(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
