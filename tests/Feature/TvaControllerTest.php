@@ -30,6 +30,24 @@ class TvaControllerTest extends TestCase
 
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
+
+        $this->seedCompanySettings($this->owner->id);
+    }
+
+    /**
+     * Company identity the invoice generator reads (ice/rc/if/company_*).
+     * settingsKeys() has no defaults for these, so seed them per tenant or
+     * generation throws "Undefined array key" the moment it creates an invoice.
+     */
+    private function seedCompanySettings(int $parentId): void
+    {
+        $company = [
+            'company_name' => 'Test Co', 'company_address' => '1 Rue Test',
+            'ice' => 'ICE-1', 'rc' => 'RC-1', 'if' => 'IF-1',
+        ];
+        foreach ($company as $name => $value) {
+            \App\Models\Setting::create(['name' => $name, 'value' => $value, 'parent_id' => $parentId]);
+        }
     }
 
     // ── unauthenticated ───────────────────────────────────────────────────────
@@ -477,8 +495,7 @@ class TvaControllerTest extends TestCase
     {
         $this->actingAs($this->owner)
             ->post(route('tva.generate'), [
-                'month'      => now()->format('Y-m'),
-                'tva_number' => 0,
+                'month' => now()->format('Y-m'),
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -498,8 +515,7 @@ class TvaControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->post(route('tva.generate'), [
-                'month'      => $monthStart->format('Y-m'),
-                'tva_number' => 10,
+                'month' => $monthStart->format('Y-m'),
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -617,21 +633,128 @@ class TvaControllerTest extends TestCase
             );
     }
 
-    // ── TvaController::generateMonthlyTva — with tva_number param ────────────
+    // ── TvaController::generateMonthlyTva — per-year numbering ───────────────
 
-    public function test_generate_monthly_tva_uses_provided_tva_number_as_starting_counter(): void
+    /** Create a booking (for the owner) with a payment on the given date. */
+    private function bookingPaymentOn(string $date, float $amount = 120.00): void
     {
-        $month = now()->format('Y-m');
+        $booking = \App\Models\Booking::factory()->create(['parent_id' => $this->owner->id]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id,
+            'parent_id'  => $this->owner->id,
+            'date'       => $date,
+            'amount'     => $amount,
+        ]);
+    }
+
+    public function test_generate_numbers_invoices_sequentially_within_a_year(): void
+    {
+        // Two payments in January, one in February of the same year.
+        $this->bookingPaymentOn('2024-01-10');
+        $this->bookingPaymentOn('2024-01-20');
+        $this->bookingPaymentOn('2024-02-05');
+
+        // Generating January issues 1 and 2…
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '1', 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '2', 'deleted_at' => null]);
+
+        // …and February continues from the year's running total (→ 3).
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-02'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '3', 'deleted_at' => null]);
+    }
+
+    public function test_generate_resets_numbering_to_one_each_year(): void
+    {
+        $this->bookingPaymentOn('2024-01-10');
+        $this->bookingPaymentOn('2025-01-10');
 
         $this->actingAs($this->owner)
-            ->post(route('tva.generate'), [
-                'month'      => $month,
-                'tva_number' => 50,
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
 
-        // No payments exist, so no TVAs created, but the route should succeed
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2025-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // The first invoice of 2024 and the first of 2025 both start at 1.
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '1', 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2025, 'facture_number' => '1', 'deleted_at' => null]);
+    }
+
+    public function test_generate_regenerating_a_month_does_not_inflate_its_own_numbers(): void
+    {
+        // Two payments in the same month; regenerating must not double-count the
+        // records it just replaced (they're soft-deleted before renumbering).
+        $this->bookingPaymentOn('2024-03-10');
+        $this->bookingPaymentOn('2024-03-20');
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-03'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Regenerate the same month.
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-03'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Still numbered 1 and 2 — not 3 and 4.
+        $active = Tva::whereNull('deleted_at')->where('parent_id', $this->owner->id)->pluck('facture_number')->sort()->values()->all();
+        $this->assertEquals(['1', '2'], $active);
+    }
+
+    public function test_generate_numbers_by_booking_parent_not_generating_user(): void
+    {
+        // IST-230 Finding 1: numbering must follow the BOOKING's business, not
+        // the role/account of whoever clicks "Generate". Regression guard for
+        // the old behaviour where a super admin (parentId() = own id) reset the
+        // counter to 0 and produced duplicate facture numbers.
+
+        // Owner's business gets a January payment; the owner generates → 1.
+        $this->bookingPaymentOn('2024-01-10');
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // A super admin (parentId() resolves to their OWN id, not the owner's)
+        // generates February for the same business.
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('manage tva');
+        $this->seedCompanySettings($superAdmin->id);
+
+        $this->bookingPaymentOn('2024-02-10');
+        $this->actingAs($superAdmin)
+            ->post(route('tva.generate'), ['month' => '2024-02'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // February continues the OWNER's sequence (→ 2), independent of who ran it…
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '2', 'deleted_at' => null]);
+        // …and there is exactly one '1' for the business — no duplicate.
+        $this->assertEquals(1, Tva::whereNull('deleted_at')
+            ->where('parent_id', $this->owner->id)
+            ->where('facture_number', '1')->count());
+    }
+
+    public function test_generate_targets_the_requested_month_regardless_of_today(): void
+    {
+        // Guards the createFromFormat('!Y-m', ...) day-pinning: generating a
+        // short month (Feb) must not roll over to the next month when "today"
+        // is a day that February lacks (e.g. the 30th).
+        $this->bookingPaymentOn('2024-02-15');
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-02'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // The invoice lands in February (month 2), not March.
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'month' => 2, 'deleted_at' => null]);
+        $this->assertDatabaseMissing('tvas', ['parent_id' => $this->owner->id, 'month' => 3, 'deleted_at' => null]);
     }
 
     // ── bulkDownload (facture PDF generation) ──────────────────────────────────
