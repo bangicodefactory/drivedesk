@@ -380,7 +380,18 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 {can('create booking payment') && (
-                                    <Dialog open={markPaidOpen} onOpenChange={setMarkPaidOpen}>
+                                    <Dialog
+                                        open={markPaidOpen}
+                                        onOpenChange={(o) => {
+                                            // Reset to a fresh date + default method each time the
+                                            // dialog opens, so a prior unsubmitted choice can't carry over.
+                                            if (o) {
+                                                setPayDate(new Date().toISOString().slice(0, 10));
+                                                setPayMethod(paymentMethods?.[0]?.value ?? '');
+                                            }
+                                            setMarkPaidOpen(o);
+                                        }}
+                                    >
                                         <DialogTrigger asChild>
                                             <Button variant="success" size="sm">
                                                 <CheckCircle2 className="mr-2 h-4 w-4" />
