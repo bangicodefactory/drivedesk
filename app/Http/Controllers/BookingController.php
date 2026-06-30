@@ -78,8 +78,16 @@ class BookingController extends Controller
 
         [$search, $month] = $this->bookingFilters($request);
 
-        $bookings = $this->filteredBookings($request)
-            ->paginate(25)
+        $query = $this->filteredBookings($request);
+
+        // When a month is selected, show every matching booking on a single
+        // page (no pagination); otherwise keep the default 25 per page. Using
+        // the full count as the page size preserves the paginator shape the
+        // frontend consumes, so the list and <Pagination> need no changes.
+        $perPage = $month !== '' ? max($query->count(), 1) : 25;
+
+        $bookings = $query
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Booking/Index', [
