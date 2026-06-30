@@ -573,8 +573,8 @@
                             <td class="quantity">{{ $item->quantity }}</td>
                             {{-- <td class="quantity">8</td> --}}
 
-                            {{-- <td class="rate">{{ number_format($item->unit_price, 2) }} MAD</td> --}}
-                            <td class="rate">{{ $item->total_ttc / 8 }} MAD</td>
+                            {{-- P.U (TTC per unit) so QTY × P.U reconciles with the TOTAL column. --}}
+                            <td class="rate">{{ number_format($item->quantity > 0 ? $item->total_ttc / $item->quantity : $item->total_ttc, 2) }} MAD</td>
                             <td class="amount">{{ number_format($item->total_ttc, 2) }} MAD</td>
                         </tr>
                     @endforeach
