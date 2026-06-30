@@ -379,7 +379,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                 </Button>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                {can('edit booking') && (
+                                {can('create booking payment') && (
                                     <Dialog open={markPaidOpen} onOpenChange={setMarkPaidOpen}>
                                         <DialogTrigger asChild>
                                             <Button variant="success" size="sm">
