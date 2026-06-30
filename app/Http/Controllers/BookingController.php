@@ -941,6 +941,16 @@ class BookingController extends Controller
                     $errors[] = "date retour invalide '{$endDate}'";
                 }
 
+                // Reject genuinely ambiguous string dates (parse validly as both
+                // d/m/Y and m/d/Y to different days) instead of silently guessing
+                // the locale — the cause of the day/month-swapped imports (IST-231).
+                if ($startDateParsed && $this->isAmbiguousDateString($startDate)) {
+                    $errors[] = "date début ambiguë '{$startDate}' — utilisez AAAA-MM-JJ";
+                }
+                if ($endDateParsed && $this->isAmbiguousDateString($endDate)) {
+                    $errors[] = "date retour ambiguë '{$endDate}' — utilisez AAAA-MM-JJ";
+                }
+
                 $startTimeFmt = $this->parseExcelTime($startTime) ?? '00:00:00';
                 $endTimeFmt   = $this->parseExcelTime($endTime) ?? '00:00:00';
 
@@ -1074,6 +1084,36 @@ class BookingController extends Controller
             : "Aucune réservation importée.";
 
         return redirect()->route('booking.index')->with('success', $msg);
+    }
+
+    /**
+     * True when a string date is genuinely ambiguous — it parses validly as
+     * BOTH d/m/Y and m/d/Y (or the dash variants) to DIFFERENT calendar dates,
+     * e.g. "5/3/2026" (5 Mar vs 3 May). Such rows are rejected on import so a
+     * locale mix-up can't silently swap day/month (IST-231). Excel date-serial
+     * cells (numeric) and ISO YYYY-MM-DD strings are never ambiguous.
+     */
+    private function isAmbiguousDateString($value): bool
+    {
+        if (!is_string($value)) {
+            return false;
+        }
+        $value = trim($value);
+        if ($value === '') {
+            return false;
+        }
+
+        foreach ([['d/m/Y', 'm/d/Y'], ['d-m-Y', 'm-d-Y']] as [$dmy, $mdy]) {
+            $a = \DateTime::createFromFormat($dmy, $value);
+            $b = \DateTime::createFromFormat($mdy, $value);
+            if ($a && $a->format($dmy) === $value
+                && $b && $b->format($mdy) === $value
+                && $a->format('Y-m-d') !== $b->format('Y-m-d')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function parseExcelDate($value): ?string
