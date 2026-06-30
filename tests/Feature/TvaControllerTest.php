@@ -800,4 +800,39 @@ class TvaControllerTest extends TestCase
             }
         }
     }
+
+    // ── invoice PDF template: unit price (IST-234) ───────────────────────────
+
+    public function test_invoice_pdf_unit_price_reconciles_with_quantity(): void
+    {
+        // IST-234: P.U must be total_ttc / quantity (so QTY × P.U = TOTAL),
+        // not the old hardcoded total_ttc / 8 (which printed 100 for an 800 TTC).
+        $tva = (object) [
+            'facture_number' => '400',
+            'facture_date'   => '2026-05-03',
+            'created_at'     => now(),
+            'client_name'    => 'JOSE ANTONIO ESPEJO',
+            'client_address' => '',
+            'payment_method' => 'Carte',
+            'montant_ttc'    => 800,
+            'total_ht'       => 666.67,
+            'tva'            => 133.33,
+            'items'          => [
+                (object) ['description' => 'SEAT IBIZA - 74653/A/44', 'details' => '', 'quantity' => 2, 'unit_price' => 400, 'total_ttc' => 800],
+            ],
+        ];
+        $settings = [
+            'company_name' => 'Co', 'company_address' => 'A', 'company_email' => 'e',
+            'company_phone' => 'p', 'ice' => 'i', 'if' => 'f', 'patente' => 'pa', 'rc' => 'rc',
+        ];
+
+        $html = view('pdf.invoice1', [
+            'tva' => $tva, 'settings' => $settings,
+            'logoPath' => null, 'ttcInWords' => 'Huit cents', 'clientIce' => '', 'signaturePath' => null,
+        ])->render();
+
+        // 800 / 2 = 400.00 (TTC per unit), and NOT the old 800 / 8 = 100.
+        $this->assertStringContainsString('400.00 MAD', $html);
+        $this->assertStringNotContainsString('100 MAD', $html);
+    }
 }
