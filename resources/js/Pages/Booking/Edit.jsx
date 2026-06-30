@@ -63,7 +63,10 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
     const apiWriting = useRef(false);
 
-    function recalculate() {
+    // dayChange mirrors create: false = recompute from the vehicle's stock rate
+    // and auto-fill the per-day price (vehicle/date change); true = keep the
+    // manually typed per-day price (price/addon/place edit) so it stays editable.
+    function recalculate(dayChange = false) {
         if (!vehicleId || !startDt || !endDt) return;
         axios.get(route('vehicle.rate.calculation'), {
             params: {
@@ -74,6 +77,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                 pickup_place: getValues('pickup_address'),
                 drop_off_place: getValues('drop_off_address'),
                 daily_price: getValues('daily_price'),
+                daychange: dayChange ? 1 : 0,
             },
         }).then((r) => {
             const res = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
@@ -82,19 +86,30 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
             const finalTotal = total - disc;
             apiWriting.current = true;
             setValue('amount', finalTotal);
-            if (res.daily_price) setValue('daily_price', res.daily_price);
+            // Auto-fill the per-day price from the vehicle's rate only when it's
+            // NOT a manual edit, so a typed override is preserved (create parity).
+            if (!dayChange && res.daily_price) setValue('daily_price', res.daily_price);
             setValue('details', JSON.stringify(res));
             apiWriting.current = false;
             setPriceBreakdown({ ...res, finalTotal, discountAmount: disc });
         }).catch(() => {});
     }
 
-    // Recalculate when vehicle/dates/addons/places change — NOT daily_price (API sets that)
+    // Vehicle/date change → recompute from the vehicle's stock rate and auto-fill
+    // the per-day price.
     useEffect(() => {
         if (apiWriting.current) return;
-        recalculate();
+        recalculate(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [vehicleId, startDt, endDt, selectedAddons, pickupId, dropoffId]);
+    }, [vehicleId, startDt, endDt]);
+
+    // Addons / pickup / drop-off change → recompute but PRESERVE a manually
+    // entered per-day price.
+    useEffect(() => {
+        if (apiWriting.current) return;
+        recalculate(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAddons, pickupId, dropoffId]);
 
     // Refresh the available-vehicle list whenever the dates change, mirroring the
     // create page. `booking_id` is passed so THIS booking isn't counted as a
@@ -244,7 +259,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
                             <div className="space-y-1">
                                 <Label htmlFor="daily_price">{t('Price per day')}</Label>
-                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} onBlur={() => recalculate()} />
+                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} onBlur={() => recalculate(true)} />
                             </div>
 
                             <div className="space-y-1">
