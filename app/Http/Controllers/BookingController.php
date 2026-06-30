@@ -714,7 +714,11 @@ class BookingController extends Controller
 
     public function bulkMarkPaid(Request $request)
     {
-        if (!\Auth::user()->can('edit booking')) {
+        // Records payments + factures (same as the single-payment flow), so it
+        // is gated on the same permission as paymentStore, not merely 'edit
+        // booking' — otherwise edit-only users could create financial records
+        // in bulk that they can't create individually.
+        if (!\Auth::user()->can('create booking payment')) {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
 

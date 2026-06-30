@@ -589,15 +589,19 @@ class BookingControllerTest extends TestCase
         $this->assertSame(0, BookingPayment::where('booking_id', $booking->id)->count());
     }
 
-    public function test_bulk_mark_paid_requires_edit_permission(): void
+    public function test_bulk_mark_paid_requires_create_booking_payment_permission(): void
     {
-        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        // Bulk now creates payments + factures, so 'edit booking' alone is NOT
+        // enough — it requires 'create booking payment' like the single flow.
+        $editOnly = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $editOnly->givePermissionTo('edit booking');
         $booking = $this->makeBooking(['payment_status' => 'impaye']);
 
-        $this->actingAs($noPerms)
+        $this->actingAs($editOnly)
             ->post(route('booking.bulk-mark-paid'), ['ids' => [$booking->id], 'payment_method' => 'Carte'])
             ->assertSessionHas('error');
 
+        $this->assertSame(0, BookingPayment::where('booking_id', $booking->id)->count());
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'impaye']);
     }
 
