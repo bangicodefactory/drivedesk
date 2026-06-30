@@ -31,15 +31,22 @@ class TvaControllerTest extends TestCase
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
 
-        // Company identity the invoice generator reads (ice/rc/if/company_*).
-        // settingsKeys() has no defaults for these, so seed them or generation
-        // throws "Undefined array key" the moment it creates a real invoice.
+        $this->seedCompanySettings($this->owner->id);
+    }
+
+    /**
+     * Company identity the invoice generator reads (ice/rc/if/company_*).
+     * settingsKeys() has no defaults for these, so seed them per tenant or
+     * generation throws "Undefined array key" the moment it creates an invoice.
+     */
+    private function seedCompanySettings(int $parentId): void
+    {
         $company = [
             'company_name' => 'Test Co', 'company_address' => '1 Rue Test',
             'ice' => 'ICE-1', 'rc' => 'RC-1', 'if' => 'IF-1',
         ];
         foreach ($company as $name => $value) {
-            \App\Models\Setting::create(['name' => $name, 'value' => $value, 'parent_id' => $this->owner->id]);
+            \App\Models\Setting::create(['name' => $name, 'value' => $value, 'parent_id' => $parentId]);
         }
     }
 
@@ -700,6 +707,54 @@ class TvaControllerTest extends TestCase
         // Still numbered 1 and 2 — not 3 and 4.
         $active = Tva::whereNull('deleted_at')->where('parent_id', $this->owner->id)->pluck('facture_number')->sort()->values()->all();
         $this->assertEquals(['1', '2'], $active);
+    }
+
+    public function test_generate_numbers_by_booking_parent_not_generating_user(): void
+    {
+        // IST-230 Finding 1: numbering must follow the BOOKING's business, not
+        // the role/account of whoever clicks "Generate". Regression guard for
+        // the old behaviour where a super admin (parentId() = own id) reset the
+        // counter to 0 and produced duplicate facture numbers.
+
+        // Owner's business gets a January payment; the owner generates → 1.
+        $this->bookingPaymentOn('2024-01-10');
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // A super admin (parentId() resolves to their OWN id, not the owner's)
+        // generates February for the same business.
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('manage tva');
+        $this->seedCompanySettings($superAdmin->id);
+
+        $this->bookingPaymentOn('2024-02-10');
+        $this->actingAs($superAdmin)
+            ->post(route('tva.generate'), ['month' => '2024-02'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // February continues the OWNER's sequence (→ 2), independent of who ran it…
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'facture_number' => '2', 'deleted_at' => null]);
+        // …and there is exactly one '1' for the business — no duplicate.
+        $this->assertEquals(1, Tva::whereNull('deleted_at')
+            ->where('parent_id', $this->owner->id)
+            ->where('facture_number', '1')->count());
+    }
+
+    public function test_generate_targets_the_requested_month_regardless_of_today(): void
+    {
+        // Guards the createFromFormat('!Y-m', ...) day-pinning: generating a
+        // short month (Feb) must not roll over to the next month when "today"
+        // is a day that February lacks (e.g. the 30th).
+        $this->bookingPaymentOn('2024-02-15');
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-02'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // The invoice lands in February (month 2), not March.
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'year' => 2024, 'month' => 2, 'deleted_at' => null]);
+        $this->assertDatabaseMissing('tvas', ['parent_id' => $this->owner->id, 'month' => 3, 'deleted_at' => null]);
     }
 
     // ── bulkDownload (facture PDF generation) ──────────────────────────────────
