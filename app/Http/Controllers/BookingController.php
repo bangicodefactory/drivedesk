@@ -106,6 +106,7 @@ class BookingController extends Controller
             ]),
             'statuses'       => collect(Booking::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
             'paymentStatuses' => collect(Booking::$paymentStatus)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
+            'paymentMethods' => collect(BookingPayment::$paymentMethod)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
         ]);
     }
 
@@ -713,20 +714,153 @@ class BookingController extends Controller
 
     public function bulkMarkPaid(Request $request)
     {
-        if (!\Auth::user()->can('edit booking')) {
+        // Records payments + factures (same as the single-payment flow), so it
+        // is gated on the same permission as paymentStore, not merely 'edit
+        // booking' — otherwise edit-only users could create financial records
+        // in bulk that they can't create individually.
+        if (!\Auth::user()->can('create booking payment')) {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
 
-        $ids = $request->input('ids', []);
-        if (empty($ids)) {
-            return redirect()->back()->with('error', __('No bookings selected.'));
+        $validated = $request->validate([
+            'ids'            => 'required|array|min:1',
+            'ids.*'          => 'integer',
+            'payment_method' => 'required|string',
+            'date'           => 'nullable|date',
+        ]);
+
+        $date     = $validated['date'] ?? now()->toDateString();
+        $method   = $validated['payment_method'];
+        $isCash   = strtolower($method) === 'espece';
+
+        $paid = 0;
+        $skippedAlreadyPaid = 0;
+        $skippedCash = 0;
+
+        DB::transaction(function () use ($validated, $date, $method, $isCash, &$paid, &$skippedAlreadyPaid, &$skippedCash) {
+            // Tenant-scoped: only the caller's own bookings can be touched.
+            $bookings = Booking::whereIn('id', $validated['ids'])
+                ->where('parent_id', parentId())
+                ->get();
+
+            foreach ($bookings as $booking) {
+                $remaining = round((float) $booking->getTotalDueAmount(), 2);
+
+                // Already fully paid → nothing to record.
+                if ($remaining <= 0) {
+                    $skippedAlreadyPaid++;
+                    continue;
+                }
+
+                // Same rule as the single-payment flow: cash over 5000 is refused.
+                if ($isCash && $remaining > 5000) {
+                    $skippedCash++;
+                    continue;
+                }
+
+                // Records the payment for the outstanding balance, the matching
+                // facture, and flips the status — identical to paymentStore.
+                $this->recordBookingPayment($booking, $remaining, $method, $date);
+                $paid++;
+            }
+        });
+
+        $msg = __(':count booking(s) marked as paid.', ['count' => $paid]);
+        $notes = [];
+        if ($skippedAlreadyPaid > 0) {
+            $notes[] = __(':count already fully paid', ['count' => $skippedAlreadyPaid]);
+        }
+        if ($skippedCash > 0) {
+            $notes[] = __(':count skipped (cash over 5000)', ['count' => $skippedCash]);
+        }
+        if (!empty($notes)) {
+            $msg .= ' — ' . implode(', ', $notes);
         }
 
-        Booking::whereIn('id', $ids)
-            ->where('parent_id', parentId())
-            ->update(['payment_status' => 'paye']);
+        return redirect()->route('booking.index')->with('success', $msg);
+    }
 
-        return redirect()->route('booking.index')->with('success', __('Selected bookings marked as paid.'));
+    /**
+     * Record one payment on a booking plus its matching facture (TVA), then
+     * update the booking's payment status. Shared by the single-payment flow
+     * (paymentStore) and the bulk "mark as paid" action so the two stay
+     * identical. Validation (amount > 0, cash <= 5000, permissions) is the
+     * caller's responsibility.
+     *
+     * @param int|null $quantity Optional invoice quantity (days); derived from
+     *                           the booking dates + amount when null.
+     */
+    private function recordBookingPayment(Booking $booking, float $amount, string $paymentMethod, string $date, ?string $notes = null, ?int $quantity = null): BookingPayment
+    {
+        $payment = new BookingPayment();
+        $payment->booking_id = $booking->id;
+        $payment->amount = $amount;
+        $payment->date = $date;
+        $payment->payment_method = $paymentMethod;
+        $payment->notes = $notes;
+        $payment->parent_id = parentId();
+        $payment->save();
+
+        // Status from the freshly-summed payments (includes the row just saved).
+        $status = Booking::find($booking->id)->getTotalDueAmount() <= 0 ? 'paye' : 'partiellement_paye';
+
+        $setting = settings();
+        $user = User::find($booking->driver);
+        $driver1 = Driver::where('user_id', $booking->driver)->first();
+
+        if ($quantity && $quantity > 0) {
+            $totalDays = $quantity;
+        } else {
+            $startDate = Carbon::parse($booking->start_date);
+            $endDate = Carbon::parse($booking->end_date);
+            $days = max(1, $startDate->diffInDays($endDate));
+            $bookingAmount = (float) $booking->amount;
+            $totalDays = $bookingAmount > 0 ? max(1, (int) round(($amount * $days) / $bookingAmount)) : $days;
+        }
+
+        $vd = $booking->vehicleDetails();
+        $vehicleName = $vd->name ?? '';
+        $vehiclePlate = $vd->license_plate ?? '';
+
+        $totalHT = round($amount / 1.2, 2);
+        $tvaAmount = round($amount - $totalHT, 2);
+
+        // Global last facture number (matches paymentStore; per-year unification
+        // is tracked in IST-230).
+        $lastFacture = Tva::orderByDesc('id')->first();
+        $lastNumber = ($lastFacture && preg_match('/\d+$/', (string) $lastFacture->facture_number, $matches)) ? (int) $matches[0] : 0;
+        $factureNumber = $lastNumber + 1;
+
+        $tva = new Tva();
+        $tva->facture_number = $factureNumber;
+        $tva->facture_date = $date;
+        $tva->idpaiment = $payment->id;
+        $tva->client_name = optional($user)->name ?? '';
+        $tva->client_address = $driver1 ? $driver1->address : '';
+        $tva->company_name = $setting['company_name'];
+        $tva->company_address = $setting['company_address'];
+        $tva->designation = $vehicleName . '-' . $vehiclePlate;
+        $tva->quantity = (float) $totalDays;
+        $tva->total_ht = number_format($totalHT, 2, '.', '');
+        $tva->tva = number_format($tvaAmount, 2, '.', '');
+        $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
+        $tva->montant_ttc = number_format($amount, 2, '.', '');
+        $tva->ice_number = $setting['ice'] ?? null;
+        $tva->rc_number = $setting['rc'] ?? null;
+        $tva->nif_number = $setting['if'] ?? null;
+        $tva->parent_id = parentId();
+        $tva->booking_id = $booking->id;
+        $tva->generated_date = now()->toDateString();
+        $tva->total_amount = number_format($booking->amount, 2, '.', '');
+        $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
+        $tva->payment_method = $paymentMethod;
+        // DB column is required (no default); keep consistent with seeder usage.
+        $tva->status = 1;
+        $tva->save();
+
+        Booking::statusChange($booking->id, $status);
+
+        return $payment;
     }
 
     /**
@@ -1200,93 +1334,18 @@ class BookingController extends Controller
                 }
                 return redirect()->back()->withErrors(['amount' => $msg]);
             }
-            $payment = new BookingPayment();
-            $payment->booking_id = $id;
-            $payment->amount = $numericAmount;
-            $payment->date = $request->date;
-            $payment->payment_method = $request->payment_method;
-            $payment->notes = $request->notes;
-            $payment->parent_id = parentId();
-            $payment->save();
             $booking = Booking::find($id);
-            if ($booking->getTotalDueAmount() <= 0) {
-                $status = 'paye';
-            } else {
-                $status = 'partiellement_paye';
-            }
+            // Records the payment + facture and updates the booking status.
+            // Shared with the bulk "mark as paid" action so the two stay identical.
+            $this->recordBookingPayment(
+                $booking,
+                $numericAmount,
+                $request->payment_method,
+                $request->date,
+                $request->notes,
+                ($request->has('quantity') && $request->quantity > 0) ? (int) $request->quantity : null
+            );
 
-            // 🔹 Call Settings table
-            $setting = settings();
-            // 🔹 User & driver
-            $user = User::find($booking->driver);
-            $driver1 = Driver::where('user_id', $booking->driver)->first();
-            // 🔹 TVA Calculation. 🔹
-            
-            // Use quantity from request if provided, otherwise calculate
-            if ($request->has('quantity') && $request->quantity > 0) {
-                $totalDays = (int)$request->quantity;
-            } else {
-                $startDate = Carbon::parse($booking->start_date);
-                $endDate = Carbon::parse($booking->end_date);
-                $totalDays = max(1, $startDate->diffInDays($endDate));
-                // Calcul totaldays by numericAmount
-                $totalDaysAmount = ($numericAmount * $totalDays ) / $booking->amount;
-                $totalDays = max(1, round($totalDaysAmount));
-            }
-
-
-            // vehicle_details is cast to object in Booking model; cast to array for safe key access
-            $vehicleDetailsObj = $booking->vehicleDetails();
-            $vehicle_name = $vehicleDetailsObj->name ?? '';
-            $vehicle_license_plate = $vehicleDetailsObj->license_plate ?? '';
-
-            // $totalHT = round($numericAmount * 0.8, 2);
-            // $tvaAmount = round($numericAmount * 0.2, 2);
-            $totalHT = round($numericAmount / 1.2, 2);
-            $tvaAmount = round($numericAmount - $totalHT, 2);
-
-
-            // Global last facture number (ignoring tenant scoping per new requirement)
-            $lastFacture = Tva::orderByDesc('id')->first();
-            $lastNumber = 0;
-            if ($lastFacture && preg_match('/\d+$/', $lastFacture->facture_number, $matches)) {
-                $lastNumber = (int)$matches[0];
-            }
-            $factureCounter = $lastNumber;
-            $factureCounter++;
-            $factureNumber = $factureCounter;
-
-
-            $tva = new Tva();
-            $tva->facture_number = $factureNumber;
-            $tva->facture_date = $request->date;
-            $tva->idpaiment = $payment->id;
-            $tva->client_name = $user->name;
-            $tva->client_address = $driver1 ? $driver1->address : '';
-            $tva->company_name = $setting['company_name'];
-            $tva->company_address = $setting['company_address'];
-            $tva->designation = $vehicle_name . '-' . $vehicle_license_plate;
-            $tva->quantity = (float)$totalDays;
-            $tva->total_ht = number_format($totalHT, 2, '.', '');
-            $tva->tva = number_format($tvaAmount, 2, '.', '');
-            $tva->unit_price_ht = number_format($totalDays > 0 ? round($totalHT / $totalDays, 2) : 0, 2, '.', '');
-            $tva->montant_ttc = number_format($numericAmount, 2, '.', '');
-            $tva->ice_number = $setting['ice'] ?? null;
-            $tva->rc_number = $setting['rc'] ?? null;
-            $tva->nif_number = $setting['if'] ?? null;
-            $tva->parent_id = parentId();
-            $tva->booking_id = $booking->id;
-            $tva->generated_date = now()->toDateString();
-            $tva->total_amount = number_format($booking->amount, 2, '.', '');
-            $tva->tva_amount = number_format($tvaAmount, 2, '.', '');
-            $tva->payment_method = $request->payment_method;
-            // DB column is required (no default); keep consistent with seeder usage.
-            $tva->status = 1;
-            $tva->save();
-
-
-
-            Booking::statusChange($booking->id, $status);
             if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
                 return response()->json(['status' => 'success', 'message' => __('Booking payment successfully created.')]);
             }
