@@ -19,7 +19,18 @@ return [
         // Public marketing landing + "Book a demo" gateway at /. Off for normal
         // tenants (the app is internal-only); on for demo/showcase clients.
         'demo_gateway'    => false,
+        // Split a cash payment over `cash_payment_max` into several receipts
+        // each within the cap (Moroccan CGI art. 193 per-day cash ceiling),
+        // instead of rejecting it. Off = today's behavior (reject).
+        'cash_split'      => false,
     ],
+
+    /*
+     * Legal ceiling (MAD) for a single cash payment/receipt. Above it, cash is
+     * either rejected (cash_split off) or split into receipts each within this
+     * cap (cash_split on). Read via config('client.cash_payment_max', 5000).
+     */
+    'cash_payment_max' => 5000,
 
     /*
      * Interface → concrete bindings resolved by ClientServiceProvider.

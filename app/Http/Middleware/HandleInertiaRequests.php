@@ -122,6 +122,7 @@ class HandleInertiaRequests extends Middleware
             'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
             'supported_locales' => config('client.supported_locales', []),
             'features'          => config('client.features', []),
+            'cash_max'          => (float) config('client.cash_payment_max', 5000),
         ];
     }
 
