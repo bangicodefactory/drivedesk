@@ -21,4 +21,5 @@ return [
     'tva_renumber'     => env('FEATURE_TVA_RENUMBER', null),
     'signatures'       => env('FEATURE_SIGNATURES', null),
     'demo_gateway'     => env('FEATURE_DEMO_GATEWAY', null),
+    'cash_split'       => env('FEATURE_CASH_SPLIT', null),
 ];
