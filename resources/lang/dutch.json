@@ -618,5 +618,9 @@
   "System IP": "Systeem-IP",
   "State": "Staat",
   "Country": "Land",
-  "System": "Systeem"
+  "System": "Systeem",
+  "This cash payment exceeds :max MAD and will be split into :count receipts.": "Deze contante betaling overschrijdt :max MAD en wordt gesplitst in :count bonnen.",
+  "Confirm split": "Splitsing bevestigen",
+  "Split into :count receipts.": "Gesplitst in :count bonnen.",
+  "Receipt": "Bon"
 }
