@@ -12,6 +12,7 @@ use App\Models\Place;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Tva;
+use App\Services\CashPaymentSplitter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -732,12 +733,14 @@ class BookingController extends Controller
         $date     = $validated['date'] ?? now()->toDateString();
         $method   = $validated['payment_method'];
         $isCash   = strtolower($method) === 'espece';
+        $cashMax  = (float) config('client.cash_payment_max', 5000);
+        $splitCash = $isCash && feature('cash_split');
 
         $paid = 0;
         $skippedAlreadyPaid = 0;
         $skippedCash = 0;
 
-        DB::transaction(function () use ($validated, $date, $method, $isCash, &$paid, &$skippedAlreadyPaid, &$skippedCash) {
+        DB::transaction(function () use ($validated, $date, $method, $isCash, $cashMax, $splitCash, &$paid, &$skippedAlreadyPaid, &$skippedCash) {
             // Tenant-scoped: only the caller's own bookings can be touched.
             $bookings = Booking::whereIn('id', $validated['ids'])
                 ->where('parent_id', parentId())
@@ -752,9 +755,15 @@ class BookingController extends Controller
                     continue;
                 }
 
-                // Same rule as the single-payment flow: cash over 5000 is refused.
-                if ($isCash && $remaining > 5000) {
-                    $skippedCash++;
+                // Same rule as the single-payment flow: cash over the ceiling is
+                // either split into compliant receipts (cash_split on) or refused.
+                if ($isCash && $remaining > $cashMax) {
+                    if (!$splitCash) {
+                        $skippedCash++;
+                        continue;
+                    }
+                    $this->recordSplitCashPayment($booking, $remaining, $method, $date, null, null);
+                    $paid++;
                     continue;
                 }
 
@@ -861,6 +870,62 @@ class BookingController extends Controller
         Booking::statusChange($booking->id, $status);
 
         return $payment;
+    }
+
+    /**
+     * Rental days a single facture should show for a given payment amount:
+     * an explicit override when provided, else proportional to the booking's
+     * total (mirrors the null-quantity branch of recordBookingPayment).
+     */
+    private function deriveInvoiceDays(Booking $booking, float $amount, ?int $quantity): int
+    {
+        if ($quantity && $quantity > 0) {
+            return $quantity;
+        }
+        $startDate = Carbon::parse($booking->start_date);
+        $endDate   = Carbon::parse($booking->end_date);
+        $days      = max(1, $startDate->diffInDays($endDate));
+        $bookingAmount = (float) $booking->amount;
+
+        return $bookingAmount > 0 ? max(1, (int) round(($amount * $days) / $bookingAmount)) : $days;
+    }
+
+    /**
+     * Record a cash payment that exceeds the legal ceiling as several compliant
+     * receipts (each <= cash_payment_max), on distinct days across the rental
+     * period, with the rental days apportioned. Each receipt goes through
+     * recordBookingPayment, so it gets its own BookingPayment + facture and the
+     * booking status is kept in sync — identical to a normal payment.
+     *
+     * @return int Number of receipts created.
+     */
+    private function recordSplitCashPayment(Booking $booking, float $amount, string $paymentMethod, string $date, ?string $notes, ?int $quantity): int
+    {
+        $cashMax   = (float) config('client.cash_payment_max', 5000);
+        $totalDays = $this->deriveInvoiceDays($booking, $amount, $quantity);
+
+        $plan = app(CashPaymentSplitter::class)->plan(
+            $amount,
+            Carbon::parse($booking->start_date),
+            Carbon::parse($booking->end_date),
+            $totalDays,
+            $cashMax
+        );
+
+        DB::transaction(function () use ($booking, $plan, $paymentMethod, $notes) {
+            foreach ($plan as $receipt) {
+                $this->recordBookingPayment(
+                    $booking,
+                    $receipt['amount'],
+                    $paymentMethod,
+                    $receipt['date'],
+                    $notes,
+                    $receipt['days']
+                );
+            }
+        });
+
+        return count($plan);
     }
 
     /**
@@ -1325,16 +1390,42 @@ class BookingController extends Controller
                 }
                 return redirect()->back()->withErrors(['amount' => $msg])->withInput();
             }
-            // Business rule: Cash (Espece) payments cannot exceed 5000
+            // Business rule: Cash (Espece) payments cannot exceed the legal
+            // ceiling. When the cash_split feature is on we split the payment
+            // into receipts each within the cap (Moroccan CGI art. 193) rather
+            // than rejecting it; otherwise the payment is refused as before.
+            $cashMax = (float) config('client.cash_payment_max', 5000);
             $paymentMethodNormalized = strtolower($request->payment_method);
-            if ($paymentMethodNormalized === 'espece' && $request->amount > 5000) {
-                $msg = __('Cash payments over 5000 are not allowed. Please choose another method.');
-                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
-                    return response()->json(['status' => 'error', 'message' => $msg], 422);
-                }
-                return redirect()->back()->withErrors(['amount' => $msg]);
-            }
+            $isCash = $paymentMethodNormalized === 'espece';
             $booking = Booking::find($id);
+
+            if ($isCash && $numericAmount > $cashMax) {
+                if (!feature('cash_split')) {
+                    $msg = __('Cash payments over 5000 are not allowed. Please choose another method.');
+                    if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
+                        return response()->json(['status' => 'error', 'message' => $msg], 422);
+                    }
+                    return redirect()->back()->withErrors(['amount' => $msg]);
+                }
+
+                // Split into several receipts, each <= cashMax, on distinct days
+                // across the rental period, with the rental days apportioned.
+                $count = $this->recordSplitCashPayment(
+                    $booking,
+                    $numericAmount,
+                    $request->payment_method,
+                    $request->date,
+                    $request->notes,
+                    ($request->has('quantity') && $request->quantity > 0) ? (int) $request->quantity : null
+                );
+
+                $msg = __('Split into :count receipts.', ['count' => $count]);
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
+                    return response()->json(['status' => 'success', 'message' => $msg]);
+                }
+                return redirect()->back()->with('success', $msg);
+            }
+
             // Records the payment + facture and updates the booking status.
             // Shared with the bulk "mark as paid" action so the two stay identical.
             $this->recordBookingPayment(
@@ -1353,6 +1444,52 @@ class BookingController extends Controller
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
+    }
+
+    /**
+     * Preview how a cash payment over the ceiling would be split into receipts.
+     * Display-only for the payment dialog; paymentStore recomputes the same plan
+     * (same service, same inputs) as the authoritative source when confirmed.
+     */
+    public function paymentSplitPreview(Request $request, $id)
+    {
+        if (!\Auth::user()->can('create booking payment')) {
+            return response()->json(['message' => __('Permission Denied.')], 403);
+        }
+
+        $booking = Booking::where('parent_id', parentId())->find($id);
+        if (!$booking) {
+            return response()->json(['message' => __('Not found')], 404);
+        }
+
+        $cashMax = (float) config('client.cash_payment_max', 5000);
+        $rawAmount = is_string($request->amount) ? str_replace(',', '.', $request->amount) : $request->amount;
+        $amount = (float) $rawAmount;
+        $method = strtolower((string) $request->payment_method);
+
+        // Only cash over the ceiling with the feature on actually splits.
+        if (!feature('cash_split') || $method !== 'espece' || $amount <= $cashMax) {
+            return response()->json(['split' => false]);
+        }
+
+        $quantity  = ($request->has('quantity') && $request->quantity > 0) ? (int) $request->quantity : null;
+        $totalDays = $this->deriveInvoiceDays($booking, $amount, $quantity);
+
+        $plan = app(CashPaymentSplitter::class)->plan(
+            $amount,
+            Carbon::parse($booking->start_date),
+            Carbon::parse($booking->end_date),
+            $totalDays,
+            $cashMax
+        );
+
+        return response()->json([
+            'split'    => true,
+            'count'    => count($plan),
+            'total'    => round($amount, 2),
+            'cash_max' => $cashMax,
+            'receipts' => $plan,
+        ]);
     }
 
     public function paymentDestroy($booking_id, $id)

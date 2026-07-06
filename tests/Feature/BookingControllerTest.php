@@ -578,6 +578,26 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $big->id, 'payment_status' => 'impaye']);
     }
 
+    public function test_bulk_mark_paid_splits_cash_over_cap_when_flag_on(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $big = $this->makeBooking([
+            'amount' => 13000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.bulk-mark-paid'), [
+                'ids' => [$big->id], 'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Split into compliant receipts instead of being skipped.
+        $this->assertSame(3, BookingPayment::where('booking_id', $big->id)->count());
+        $this->assertSame(3, Tva::where('booking_id', $big->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $big->id, 'payment_status' => 'paye']);
+    }
+
     public function test_bulk_mark_paid_requires_payment_method(): void
     {
         $booking = $this->makeBooking(['payment_status' => 'impaye']);
@@ -681,6 +701,173 @@ class BookingControllerTest extends TestCase
             ->assertSessionHasErrors(['amount']);
 
         $this->assertDatabaseMissing('booking_payments', ['booking_id' => $booking->id]);
+    }
+
+    public function test_payment_store_splits_cash_over_cap_when_flag_on(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $booking = $this->makeBooking([
+            'amount'     => 13000,
+            'start_date' => '2026-07-01',
+            'end_date'   => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 13000,
+                'date'           => '2026-07-01',
+                'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // 13000 → three receipts, each within the 5000 cap.
+        $payments = BookingPayment::where('booking_id', $booking->id)->orderBy('id')->get();
+        $this->assertCount(3, $payments);
+        $this->assertEqualsCanonicalizing([5000.0, 5000.0, 3000.0], $payments->pluck('amount')->map(fn ($a) => (float) $a)->all());
+        foreach ($payments as $p) {
+            $this->assertLessThanOrEqual(5000, (float) $p->amount);
+            $this->assertSame('Espece', $p->payment_method);
+        }
+
+        // One facture per receipt; rental days apportioned back to the total (10).
+        $this->assertSame(3, Tva::where('booking_id', $booking->id)->count());
+        $this->assertSame(10.0, (float) Tva::where('booking_id', $booking->id)->sum('quantity'));
+
+        // Distinct days spread across the rental period.
+        $dates = $payments->pluck('date')->map(fn ($d) => substr((string) $d, 0, 10))->all();
+        $this->assertSame($dates, array_values(array_unique($dates)));
+
+        // Full balance cleared.
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
+    }
+
+    public function test_split_generates_successive_facture_numbers(): void
+    {
+        config(['client.features.cash_split' => true]);
+        // Establish the current global invoice-number high-water mark.
+        Tva::factory()->create(['facture_number' => 500, 'parent_id' => $this->owner->id]);
+
+        $booking = $this->makeBooking([
+            'amount' => 13000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 13000,
+                'date'           => '2026-07-01',
+                'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // The three receipts continue the sequence strictly consecutively, no gaps.
+        $numbers = Tva::where('booking_id', $booking->id)
+            ->orderBy('id')
+            ->pluck('facture_number')
+            ->map(fn ($n) => (int) $n)
+            ->all();
+
+        $this->assertSame([501, 502, 503], $numbers);
+    }
+
+    public function test_payment_store_cash_at_cap_is_not_split(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $booking = $this->makeBooking(['amount' => 5000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 5000,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(1, BookingPayment::where('booking_id', $booking->id)->count());
+    }
+
+    public function test_payment_store_non_cash_over_cap_is_not_split(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $booking = $this->makeBooking(['amount' => 13000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 13000,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Virement bancaire',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // Non-cash is never split, regardless of the flag.
+        $this->assertSame(1, BookingPayment::where('booking_id', $booking->id)->count());
+    }
+
+    public function test_payment_store_still_rejects_cash_over_cap_when_flag_off(): void
+    {
+        // Flag defaults off for directonderweg — behavior unchanged.
+        $booking = $this->makeBooking(['amount' => 13000]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 6000,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Espece',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['amount']);
+
+        $this->assertDatabaseMissing('booking_payments', ['booking_id' => $booking->id]);
+    }
+
+    // ── BookingController::paymentSplitPreview ───────────────────────────────
+
+    public function test_split_preview_returns_plan_when_flag_on(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $booking = $this->makeBooking([
+            'amount' => 13000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('booking.payment.split-preview', $booking->id), [
+                'amount' => 13000, 'payment_method' => 'Espece',
+            ])
+            ->assertOk()
+            ->assertJson(['split' => true, 'count' => 3, 'total' => 13000])
+            ->assertJsonCount(3, 'receipts')
+            ->assertJsonPath('receipts.0.amount', 5000)
+            ->assertJsonPath('receipts.2.amount', 3000);
+    }
+
+    public function test_split_preview_returns_false_when_flag_off(): void
+    {
+        $booking = $this->makeBooking(['amount' => 13000]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('booking.payment.split-preview', $booking->id), [
+                'amount' => 13000, 'payment_method' => 'Espece',
+            ])
+            ->assertOk()
+            ->assertJson(['split' => false]);
+    }
+
+    public function test_split_preview_requires_permission(): void
+    {
+        config(['client.features.cash_split' => true]);
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $booking = $this->makeBooking(['amount' => 13000]);
+
+        $this->actingAs($noPerms)
+            ->postJson(route('booking.payment.split-preview', $booking->id), [
+                'amount' => 13000, 'payment_method' => 'Espece',
+            ])
+            ->assertStatus(403);
     }
 
     public function test_payment_store_rejects_zero_amount(): void

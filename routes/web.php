@@ -275,6 +275,7 @@ Route::group(
         Route::get('planning', [BookingController::class, 'planning'])->name('planning');
         Route::get('booking/{id}/payment/create', [BookingController::class, 'paymentCreate'])->name('booking.payment.create');
         Route::post('booking/{id}/payment/store', [BookingController::class, 'paymentStore'])->name('booking.payment.store');
+        Route::post('booking/{id}/payment/split-preview', [BookingController::class, 'paymentSplitPreview'])->name('booking.payment.split-preview');
         Route::delete('booking/{id}/payment/{pid}/destroy', [BookingController::class, 'paymentDestroy'])->name('booking.payment.destroy');
         Route::post('booking/import', [BookingController::class, 'importExcel'])->name('booking.import');
         Route::get('booking/template/download', [BookingController::class, 'downloadTemplate'])->name('booking.template');

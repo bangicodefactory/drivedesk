@@ -15,6 +15,7 @@ return [
         'multi_branch'    => false,
         'tva_renumber'    => true,
         'signatures'      => true,
+        'cash_split'      => false,  // keep today's behavior: reject cash over the ceiling
     ],
 
     /*
