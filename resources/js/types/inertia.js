@@ -66,6 +66,7 @@
  * @property {boolean} multi_branch
  * @property {boolean} tva_renumber
  * @property {boolean} signatures
+ * @property {boolean} cash_split
  */
 
 /**
@@ -74,6 +75,7 @@
  * @property {string}         default_locale     - e.g. 'en'
  * @property {string[]}       supported_locales  - e.g. ['ar','en','fr']
  * @property {ClientFeatures} features
+ * @property {number}         cash_max           - legal cash ceiling (MAD), e.g. 5000
  */
 
 // ---------------------------------------------------------------------------

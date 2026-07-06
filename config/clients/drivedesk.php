@@ -22,6 +22,7 @@ return [
         'tva_renumber'    => true,
         'signatures'      => true,
         'demo_gateway'    => true,   // DriveDesk is the product's demo gateway
+        'cash_split'      => true,   // split cash over the ceiling into compliant receipts
     ],
 
     /*
