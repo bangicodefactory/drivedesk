@@ -35,6 +35,10 @@ const PAYMENT_VARIANT = {
 
 function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }) {
     const t = useTranslation();
+    const { client } = usePage().props;
+    const cashMax = client?.cash_max ?? 5000;
+    const cashSplitEnabled = !!client?.features?.cash_split;
+
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
         date: new Date().toISOString().slice(0, 10),
@@ -44,29 +48,62 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
         notes: '',
     });
     const [error, setError] = useState('');
+    const [preview, setPreview] = useState(null); // pending split awaiting confirmation
+    const [busy, setBusy] = useState(false);
 
     function set(key, value) {
         setForm((prev) => ({ ...prev, [key]: value }));
         setError('');
+        setPreview(null); // any edit invalidates a shown split preview
+    }
+
+    function reset() {
+        setError('');
+        setPreview(null);
+        setBusy(false);
+    }
+
+    const normalizeMethod = (m) => (m || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+    function post() {
+        setBusy(true);
+        router.post(route('booking.payment.store', bookingId), form, {
+            onSuccess: () => { setOpen(false); setPreview(null); },
+            onError: (errs) => setError(errs.amount || errs.date || errs.payment_method || Object.values(errs)[0] || 'Error'),
+            onFinish: () => setBusy(false),
+        });
     }
 
     function submit(e) {
         e.preventDefault();
         setError('');
         const amount = parseFloat(form.amount) || 0;
-        const method = (form.payment_method || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-        if (amount > 5000 && method === 'espece') {
+        const overCap = amount > cashMax && normalizeMethod(form.payment_method) === 'espece';
+
+        // Cash over the legal ceiling: split when enabled, else refuse (as before).
+        if (overCap && !cashSplitEnabled) {
             setError(t('Cash payments over 5000 are not allowed. Please choose another method.'));
             return;
         }
-        router.post(route('booking.payment.store', bookingId), form, {
-            onSuccess: () => setOpen(false),
-            onError: (errs) => setError(errs.amount || errs.date || errs.payment_method || Object.values(errs)[0] || 'Error'),
-        });
+        // First submit of an over-cap cash payment → fetch + show the split preview.
+        if (overCap && cashSplitEnabled && !preview) {
+            setBusy(true);
+            window.axios.post(route('booking.payment.split-preview', bookingId), {
+                amount: form.amount,
+                payment_method: form.payment_method,
+                quantity: form.quantity,
+            })
+                .then(({ data }) => { data?.split ? setPreview(data) : post(); })
+                .catch(() => setError(t('Cash payments over 5000 are not allowed. Please choose another method.')))
+                .finally(() => setBusy(false));
+            return;
+        }
+        // Normal payment, or confirming the already-previewed split.
+        post();
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
                     <CreditCard className="mr-2 h-4 w-4" /> {t('Payment')}
@@ -105,9 +142,37 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
                         <Label htmlFor="pay-notes">{t('Notes')}</Label>
                         <Textarea id="pay-notes" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
                     </div>
+                    {preview && (
+                        <div className="space-y-2 rounded-md border p-3 text-sm">
+                            <p className="text-muted-foreground">
+                                {t('This cash payment exceeds :max MAD and will be split into :count receipts.')
+                                    .replace(':max', cashMax).replace(':count', preview.count)}
+                            </p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('Receipt')}</TableHead>
+                                        <TableHead>{t('Date')}</TableHead>
+                                        <TableHead>{t('Quantity (Days)')}</TableHead>
+                                        <TableHead className="text-right">{t('Amount')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {preview.receipts.map((r, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell>{i + 1}</TableCell>
+                                            <TableCell>{r.date}</TableCell>
+                                            <TableCell>{r.days}</TableCell>
+                                            <TableCell className="text-right">{r.amount}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('Close')}</Button>
-                        <Button type="submit">{t('Create')}</Button>
+                        <Button type="button" variant="outline" onClick={() => { setOpen(false); reset(); }}>{t('Close')}</Button>
+                        <Button type="submit" disabled={busy}>{preview ? t('Confirm split') : t('Create')}</Button>
                     </div>
                 </form>
             </DialogContent>
