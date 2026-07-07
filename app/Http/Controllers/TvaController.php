@@ -508,6 +508,12 @@ class TvaController extends Controller
                 continue;
             }
 
+            // Under the "invoice only when fully paid" policy, a payment whose
+            // booking still has an outstanding balance gets no facture — skip it.
+            if (feature('invoice_on_full_payment') && $booking->getTotalDueAmount() > 0) {
+                continue;
+            }
+
             // Counter key = the business this invoice belongs to (may be null
             // for legacy bookings with no parent). Seed from that business's
             // own year-max the first time we encounter it.

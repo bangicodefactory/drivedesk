@@ -534,6 +534,65 @@ class TvaControllerTest extends TestCase
         ]);
     }
 
+    // ── generateMonthlyTva — invoice_on_full_payment gating ──────────────────
+
+    public function test_generate_skips_not_fully_paid_bookings_when_flag_on(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = \App\Models\Booking::factory()->create([
+            'parent_id' => $this->owner->id, 'amount' => 1000, 'payment_status' => 'impaye',
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id, 'parent_id' => $this->owner->id,
+            'date' => '2024-01-10', 'amount' => 300,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Partially paid (300 of 1000) → no invoice generated.
+        $this->assertSame(0, Tva::where('booking_id', $booking->id)->whereNull('deleted_at')->count());
+    }
+
+    public function test_generate_includes_fully_paid_bookings_when_flag_on(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = \App\Models\Booking::factory()->create([
+            'parent_id' => $this->owner->id, 'amount' => 1000, 'payment_status' => 'paye',
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id, 'parent_id' => $this->owner->id, 'date' => '2024-01-10', 'amount' => 600,
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id, 'parent_id' => $this->owner->id, 'date' => '2024-01-20', 'amount' => 400,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Fully paid (600 + 400 = 1000) → both payments invoiced.
+        $this->assertSame(2, Tva::where('booking_id', $booking->id)->whereNull('deleted_at')->count());
+    }
+
+    public function test_generate_invoices_all_payments_when_flag_off(): void
+    {
+        // Default (directonderweg): generate per payment regardless of paid state.
+        $booking = \App\Models\Booking::factory()->create([
+            'parent_id' => $this->owner->id, 'amount' => 1000, 'payment_status' => 'impaye',
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id, 'parent_id' => $this->owner->id, 'date' => '2024-01-10', 'amount' => 300,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame(1, Tva::where('booking_id', $booking->id)->whereNull('deleted_at')->count());
+    }
+
     // ── TvaController::report — additional ───────────────────────────────────
 
     public function test_report_renders_inertia_component_with_expected_props(): void
