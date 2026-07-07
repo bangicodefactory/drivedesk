@@ -801,33 +801,39 @@ class BookingController extends Controller
      */
     private function recordBookingPayment(Booking $booking, float $amount, string $paymentMethod, string $date, ?string $notes = null, ?int $quantity = null): BookingPayment
     {
-        $payment = new BookingPayment();
-        $payment->booking_id = $booking->id;
-        $payment->amount = $amount;
-        $payment->date = $date;
-        $payment->payment_method = $paymentMethod;
-        $payment->notes = $notes;
-        $payment->parent_id = parentId();
-        $payment->save();
+        // Payment, facture(s), and status change are one atomic unit: a flush
+        // can create several factures, so a mid-flush failure must not leave the
+        // payment committed with a partial invoice set and a stale status. Safe
+        // to nest — the split/bulk callers already open their own transaction.
+        return DB::transaction(function () use ($booking, $amount, $paymentMethod, $date, $notes, $quantity) {
+            $payment = new BookingPayment();
+            $payment->booking_id = $booking->id;
+            $payment->amount = $amount;
+            $payment->date = $date;
+            $payment->payment_method = $paymentMethod;
+            $payment->notes = $notes;
+            $payment->parent_id = parentId();
+            $payment->save();
 
-        // Status from the freshly-summed payments (includes the row just saved).
-        $fullyPaid = Booking::find($booking->id)->getTotalDueAmount() <= 0;
-        $status = $fullyPaid ? 'paye' : 'partiellement_paye';
+            // Status from the freshly-summed payments (includes the row just saved).
+            $fullyPaid = Booking::find($booking->id)->getTotalDueAmount() <= 0;
+            $status = $fullyPaid ? 'paye' : 'partiellement_paye';
 
-        if (feature('invoice_on_full_payment')) {
-            // Defer invoicing: emit a facture for every still-uninvoiced payment
-            // on the booking only once its balance is fully cleared.
-            if ($fullyPaid) {
-                $this->flushBookingFactures($booking);
+            if (feature('invoice_on_full_payment')) {
+                // Defer invoicing: emit a facture for every still-uninvoiced payment
+                // on the booking only once its balance is fully cleared.
+                if ($fullyPaid) {
+                    $this->flushBookingFactures($booking);
+                }
+            } else {
+                // Legacy behaviour: one facture per payment, created immediately.
+                $this->createFactureForPayment($booking, $payment, $quantity);
             }
-        } else {
-            // Legacy behaviour: one facture per payment, created immediately.
-            $this->createFactureForPayment($booking, $payment, $quantity);
-        }
 
-        Booking::statusChange($booking->id, $status);
+            Booking::statusChange($booking->id, $status);
 
-        return $payment;
+            return $payment;
+        });
     }
 
     /**
