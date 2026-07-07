@@ -23,6 +23,10 @@ return [
         // each within the cap (Moroccan CGI art. 193 per-day cash ceiling),
         // instead of rejecting it. Off = today's behavior (reject).
         'cash_split'      => false,
+        // Defer invoice (facture) creation until a booking is fully paid, then
+        // emit one per payment. Off = today's behavior (one invoice per payment,
+        // including partial payments).
+        'invoice_on_full_payment' => false,
     ],
 
     /*

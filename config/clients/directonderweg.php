@@ -16,6 +16,7 @@ return [
         'tva_renumber'    => true,
         'signatures'      => true,
         'cash_split'      => false,  // keep today's behavior: reject cash over the ceiling
+        'invoice_on_full_payment' => false,  // keep today's behavior: one invoice per payment
     ],
 
     /*
