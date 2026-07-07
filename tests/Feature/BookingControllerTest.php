@@ -898,6 +898,103 @@ class BookingControllerTest extends TestCase
             ->assertSessionHas('error', __('Permission Denied.'));
     }
 
+    // ── invoice_on_full_payment: defer factures until fully paid ─────────────
+
+    public function test_partial_payment_defers_invoice_when_flag_on(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking(['amount' => 1000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount' => 300, 'date' => now()->format('Y-m-d'), 'payment_method' => 'Carte',
+            ])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Payment recorded, but no invoice while the balance is outstanding.
+        $this->assertDatabaseHas('booking_payments', ['booking_id' => $booking->id, 'amount' => 300]);
+        $this->assertSame(0, Tva::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'partiellement_paye']);
+    }
+
+    public function test_final_payment_flushes_all_invoices_when_flag_on(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking(['amount' => 1000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 300, 'date' => '2026-07-01', 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+        $this->assertSame(0, Tva::where('booking_id', $booking->id)->count());
+
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 700, 'date' => '2026-07-05', 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+
+        // Balance cleared → one invoice per payment, emitted together, successive.
+        $this->assertSame(2, Tva::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
+        $nums = Tva::where('booking_id', $booking->id)->orderBy('id')->pluck('facture_number')->map(fn ($n) => (int) $n)->all();
+        $this->assertSame($nums[0] + 1, $nums[1]);
+    }
+
+    public function test_flag_off_invoices_each_payment_immediately(): void
+    {
+        // Default (directonderweg) keeps one invoice per payment, incl. partial.
+        $booking = $this->makeBooking(['amount' => 1000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 300, 'date' => now()->format('Y-m-d'), 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+
+        $this->assertSame(1, Tva::where('booking_id', $booking->id)->count());
+    }
+
+    public function test_cash_split_full_payment_flushes_receipts_when_both_flags_on(): void
+    {
+        config(['client.features.cash_split' => true, 'client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking([
+            'amount' => 13000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        // One 13000 cash payment clears the booking and splits into 3 receipts.
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 13000, 'date' => '2026-07-01', 'payment_method' => 'Espece',
+        ])->assertSessionHas('success');
+
+        $this->assertSame(3, BookingPayment::where('booking_id', $booking->id)->count());
+        $this->assertSame(3, Tva::where('booking_id', $booking->id)->count());
+        foreach (Tva::where('booking_id', $booking->id)->get() as $t) {
+            $this->assertLessThanOrEqual(5000, (float) $t->montant_ttc);
+        }
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
+    }
+
+    public function test_cash_split_partial_defers_then_flushes_when_both_flags_on(): void
+    {
+        config(['client.features.cash_split' => true, 'client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking([
+            'amount' => 20000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        // 13000 cash → 3 receipts, but 7000 still due → no invoices yet.
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 13000, 'date' => '2026-07-01', 'payment_method' => 'Espece',
+        ])->assertSessionHas('success');
+        $this->assertSame(3, BookingPayment::where('booking_id', $booking->id)->count());
+        $this->assertSame(0, Tva::where('booking_id', $booking->id)->count());
+
+        // Clear the remaining 7000 → flush invoices for all four payments.
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 7000, 'date' => '2026-07-11', 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+        $this->assertSame(4, BookingPayment::where('booking_id', $booking->id)->count());
+        $this->assertSame(4, Tva::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
+    }
+
     // ── BookingController::paymentStore — Inertia requests ───────────────────
 
     public function test_payment_store_inertia_error_returns_redirect_not_json(): void
