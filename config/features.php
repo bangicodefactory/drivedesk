@@ -22,4 +22,5 @@ return [
     'signatures'       => env('FEATURE_SIGNATURES', null),
     'demo_gateway'     => env('FEATURE_DEMO_GATEWAY', null),
     'cash_split'       => env('FEATURE_CASH_SPLIT', null),
+    'invoice_on_full_payment' => env('FEATURE_INVOICE_ON_FULL_PAYMENT', null),
 ];
