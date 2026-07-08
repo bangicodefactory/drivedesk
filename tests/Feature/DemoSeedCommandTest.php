@@ -45,6 +45,45 @@ class DemoSeedCommandTest extends TestCase
         $this->assertSame(0, Vehicle::count());
     }
 
+    public function test_force_is_not_honored_in_production_on_a_real_client(): void
+    {
+        $this->asClient('directonderweg'); // demo_gateway off
+        $this->app['env'] = 'production';
+
+        // demo:seed's refresh step deletes the owner's bookings/payments/factures
+        // before reseeding — on a real production client --force must not unlock
+        // that, no matter how certain the operator claims to be.
+        $this->artisan('demo:seed --force')
+            ->expectsOutputToContain('Refusing to run')
+            ->assertFailed();
+
+        $this->assertSame(0, Booking::count());
+        $this->assertSame(0, Vehicle::count());
+    }
+
+    public function test_force_still_works_outside_production(): void
+    {
+        $this->asClient('directonderweg'); // demo_gateway off, env is 'testing'
+
+        $this->artisan('demo:seed --force')->assertSuccessful();
+
+        $this->assertGreaterThan(0, Vehicle::count());
+    }
+
+    public function test_demo_seed_works_in_production_on_a_demo_client(): void
+    {
+        // Pins the drivedesk deploy path: deploy.yml runs `demo:seed --if-demo`
+        // on a host whose APP_ENV is production. DevDataSeeder's production
+        // guard must exempt demo clients or demo data silently stops refreshing.
+        $this->asClient('drivedesk'); // demo_gateway on
+        $this->app['env'] = 'production';
+
+        $this->artisan('demo:seed --if-demo')->assertSuccessful();
+
+        $this->assertGreaterThan(0, Vehicle::count());
+        $this->assertGreaterThan(0, Booking::count());
+    }
+
     public function test_it_seeds_showcase_data_on_a_demo_client(): void
     {
         $this->asClient('drivedesk'); // demo_gateway on
