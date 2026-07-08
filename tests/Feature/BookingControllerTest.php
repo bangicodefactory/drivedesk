@@ -995,6 +995,28 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
     }
 
+    public function test_flush_does_not_regenerate_a_soft_deleted_invoice(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking(['amount' => 1000, 'payment_status' => 'impaye']);
+
+        // Full payment → one invoice flushed.
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 1000, 'date' => '2026-07-01', 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+        $this->assertSame(1, Tva::where('booking_id', $booking->id)->count());
+
+        // The invoice is deleted (soft delete), then a later payment lands.
+        Tva::where('booking_id', $booking->id)->firstOrFail()->delete();
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 200, 'date' => '2026-07-05', 'payment_method' => 'Carte',
+        ])->assertSessionHas('success');
+
+        // The trashed invoice is NOT regenerated — only the new payment is invoiced.
+        $this->assertSame(1, Tva::where('booking_id', $booking->id)->count());          // active
+        $this->assertSame(2, Tva::withTrashed()->where('booking_id', $booking->id)->count()); // + trashed
+    }
+
     // ── BookingController::paymentStore — Inertia requests ───────────────────
 
     public function test_payment_store_inertia_error_returns_redirect_not_json(): void
