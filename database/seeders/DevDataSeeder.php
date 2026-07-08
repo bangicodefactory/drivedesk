@@ -41,8 +41,10 @@ class DevDataSeeder extends Seeder
         // real owner account and generates TVA factures for every un-invoiced
         // payment — on a live DB that pollutes real invoice numbering (ran on
         // directonderweg prod 2026-07-06, 490 rows cleaned up by hand).
-        if (app()->isProduction()) {
-            throw new \RuntimeException('DevDataSeeder seeds fake business data and must never run in production.');
+        // Demo clients are the exception: their production deployment exists to
+        // hold this data, and deploy runs `demo:seed --if-demo` on every release.
+        if (app()->isProduction() && ! feature('demo_gateway')) {
+            throw new \RuntimeException('DevDataSeeder seeds fake business data and must never run in production on a non-demo client.');
         }
 
         $owner = User::where('type', 'owner')->firstOrFail();
