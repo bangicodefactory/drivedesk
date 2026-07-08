@@ -995,6 +995,28 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
     }
 
+    public function test_fully_paid_via_decimal_installments_is_invoiced_when_flag_on(): void
+    {
+        // Regression (review #1): getTotalDueAmount sums float payment amounts,
+        // so cent-valued installments leave a sub-cent residual — 1.13 + 0.18 +
+        // 0.69 = 2.00, but the float sum is 1.9999…, leaving due ≈ 1e-16 > 0.
+        // Without rounding the "fully paid" test, the booking reads as still
+        // owing and its invoices are never flushed. The triple is order-robust:
+        // the residual stays in (0, 0.005) for any payment ordering.
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking(['amount' => 2, 'payment_status' => 'impaye']);
+
+        foreach (['1.13', '0.18', '0.69'] as $i => $amt) {
+            $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+                'amount' => $amt, 'date' => '2026-07-0' . ($i + 1), 'payment_method' => 'Carte',
+            ])->assertSessionHas('success');
+        }
+
+        // Balance cleared (bar a float residual) → all three payments invoiced.
+        $this->assertSame(3, Tva::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
+    }
+
     public function test_flush_does_not_regenerate_a_soft_deleted_invoice(): void
     {
         config(['client.features.invoice_on_full_payment' => true]);

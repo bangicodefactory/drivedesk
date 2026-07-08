@@ -501,6 +501,9 @@ class TvaController extends Controller
         // rather than slotting in chronologically — use the Renumber tool to
         // re-sequence a year by date afterwards.
         $factureCounters = [];
+        // Memoise the (booking-scoped) due amount per booking so a booking with
+        // several payments in the month isn't re-summed on every payment row.
+        $dueByBooking = [];
 
         foreach ($payments as $payment) {
             $booking = Booking::with('drivers')->find($payment->booking_id);
@@ -510,8 +513,12 @@ class TvaController extends Controller
 
             // Under the "invoice only when fully paid" policy, a payment whose
             // booking still has an outstanding balance gets no facture — skip it.
-            if (feature('invoice_on_full_payment') && $booking->getTotalDueAmount() > 0) {
-                continue;
+            // Round to cents (float amounts) so a residual isn't read as owing.
+            if (feature('invoice_on_full_payment')) {
+                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalDueAmount(), 2);
+                if ($due > 0) {
+                    continue;
+                }
             }
 
             // Counter key = the business this invoice belongs to (may be null
