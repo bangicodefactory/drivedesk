@@ -816,7 +816,10 @@ class BookingController extends Controller
             $payment->save();
 
             // Status from the freshly-summed payments (includes the row just saved).
-            $fullyPaid = Booking::find($booking->id)->getTotalDueAmount() <= 0;
+            // Round to cents before the zero-test: payment amounts are floats, so
+            // an unrounded residual (e.g. 1e-13 from installment sums) would read
+            // as "still owing" and wrongly defer invoicing. Matches bulkMarkPaid.
+            $fullyPaid = round((float) Booking::find($booking->id)->getTotalDueAmount(), 2) <= 0;
             $status = $fullyPaid ? 'paye' : 'partiellement_paye';
 
             if (feature('invoice_on_full_payment')) {
