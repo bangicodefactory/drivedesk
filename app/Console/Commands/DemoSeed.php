@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\DB;
 class DemoSeed extends Command
 {
     protected $signature = 'demo:seed
-        {--force : Run even when the active client is not a demo client (dangerous — injects fake data)}
+        {--force : Run even when the active client is not a demo client (dangerous — injects fake data; not honored in production)}
         {--if-demo : On a non-demo client, skip quietly (exit 0) instead of failing — for unconditional deploy/scheduler use}';
 
     protected $description = 'Seed/refresh showcase data for a demo client. Re-anchors dates to today. Refuses on non-demo clients unless --force.';
@@ -55,7 +55,12 @@ class DemoSeed extends Command
 
     public function handle(): int
     {
-        if (! feature('demo_gateway') && ! $this->option('force')) {
+        // --force is an escape hatch for local/staging experiments only. In
+        // production it is never honored: the refresh step below deletes the
+        // real owner's bookings, payments and factures before reseeding.
+        $forceAllowed = $this->option('force') && ! app()->isProduction();
+
+        if (! feature('demo_gateway') && ! $forceAllowed) {
             $client = config('app.client', 'directonderweg');
 
             // --if-demo: deploy/scheduler call this on every client unconditionally;
@@ -68,7 +73,12 @@ class DemoSeed extends Command
 
             $this->error("Refusing to run: client '{$client}' is not a demo client (feature 'demo_gateway' is off).");
             $this->line('  demo:seed injects fake showcase data — never run it against a real client.');
-            $this->line('  Use --force only if you are certain this deployment should hold demo data.');
+
+            if ($this->option('force')) {
+                $this->line('  --force is not honored in production: the refresh step would delete the real owner\'s bookings, payments and factures.');
+            } else {
+                $this->line('  Use --force only if you are certain this deployment should hold demo data.');
+            }
 
             return self::FAILURE;
         }
