@@ -37,6 +37,14 @@ class DevDataSeeder extends Seeder
 
     public function run(): void
     {
+        // Hard stop: this seeder attaches fake vehicles/bookings/payments to the
+        // real owner account and generates TVA factures for every un-invoiced
+        // payment — on a live DB that pollutes real invoice numbering (ran on
+        // directonderweg prod 2026-07-06, 490 rows cleaned up by hand).
+        if (app()->isProduction()) {
+            throw new \RuntimeException('DevDataSeeder seeds fake business data and must never run in production.');
+        }
+
         $owner = User::where('type', 'owner')->firstOrFail();
         $this->ownerId = $owner->id;
 
