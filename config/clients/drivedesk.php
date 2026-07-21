@@ -4,7 +4,12 @@ return [
 
     'name'               => 'DriveDesk',
     'default_locale'     => 'en',
-    'supported_locales'  => ['en', 'fr', 'nl', 'ar'],
+    'supported_locales'  => ['en', 'fr', 'nl', 'ar', 'ary'],
+
+    // Anonymous/guest visitors (e.g. the marketing landing) default to Moroccan
+    // Arabic (Darija, 'ary'). Logged-in users keep their own saved language.
+    // Read by App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
+    'public_default_locale' => 'ary',
 
     /*
      * DriveDesk is the product's own reference/demo client — the base tenant
