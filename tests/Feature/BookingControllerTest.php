@@ -1017,6 +1017,44 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paye']);
     }
 
+    public function test_manual_quantity_override_survives_deferred_flush(): void
+    {
+        // Option 3: an explicit "Quantity (Days)" is persisted on the payment and
+        // used at flush, instead of being re-derived. Booking 8000 over 10 days,
+        // paid in full with days=4 → invoice shows 4, not the proportional 10.
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking([
+            'amount' => 8000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 8000, 'date' => '2026-07-01', 'payment_method' => 'Carte', 'quantity' => 4,
+        ])->assertSessionHas('success');
+
+        $this->assertSame(4, (int) Tva::where('booking_id', $booking->id)->firstOrFail()->quantity);
+    }
+
+    public function test_split_apportioned_days_survive_deferred_flush(): void
+    {
+        // Option 3: cash-split receipts persist their apportioned days, so the
+        // issued invoices match the split plan (and the preview). 9000 over 10
+        // days splits 5000/4000 → 5/5 days; proportional re-derivation would
+        // have given 6/4.
+        config(['client.features.cash_split' => true, 'client.features.invoice_on_full_payment' => true]);
+        $booking = $this->makeBooking([
+            'amount' => 9000, 'start_date' => '2026-07-01', 'end_date' => '2026-07-11',
+            'payment_status' => 'impaye',
+        ]);
+
+        $this->actingAs($this->owner)->post(route('booking.payment.store', $booking->id), [
+            'amount' => 9000, 'date' => '2026-07-01', 'payment_method' => 'Espece',
+        ])->assertSessionHas('success');
+
+        $days = Tva::where('booking_id', $booking->id)->orderBy('id')->pluck('quantity')->map(fn ($q) => (int) $q)->all();
+        $this->assertSame([5, 5], $days);
+    }
+
     public function test_flush_does_not_regenerate_a_soft_deleted_invoice(): void
     {
         config(['client.features.invoice_on_full_payment' => true]);
