@@ -576,6 +576,30 @@ class TvaControllerTest extends TestCase
         $this->assertSame(2, Tva::where('booking_id', $booking->id)->whereNull('deleted_at')->count());
     }
 
+    public function test_generate_uses_persisted_invoice_days_when_present(): void
+    {
+        // The monthly rebuild honors a payment's stored invoice_days (a manual
+        // override or cash-split share) so it matches the live-flush invoice,
+        // instead of always using the booking's full rental span.
+        config(['client.features.invoice_on_full_payment' => true]);
+        $booking = \App\Models\Booking::factory()->create([
+            'parent_id' => $this->owner->id, 'amount' => 1000, 'payment_status' => 'paye',
+            'start_date' => '2024-01-01', 'end_date' => '2024-01-11', // 10-day span
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $booking->id, 'parent_id' => $this->owner->id,
+            'date' => '2024-01-10', 'amount' => 1000, 'invoice_days' => 4,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        // Facture Qty = the stored 4, not the booking's 10-day span.
+        $tva = Tva::where('booking_id', $booking->id)->whereNull('deleted_at')->firstOrFail();
+        $this->assertSame(4.0, (float) $tva->quantity);
+    }
+
     public function test_generate_invoices_all_payments_when_flag_off(): void
     {
         // Default (directonderweg): generate per payment regardless of paid state.
