@@ -812,6 +812,9 @@ class BookingController extends Controller
             $payment->date = $date;
             $payment->payment_method = $paymentMethod;
             $payment->notes = $notes;
+            // Persist the invoice day-count so deferred invoicing reproduces the
+            // exact days (manual override or cash-split share) at flush time.
+            $payment->invoice_days = ($quantity && $quantity > 0) ? $quantity : null;
             $payment->parent_id = parentId();
             $payment->save();
 
@@ -830,7 +833,7 @@ class BookingController extends Controller
                 }
             } else {
                 // Legacy behaviour: one facture per payment, created immediately.
-                $this->createFactureForPayment($booking, $payment, $quantity);
+                $this->createFactureForPayment($booking, $payment);
             }
 
             Booking::statusChange($booking->id, $status);
@@ -841,10 +844,11 @@ class BookingController extends Controller
 
     /**
      * Build and persist one facture (TVA) for a single payment, continuing the
-     * global facture-number sequence. The quantity (days) is the explicit
-     * override when given, else derived from the booking dates + payment amount.
+     * global facture-number sequence. The quantity (days) is the value stored on
+     * the payment (a manual override or a cash-split share) when present, else
+     * derived from the booking dates + payment amount.
      */
-    private function createFactureForPayment(Booking $booking, BookingPayment $payment, ?int $quantity = null): Tva
+    private function createFactureForPayment(Booking $booking, BookingPayment $payment): Tva
     {
         $amount        = (float) $payment->amount;
         $date          = $payment->date;
@@ -854,7 +858,7 @@ class BookingController extends Controller
         $user    = User::find($booking->driver);
         $driver1 = Driver::where('user_id', $booking->driver)->first();
 
-        $totalDays = $this->deriveInvoiceDays($booking, $amount, $quantity);
+        $totalDays = $this->deriveInvoiceDays($booking, $amount, $payment->invoice_days);
 
         $vd = $booking->vehicleDetails();
         $vehicleName  = $vd->name ?? '';
@@ -923,7 +927,7 @@ class BookingController extends Controller
             ->get();
 
         foreach ($payments as $payment) {
-            $this->createFactureForPayment($booking, $payment, null);
+            $this->createFactureForPayment($booking, $payment);
         }
     }
 
