@@ -553,10 +553,13 @@ class TvaController extends Controller
             $vehicleName = $vd['name'] ?? '';
             $vehicleLicensePlate = $vd['license_plate'] ?? '';
 
-            // Rental days (for unit price / quantity consistency with earlier logic)
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
-            $totalDays = $startDate->diffInDays($endDate) ?: 1;
+            // Facture days: prefer the per-payment invoice_days persisted at
+            // payment time (a manual override or a cash-split share) so a monthly
+            // rebuild reproduces the same Qty the live invoice used. Fall back to
+            // the booking's full rental span for payments without a stored value.
+            $totalDays = ($payment->invoice_days && $payment->invoice_days > 0)
+                ? (int) $payment->invoice_days
+                : (Carbon::parse($booking->start_date)->diffInDays(Carbon::parse($booking->end_date)) ?: 1);
 
             // Financials based on payment amount (TTC) with fixed 20% VAT assumption
             $paymentTtc = (float)$payment->amount;
