@@ -143,7 +143,7 @@ export default function DemoGateway() {
     const { rtl, display, bodyFont, ls } = useDisplay();
     const [open, setOpen] = useState(false);
     const book = () => setOpen(true);
-    const pillBtn = { background: C.grad, color: '#fff', border: 0, borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 16px 36px -12px rgba(229,96,30,.6)' };
+    const pillBtn = { background: C.grad, color: '#fff', border: 0, borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 16px 36px -12px rgba(229,96,30,.6)', whiteSpace: 'nowrap' };
     const ghostBtn = { background: 'transparent', color: C.ink, border: `1px solid ${C.line}`, borderRadius: 999, padding: '14px 26px', fontSize: 16, fontWeight: 800, cursor: 'pointer' };
 
     const FEATURES = [
@@ -165,6 +165,9 @@ export default function DemoGateway() {
 
     return (
         <div style={{ fontFamily: bodyFont, background: C.bg, color: C.ink, minHeight: '100vh' }}>
+            {/* On phones the nav gets crowded (brand + login + CTA); hide the nav
+                CTA — the hero has a prominent "Book a demo" right below. */}
+            <style>{`@media (max-width: 640px){ .dg-nav-cta{ display: none; } }`}</style>
             <Head title="DriveDesk — Car Rental Management, simplified">
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Saira+Condensed:ital,wght@1,800&family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -175,8 +178,8 @@ export default function DemoGateway() {
                 <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Gauge size={36} /><Wordmark /></div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <Link href={route('login')} style={{ color: C.muted, textDecoration: 'none', fontSize: 15, fontWeight: 700 }}>{t('dg_nav_login', 'Log in')}</Link>
-                        <button onClick={book} style={{ ...pillBtn, padding: '11px 22px', fontSize: 15 }}>{t('dg_book', 'Book a demo')}</button>
+                        <Link href={route('login')} style={{ color: C.muted, textDecoration: 'none', fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap' }}>{t('dg_nav_login', 'Log in')}</Link>
+                        <button onClick={book} className="dg-nav-cta" style={{ ...pillBtn, padding: '11px 22px', fontSize: 15 }}>{t('dg_book', 'Book a demo')}</button>
                     </div>
                 </div>
             </nav>
