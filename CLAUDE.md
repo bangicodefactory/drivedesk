@@ -117,11 +117,15 @@ client, and the API does not change** during the migration. Specifically:
   change — open a separate ticket, do not bundle it.
 - **Form field names, validation messages (per locale), and response
   status codes stay identical.**
-- **Database schema is frozen for the duration of the migration.**
-  No `ALTER TABLE` migrations. The only schema migrations allowed are
-  *adding indexes that the perf audit has explicitly recommended*, and
-  even those land in a separate, clearly-labeled PR after the audit is
-  approved.
+- **Schema changes are allowed again — the migration freeze is lifted**
+  (the Laravel 10 → 12 + Inertia migration is complete). New schema
+  migrations must be **additive and backward-compatible** (nullable
+  columns, no destructive `ALTER`/`DROP` on populated columns, no
+  rename-in-place), **reversible** (a real `down()`), and land in their
+  own clearly-labeled PR with tests. `directonderweg` runs in production,
+  so a migration must not change behavior for existing rows — never
+  require a backfill to stay correct. *(Historical: schema was frozen for
+  the duration of the migration; that constraint no longer applies.)*
 - **Emails: subject lines, From addresses, and visible body content
   must match** before and after the migration. PDF templates likewise.
 - **All 14 locales** (en, fr, ar, de, es, it, ja, nl, da, pl, pt, ru,
@@ -226,8 +230,11 @@ later. Specifically:
 
 Each of these has bitten teams doing exactly this kind of work:
 
-- ❌ **Schema changes** ("while I'm here, this column should be
-  nullable"). The migration freezes schema.
+- ❌ **Destructive or gratuitous schema changes** ("while I'm here, let
+  me rename/drop this column"). The freeze is lifted, but changes must be
+  additive, backward-compatible, and reversible (see §4) — never a
+  rename-in-place, a drop of a populated column, or a change that needs a
+  backfill to keep prod correct.
 - ❌ **Renaming routes, controllers, or models.** Even "obvious"
   ones. Cosmetic renames are a separate ticket.
 - ❌ **Deleting Blade files before the React replacement is verified
@@ -386,4 +393,4 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/deploy-namecheap-cpanel.md` — simplified cPanel/Namecheap companion guide
 - `docs/deploy-drivedesk-ma.md` — adding the DriveDesk demo client (`drivedesk.ma`) as a second isolated app on the directonderweg cPanel host
 
-Last updated: 2026-06-10.
+Last updated: 2026-07-21.
