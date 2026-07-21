@@ -186,7 +186,7 @@ export default function DemoGateway() {
                 <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'radial-gradient(circle at 24% 8%, rgba(229,96,30,.22), transparent 40%), radial-gradient(circle at 82% 32%, rgba(247,162,30,.12), transparent 42%)' }} />
                 <div style={{ position: 'relative', zIndex: 1, maxWidth: 980, margin: '0 auto' }}>
                     <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: ls('0.22em'), textTransform: 'uppercase', color: C.orange }}>{t('dg_hero_eyebrow', 'The operating system for car rental')}</div>
-                    <h1 style={{ ...display, fontSize: 80, lineHeight: rtl ? 1.08 : 0.98, margin: '18px 0 0' }}>
+                    <h1 style={{ ...display, fontSize: 'clamp(2.25rem, 8vw, 5rem)', lineHeight: rtl ? 1.08 : 0.98, margin: '18px 0 0' }}>
                         {t('dg_hero_line1', 'Run your entire rental agency')}<br />{t('dg_hero_line2_pre', 'from ')}<span style={gradText}>{t('dg_hero_highlight', 'one desk.')}</span>
                     </h1>
                     <p style={{ fontSize: 21, color: C.muted, maxWidth: 660, margin: '24px auto 0', lineHeight: 1.55, fontWeight: 500 }}>
@@ -205,9 +205,9 @@ export default function DemoGateway() {
                 <div style={{ maxWidth: 1180, margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: 54 }}>
                         <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: ls('0.2em'), textTransform: 'uppercase', color: C.orange }}>{t('dg_features_eyebrow', 'Everything your agency runs on')}</div>
-                        <h2 style={{ ...display, fontSize: 52, marginTop: 12 }}>{t('dg_features_title_1', 'One platform.')}<br />{t('dg_features_title_2', 'Zero spreadsheets.')}</h2>
+                        <h2 style={{ ...display, fontSize: 'clamp(2rem, 6vw, 3.25rem)', marginTop: 12 }}>{t('dg_features_title_1', 'One platform.')}<br />{t('dg_features_title_2', 'Zero spreadsheets.')}</h2>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 20 }}>
                         {FEATURES.map(({ Icon, t: ft, s }) => (
                             <div key={ft} style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 18, padding: 28 }}>
                                 <div style={{ width: 56, height: 56, borderRadius: 14, background: C.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
@@ -226,7 +226,7 @@ export default function DemoGateway() {
                 <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', justifyContent: 'center', gap: 90, flexWrap: 'wrap' }}>
                     {STATS.map(([n, l]) => (
                         <div key={l}>
-                            <div style={{ ...display, fontSize: 74, lineHeight: 1 }} dir="ltr">{n}</div>
+                            <div style={{ ...display, fontSize: 'clamp(2.75rem, 8vw, 4.625rem)', lineHeight: 1 }} dir="ltr">{n}</div>
                             <div style={{ fontWeight: 700, fontSize: 16, opacity: 0.92, marginTop: 6 }}>{l}</div>
                         </div>
                     ))}
@@ -236,7 +236,7 @@ export default function DemoGateway() {
             {/* Final CTA */}
             <section style={{ textAlign: 'center', padding: '104px 28px' }}>
                 <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: ls('0.2em'), textTransform: 'uppercase', color: C.orange }}>{t('dg_cta_eyebrow', 'Ready when you are')}</div>
-                <h2 style={{ ...display, fontSize: 62, marginTop: 12 }}>{t('dg_cta_line1', 'Put your agency')}<br />{t('dg_cta_line2_pre', 'on ')}<span style={gradText}>{t('dg_cta_highlight', 'autopilot.')}</span></h2>
+                <h2 style={{ ...display, fontSize: 'clamp(2.25rem, 7vw, 3.875rem)', marginTop: 12 }}>{t('dg_cta_line1', 'Put your agency')}<br />{t('dg_cta_line2_pre', 'on ')}<span style={gradText}>{t('dg_cta_highlight', 'autopilot.')}</span></h2>
                 <p style={{ color: C.muted, fontSize: 19, marginTop: 16, fontWeight: 500 }}>{t('dg_cta_sub', 'See DriveDesk on your own fleet. A 20-minute demo, no commitment.')}</p>
                 <div style={{ marginTop: 34 }}><button onClick={book} style={{ ...pillBtn, fontSize: 18, padding: '18px 38px' }}>{t('dg_book', 'Book a demo')} →</button></div>
             </section>
