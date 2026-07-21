@@ -23,9 +23,11 @@ jobs:
         # Prod hosts run MariaDB (whose default engine is MyISAM — hence the
         # engine=InnoDB pin in config/database.php); CI historically only tested
         # MySQL, so MariaDB-only breakage (e.g. silently-dropped FKs) slipped by.
+        # health differs: MariaDB 11.x dropped the mysqladmin symlink, so it uses
+        # the image's healthcheck.sh; MySQL keeps mysqladmin ping.
         db:
-          - { image: 'mysql:8.0',   name: mysql }
-          - { image: 'mariadb:11.4', name: mariadb }
+          - { image: 'mysql:8.0',    name: mysql,   health: 'mysqladmin ping' }
+          - { image: 'mariadb:11.4', name: mariadb, health: 'healthcheck.sh --connect --innodb_initialized' }
 
     services:
       db:
@@ -36,11 +38,11 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="${{ matrix.db.health }}"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
-          --health-start-period=30s
+          --health-retries=6
+          --health-start-period=60s
 
     env:
       APP_ENV: testing
