@@ -57,7 +57,11 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
-            'engine' => null,
+            // Force InnoDB. Some MariaDB hosts default to MyISAM, which silently
+            // ignores foreign keys — so migrations that later dropForeign()/alter
+            // FKs fail on a fresh migrate. InnoDB is required for FKs + real
+            // transactions (MySQL/CI already default to it, so this is a no-op there).
+            'engine' => 'InnoDB',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
