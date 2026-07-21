@@ -801,37 +801,70 @@ class BookingController extends Controller
      */
     private function recordBookingPayment(Booking $booking, float $amount, string $paymentMethod, string $date, ?string $notes = null, ?int $quantity = null): BookingPayment
     {
-        $payment = new BookingPayment();
-        $payment->booking_id = $booking->id;
-        $payment->amount = $amount;
-        $payment->date = $date;
-        $payment->payment_method = $paymentMethod;
-        $payment->notes = $notes;
-        $payment->parent_id = parentId();
-        $payment->save();
+        // Payment, facture(s), and status change are one atomic unit: a flush
+        // can create several factures, so a mid-flush failure must not leave the
+        // payment committed with a partial invoice set and a stale status. Safe
+        // to nest — the split/bulk callers already open their own transaction.
+        return DB::transaction(function () use ($booking, $amount, $paymentMethod, $date, $notes, $quantity) {
+            $payment = new BookingPayment();
+            $payment->booking_id = $booking->id;
+            $payment->amount = $amount;
+            $payment->date = $date;
+            $payment->payment_method = $paymentMethod;
+            $payment->notes = $notes;
+            // Persist the invoice day-count so deferred invoicing reproduces the
+            // exact days (manual override or cash-split share) at flush time.
+            $payment->invoice_days = ($quantity && $quantity > 0) ? $quantity : null;
+            $payment->parent_id = parentId();
+            $payment->save();
 
-        // Status from the freshly-summed payments (includes the row just saved).
-        $status = Booking::find($booking->id)->getTotalDueAmount() <= 0 ? 'paye' : 'partiellement_paye';
+            // Status from the freshly-summed payments (includes the row just saved).
+            // Round to cents before the zero-test: payment amounts are floats, so
+            // an unrounded residual (e.g. 1e-13 from installment sums) would read
+            // as "still owing" and wrongly defer invoicing. Matches bulkMarkPaid.
+            $fullyPaid = round((float) Booking::find($booking->id)->getTotalDueAmount(), 2) <= 0;
+            $status = $fullyPaid ? 'paye' : 'partiellement_paye';
+
+            if (feature('invoice_on_full_payment')) {
+                // Defer invoicing: emit a facture for every still-uninvoiced payment
+                // on the booking only once its balance is fully cleared.
+                if ($fullyPaid) {
+                    $this->flushBookingFactures($booking);
+                }
+            } else {
+                // Legacy behaviour: one facture per payment, created immediately.
+                $this->createFactureForPayment($booking, $payment);
+            }
+
+            Booking::statusChange($booking->id, $status);
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Build and persist one facture (TVA) for a single payment, continuing the
+     * global facture-number sequence. The quantity (days) is the value stored on
+     * the payment (a manual override or a cash-split share) when present, else
+     * derived from the booking dates + payment amount.
+     */
+    private function createFactureForPayment(Booking $booking, BookingPayment $payment): Tva
+    {
+        $amount        = (float) $payment->amount;
+        $date          = $payment->date;
+        $paymentMethod = $payment->payment_method;
 
         $setting = settings();
-        $user = User::find($booking->driver);
+        $user    = User::find($booking->driver);
         $driver1 = Driver::where('user_id', $booking->driver)->first();
 
-        if ($quantity && $quantity > 0) {
-            $totalDays = $quantity;
-        } else {
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
-            $days = max(1, $startDate->diffInDays($endDate));
-            $bookingAmount = (float) $booking->amount;
-            $totalDays = $bookingAmount > 0 ? max(1, (int) round(($amount * $days) / $bookingAmount)) : $days;
-        }
+        $totalDays = $this->deriveInvoiceDays($booking, $amount, $payment->invoice_days);
 
         $vd = $booking->vehicleDetails();
-        $vehicleName = $vd->name ?? '';
+        $vehicleName  = $vd->name ?? '';
         $vehiclePlate = $vd->license_plate ?? '';
 
-        $totalHT = round($amount / 1.2, 2);
+        $totalHT   = round($amount / 1.2, 2);
         $tvaAmount = round($amount - $totalHT, 2);
 
         // Global last facture number (matches paymentStore; per-year unification
@@ -867,9 +900,35 @@ class BookingController extends Controller
         $tva->status = 1;
         $tva->save();
 
-        Booking::statusChange($booking->id, $status);
+        return $tva;
+    }
 
-        return $payment;
+    /**
+     * Emit a facture for every payment on the booking that doesn't yet have one,
+     * in id order so facture numbers stay successive. Idempotent — already-
+     * invoiced payments are skipped, so re-clearing an over-paid booking (or a
+     * later payment on an already-paid one) never duplicates invoices.
+     *
+     * The "already invoiced" set includes soft-deleted factures (withTrashed):
+     * a manually deleted invoice must not be silently regenerated by a later
+     * flush. Re-issuing it is a deliberate action (the Renumber/Generate tools).
+     */
+    private function flushBookingFactures(Booking $booking): void
+    {
+        $invoicedPaymentIds = Tva::withTrashed()
+            ->where('booking_id', $booking->id)
+            ->whereNotNull('idpaiment')
+            ->pluck('idpaiment')
+            ->all();
+
+        $payments = BookingPayment::where('booking_id', $booking->id)
+            ->whereNotIn('id', $invoicedPaymentIds)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($payments as $payment) {
+            $this->createFactureForPayment($booking, $payment);
+        }
     }
 
     /**

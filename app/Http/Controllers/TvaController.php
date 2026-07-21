@@ -501,11 +501,24 @@ class TvaController extends Controller
         // rather than slotting in chronologically — use the Renumber tool to
         // re-sequence a year by date afterwards.
         $factureCounters = [];
+        // Memoise the (booking-scoped) due amount per booking so a booking with
+        // several payments in the month isn't re-summed on every payment row.
+        $dueByBooking = [];
 
         foreach ($payments as $payment) {
             $booking = Booking::with('drivers')->find($payment->booking_id);
             if (!$booking) {
                 continue;
+            }
+
+            // Under the "invoice only when fully paid" policy, a payment whose
+            // booking still has an outstanding balance gets no facture — skip it.
+            // Round to cents (float amounts) so a residual isn't read as owing.
+            if (feature('invoice_on_full_payment')) {
+                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalDueAmount(), 2);
+                if ($due > 0) {
+                    continue;
+                }
             }
 
             // Counter key = the business this invoice belongs to (may be null
@@ -540,10 +553,13 @@ class TvaController extends Controller
             $vehicleName = $vd['name'] ?? '';
             $vehicleLicensePlate = $vd['license_plate'] ?? '';
 
-            // Rental days (for unit price / quantity consistency with earlier logic)
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
-            $totalDays = $startDate->diffInDays($endDate) ?: 1;
+            // Facture days: prefer the per-payment invoice_days persisted at
+            // payment time (a manual override or a cash-split share) so a monthly
+            // rebuild reproduces the same Qty the live invoice used. Fall back to
+            // the booking's full rental span for payments without a stored value.
+            $totalDays = ($payment->invoice_days && $payment->invoice_days > 0)
+                ? (int) $payment->invoice_days
+                : (Carbon::parse($booking->start_date)->diffInDays(Carbon::parse($booking->end_date)) ?: 1);
 
             // Financials based on payment amount (TTC) with fixed 20% VAT assumption
             $paymentTtc = (float)$payment->amount;
