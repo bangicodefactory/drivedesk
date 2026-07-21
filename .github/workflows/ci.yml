@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    name: Test (PHP ${{ matrix.php }} / ${{ matrix.client }})
+    name: Test (PHP ${{ matrix.php }} / ${{ matrix.client }} / ${{ matrix.db.name }})
     runs-on: ubuntu-latest
 
     strategy:
@@ -20,10 +20,16 @@ jobs:
       matrix:
         client: [directonderweg, drivedesk]   # extend as clients onboard
         php: ['8.4']
+        # Prod hosts run MariaDB (whose default engine is MyISAM — hence the
+        # engine=InnoDB pin in config/database.php); CI historically only tested
+        # MySQL, so MariaDB-only breakage (e.g. silently-dropped FKs) slipped by.
+        db:
+          - { image: 'mysql:8.0',   name: mysql }
+          - { image: 'mariadb:11.4', name: mariadb }
 
     services:
-      mysql:
-        image: mysql:8.0
+      db:
+        image: ${{ matrix.db.image }}
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: testing
