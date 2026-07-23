@@ -64,6 +64,13 @@ class TvaController extends Controller
         // cover every page, not just the current 25, for bulk download.
         $allIds = (clone $query)->pluck('id');
 
+        // Month view: when a specific month AND year are selected, show all of
+        // that month's invoices on one page (cap 300) instead of paginating —
+        // mirrors BookingController@index. Any other filter combo keeps the
+        // default 25 per page.
+        $monthYearSelected = $request->filled('filter_month') && $request->filled('filter_year');
+        $perPage = $monthYearSelected ? 300 : 25;
+
         // F-21 (perf-audit): paginate server-side instead of loading every row
         // (the whole tenant result — 1k+ rows — was previously sent to the client).
         // withQueryString() keeps the active filters on the pagination links; the
@@ -71,7 +78,7 @@ class TvaController extends Controller
         $tvas = $query->with(['booking', 'booking.drivers'])
             ->orderByDesc('facture_date')
             ->orderByDesc('id')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Tva/Index', [
