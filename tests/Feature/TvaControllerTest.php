@@ -103,6 +103,38 @@ class TvaControllerTest extends TestCase
             ->assertOk();
     }
 
+    public function test_index_exposes_invoice_payment_method(): void
+    {
+        // The Factures list shows each invoice's recorded payment method.
+        Tva::factory()->withInvoice()->create([
+            'parent_id' => $this->owner->id, 'payment_method' => 'Chèque',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.data.0.payment_method', 'Chèque')
+            );
+    }
+
+    public function test_index_invoice_without_method_exposes_null(): void
+    {
+        // No recorded method -> prop is null (the list cell renders '—').
+        Tva::factory()->withInvoice()->create([
+            'parent_id' => $this->owner->id, 'payment_method' => null,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.data.0.payment_method', null)
+            );
+    }
+
     public function test_index_paginates_results(): void
     {
         // F-21: the list is server-side paginated (25/page) instead of loading all rows.
