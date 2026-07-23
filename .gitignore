@@ -5,6 +5,10 @@ storage/installed
 public/images/  # Replace with the path to your images folder
 *.log           # Example for log files
 .env
+# any env variant (backups, per-client) — never commit; keep only *.example
+.env.*
+!.env.example
+!.env.*.example
 node_modules
 /storage/framework
 /storage
