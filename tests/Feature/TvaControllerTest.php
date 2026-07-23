@@ -121,6 +121,44 @@ class TvaControllerTest extends TestCase
             );
     }
 
+    public function test_index_shows_all_on_one_page_when_month_and_year_selected(): void
+    {
+        // Month view: a specific month + year shows every invoice on one page
+        // (cap 300) instead of paginating — mirrors the reservation list.
+        Tva::factory()->withInvoice()->count(30)->create([
+            'parent_id' => $this->owner->id, 'facture_date' => '2026-06-10',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_month' => '06', 'filter_year' => '2026']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.total', 30)
+                ->where('tvas.per_page', 300)
+                ->where('tvas.last_page', 1)
+                ->has('tvas.data', 30)
+            );
+    }
+
+    public function test_index_month_without_year_still_paginates(): void
+    {
+        // The show-all trigger requires BOTH month and year; month alone paginates.
+        Tva::factory()->withInvoice()->count(30)->create([
+            'parent_id' => $this->owner->id, 'facture_date' => '2026-06-10',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('tva.index', ['filter_month' => '06']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tva/Index')
+                ->where('tvas.total', 30)
+                ->where('tvas.per_page', 25)
+                ->where('tvas.last_page', 2)
+            );
+    }
+
     public function test_index_pagination_preserves_filter_on_later_pages(): void
     {
         // withQueryString() must keep the filter on page 2 (and the id tiebreaker
