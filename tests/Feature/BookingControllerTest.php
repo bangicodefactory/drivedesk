@@ -1233,6 +1233,112 @@ class BookingControllerTest extends TestCase
         $this->assertDatabaseHas('vehicles', ['license_plate' => 'AA-123-BB', 'parent_id' => $this->owner->id]);
     }
 
+    // ── Chèque payment method + import normalization (BAN-241) ────────────────
+
+    public function test_import_normalizes_recognized_payment_methods(): void
+    {
+        // Excel files carry accented / lowercase / misspelled French; each must
+        // land on the canonical method used everywhere else in the app.
+        $file = $this->makeImportFile([
+            ['Cheque Payer',  '2026-06-01', '09:00', 'Toyota', 'CQ-001-BB', '2026-06-02', '18:00', '1', '100', 'chèque'],
+            ['Espece Payer',  '2026-06-01', '09:00', 'Toyota', 'CQ-002-BB', '2026-06-02', '18:00', '1', '100', 'espèce'],
+            ['Virment Payer', '2026-06-01', '09:00', 'Toyota', 'CQ-003-BB', '2026-06-02', '18:00', '1', '100', 'virment'],
+            ['Carte Payer',   '2026-06-01', '09:00', 'Toyota', 'CQ-004-BB', '2026-06-02', '18:00', '1', '100', 'CARTE'],
+            ['Cash Payer',    '2026-06-01', '09:00', 'Toyota', 'CQ-005-BB', '2026-06-02', '18:00', '1', '100', 'cash'],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        foreach ([
+            'CQ-001-BB' => 'Chèque',
+            'CQ-002-BB' => 'Espece',
+            'CQ-003-BB' => 'Virement bancaire',
+            'CQ-004-BB' => 'Carte',
+            'CQ-005-BB' => 'Espece',
+        ] as $plate => $expected) {
+            $vehicle = Vehicle::where('license_plate', $plate)->where('parent_id', $this->owner->id)->firstOrFail();
+            $this->assertDatabaseHas('bookings', [
+                'vehicle'        => $vehicle->id,
+                'payment_method' => $expected,
+            ]);
+        }
+    }
+
+    public function test_import_keeps_unrecognized_payment_method_raw(): void
+    {
+        $file = $this->makeImportFile([
+            ['Bitcoin Payer', '2026-06-01', '09:00', 'Toyota', 'CQ-006-BB', '2026-06-02', '18:00', '1', '100', '  bitcoin  '],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $vehicle = Vehicle::where('license_plate', 'CQ-006-BB')->where('parent_id', $this->owner->id)->firstOrFail();
+        $this->assertDatabaseHas('bookings', [
+            'vehicle'        => $vehicle->id,
+            'payment_method' => 'bitcoin', // trimmed, otherwise unchanged (no data loss)
+        ]);
+    }
+
+    public function test_import_empty_payment_method_stays_null(): void
+    {
+        $file = $this->makeImportFile([
+            ['Blank Payer', '2026-06-01', '09:00', 'Toyota', 'CQ-007-BB', '2026-06-02', '18:00', '1', '100', ''],
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.import'), ['file' => $file])
+            ->assertRedirect();
+
+        $vehicle = Vehicle::where('license_plate', 'CQ-007-BB')->where('parent_id', $this->owner->id)->firstOrFail();
+        $this->assertDatabaseHas('bookings', [
+            'vehicle'        => $vehicle->id,
+            'payment_method' => null,
+        ]);
+    }
+
+    public function test_index_exposes_cheque_payment_method(): void
+    {
+        $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Index')
+                ->where('paymentMethods', fn ($methods) => collect($methods)
+                    ->contains(fn ($m) => ($m['value'] ?? null) === 'Chèque' && ($m['label'] ?? null) === 'Chèque'))
+            );
+    }
+
+    public function test_payment_store_cheque_over_cap_is_not_split(): void
+    {
+        // Chèque must never hit the 5000-MAD cash ceiling (which keys on
+        // 'espece'), even with the cash_split flag on — a single payment.
+        config(['client.features.cash_split' => true]);
+        $booking = $this->makeBooking(['amount' => 13000, 'payment_status' => 'impaye']);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.payment.store', $booking->id), [
+                'amount'         => 13000,
+                'date'           => now()->format('Y-m-d'),
+                'payment_method' => 'Chèque',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(1, BookingPayment::where('booking_id', $booking->id)->count());
+        $this->assertDatabaseHas('booking_payments', [
+            'booking_id'     => $booking->id,
+            'amount'         => 13000,
+            'payment_method' => 'Chèque',
+        ]);
+    }
+
     public function test_import_reuses_vehicle_when_plate_differs_only_by_nbsp(): void
     {
         // Pre-existing vehicle; the import row's plate carries a leading
