@@ -1084,7 +1084,7 @@ class BookingController extends Controller
             ['HEURE RETOUR',       'Format HH:MM  ex: 18:30'],
             ['PERIODE',            'Nombre de jours de location (informatif)'],
             ['PRIX',               'Montant total en DH (laisser vide si inconnu)'],
-            ['METHOD',             'Mode de paiement  ex: espèce, virement, chèque, carte (laisser vide si inconnu)'],
+            ['METHOD',             'Mode de paiement  ex: Espece, Virement bancaire, Carte, Chèque (laisser vide si inconnu)'],
         ];
         foreach ($notesData as $i => $nd) {
             $notes->setCellValue('A' . ($i + 2), $nd[0]);
@@ -1284,7 +1284,7 @@ class BookingController extends Controller
                 $vehicle = $vehiclesCache[$plateKey];
 
                 $amount        = (is_numeric($prix) && $prix >= 0) ? (int) $prix : 0;
-                $paymentMethod = !empty($method) ? trim((string) $method) : null;
+                $paymentMethod = $this->normalizeImportPaymentMethod($method);
 
                 $booking = new Booking();
                 $booking->booking_id        = $this->bookingNumber();
@@ -1335,6 +1335,39 @@ class BookingController extends Controller
             : __('No bookings imported.');
 
         return redirect()->route('booking.index')->with('success', $msg);
+    }
+
+    /**
+     * Normalize a raw METHOD value from an imported reservation row to one of
+     * the canonical payment methods (BookingPayment::$paymentMethod).
+     *
+     * Excel files come in with accented, lowercase, or misspelled French
+     * ('espèce', 'chèque', 'virment'), none of which match the canonical
+     * values used across the rest of the app. Matching is accent- and
+     * case-insensitive via Str::ascii(). Empty stays null; an unrecognized
+     * value is kept as its trimmed original (no data loss).
+     */
+    private function normalizeImportPaymentMethod($raw): ?string
+    {
+        if ($raw === null || trim((string) $raw) === '') {
+            return null;
+        }
+
+        $trimmed = trim((string) $raw);
+        $key     = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($trimmed));
+
+        $map = [
+            'espece'  => 'Espece',
+            'especes' => 'Espece',
+            'cash'    => 'Espece',
+            'liquide' => 'Espece',
+            'carte'   => 'Carte',
+            'virement' => 'Virement bancaire',
+            'virment'  => 'Virement bancaire', // common typo seen in real files
+            'cheque'   => 'Chèque',
+        ];
+
+        return $map[$key] ?? $trimmed;
     }
 
     private function parseExcelDate($value): ?string
