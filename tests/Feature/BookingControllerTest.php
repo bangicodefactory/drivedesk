@@ -1245,6 +1245,8 @@ class BookingControllerTest extends TestCase
             ['Virment Payer', '2026-06-01', '09:00', 'Toyota', 'CQ-003-BB', '2026-06-02', '18:00', '1', '100', 'virment'],
             ['Carte Payer',   '2026-06-01', '09:00', 'Toyota', 'CQ-004-BB', '2026-06-02', '18:00', '1', '100', 'CARTE'],
             ['Cash Payer',    '2026-06-01', '09:00', 'Toyota', 'CQ-005-BB', '2026-06-02', '18:00', '1', '100', 'cash'],
+            ['Cheques Payer', '2026-06-01', '09:00', 'Toyota', 'CQ-008-BB', '2026-06-02', '18:00', '1', '100', 'Chèques'],
+            ['Canon Payer',   '2026-06-01', '09:00', 'Toyota', 'CQ-009-BB', '2026-06-02', '18:00', '1', '100', 'Virement bancaire'],
         ]);
 
         $this->actingAs($this->owner)
@@ -1258,6 +1260,8 @@ class BookingControllerTest extends TestCase
             'CQ-003-BB' => 'Virement bancaire',
             'CQ-004-BB' => 'Carte',
             'CQ-005-BB' => 'Espece',
+            'CQ-008-BB' => 'Chèque',            // plural + accent → canonical
+            'CQ-009-BB' => 'Virement bancaire', // already-canonical value round-trips
         ] as $plate => $expected) {
             $vehicle = Vehicle::where('license_plate', $plate)->where('parent_id', $this->owner->id)->firstOrFail();
             $this->assertDatabaseHas('bookings', [
