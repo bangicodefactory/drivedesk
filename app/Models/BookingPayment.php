@@ -29,6 +29,6 @@ class BookingPayment extends Model
         'Espece' => 'Espece',
         'Virement bancaire' => 'Virement bancaire',
         'Carte' => 'Carte',
-        
+        'Chèque' => 'Chèque',
     ];
 }
