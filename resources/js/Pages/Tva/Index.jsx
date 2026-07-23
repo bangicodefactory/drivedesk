@@ -46,6 +46,12 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
 
+    // The Action column is permission-gated, so the empty-state colSpan can't be
+    // hardcoded: 8 fixed columns (checkbox + 6 data + Method) plus the optional
+    // Action column.
+    const hasActions = can('show booking') || can('edit booking') || can('delete booking');
+    const colCount = 8 + (hasActions ? 1 : 0);
+
     const [selected, setSelected] = useState([]);
     const [downloading, setDownloading] = useState(false);
 
@@ -252,7 +258,8 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                 <TableHead>{t('Designation')}</TableHead>
                                 <TableHead>{t('Date')}</TableHead>
                                 <TableHead>{t('TTC')}</TableHead>
-                                {(can('show booking') || can('edit booking') || can('delete booking')) && (
+                                <TableHead>{t('Method')}</TableHead>
+                                {hasActions && (
                                     <TableHead className="text-right">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
@@ -260,7 +267,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                         <TableBody>
                             {tvas.data.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={colCount} className="text-center text-muted-foreground py-8">
                                         {t('No invoices found')}
                                     </TableCell>
                                 </TableRow>
@@ -283,7 +290,8 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                     <TableCell>{t.designation || '—'}</TableCell>
                                     <TableCell>{t.facture_date}</TableCell>
                                     <TableCell className="font-medium">{t.montant_ttc} Dh</TableCell>
-                                    {(can('show booking') || can('edit booking') || can('delete booking')) && (
+                                    <TableCell className="text-sm text-muted-foreground">{t.payment_method || '—'}</TableCell>
+                                    {hasActions && (
                                         <TableCell className="text-right space-x-1">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
