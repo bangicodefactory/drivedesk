@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -1344,8 +1345,9 @@ class BookingController extends Controller
      * Excel files come in with accented, lowercase, or misspelled French
      * ('espèce', 'chèque', 'virment'), none of which match the canonical
      * values used across the rest of the app. Matching is accent- and
-     * case-insensitive via Str::ascii(). Empty stays null; an unrecognized
-     * value is kept as its trimmed original (no data loss).
+     * case-insensitive via Str::ascii(), so an already-canonical value round
+     * trips back to itself. Empty stays null; an unrecognized value is kept as
+     * its trimmed original (no data loss).
      */
     private function normalizeImportPaymentMethod($raw): ?string
     {
@@ -1354,17 +1356,20 @@ class BookingController extends Controller
         }
 
         $trimmed = trim((string) $raw);
-        $key     = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($trimmed));
+        $key     = Str::lower(Str::ascii($trimmed));
 
         $map = [
-            'espece'  => 'Espece',
-            'especes' => 'Espece',
-            'cash'    => 'Espece',
-            'liquide' => 'Espece',
-            'carte'   => 'Carte',
-            'virement' => 'Virement bancaire',
-            'virment'  => 'Virement bancaire', // common typo seen in real files
-            'cheque'   => 'Chèque',
+            'espece'    => 'Espece',
+            'especes'   => 'Espece',
+            'cash'      => 'Espece',
+            'liquide'   => 'Espece',
+            'carte'     => 'Carte',
+            'cartes'    => 'Carte',
+            'virement'  => 'Virement bancaire',
+            'virements' => 'Virement bancaire',
+            'virment'   => 'Virement bancaire', // common typo seen in real files
+            'cheque'    => 'Chèque',
+            'cheques'   => 'Chèque',
         ];
 
         return $map[$key] ?? $trimmed;
