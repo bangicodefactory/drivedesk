@@ -68,8 +68,8 @@ class TvaController extends Controller
         // that month's invoices on one page (cap 300) instead of paginating —
         // mirrors BookingController@index. Any other filter combo keeps the
         // default 25 per page.
-        $monthSelected = $request->filled('filter_month') && $request->filled('filter_year');
-        $perPage = $monthSelected ? 300 : 25;
+        $monthYearSelected = $request->filled('filter_month') && $request->filled('filter_year');
+        $perPage = $monthYearSelected ? 300 : 25;
 
         // F-21 (perf-audit): paginate server-side instead of loading every row
         // (the whole tenant result — 1k+ rows — was previously sent to the client).
