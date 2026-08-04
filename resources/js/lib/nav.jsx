@@ -3,6 +3,7 @@ import {
     LayoutDashboard, Users, Car, CalendarCheck, ReceiptText,
     BellRing, FileText, Settings, Shield, CreditCard, Wrench, Receipt,
     Calendar, ClipboardList, PenLine, Layers, SlidersHorizontal, Bell, UserCircle, Inbox,
+    TriangleAlert,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ const NAV_OWNER = [
         { label: 'Booking Requests', route: 'booking_requests.index', icon: ClipboardList, permission: 'manage booking', badge: 'Upcoming' },
         { label: 'Planning',         route: 'planning',               icon: Calendar,      permission: 'manage planning' },
         { label: 'Expenses',         route: 'expense.index',          icon: ReceiptText,   permission: 'manage expense' },
+        { label: 'Traffic Violations', route: 'traffic-violation.index', icon: TriangleAlert, permission: 'manage traffic violation', feature: 'traffic_violations' },
         { label: 'Reminders',        route: 'reminder.index',         icon: BellRing,      permission: 'manage reminder' },
         { label: 'Inspections',      route: 'inspection.index',       icon: Wrench,        permission: 'manage inspection' },
         { label: 'Agreements',       route: 'rental-agreement.index', icon: FileText,      permission: 'manage rental agreement' },
