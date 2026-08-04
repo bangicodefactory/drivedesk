@@ -544,6 +544,39 @@
 
 ---
 
+## 32. Traffic Violations — `TrafficViolationController` (BAN-260)
+
+Added post-migration, so every endpoint ships covered. The whole group
+sits behind `feature:traffic_violations` and returns 404 when the flag is
+off. Every endpoint additionally verifies `parent_id` — route-model
+binding would otherwise resolve another tenant's row.
+
+| ✓/✗ | Verb | Path | Route name | Controller@method | Permission | Key inputs | Side effects |
+| --- | ---- | ---- | ---------- | ----------------- | ---------- | ---------- | ------------ |
+| ✓ | GET | `/traffic-violation` | `traffic-violation.index` | `@index` | `manage traffic violation` | search, status, confidence | — |
+| ✓ | GET | `/traffic-violation/create` | `traffic-violation.create` | `@create` | `create traffic violation` | — | — |
+| ✓ | POST | `/traffic-violation` | `traffic-violation.store` | `@store` | `create traffic violation` | license_plate, occurred_date, occurred_time, reference, amount, document | stores notice file, creates TrafficViolation, runs ViolationMatcher |
+| ✓ | GET | `/traffic-violation/{v}` | `traffic-violation.show` | `@show` | `manage traffic violation` | — | — |
+| ✓ | GET | `/traffic-violation/{v}/edit` | `traffic-violation.edit` | `@edit` | `edit traffic violation` | — | — |
+| ✓ | PUT/PATCH | `/traffic-violation/{v}` | `traffic-violation.update` | `@update` | `edit traffic violation` | same as store | updates; re-matches if plate/instant changed and not manually assigned |
+| ✓ | DELETE | `/traffic-violation/{v}` | `traffic-violation.destroy` | `@destroy` | `delete traffic violation` | — | deletes TrafficViolation |
+| ✓ | POST | `/traffic-violation/{v}/rematch` | `traffic-violation.rematch` | `@rematch` | `edit traffic violation` | — | re-runs ViolationMatcher |
+| ✓ | POST | `/traffic-violation/{v}/assign` | `traffic-violation.assign` | `@assign` | `edit traffic violation` | booking_id (nullable) | pins/unlinks a booking, records confirmed_by/at |
+| ✓ | POST | `/traffic-violation/{v}/status` | `traffic-violation.status` | `@status` | `edit traffic violation` | status, liable_party, amount_recovered | updates recovery state |
+| ✓ | POST | `/traffic-violation/import` | `traffic-violation.import` | `@importExcel` | `create traffic violation` | file (xlsx/xls/csv) | bulk-creates + auto-matches, flashes `import_skipped` |
+| ✓ | GET | `/traffic-violation/template/download` | `traffic-violation.template` | `@downloadTemplate` | `create traffic violation` | — | streams a temp xlsx, deleted after send |
+
+Covering tests:
+
+| File | Covers |
+| ---- | ------ |
+| `tests/Feature/ViolationMatcherTest.php` | The matching truth table: exact / probable / none, boundaries, null times, same-day turnover, grace window, cancelled vs completed, tenancy, plate normalization, second driver |
+| `tests/Feature/TrafficViolationControllerTest.php` | CRUD, auth, permissions, feature-flag 404, tenancy, validation, upload, auto-match on write |
+| `tests/Feature/TrafficViolationActionsTest.php` | rematch / assign / status, including manual assignment surviving edits |
+| `tests/Feature/TrafficViolationImportTest.php` | Importer: auto-match, day-first dates, per-row skips, idempotent re-import, template download |
+
+---
+
 ## Appendix: routes excluded from coverage requirement
 
 These routes exist in `routes/web.php` but do not require feature-test
