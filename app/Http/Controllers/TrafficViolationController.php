@@ -26,6 +26,17 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
  */
 class TrafficViolationController extends Controller
 {
+    /** Most bookings offered in the manual-assignment picker. */
+    private const ASSIGNABLE_LIMIT = 100;
+
+    /**
+     * Most data rows accepted from one uploaded file. Each row runs the matcher,
+     * and nothing here is queued (QUEUE_CONNECTION=sync on the shared host), so
+     * an unbounded file would simply time out. Rows beyond the cap are reported,
+     * never silently dropped.
+     */
+    private const MAX_IMPORT_ROWS = 2000;
+
     /** Import/template column layout, in order. */
     private const TEMPLATE_COLUMNS = [
         'reference'   => 'REFERENCE',
@@ -280,14 +291,27 @@ class TrafficViolationController extends Controller
         }
 
         $plateOrTimeChanged = $this->plateOrInstantChanged($trafficViolation, $request);
+        $wasManual          = $trafficViolation->match_source === TrafficViolation::SOURCE_MANUAL;
 
         $this->fill($trafficViolation, $request);
 
-        // The plate or the instant moved, so the previous match is about a
-        // different question. Re-run it rather than leaving a stale renter
-        // attached — unless the owner had pinned it by hand.
-        if ($plateOrTimeChanged && $trafficViolation->match_source !== TrafficViolation::SOURCE_MANUAL) {
-            $this->applyMatch($trafficViolation);
+        if ($plateOrTimeChanged) {
+            if ($wasManual) {
+                // A human pinned the rental, so keep it — but the vehicle is a
+                // fact about the plate, not a decision. Leaving the old
+                // vehicle_id here would make the page contradict itself: the
+                // header would show the new plate beside the old car, and the
+                // assignment picker would offer the old car's rentals.
+                $trafficViolation->vehicle_id = $this->matcher->resolveVehicle(
+                    $trafficViolation->license_plate,
+                    (int) $trafficViolation->parent_id
+                )?->id;
+            } else {
+                // The plate or the instant moved, so the previous match is about
+                // a different question. Re-run it rather than leaving a stale
+                // renter attached.
+                $this->applyMatch($trafficViolation);
+            }
         }
 
         try {
@@ -372,7 +396,9 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv,txt']);
+        // Same set BookingController::importExcel accepts — no reason for the
+        // two importers to disagree about what a spreadsheet is.
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv']);
 
         try {
             $spreadsheet = IOFactory::load($request->file('file')->getPathname());
@@ -409,6 +435,13 @@ class TrafficViolationController extends Controller
 
             $lineNumber = $index + 1;
 
+            if ($index > self::MAX_IMPORT_ROWS) {
+                $skipped[] = __('Stopped at row :max — split the file and import the rest separately.', [
+                    'max' => self::MAX_IMPORT_ROWS,
+                ]);
+                break;
+            }
+
             [$reference, $plate, $date, $time, $location, $offence, $amount] = array_pad($row, 7, null);
 
             $reference = trim((string) $reference);
@@ -435,6 +468,15 @@ class TrafficViolationController extends Controller
                 continue;
             }
 
+            // Report a malformed amount instead of silently importing 0 — this
+            // is the figure recovery totals are built on, and "400 MAD" or
+            // "1.200,50" would otherwise vanish without a trace. Blank is fine.
+            $rawAmount = trim((string) $amount);
+            if ($rawAmount !== '' && ! is_numeric($rawAmount)) {
+                $skipped[] = __('Line :line: unreadable amount.', ['line' => $lineNumber]);
+                continue;
+            }
+
             if ($reference !== '' && isset($existingReferences[mb_strtolower($reference)])) {
                 $skipped[] = __('Line :line: reference :reference already imported.', [
                     'line'      => $lineNumber,
@@ -451,7 +493,7 @@ class TrafficViolationController extends Controller
             $violation->occurred_at   = $parsedDate.' '.$parsedTime;
             $violation->location      = $location ? trim((string) $location) : null;
             $violation->description   = $offence ? trim((string) $offence) : null;
-            $violation->amount        = is_numeric($amount) ? (float) $amount : 0;
+            $violation->amount        = $rawAmount !== '' ? (float) $rawAmount : 0;
             $violation->status        = 'new';
 
             $result = $this->matcher->match(
@@ -462,7 +504,7 @@ class TrafficViolationController extends Controller
             );
 
             // $result['best'] is null when nothing matched — guard the offset,
-            // not just the property: `null['driver']` warns before ?-> runs.
+            // not just the property: `null['driver_id']` warns before ?-> runs.
             $best = $result['best'];
 
             $violation->vehicle_id       = $result['vehicle']?->id;
@@ -470,7 +512,7 @@ class TrafficViolationController extends Controller
             $violation->match_source     = TrafficViolation::SOURCE_AUTO;
             $violation->matched_at       = now();
             $violation->booking_id       = $best === null ? null : $best['booking']->id;
-            $violation->driver_user_id   = $best === null ? null : $best['driver']?->id;
+            $violation->driver_user_id   = $best === null ? null : $best['driver_id'];
 
             try {
                 $violation->save();
@@ -502,9 +544,16 @@ class TrafficViolationController extends Controller
         return [
             'license_plate' => 'required',
             'occurred_date' => 'required|date',
-            'occurred_time' => 'required',
+            // date_format, not just `required`: occurredAt() feeds this to
+            // Carbon::parse, which throws on anything unparseable. The browser's
+            // <input type="time"> constrains the form, but the endpoint does not
+            // get to assume a browser sent the request.
+            'occurred_time' => 'required|date_format:H:i,H:i:s',
             'amount'        => 'nullable|numeric',
             'notice_date'   => 'nullable|date',
+            // The scan lands on the public disk and is served from our own
+            // origin, so an .html/.svg upload would be stored XSS.
+            'document'      => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp|max:5120',
         ];
     }
 
@@ -585,7 +634,7 @@ class TrafficViolationController extends Controller
 
         if ($result['best'] !== null) {
             $violation->booking_id     = $result['best']['booking']->id;
-            $violation->driver_user_id = $result['best']['driver']?->id;
+            $violation->driver_user_id = $result['best']['driver_id'];
         } else {
             $violation->booking_id     = null;
             $violation->driver_user_id = null;
@@ -607,23 +656,30 @@ class TrafficViolationController extends Controller
             return [];
         }
 
-        return Booking::where('parent_id', $violation->parent_id)
+        $bookings = Booking::where('parent_id', $violation->parent_id)
             ->where('vehicle', $violation->vehicle_id)
             ->orderByDesc('start_date')
-            ->limit(100)
-            ->get()
-            ->map(function (Booking $booking) {
-                $attributes = $booking->getAttributes();
-                $driver     = User::find((int) ($attributes['driver'] ?? 0));
+            ->limit(self::ASSIGNABLE_LIMIT)
+            ->get();
 
-                return [
-                    'id'    => $booking->id,
-                    'label' => '#'.$booking->booking_id
-                        .' · '.($driver->name ?? __('Unknown renter'))
-                        .' · '.$attributes['start_date'].' → '.$attributes['end_date'],
-                ];
-            })
-            ->all();
+        // One query for every renter rather than a find() per booking — with
+        // the limit above this was up to 100 queries on a single page view.
+        $drivers = User::whereIn(
+            'id',
+            $bookings->pluck('driver')->map(fn ($id) => (int) $id)->filter()->unique()->values()
+        )->get()->keyBy('id');
+
+        return $bookings->map(function (Booking $booking) use ($drivers) {
+            $attributes = $booking->getAttributes();
+            $driver     = $drivers->get((int) ($attributes['driver'] ?? 0));
+
+            return [
+                'id'    => $booking->id,
+                'label' => '#'.$booking->booking_id
+                    .' · '.($driver->name ?? __('Unknown renter'))
+                    .' · '.$attributes['start_date'].' → '.$attributes['end_date'],
+            ];
+        })->all();
     }
 
     /**
@@ -634,10 +690,15 @@ class TrafficViolationController extends Controller
      */
     private function candidatesFor(TrafficViolation $violation): array
     {
-        $result = $this->matcher->match(
-            $violation->license_plate,
-            Carbon::parse($violation->occurred_at),
-            (int) $violation->parent_id
+        $at       = Carbon::parse($violation->occurred_at);
+        $parentId = (int) $violation->parent_id;
+
+        // withPeople() is what pays for the renter and second-driver models —
+        // two queries, and only on the page that actually renders them.
+        $result = $this->matcher->withPeople(
+            $this->matcher->match($violation->license_plate, $at, $parentId),
+            $at,
+            $parentId
         );
 
         return array_map(function (array $candidate) use ($violation) {

@@ -833,7 +833,9 @@
     "Line :line: missing license plate.": "Line :line: missing license plate.",
     "Line :line: unreadable date.": "Line :line: unreadable date.",
     "Line :line: unreadable time.": "Line :line: unreadable time.",
-    "Line :line: reference :reference already imported.": "Line :line: reference :reference already imported."
+    "Line :line: reference :reference already imported.": "Line :line: reference :reference already imported.",
+    "Line :line: unreadable amount.": "Line :line: unreadable amount.",
+    "Stopped at row :max — split the file and import the rest separately.": "Stopped at row :max — split the file and import the rest separately."
 }
 
 

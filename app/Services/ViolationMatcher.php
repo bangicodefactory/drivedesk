@@ -40,13 +40,17 @@ class ViolationMatcher
     /**
      * Match a violation to the bookings that could have been running at $occurredAt.
      *
+     * Candidates carry the renter's *id*, which is free — it is already on the
+     * booking row. Call withPeople() on the result to load the User models when
+     * you need names, so the importer does not pay for objects it never reads.
+     *
      * @param  Collection<int,Vehicle>|null  $vehicleCache  Preloaded tenant vehicles,
      *         so a bulk import resolves plates without a query per row.
      * @return array{
      *     vehicle: Vehicle|null,
      *     confidence: string,
-     *     candidates: array<int,array{booking:Booking,driver:User|null,second_driver:User|null,distance_seconds:int,reason:string}>,
-     *     best: array{booking:Booking,driver:User|null,second_driver:User|null,distance_seconds:int,reason:string}|null
+     *     candidates: array<int,array{booking:Booking,driver_id:int|null,distance_seconds:int,reason:string}>,
+     *     best: array{booking:Booking,driver_id:int|null,distance_seconds:int,reason:string}|null
      * }
      */
     public function match(?string $plate, CarbonInterface $occurredAt, int $parentId, ?Collection $vehicleCache = null): array
@@ -76,8 +80,11 @@ class ViolationMatcher
             })
             ->whereNotNull('start_date')
             ->whereNotNull('end_date')
-            ->whereDate('start_date', '<=', $upperBound->toDateString())
-            ->whereDate('end_date', '>=', $lowerBound->toDateString())
+            // Plain comparisons, not whereDate(): these are already `date`
+            // columns, so wrapping them in DATE() would only make the predicate
+            // non-sargable — the exact thing the comment above avoids.
+            ->where('start_date', '<=', $upperBound->toDateString())
+            ->where('end_date', '>=', $lowerBound->toDateString())
             ->get();
 
         if ($bookings->isEmpty()) {
@@ -96,7 +103,7 @@ class ViolationMatcher
             [$start, $end] = $window;
 
             if ($at->betweenIncluded($start, $end)) {
-                $containing[] = $this->candidate($booking, 0, 'within_window', $at);
+                $containing[] = ['booking' => $booking, 'distance_seconds' => 0, 'reason' => 'within_window'];
                 continue;
             }
 
@@ -107,12 +114,11 @@ class ViolationMatcher
                 : $at->diffInSeconds($end));
 
             if ($distance <= $graceSeconds) {
-                $near[] = $this->candidate(
-                    $booking,
-                    $distance,
-                    $at->lessThan($start) ? 'before_start' : 'after_end',
-                    $at
-                );
+                $near[] = [
+                    'booking'          => $booking,
+                    'distance_seconds' => $distance,
+                    'reason'           => $at->lessThan($start) ? 'before_start' : 'after_end',
+                ];
             }
         }
 
@@ -122,24 +128,28 @@ class ViolationMatcher
             // pretend to be sure.
             usort($containing, fn ($a, $b) => $this->windowStart($b['booking']) <=> $this->windowStart($a['booking']));
 
+            $candidates = $this->hydrate($containing);
+
             return [
                 'vehicle'    => $vehicle,
-                'confidence' => count($containing) === 1
+                'confidence' => count($candidates) === 1
                     ? TrafficViolation::CONFIDENCE_EXACT
                     : TrafficViolation::CONFIDENCE_PROBABLE,
-                'candidates' => $containing,
-                'best'       => $containing[0],
+                'candidates' => $candidates,
+                'best'       => $candidates[0],
             ];
         }
 
         if ($near !== []) {
             usort($near, fn ($a, $b) => $a['distance_seconds'] <=> $b['distance_seconds']);
 
+            $candidates = $this->hydrate($near);
+
             return [
                 'vehicle'    => $vehicle,
                 'confidence' => TrafficViolation::CONFIDENCE_PROBABLE,
-                'candidates' => $near,
-                'best'       => $near[0],
+                'candidates' => $candidates,
+                'best'       => $candidates[0],
             ];
         }
 
@@ -217,55 +227,119 @@ class ViolationMatcher
     }
 
     /**
-     * @return array{booking:Booking,driver:User|null,second_driver:User|null,distance_seconds:int,reason:string}
+     * Finish a candidate row without touching the database.
+     *
+     * The renter's id is already on the booking, and that is all the write path
+     * needs — `driver_user_id` is an id, not a name. Loading User models here
+     * would cost a query per candidate, per imported row, to build objects the
+     * importer never reads. Call withPeople() when you actually need names.
+     *
+     * @param  array<int,array{booking:Booking,distance_seconds:int,reason:string}>  $rows
+     * @return array<int,array{booking:Booking,driver_id:int|null,distance_seconds:int,reason:string}>
      */
-    private function candidate(Booking $booking, int $distanceSeconds, string $reason, Carbon $at): array
+    private function hydrate(array $rows): array
     {
-        $driverId = (int) ($booking->getAttributes()['driver'] ?? 0);
+        return array_map(function (array $row) {
+            $driverId = (int) ($row['booking']->getAttributes()['driver'] ?? 0);
 
-        return [
-            'booking'          => $booking,
-            'driver'           => $driverId > 0 ? User::find($driverId) : null,
-            'second_driver'    => $this->secondDriverFor($booking, $at),
-            'distance_seconds' => $distanceSeconds,
-            'reason'           => $reason,
-        ];
+            return [
+                'booking'          => $row['booking'],
+                'driver_id'        => $driverId > 0 ? $driverId : null,
+                'distance_seconds' => $row['distance_seconds'],
+                'reason'           => $row['reason'],
+            ];
+        }, $rows);
     }
 
     /**
-     * The additional driver named on a rental agreement covering this instant.
+     * Attach the renter and any second driver to a match result's candidates.
+     *
+     * Two queries regardless of candidate count, and only paid for by callers
+     * that render people (the detail page). Returns the result unchanged when
+     * there is nothing to enrich.
+     *
+     * @param  array<string,mixed>  $result  A value returned by match()
+     * @return array<string,mixed>
+     */
+    public function withPeople(array $result, CarbonInterface $at, int $parentId): array
+    {
+        if ($result['candidates'] === []) {
+            return $result;
+        }
+
+        $driverIds  = [];
+        $vehicleIds = [];
+
+        foreach ($result['candidates'] as $candidate) {
+            $attributes = $candidate['booking']->getAttributes();
+            $vehicleId  = (int) ($attributes['vehicle'] ?? 0);
+
+            if ($candidate['driver_id']) {
+                $driverIds[$candidate['driver_id']] = $candidate['driver_id'];
+            }
+            if ($vehicleId > 0) {
+                $vehicleIds[$vehicleId] = $vehicleId;
+            }
+        }
+
+        // driver id => second driver's user id, for agreements covering $at.
+        $secondDriverIds = $this->secondDriverIds($driverIds, $vehicleIds, $at, $parentId);
+
+        // array_merge, not `+`: both arrays are keyed by the *driver* id, so a
+        // union would drop every second driver on the key collision.
+        $users = User::whereIn(
+            'id',
+            array_unique(array_merge(array_values($driverIds), array_values($secondDriverIds)))
+        )->get()->keyBy('id');
+
+        $enrich = function (array $candidate) use ($users, $secondDriverIds) {
+            $secondId = $secondDriverIds[$candidate['driver_id']] ?? null;
+
+            return $candidate + [
+                'driver'        => $candidate['driver_id'] ? $users->get($candidate['driver_id']) : null,
+                'second_driver' => $secondId ? $users->get($secondId) : null,
+            ];
+        };
+
+        $result['candidates'] = array_map($enrich, $result['candidates']);
+        $result['best']       = $result['candidates'][0] ?? null;
+
+        return $result;
+    }
+
+    /**
+     * Additional drivers named on rental agreements covering this instant,
+     * keyed by the agreement's primary driver.
      *
      * `bookings` has one driver, but `rental_agreements.driver2` exists and its
      * dates are real datetimes. Surfaced so the owner can see who else was
      * authorised to drive — it is never auto-assigned, because the agreement
      * does not say who was actually behind the wheel.
+     *
+     * @param  array<int,int>  $driverIds
+     * @param  array<int,int>  $vehicleIds
+     * @return array<int,int>
      */
-    public function secondDriverFor(Booking $booking, CarbonInterface $at): ?User
+    private function secondDriverIds(array $driverIds, array $vehicleIds, CarbonInterface $at, int $parentId): array
     {
-        $attributes = $booking->getAttributes();
-        $driverId   = (int) ($attributes['driver'] ?? 0);
-        $vehicleId  = (int) ($attributes['vehicle'] ?? 0);
-
-        if ($driverId <= 0 || $vehicleId <= 0) {
-            return null;
+        if ($driverIds === [] || $vehicleIds === []) {
+            return [];
         }
 
-        $agreement = RentalAgreement::where('parent_id', $booking->parent_id)
-            ->where('vehicle', $vehicleId)
-            ->where('driver', $driverId)
+        $instant = $at->format('Y-m-d H:i:s');
+
+        return RentalAgreement::where('parent_id', $parentId)
+            ->whereIn('vehicle', array_values($vehicleIds))
+            ->whereIn('driver', array_values($driverIds))
             ->whereNotNull('driver2')
             ->where(function ($q) {
                 $q->whereNull('status')->orWhereNotIn('status', self::EXCLUDED_STATUSES);
             })
-            ->where('rental_start_date', '<=', $at->format('Y-m-d H:i:s'))
-            ->where('rental_end_date', '>=', $at->format('Y-m-d H:i:s'))
-            ->first();
-
-        if ($agreement === null || empty($agreement->driver2)) {
-            return null;
-        }
-
-        return User::find((int) $agreement->driver2);
+            ->where('rental_start_date', '<=', $instant)
+            ->where('rental_end_date', '>=', $instant)
+            ->get()
+            ->mapWithKeys(fn (RentalAgreement $a) => [(int) $a->driver => (int) $a->driver2])
+            ->all();
     }
 
     /** @return array{vehicle:Vehicle|null,confidence:string,candidates:array<int,mixed>,best:null} */

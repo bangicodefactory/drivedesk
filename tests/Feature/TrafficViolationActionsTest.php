@@ -278,6 +278,40 @@ class TrafficViolationActionsTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->has('assignableBookings', 1));
     }
 
+    public function test_show_query_count_does_not_grow_with_the_number_of_bookings(): void
+    {
+        // Guards both batched lookups: ViolationMatcher::hydrate() and
+        // assignableBookings(). Each used to issue a User::find() per row, so a
+        // busy vehicle meant ~100 queries for one page view.
+        $violation = $this->violation();
+
+        $measure = function (int $bookings) use ($violation) {
+            Booking::query()->delete();
+            for ($i = 0; $i < $bookings; $i++) {
+                $this->booking('2026-06-0'.(($i % 4) + 1), '2026-06-0'.(($i % 4) + 5));
+            }
+
+            // flushQueryLog, not just enable: disableQueryLog() leaves the log
+            // in place, so a second measurement would count the first's queries.
+            \DB::flushQueryLog();
+            \DB::enableQueryLog();
+            $this->actingAs($this->owner)->get(route('traffic-violation.show', $violation->id));
+            $queries = count(\DB::getQueryLog());
+            \DB::disableQueryLog();
+
+            return $queries;
+        };
+
+        $few  = $measure(2);
+        $many = $measure(12);
+
+        $this->assertLessThanOrEqual(
+            $few + 2,
+            $many,
+            "Show queries went from {$few} to {$many} when bookings went 2 → 12 — a per-row lookup is back."
+        );
+    }
+
     public function test_show_offers_nothing_when_the_plate_resolved_to_no_vehicle(): void
     {
         $this->booking();
