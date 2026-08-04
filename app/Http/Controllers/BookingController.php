@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use App\Support\ExcelValue;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -1375,59 +1376,19 @@ class BookingController extends Controller
         return $map[$key] ?? $trimmed;
     }
 
+    /**
+     * Both parsers now live in App\Support\ExcelValue so the traffic-violation
+     * importer reads spreadsheet dates by the exact same rules — in particular
+     * the day-first (d/m/Y) contract from IST-231. Behavior is unchanged.
+     */
     private function parseExcelDate($value): ?string
     {
-        if (empty($value)) {
-            return null;
-        }
-
-        // Numeric: Excel serial date (unambiguous).
-        if (is_numeric($value)) {
-            try {
-                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)->format('Y-m-d');
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-
-        $value = trim((string) $value);
-
-        // String dates are interpreted as the import locale, day-first (d/m/Y),
-        // matching the booking template. We deliberately do NOT fall back to the
-        // American m/d/Y order: an ambiguous value like "01/06/2026" always means
-        // 1 June (not 6 Jan), and a US-style value with day > 12 (e.g. "06/20/2026")
-        // is rejected as invalid rather than silently swapped (IST-231). Use a real
-        // Excel date cell or ISO YYYY-MM-DD for anything outside this format.
-        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y'] as $fmt) {
-            $parsed = \DateTime::createFromFormat($fmt, $value);
-            if ($parsed && $parsed->format($fmt) === $value) {
-                return $parsed->format('Y-m-d');
-            }
-        }
-
-        return null;
+        return ExcelValue::date($value);
     }
 
     private function parseExcelTime($value): ?string
     {
-        if (empty($value) && $value !== '0') {
-            return null;
-        }
-
-        // Numeric: Excel fractional day (e.g. 0.375 = 09:00)
-        if (is_numeric($value) && $value >= 0 && $value < 1) {
-            $seconds = round((float) $value * 86400);
-            return gmdate('H:i:s', $seconds);
-        }
-
-        $value = trim((string) $value);
-
-        // HH:MM or HH:MM:SS
-        if (preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $value)) {
-            return strlen($value) === 5 ? $value . ':00' : $value;
-        }
-
-        return null;
+        return ExcelValue::time($value);
     }
 
     public function bookingNumber()

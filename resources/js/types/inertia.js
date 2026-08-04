@@ -67,6 +67,7 @@
  * @property {boolean} tva_renumber
  * @property {boolean} signatures
  * @property {boolean} cash_split
+ * @property {boolean} traffic_violations
  */
 
 /**

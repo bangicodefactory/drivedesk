@@ -29,6 +29,7 @@ return [
         'demo_gateway'    => true,   // DriveDesk is the product's demo gateway
         'cash_split'      => true,   // split cash over the ceiling into compliant receipts
         'invoice_on_full_payment' => true,  // emit invoices only once a booking is fully paid
+        'traffic_violations' => true,  // BAN-260: part of the full demo surface
     ],
 
     /*
