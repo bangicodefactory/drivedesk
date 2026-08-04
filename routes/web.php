@@ -28,6 +28,7 @@ use App\Http\Controllers\TvaController;
 use App\Http\Controllers\TvaRenumberController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\RequestBookingController;
+use App\Http\Controllers\TrafficViolationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -301,6 +302,22 @@ Route::group(
     function () {
 
         Route::resource('expense', ExpenseController::class);
+    }
+);
+//-------------------------------Traffic Violation---------------------------------
+// Optional feature (BAN-260): `feature:traffic_violations` 404s the whole module
+// for clients that do not have it enabled, rather than half-rendering it.
+Route::group(
+    [
+        'middleware' => [
+            'auth',
+            'XSS',
+            'feature:traffic_violations',
+        ],
+    ],
+    function () {
+
+        Route::resource('traffic-violation', TrafficViolationController::class);
     }
 );
 //-------------------------------Option-------------------------------------------
