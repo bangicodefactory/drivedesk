@@ -72,6 +72,22 @@ class ViolationMatcherTest extends TestCase
         );
     }
 
+    /**
+     * match() carries only the renter's id — free, since it is on the booking
+     * row. withPeople() is the opt-in that loads the User models, so the
+     * importer never pays for objects it does not read.
+     */
+    private function matchWithPeopleAt(string $when, ?string $plate = null): array
+    {
+        $at = Carbon::parse($when);
+
+        return $this->matcher->withPeople(
+            $this->matcher->match($plate ?? '12345 A 6', $at, $this->owner->id),
+            $at,
+            $this->owner->id
+        );
+    }
+
     // ── Exact ────────────────────────────────────────────────────────────────
 
     public function test_instant_inside_a_single_window_is_an_exact_match(): void
@@ -261,7 +277,7 @@ class ViolationMatcherTest extends TestCase
             'status'            => 'completed',
         ]);
 
-        $result = $this->matchAt('2026-06-03 14:32:00');
+        $result = $this->matchWithPeopleAt('2026-06-03 14:32:00');
 
         $this->assertNotNull($result['best']['second_driver']);
         $this->assertSame($secondDriver->id, $result['best']['second_driver']->id);
@@ -271,7 +287,42 @@ class ViolationMatcherTest extends TestCase
     {
         $this->booking('2026-06-01 09:00:00', '2026-06-05 18:00:00');
 
-        $this->assertNull($this->matchAt('2026-06-03 14:32:00')['best']['second_driver']);
+        $this->assertNull($this->matchWithPeopleAt('2026-06-03 14:32:00')['best']['second_driver']);
+    }
+
+    public function test_match_alone_issues_no_query_per_candidate(): void
+    {
+        // The importer runs match() once per row; loading a User and an
+        // agreement per candidate here is what made a 1000-row file 4000 queries.
+        $this->booking('2026-06-01 09:00:00', '2026-06-05 18:00:00');
+        $this->booking('2026-06-03 10:00:00', '2026-06-07 18:00:00');
+
+        \DB::enableQueryLog();
+        $result = $this->matchAt('2026-06-03 14:32:00');
+        $queries = count(\DB::getQueryLog());
+        \DB::disableQueryLog();
+
+        $this->assertCount(2, $result['candidates']);
+        // One vehicle lookup, one booking lookup. Nothing per candidate.
+        $this->assertSame(2, $queries);
+    }
+
+    public function test_with_people_costs_two_queries_regardless_of_candidate_count(): void
+    {
+        $this->booking('2026-06-01 09:00:00', '2026-06-05 18:00:00');
+        $this->booking('2026-06-03 10:00:00', '2026-06-07 18:00:00');
+        $this->booking('2026-06-02 08:00:00', '2026-06-06 20:00:00');
+
+        $at     = Carbon::parse('2026-06-03 14:32:00');
+        $result = $this->matcher->match('12345 A 6', $at, $this->owner->id);
+
+        \DB::enableQueryLog();
+        $enriched = $this->matcher->withPeople($result, $at, $this->owner->id);
+        $queries  = count(\DB::getQueryLog());
+        \DB::disableQueryLog();
+
+        $this->assertCount(3, $enriched['candidates']);
+        $this->assertSame(2, $queries); // agreements + users, batched
     }
 
     // ── Driver resolution ────────────────────────────────────────────────────
@@ -282,7 +333,11 @@ class ViolationMatcherTest extends TestCase
 
         $result = $this->matchAt('2026-06-03 14:32:00');
 
-        $this->assertNotNull($result['best']['driver']);
-        $this->assertSame((int) $booking->getAttributes()['driver'], $result['best']['driver']->id);
+        // The id comes free with the match — it is what the write path stores.
+        $this->assertSame((int) $booking->getAttributes()['driver'], $result['best']['driver_id']);
+
+        $enriched = $this->matchWithPeopleAt('2026-06-03 14:32:00');
+        $this->assertNotNull($enriched['best']['driver']);
+        $this->assertSame((int) $booking->getAttributes()['driver'], $enriched['best']['driver']->id);
     }
 }

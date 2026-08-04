@@ -96,10 +96,4 @@ class TrafficViolation extends Model
     {
         return $this->booking_id !== null;
     }
-
-    /** Rows an owner still has to look at: nothing attached, or only a guess. */
-    public function needsReview(): bool
-    {
-        return ! $this->isMatched() || ($this->match_confidence !== self::CONFIDENCE_EXACT && $this->confirmed_at === null);
-    }
 }

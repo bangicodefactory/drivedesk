@@ -222,6 +222,65 @@ class TrafficViolationImportTest extends TestCase
         $this->assertCount(1, session('import_skipped'));
     }
 
+    public function test_import_reports_a_malformed_amount_instead_of_importing_zero(): void
+    {
+        // Silently storing 0 would corrupt recovery totals with no trace.
+        $this->actingAs($this->owner)->post(route('traffic-violation.import'), [
+            'file' => $this->upload([$this->validRow([6 => '400 MAD'])]),
+        ]);
+
+        $this->assertSame(0, TrafficViolation::count());
+        $this->assertCount(1, session('import_skipped'));
+    }
+
+    public function test_import_accepts_a_blank_amount_as_zero(): void
+    {
+        $this->actingAs($this->owner)->post(route('traffic-violation.import'), [
+            'file' => $this->upload([$this->validRow([6 => ''])]),
+        ]);
+
+        $this->assertSame('0.00', (string) TrafficViolation::first()->amount);
+        $this->assertNull(session('import_skipped'));
+    }
+
+    public function test_import_query_count_does_not_grow_per_row(): void
+    {
+        // Guards the batching in ViolationMatcher::hydrate(): this used to run a
+        // User::find() and a RentalAgreement query per candidate, per row.
+        $this->bookingCovering();
+
+        $count = function (int $rows) {
+            TrafficViolation::query()->delete();
+            $payload = [];
+            for ($i = 0; $i < $rows; $i++) {
+                $payload[] = $this->validRow([0 => 'PV-'.$i]);
+            }
+
+            // flushQueryLog, not just enable: disableQueryLog() leaves the log
+            // in place, so a second measurement would count the first's queries.
+            \DB::flushQueryLog();
+            \DB::enableQueryLog();
+            $this->actingAs($this->owner)->post(route('traffic-violation.import'), [
+                'file' => $this->upload($payload),
+            ]);
+            $queries = count(\DB::getQueryLog());
+            \DB::disableQueryLog();
+
+            return $queries;
+        };
+
+        $one = $count(1);
+        $ten = $count(10);
+
+        // Inserts are unavoidably per-row; the lookups around them must not be.
+        // Before batching this grew by ~4 per row.
+        $this->assertLessThan(
+            $one + (10 - 1) * 3,
+            $ten,
+            "Import queries grew from {$one} to {$ten} across 9 extra rows — per-row lookups are back."
+        );
+    }
+
     public function test_import_ignores_blank_filler_rows(): void
     {
         $this->actingAs($this->owner)->post(route('traffic-violation.import'), [

@@ -233,6 +233,20 @@ class TrafficViolationControllerTest extends TestCase
         ]);
     }
 
+    public function test_occurred_at_serializes_without_a_timezone_shift(): void
+    {
+        // The JSX splits occurred_at with slice(11,16) to fill the edit form and
+        // render the list. That is only correct while app.timezone leaves the
+        // instant unshifted. If a client ever sets TIMEZONE=Africa/Casablanca,
+        // this fails here rather than silently displaying every fine an hour off.
+        $this->actingAs($this->owner)
+            ->post(route('traffic-violation.store'), $this->validPayload());
+
+        $json = json_decode(TrafficViolation::first()->toJson(), true);
+
+        $this->assertStringStartsWith('2026-06-03T14:32:00', $json['occurred_at']);
+    }
+
     public function test_store_combines_the_date_and_time_into_the_instant(): void
     {
         $this->actingAs($this->owner)
@@ -287,6 +301,55 @@ class TrafficViolationControllerTest extends TestCase
             $this->actingAs($this->owner)
                 ->post(route('traffic-violation.store'), $this->validPayload([$field => '']))
                 ->assertSessionHas('error');
+        }
+
+        $this->assertDatabaseCount('traffic_violations', 0);
+    }
+
+    public function test_store_rejects_a_malformed_time_instead_of_fataling(): void
+    {
+        // occurredAt() feeds this to Carbon::parse, which throws on garbage.
+        // <input type="time"> constrains the form; the endpoint cannot assume one.
+        foreach (['abc', '25:99', '14', '14:32:99'] as $time) {
+            $this->actingAs($this->owner)
+                ->post(route('traffic-violation.store'), $this->validPayload(['occurred_time' => $time]))
+                ->assertSessionHas('error');
+        }
+
+        $this->assertDatabaseCount('traffic_violations', 0);
+    }
+
+    public function test_update_rejects_a_malformed_time(): void
+    {
+        $violation = $this->violation();
+
+        $this->actingAs($this->owner)
+            ->put(route('traffic-violation.update', $violation->id), $this->validPayload(['occurred_time' => 'abc']))
+            ->assertSessionHas('error');
+    }
+
+    public function test_store_accepts_a_time_with_seconds(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('traffic-violation.store'), $this->validPayload(['occurred_time' => '14:32:10']))
+            ->assertSessionHas('success');
+
+        $this->assertSame(
+            '2026-06-03 14:32:10',
+            TrafficViolation::first()->occurred_at->format('Y-m-d H:i:s')
+        );
+    }
+
+    public function test_store_rejects_a_dangerous_document_upload(): void
+    {
+        Storage::fake('public');
+
+        // The scan is served from our own origin, so .html/.svg would be stored XSS.
+        foreach (['payload.html', 'payload.svg', 'shell.php'] as $name) {
+            $this->actingAs($this->owner)->post(
+                route('traffic-violation.store'),
+                $this->validPayload(['document' => UploadedFile::fake()->create($name, 10)])
+            )->assertSessionHas('error');
         }
 
         $this->assertDatabaseCount('traffic_violations', 0);
@@ -390,6 +453,53 @@ class TrafficViolationControllerTest extends TestCase
         $fresh = $violation->fresh();
         $this->assertSame($booking->id, (int) $fresh->booking_id);
         $this->assertSame('manual', $fresh->match_source);
+    }
+
+    public function test_update_rebinds_the_vehicle_when_a_manual_matchs_plate_changes(): void
+    {
+        $booking = $this->bookingCovering();
+        $other   = Vehicle::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'license_plate' => '99999 Z 9',
+        ]);
+
+        $violation = $this->violation([
+            'booking_id'   => $booking->id,
+            'vehicle_id'   => $this->vehicle->id,
+            'match_source' => 'manual',
+        ]);
+
+        $this->actingAs($this->owner)->put(
+            route('traffic-violation.update', $violation->id),
+            $this->validPayload(['license_plate' => '99999 Z 9'])
+        );
+
+        $fresh = $violation->fresh();
+
+        // The pinned rental survives — a human decided it.
+        $this->assertSame($booking->id, (int) $fresh->booking_id);
+        $this->assertSame('manual', $fresh->match_source);
+
+        // But the vehicle is a fact about the plate, not a decision. Leaving the
+        // old id here made the page contradict itself.
+        $this->assertSame($other->id, (int) $fresh->vehicle_id);
+    }
+
+    public function test_update_clears_the_vehicle_when_a_manual_matchs_plate_becomes_unknown(): void
+    {
+        $booking   = $this->bookingCovering();
+        $violation = $this->violation([
+            'booking_id'   => $booking->id,
+            'vehicle_id'   => $this->vehicle->id,
+            'match_source' => 'manual',
+        ]);
+
+        $this->actingAs($this->owner)->put(
+            route('traffic-violation.update', $violation->id),
+            $this->validPayload(['license_plate' => 'NOT-IN-FLEET'])
+        );
+
+        $this->assertNull($violation->fresh()->vehicle_id);
     }
 
     public function test_update_denied_without_permission(): void

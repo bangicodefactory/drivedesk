@@ -1322,5 +1322,7 @@
     "Line :line: missing license plate.": "السطر :line: رقم اللوحة مفقود.",
     "Line :line: unreadable date.": "السطر :line: تاريخ غير مقروء.",
     "Line :line: unreadable time.": "السطر :line: توقيت غير مقروء.",
-    "Line :line: reference :reference already imported.": "السطر :line: المرجع :reference مستورد من قبل."
+    "Line :line: reference :reference already imported.": "السطر :line: المرجع :reference مستورد من قبل.",
+    "Line :line: unreadable amount.": "السطر :line: مبلغ غير مقروء.",
+    "Stopped at row :max — split the file and import the rest separately.": "توقف عند السطر :max — قسّم الملف واستورد الباقي على حدة."
 }

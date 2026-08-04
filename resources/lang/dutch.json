@@ -700,5 +700,7 @@
   "Line :line: missing license plate.": "Regel :line: kenteken ontbreekt.",
   "Line :line: unreadable date.": "Regel :line: onleesbare datum.",
   "Line :line: unreadable time.": "Regel :line: onleesbaar tijdstip.",
-  "Line :line: reference :reference already imported.": "Regel :line: referentie :reference is al geïmporteerd."
+  "Line :line: reference :reference already imported.": "Regel :line: referentie :reference is al geïmporteerd.",
+  "Line :line: unreadable amount.": "Regel :line: onleesbaar bedrag.",
+  "Stopped at row :max — split the file and import the rest separately.": "Gestopt bij regel :max — splits het bestand en importeer de rest apart."
 }

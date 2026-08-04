@@ -1333,5 +1333,7 @@
   "Line :line: missing license plate.": "Ligne :line : immatriculation manquante.",
   "Line :line: unreadable date.": "Ligne :line : date illisible.",
   "Line :line: unreadable time.": "Ligne :line : heure illisible.",
-  "Line :line: reference :reference already imported.": "Ligne :line : la référence :reference a déjà été importée."
+  "Line :line: reference :reference already imported.": "Ligne :line : la référence :reference a déjà été importée.",
+  "Line :line: unreadable amount.": "Ligne :line : montant illisible.",
+  "Stopped at row :max — split the file and import the rest separately.": "Arrêté à la ligne :max — divisez le fichier et importez le reste séparément."
 }
