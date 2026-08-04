@@ -319,6 +319,11 @@ Route::group(
 
         // Declared before the resource so the literal segments are not
         // swallowed by its {traffic_violation} parameter.
+        Route::post('traffic-violation/import', [TrafficViolationController::class, 'importExcel'])
+            ->name('traffic-violation.import');
+        Route::get('traffic-violation/template/download', [TrafficViolationController::class, 'downloadTemplate'])
+            ->name('traffic-violation.template');
+
         Route::post('traffic-violation/{traffic_violation}/rematch', [TrafficViolationController::class, 'rematch'])
             ->name('traffic-violation.rematch');
         Route::post('traffic-violation/{traffic_violation}/assign', [TrafficViolationController::class, 'assign'])

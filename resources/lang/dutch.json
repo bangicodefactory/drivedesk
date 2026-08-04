@@ -689,5 +689,16 @@
   "Match refreshed.": "Koppeling vernieuwd.",
   "Rental unlinked.": "Verhuur ontkoppeld.",
   "Rental linked to this violation.": "Verhuur gekoppeld aan deze overtreding.",
-  "That booking could not be found.": "Die boeking kon niet worden gevonden."
+  "That booking could not be found.": "Die boeking kon niet worden gevonden.",
+  "Import Traffic Violations": "Verkeersovertredingen importeren",
+  "Import": "Importeren",
+  "File": "Bestand",
+  "Expected format (7 columns):": "Verwacht formaat (7 kolommen):",
+  "Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.": "Datums worden dag-eerst gelezen (03/06/2026 is 3 juni). Al geïmporteerde regels worden overgeslagen.",
+  "row(s) not imported:": "regel(s) niet geïmporteerd:",
+  ":count violation(s) imported.": ":count overtreding(en) geïmporteerd.",
+  "Line :line: missing license plate.": "Regel :line: kenteken ontbreekt.",
+  "Line :line: unreadable date.": "Regel :line: onleesbare datum.",
+  "Line :line: unreadable time.": "Regel :line: onleesbaar tijdstip.",
+  "Line :line: reference :reference already imported.": "Regel :line: referentie :reference is al geïmporteerd."
 }

@@ -822,7 +822,18 @@
     "Match refreshed.": "Match refreshed.",
     "Rental unlinked.": "Rental unlinked.",
     "Rental linked to this violation.": "Rental linked to this violation.",
-    "That booking could not be found.": "That booking could not be found."
+    "That booking could not be found.": "That booking could not be found.",
+    "Import Traffic Violations": "Import Traffic Violations",
+    "Import": "Import",
+    "File": "File",
+    "Expected format (7 columns):": "Expected format (7 columns):",
+    "Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.": "Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.",
+    "row(s) not imported:": "row(s) not imported:",
+    ":count violation(s) imported.": ":count violation(s) imported.",
+    "Line :line: missing license plate.": "Line :line: missing license plate.",
+    "Line :line: unreadable date.": "Line :line: unreadable date.",
+    "Line :line: unreadable time.": "Line :line: unreadable time.",
+    "Line :line: reference :reference already imported.": "Line :line: reference :reference already imported."
 }
 
 
