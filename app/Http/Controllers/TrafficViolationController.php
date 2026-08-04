@@ -7,10 +7,14 @@ use App\Models\TrafficViolation;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\ViolationMatcher;
+use App\Support\ExcelValue;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
  * Traffic violations (BAN-260): record a notice and identify the renter who
@@ -22,6 +26,17 @@ use Inertia\Inertia;
  */
 class TrafficViolationController extends Controller
 {
+    /** Import/template column layout, in order. */
+    private const TEMPLATE_COLUMNS = [
+        'reference'   => 'REFERENCE',
+        'plate'       => 'IMMATRICULATION',
+        'date'        => 'DATE',
+        'time'        => 'HEURE',
+        'location'    => 'LIEU',
+        'description' => 'INFRACTION',
+        'amount'      => 'MONTANT',
+    ];
+
     public function __construct(private ViolationMatcher $matcher)
     {
     }
@@ -299,6 +314,184 @@ class TrafficViolationController extends Controller
 
         return redirect()->route('traffic-violation.index')
             ->with('success', __('Traffic violation successfully deleted.'));
+    }
+
+    /** The column layout the importer expects, as a downloadable xlsx. */
+    public function downloadTemplate()
+    {
+        if (! \Auth::user()->can('create traffic violation')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+
+        foreach (array_values(self::TEMPLATE_COLUMNS) as $i => $heading) {
+            $sheet->setCellValue(
+                \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1).'1',
+                $heading
+            );
+            $sheet->getColumnDimension(
+                \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1)
+            )->setWidth(20);
+        }
+
+        $sheet->getStyle('A1:G1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4472C4'],
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // One example row: the date/time format is the whole point of the
+        // template, so showing it beats documenting it elsewhere.
+        $sheet->fromArray(
+            [['PV-000123', '12345 A 6', '03/06/2026', '14:32', 'Avenue Hassan II', 'Excès de vitesse', '400']],
+            null,
+            'A2'
+        );
+
+        $path = storage_path('app/violation_tpl_'.uniqid().'.xlsx');
+        (new Xlsx($spreadsheet))->save($path);
+
+        return response()->download($path, 'traffic_violations_template.xlsx')->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Bulk-import violation notices from a spreadsheet and auto-match each one.
+     *
+     * Mirrors BookingController::importExcel: header row skipped, per-row
+     * reasons collected in `import_skipped` rather than aborting the batch, and
+     * tenant lookups cached so a hundred rows do not mean a hundred queries.
+     */
+    public function importExcel(Request $request)
+    {
+        if (! \Auth::user()->can('create traffic violation')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv,txt']);
+
+        try {
+            $spreadsheet = IOFactory::load($request->file('file')->getPathname());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', __('Could not read the file: ').$e->getMessage());
+        }
+
+        $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+
+        if (count($rows) < 2) {
+            return redirect()->back()->with('error', __('The file has no data rows.'));
+        }
+
+        $pid = parentId();
+
+        // Resolve plates against one preloaded fleet rather than per row.
+        $vehicles = Vehicle::where('parent_id', $pid)->whereNotNull('license_plate')->get();
+
+        // Existing references, so a re-imported file reports duplicates instead
+        // of hitting the unique index row by row.
+        $existingReferences = TrafficViolation::where('parent_id', $pid)
+            ->whereNotNull('reference')
+            ->pluck('reference')
+            ->mapWithKeys(fn ($r) => [mb_strtolower(trim($r)) => true])
+            ->all();
+
+        $imported = 0;
+        $skipped  = [];
+
+        foreach ($rows as $index => $row) {
+            if ($index === 0) {
+                continue; // header
+            }
+
+            $lineNumber = $index + 1;
+
+            [$reference, $plate, $date, $time, $location, $offence, $amount] = array_pad($row, 7, null);
+
+            $reference = trim((string) $reference);
+            $plate     = trim((string) $plate);
+
+            if ($plate === '' && $reference === '' && trim((string) $date) === '') {
+                continue; // blank filler row
+            }
+
+            if ($plate === '') {
+                $skipped[] = __('Line :line: missing license plate.', ['line' => $lineNumber]);
+                continue;
+            }
+
+            $parsedDate = ExcelValue::date($date);
+            if ($parsedDate === null) {
+                $skipped[] = __('Line :line: unreadable date.', ['line' => $lineNumber]);
+                continue;
+            }
+
+            $parsedTime = ExcelValue::time($time);
+            if ($parsedTime === null) {
+                $skipped[] = __('Line :line: unreadable time.', ['line' => $lineNumber]);
+                continue;
+            }
+
+            if ($reference !== '' && isset($existingReferences[mb_strtolower($reference)])) {
+                $skipped[] = __('Line :line: reference :reference already imported.', [
+                    'line'      => $lineNumber,
+                    'reference' => $reference,
+                ]);
+                continue;
+            }
+
+            $violation = new TrafficViolation();
+            $violation->parent_id     = $pid;
+            $violation->created_by    = \Auth::id();
+            $violation->reference     = $reference !== '' ? $reference : null;
+            $violation->license_plate = $plate;
+            $violation->occurred_at   = $parsedDate.' '.$parsedTime;
+            $violation->location      = $location ? trim((string) $location) : null;
+            $violation->description   = $offence ? trim((string) $offence) : null;
+            $violation->amount        = is_numeric($amount) ? (float) $amount : 0;
+            $violation->status        = 'new';
+
+            $result = $this->matcher->match(
+                $plate,
+                Carbon::parse($violation->occurred_at),
+                $pid,
+                $vehicles
+            );
+
+            // $result['best'] is null when nothing matched — guard the offset,
+            // not just the property: `null['driver']` warns before ?-> runs.
+            $best = $result['best'];
+
+            $violation->vehicle_id       = $result['vehicle']?->id;
+            $violation->match_confidence = $result['confidence'];
+            $violation->match_source     = TrafficViolation::SOURCE_AUTO;
+            $violation->matched_at       = now();
+            $violation->booking_id       = $best === null ? null : $best['booking']->id;
+            $violation->driver_user_id   = $best === null ? null : $best['driver']?->id;
+
+            try {
+                $violation->save();
+            } catch (QueryException $e) {
+                $skipped[] = __('Line :line: reference :reference already imported.', [
+                    'line'      => $lineNumber,
+                    'reference' => $reference,
+                ]);
+                continue;
+            }
+
+            if ($reference !== '') {
+                $existingReferences[mb_strtolower($reference)] = true;
+            }
+
+            $imported++;
+        }
+
+        return redirect()->route('traffic-violation.index')
+            ->with('success', __(':count violation(s) imported.', ['count' => $imported]))
+            ->with('import_skipped', $skipped ?: null);
     }
 
     // ── Internals ────────────────────────────────────────────────────────────

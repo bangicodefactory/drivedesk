@@ -1323,5 +1323,15 @@
   "Match refreshed.": "Correspondance actualisée.",
   "Rental unlinked.": "Location dissociée.",
   "Rental linked to this violation.": "Location associée à cette contravention.",
-  "That booking could not be found.": "Cette réservation est introuvable."
+  "That booking could not be found.": "Cette réservation est introuvable.",
+  "Import Traffic Violations": "Importer des contraventions",
+  "File": "Fichier",
+  "Expected format (7 columns):": "Format attendu (7 colonnes) :",
+  "Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.": "Les dates sont lues jour en premier (03/06/2026 = 3 juin). Les lignes déjà importées sont ignorées.",
+  "row(s) not imported:": "ligne(s) non importée(s) :",
+  ":count violation(s) imported.": ":count contravention(s) importée(s).",
+  "Line :line: missing license plate.": "Ligne :line : immatriculation manquante.",
+  "Line :line: unreadable date.": "Ligne :line : date illisible.",
+  "Line :line: unreadable time.": "Ligne :line : heure illisible.",
+  "Line :line: reference :reference already imported.": "Ligne :line : la référence :reference a déjà été importée."
 }

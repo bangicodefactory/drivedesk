@@ -8,7 +8,11 @@ import {
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Eye, Pencil, Plus, Search, TriangleAlert, Trash2 } from 'lucide-react';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, Eye, Pencil, Plus, Search, TriangleAlert, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/components/Pagination';
 import { ConfidenceBadge, StatusBadge } from '@/components/ViolationBadges';
@@ -25,8 +29,33 @@ function TrafficViolationIndex({
 }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+
+    const [importOpen, setImportOpen] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const importSkipped = flash?.import_skipped;
+
+    // The import redirects back here; if any row was rejected, reopen the
+    // dialog so the reasons are seen rather than lost behind a toast.
+    useEffect(() => {
+        if (importSkipped?.length > 0) {
+            setImportOpen(true);
+        }
+    }, [importSkipped]);
+
+    function submitImport(e) {
+        e.preventDefault();
+        if (!importFile) return;
+        router.post(
+            route('traffic-violation.import'),
+            { file: importFile },
+            {
+                forceFormData: true,
+                onSuccess: () => setImportFile(null),
+            },
+        );
+    }
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
@@ -128,11 +157,88 @@ function TrafficViolationIndex({
                 </div>
 
                 {can('create traffic violation') && (
-                    <Button size="sm" asChild>
-                        <Link href={route('traffic-violation.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Traffic Violation')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Dialog open={importOpen} onOpenChange={setImportOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <Upload className="mr-2 h-4 w-4" /> {t('Import')}
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-2xl">
+                                <DialogHeader className="border-b px-6 py-4 text-left">
+                                    <DialogTitle>{t('Import Traffic Violations')}</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
+                                    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="importFile">{t('File')}</Label>
+                                            <Input
+                                                id="importFile"
+                                                type="file"
+                                                accept=".xlsx,.xls,.csv"
+                                                required
+                                                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                {t('Upload an .xlsx or .xls file. Download the')}{' '}
+                                                <a
+                                                    href={route('traffic-violation.template')}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="font-medium text-primary underline underline-offset-2"
+                                                >
+                                                    {t('template')}
+                                                </a>{' '}
+                                                {t('to see the required format.')}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-md border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                                            <strong className="font-semibold text-foreground">
+                                                {t('Expected format (7 columns):')}
+                                            </strong>
+                                            <p className="mt-1 font-mono leading-relaxed">
+                                                REFERENCE | IMMATRICULATION | DATE | HEURE | LIEU | INFRACTION | MONTANT
+                                            </p>
+                                            <p className="mt-2">
+                                                {t('Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.')}
+                                            </p>
+                                        </div>
+
+                                        {importSkipped?.length > 0 && (
+                                            <div className="rounded-md border border-warning/40 bg-warning/10">
+                                                <div className="flex items-center gap-2 border-b border-warning/30 px-3 py-2">
+                                                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                                                    <strong className="text-sm font-semibold">
+                                                        {importSkipped.length} {t('row(s) not imported:')}
+                                                    </strong>
+                                                </div>
+                                                <ul className="max-h-56 space-y-1 overflow-auto px-4 py-2 text-xs">
+                                                    {importSkipped.map((reason, i) => (
+                                                        <li key={i}>{reason}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-end gap-2 border-t px-6 py-4">
+                                        <Button type="button" variant="outline" onClick={() => setImportOpen(false)}>
+                                            {t('Cancel')}
+                                        </Button>
+                                        <Button type="submit">
+                                            <Upload className="mr-2 h-4 w-4" /> {t('Import')}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Button size="sm" asChild>
+                            <Link href={route('traffic-violation.create')}>
+                                <Plus className="mr-2 h-4 w-4" /> {t('Create Traffic Violation')}
+                            </Link>
+                        </Button>
+                    </div>
                 )}
             </div>
 

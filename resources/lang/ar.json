@@ -1312,5 +1312,15 @@
     "Match refreshed.": "تم تحديث المطابقة.",
     "Rental unlinked.": "تم إلغاء ربط عملية الكراء.",
     "Rental linked to this violation.": "تم ربط عملية الكراء بهذه المخالفة.",
-    "That booking could not be found.": "تعذر العثور على هذا الحجز."
+    "That booking could not be found.": "تعذر العثور على هذا الحجز.",
+    "Import Traffic Violations": "استيراد المخالفات المرورية",
+    "File": "الملف",
+    "Expected format (7 columns):": "الصيغة المتوقعة (7 أعمدة):",
+    "Dates are read day-first (03/06/2026 is 3 June). Rows already imported are skipped.": "تُقرأ التواريخ باليوم أولًا (03/06/2026 يعني 3 يونيو). تُتجاهل الأسطر المستوردة مسبقًا.",
+    "row(s) not imported:": "سطر/أسطر لم تُستورد:",
+    ":count violation(s) imported.": "تم استيراد :count مخالفة.",
+    "Line :line: missing license plate.": "السطر :line: رقم اللوحة مفقود.",
+    "Line :line: unreadable date.": "السطر :line: تاريخ غير مقروء.",
+    "Line :line: unreadable time.": "السطر :line: توقيت غير مقروء.",
+    "Line :line: reference :reference already imported.": "السطر :line: المرجع :reference مستورد من قبل."
 }
