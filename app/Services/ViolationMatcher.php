@@ -128,7 +128,7 @@ class ViolationMatcher
             // pretend to be sure.
             usort($containing, fn ($a, $b) => $this->windowStart($b['booking']) <=> $this->windowStart($a['booking']));
 
-            $candidates = $this->hydrate($containing);
+            $candidates = $this->shapeCandidates($containing);
 
             return [
                 'vehicle'    => $vehicle,
@@ -143,7 +143,7 @@ class ViolationMatcher
         if ($near !== []) {
             usort($near, fn ($a, $b) => $a['distance_seconds'] <=> $b['distance_seconds']);
 
-            $candidates = $this->hydrate($near);
+            $candidates = $this->shapeCandidates($near);
 
             return [
                 'vehicle'    => $vehicle,
@@ -237,7 +237,7 @@ class ViolationMatcher
      * @param  array<int,array{booking:Booking,distance_seconds:int,reason:string}>  $rows
      * @return array<int,array{booking:Booking,driver_id:int|null,distance_seconds:int,reason:string}>
      */
-    private function hydrate(array $rows): array
+    private function shapeCandidates(array $rows): array
     {
         return array_map(function (array $row) {
             $driverId = (int) ($row['booking']->getAttributes()['driver'] ?? 0);
@@ -282,18 +282,22 @@ class ViolationMatcher
             }
         }
 
-        // driver id => second driver's user id, for agreements covering $at.
+        // "vehicleId:driverId" => second driver's user id, for agreements
+        // covering $at.
         $secondDriverIds = $this->secondDriverIds($driverIds, $vehicleIds, $at, $parentId);
 
-        // array_merge, not `+`: both arrays are keyed by the *driver* id, so a
-        // union would drop every second driver on the key collision.
+        // array_merge, not `+`: the two arrays are keyed differently, and a
+        // union would drop entries on key collisions.
         $users = User::whereIn(
             'id',
             array_unique(array_merge(array_values($driverIds), array_values($secondDriverIds)))
         )->get()->keyBy('id');
 
         $enrich = function (array $candidate) use ($users, $secondDriverIds) {
-            $secondId = $secondDriverIds[$candidate['driver_id']] ?? null;
+            $vehicleId = (int) ($candidate['booking']->getAttributes()['vehicle'] ?? 0);
+            $secondId  = $candidate['driver_id']
+                ? ($secondDriverIds[self::personKey($vehicleId, $candidate['driver_id'])] ?? null)
+                : null;
 
             return $candidate + [
                 'driver'        => $candidate['driver_id'] ? $users->get($candidate['driver_id']) : null,
@@ -301,6 +305,8 @@ class ViolationMatcher
             ];
         };
 
+        // match() guarantees best === candidates[0]; keep that invariant rather
+        // than leaving `best` pointing at an un-enriched copy.
         $result['candidates'] = array_map($enrich, $result['candidates']);
         $result['best']       = $result['candidates'][0] ?? null;
 
@@ -309,16 +315,20 @@ class ViolationMatcher
 
     /**
      * Additional drivers named on rental agreements covering this instant,
-     * keyed by the agreement's primary driver.
+     * keyed by "vehicleId:driverId".
      *
      * `bookings` has one driver, but `rental_agreements.driver2` exists and its
      * dates are real datetimes. Surfaced so the owner can see who else was
      * authorised to drive — it is never auto-assigned, because the agreement
      * does not say who was actually behind the wheel.
      *
+     * Keyed by vehicle *and* driver, not driver alone: one renter can have two
+     * cars out at the same instant, and a driver-only key would silently hand
+     * one car's second driver to the other.
+     *
      * @param  array<int,int>  $driverIds
      * @param  array<int,int>  $vehicleIds
-     * @return array<int,int>
+     * @return array<string,int>
      */
     private function secondDriverIds(array $driverIds, array $vehicleIds, CarbonInterface $at, int $parentId): array
     {
@@ -338,8 +348,16 @@ class ViolationMatcher
             ->where('rental_start_date', '<=', $instant)
             ->where('rental_end_date', '>=', $instant)
             ->get()
-            ->mapWithKeys(fn (RentalAgreement $a) => [(int) $a->driver => (int) $a->driver2])
+            ->mapWithKeys(fn (RentalAgreement $a) => [
+                self::personKey((int) $a->vehicle, (int) $a->driver) => (int) $a->driver2,
+            ])
             ->all();
+    }
+
+    /** Composite key for the second-driver lookup. */
+    private static function personKey(int $vehicleId, int $driverId): string
+    {
+        return $vehicleId.':'.$driverId;
     }
 
     /** @return array{vehicle:Vehicle|null,confidence:string,candidates:array<int,mixed>,best:null} */

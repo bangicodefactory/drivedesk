@@ -835,7 +835,8 @@
     "Line :line: unreadable time.": "Line :line: unreadable time.",
     "Line :line: reference :reference already imported.": "Line :line: reference :reference already imported.",
     "Line :line: unreadable amount.": "Line :line: unreadable amount.",
-    "Stopped at row :max — split the file and import the rest separately.": "Stopped at row :max — split the file and import the rest separately."
+    "Stopped at row :max — split the file and import the rest separately.": "Stopped at row :max — split the file and import the rest separately.",
+    "The rentals have changed since this was matched — re-run the match.": "The rentals have changed since this was matched — re-run the match."
 }
 
 

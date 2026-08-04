@@ -233,6 +233,22 @@ class TrafficViolationImportTest extends TestCase
         $this->assertCount(1, session('import_skipped'));
     }
 
+    public function test_a_duplicate_row_reports_the_duplicate_not_its_formatting(): void
+    {
+        // Both wrong at once: "already imported" is the useful reason, because
+        // the row is already in the system and its formatting is moot.
+        TrafficViolation::factory()->create([
+            'parent_id' => $this->owner->id,
+            'reference' => 'PV-001',
+        ]);
+
+        $this->actingAs($this->owner)->post(route('traffic-violation.import'), [
+            'file' => $this->upload([$this->validRow([6 => '400 MAD'])]),
+        ]);
+
+        $this->assertStringContainsString('PV-001', session('import_skipped')[0]);
+    }
+
     public function test_import_accepts_a_blank_amount_as_zero(): void
     {
         $this->actingAs($this->owner)->post(route('traffic-violation.import'), [

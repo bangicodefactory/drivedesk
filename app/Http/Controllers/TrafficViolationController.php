@@ -11,6 +11,7 @@ use App\Support\ExcelValue;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -149,13 +150,47 @@ class TrafficViolationController extends Controller
 
         $trafficViolation->load(['vehicle', 'booking', 'driver']);
 
+        $at       = Carbon::parse($trafficViolation->occurred_at);
+        $parentId = (int) $trafficViolation->parent_id;
+
+        // Computed fresh, while the badge on the page is what was stored at
+        // match time. Bookings get edited afterwards, so the two can legitimately
+        // disagree — surface that instead of quietly showing a stale verdict.
+        $result = $this->matcher->withPeople(
+            $this->matcher->match($trafficViolation->license_plate, $at, $parentId),
+            $at,
+            $parentId
+        );
+
         return Inertia::render('TrafficViolation/Show', [
             'violation'  => $trafficViolation,
-            'candidates' => $this->candidatesFor($trafficViolation),
+            'candidates' => $this->candidatesFor($trafficViolation, $result),
             'statuses'      => TrafficViolation::$statuses,
             'liableParties' => TrafficViolation::$liableParties,
             'assignableBookings' => $this->assignableBookings($trafficViolation),
+            'matchIsStale'       => $this->matchIsStale($trafficViolation, $result),
         ]);
+    }
+
+    /**
+     * Does the stored match still agree with what the matcher says now?
+     *
+     * A manual assignment is never stale — a human overrode the matcher on
+     * purpose. Otherwise a booking edited after the fact can silently invalidate
+     * the stored verdict, and the owner deserves to know before acting on it.
+     *
+     * @param  array<string,mixed>  $result
+     */
+    private function matchIsStale(TrafficViolation $violation, array $result): bool
+    {
+        if ($violation->match_source === TrafficViolation::SOURCE_MANUAL) {
+            return false;
+        }
+
+        $freshBookingId = $result['best']['booking']->id ?? null;
+
+        return (int) $violation->booking_id !== (int) $freshBookingId
+            || $violation->match_confidence !== $result['confidence'];
     }
 
     /**
@@ -468,20 +503,23 @@ class TrafficViolationController extends Controller
                 continue;
             }
 
+            // Duplicate check first: on a row that is both a duplicate and
+            // malformed, "already imported" is the more useful reason — the row
+            // is already in the system, so its formatting is moot.
+            if ($reference !== '' && isset($existingReferences[mb_strtolower($reference)])) {
+                $skipped[] = __('Line :line: reference :reference already imported.', [
+                    'line'      => $lineNumber,
+                    'reference' => $reference,
+                ]);
+                continue;
+            }
+
             // Report a malformed amount instead of silently importing 0 — this
             // is the figure recovery totals are built on, and "400 MAD" or
             // "1.200,50" would otherwise vanish without a trace. Blank is fine.
             $rawAmount = trim((string) $amount);
             if ($rawAmount !== '' && ! is_numeric($rawAmount)) {
                 $skipped[] = __('Line :line: unreadable amount.', ['line' => $lineNumber]);
-                continue;
-            }
-
-            if ($reference !== '' && isset($existingReferences[mb_strtolower($reference)])) {
-                $skipped[] = __('Line :line: reference :reference already imported.', [
-                    'line'      => $lineNumber,
-                    'reference' => $reference,
-                ]);
                 continue;
             }
 
@@ -590,9 +628,20 @@ class TrafficViolationController extends Controller
         $violation->notes         = $request->input('notes');
 
         if ($request->hasFile('document')) {
-            $originalName = $request->file('document')->getClientOriginalName();
-            $fileName     = pathinfo($originalName, PATHINFO_FILENAME)
-                .'_'.time().'.'.$request->file('document')->getClientOriginalExtension();
+            $file = $request->file('document');
+
+            // The extension comes from the file's *content*, never from the
+            // client name. `mimes:` validates content (guessExtension), so
+            // trusting getClientOriginalExtension() here would let a PNG
+            // carrying <script> in a comment chunk be stored as "x.html" and
+            // served as text/html from our own origin — stored XSS that passes
+            // validation. Laravel blocks .php itself; .html/.svg it does not.
+            $extension = $file->extension() ?: 'bin';
+
+            // Slug the basename too: it lands in a public URL, and a non-latin
+            // name can slug to empty.
+            $base     = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'notice';
+            $fileName = $base.'_'.time().'.'.$extension;
 
             $dir = storage_path('upload/violation');
             if (! file_exists($dir)) {
@@ -686,21 +735,11 @@ class TrafficViolationController extends Controller
      * Every booking the matcher considers plausible, flattened for the UI so it
      * can explain the guess instead of just asserting it.
      *
+     * @param  array<string,mixed>  $result  An already-matched, people-enriched result
      * @return array<int,array<string,mixed>>
      */
-    private function candidatesFor(TrafficViolation $violation): array
+    private function candidatesFor(TrafficViolation $violation, array $result): array
     {
-        $at       = Carbon::parse($violation->occurred_at);
-        $parentId = (int) $violation->parent_id;
-
-        // withPeople() is what pays for the renter and second-driver models —
-        // two queries, and only on the page that actually renders them.
-        $result = $this->matcher->withPeople(
-            $this->matcher->match($violation->license_plate, $at, $parentId),
-            $at,
-            $parentId
-        );
-
         return array_map(function (array $candidate) use ($violation) {
             $booking = $candidate['booking'];
 

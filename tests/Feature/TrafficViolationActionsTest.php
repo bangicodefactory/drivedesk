@@ -278,6 +278,43 @@ class TrafficViolationActionsTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->has('assignableBookings', 1));
     }
 
+    public function test_show_flags_a_match_that_the_bookings_have_outgrown(): void
+    {
+        $booking   = $this->booking();
+        $violation = $this->violation([
+            'booking_id'       => $booking->id,
+            'match_confidence' => 'exact',
+            'match_source'     => 'auto',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('traffic-violation.show', $violation->id))
+            ->assertInertia(fn (Assert $page) => $page->where('matchIsStale', false));
+
+        // The rental that justified the match is edited away from the instant.
+        $booking->update(['start_date' => '2026-09-01', 'end_date' => '2026-09-05']);
+
+        $this->actingAs($this->owner)
+            ->get(route('traffic-violation.show', $violation->id))
+            ->assertInertia(fn (Assert $page) => $page->where('matchIsStale', true));
+    }
+
+    public function test_a_manual_assignment_is_never_reported_as_stale(): void
+    {
+        // A human overrode the matcher on purpose; disagreeing with it later is
+        // the point, not a problem.
+        $booking   = $this->booking('2026-01-01', '2026-01-05');
+        $violation = $this->violation([
+            'booking_id'       => $booking->id,
+            'match_confidence' => 'exact',
+            'match_source'     => 'manual',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('traffic-violation.show', $violation->id))
+            ->assertInertia(fn (Assert $page) => $page->where('matchIsStale', false));
+    }
+
     public function test_show_query_count_does_not_grow_with_the_number_of_bookings(): void
     {
         // Guards both batched lookups: ViolationMatcher::hydrate() and
