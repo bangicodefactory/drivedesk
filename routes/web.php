@@ -317,6 +317,15 @@ Route::group(
     ],
     function () {
 
+        // Declared before the resource so the literal segments are not
+        // swallowed by its {traffic_violation} parameter.
+        Route::post('traffic-violation/{traffic_violation}/rematch', [TrafficViolationController::class, 'rematch'])
+            ->name('traffic-violation.rematch');
+        Route::post('traffic-violation/{traffic_violation}/assign', [TrafficViolationController::class, 'assign'])
+            ->name('traffic-violation.assign');
+        Route::post('traffic-violation/{traffic_violation}/status', [TrafficViolationController::class, 'status'])
+            ->name('traffic-violation.status');
+
         Route::resource('traffic-violation', TrafficViolationController::class);
     }
 );

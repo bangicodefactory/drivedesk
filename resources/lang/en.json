@@ -808,7 +808,21 @@
     "Contested": "Contested",
     "Written Off": "Written Off",
     "Unknown": "Unknown",
-    "Company": "Company"
+    "Company": "Company",
+    "Re-run match": "Re-run match",
+    "Confirm this renter": "Confirm this renter",
+    "Unlink": "Unlink",
+    "Assign a rental": "Assign a rental",
+    "Assign": "Assign",
+    "Select a rental": "Select a rental",
+    "Search rentals…": "Search rentals…",
+    "Recovery": "Recovery",
+    "The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.": "The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.",
+    "Picking a rental here overrides the automatic match and keeps it through later edits.": "Picking a rental here overrides the automatic match and keeps it through later edits.",
+    "Match refreshed.": "Match refreshed.",
+    "Rental unlinked.": "Rental unlinked.",
+    "Rental linked to this violation.": "Rental linked to this violation.",
+    "That booking could not be found.": "That booking could not be found."
 }
 
 

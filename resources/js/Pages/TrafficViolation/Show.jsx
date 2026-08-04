@@ -1,8 +1,15 @@
-import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, TriangleAlert, UserRound } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Check, Link2Off, Pencil, RefreshCw, TriangleAlert, UserRound } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { ConfidenceBadge, StatusBadge } from '@/components/ViolationBadges';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -32,13 +39,33 @@ function Field({ label, children }) {
     );
 }
 
-function TrafficViolationShow({ violation, candidates = [], statuses = {}, liableParties = {} }) {
+function TrafficViolationShow({
+    violation,
+    candidates = [],
+    statuses = {},
+    liableParties = {},
+    assignableBookings = [],
+}) {
     const t = useTranslation();
     const { auth } = usePage().props;
     const can = (p) => auth.permissions.includes(p);
+    const canEdit = can('edit traffic violation');
 
     const occurredAt = String(violation.occurred_at ?? '').replace('T', ' ').slice(0, 16);
     const matched = candidates.find((c) => c.is_current) ?? null;
+
+    const [assignTo, setAssignTo] = useState(
+        violation.booking_id ? String(violation.booking_id) : '',
+    );
+    const [status, setStatus] = useState(violation.status ?? 'new');
+    const [liableParty, setLiableParty] = useState(violation.liable_party ?? 'unknown');
+    const [recovered, setRecovered] = useState(
+        violation.amount_recovered != null ? String(violation.amount_recovered) : '0',
+    );
+
+    const post = (name, data = {}) => router.post(route(name, violation.id), data, {
+        preserveScroll: true,
+    });
 
     return (
         <div className="space-y-6 p-6">
@@ -121,6 +148,35 @@ function TrafficViolationShow({ violation, candidates = [], statuses = {}, liabl
                                 {t('More than one rental could fit — confirm before acting on this.')}
                             </span>
                         )}
+
+                        {canEdit && (
+                            <div className="ml-auto flex flex-wrap gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => post('traffic-violation.rematch')}
+                                >
+                                    <RefreshCw className="mr-2 h-4 w-4" /> {t('Re-run match')}
+                                </Button>
+                                {violation.booking_id && !violation.confirmed_at && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => post('traffic-violation.assign', { booking_id: violation.booking_id })}
+                                    >
+                                        <Check className="mr-2 h-4 w-4" /> {t('Confirm this renter')}
+                                    </Button>
+                                )}
+                                {violation.booking_id && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => post('traffic-violation.assign', { booking_id: null })}
+                                    >
+                                        <Link2Off className="mr-2 h-4 w-4" /> {t('Unlink')}
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {violation.driver ? (
@@ -199,6 +255,111 @@ function TrafficViolationShow({ violation, candidates = [], statuses = {}, liabl
                     })}
                 </CardContent>
             </Card>
+
+            {canEdit && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('Assign a rental')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {assignableBookings.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                {t('The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.')}
+                            </p>
+                        ) : (
+                            <>
+                                <p className="text-sm text-muted-foreground">
+                                    {t('Picking a rental here overrides the automatic match and keeps it through later edits.')}
+                                </p>
+                                <div className="flex flex-wrap items-end gap-2">
+                                    <div className="min-w-[280px] flex-1 space-y-1.5">
+                                        <Label>{t('Booking')}</Label>
+                                        <SearchableSelect
+                                            options={assignableBookings.map((b) => ({
+                                                value: String(b.id),
+                                                label: b.label,
+                                            }))}
+                                            value={assignTo}
+                                            onChange={setAssignTo}
+                                            placeholder={t('Select a rental')}
+                                            searchPlaceholder={t('Search rentals…')}
+                                            ariaLabel={t('Booking')}
+                                        />
+                                    </div>
+                                    <Button
+                                        disabled={!assignTo}
+                                        onClick={() => post('traffic-violation.assign', { booking_id: assignTo })}
+                                    >
+                                        {t('Assign')}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {canEdit && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('Recovery')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="space-y-1.5">
+                                <Label>{t('Status')}</Label>
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger aria-label={t('Status')}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(statuses).map(([key, label]) => (
+                                            <SelectItem key={key} value={key}>{t(label)}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label>{t('Liable Party')}</Label>
+                                <Select value={liableParty} onValueChange={setLiableParty}>
+                                    <SelectTrigger aria-label={t('Liable Party')}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(liableParties).map(([key, label]) => (
+                                            <SelectItem key={key} value={key}>{t(label)}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="amount_recovered">{t('Amount Recovered')}</Label>
+                                <Input
+                                    id="amount_recovered"
+                                    type="number"
+                                    step="0.01"
+                                    value={recovered}
+                                    onChange={(e) => setRecovered(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button
+                                onClick={() => post('traffic-violation.status', {
+                                    status,
+                                    liable_party: liableParty,
+                                    amount_recovered: recovered,
+                                })}
+                            >
+                                {t('Save')}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="flex justify-end">
                 <Button variant="ghost" asChild>
