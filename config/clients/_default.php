@@ -27,7 +27,19 @@ return [
         // emit one per payment. Off = today's behavior (one invoice per payment,
         // including partial payments).
         'invoice_on_full_payment' => false,
+        // Traffic violation (contravention / PV) tracking: record a notice and
+        // match it to the booking + renter that held the vehicle at that
+        // instant. Off by default so an unconfigured client is unchanged.
+        'traffic_violations' => false,
     ],
+
+    /*
+     * How far outside a rental window a violation may still be attributed to
+     * that rental, in hours. Covers late returns and same-day turnovers, which
+     * the booking data cannot express (there is no actual-return timestamp).
+     * Read via config('client.violation_match_grace_hours', 12).
+     */
+    'violation_match_grace_hours' => 12,
 
     /*
      * Legal ceiling (MAD) for a single cash payment/receipt. Above it, cash is

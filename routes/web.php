@@ -28,6 +28,7 @@ use App\Http\Controllers\TvaController;
 use App\Http\Controllers\TvaRenumberController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\RequestBookingController;
+use App\Http\Controllers\TrafficViolationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -301,6 +302,36 @@ Route::group(
     function () {
 
         Route::resource('expense', ExpenseController::class);
+    }
+);
+//-------------------------------Traffic Violation---------------------------------
+// Optional feature (BAN-260): `feature:traffic_violations` 404s the whole module
+// for clients that do not have it enabled, rather than half-rendering it.
+Route::group(
+    [
+        'middleware' => [
+            'auth',
+            'XSS',
+            'feature:traffic_violations',
+        ],
+    ],
+    function () {
+
+        // Declared before the resource so the literal segments are not
+        // swallowed by its {traffic_violation} parameter.
+        Route::post('traffic-violation/import', [TrafficViolationController::class, 'importExcel'])
+            ->name('traffic-violation.import');
+        Route::get('traffic-violation/template/download', [TrafficViolationController::class, 'downloadTemplate'])
+            ->name('traffic-violation.template');
+
+        Route::post('traffic-violation/{traffic_violation}/rematch', [TrafficViolationController::class, 'rematch'])
+            ->name('traffic-violation.rematch');
+        Route::post('traffic-violation/{traffic_violation}/assign', [TrafficViolationController::class, 'assign'])
+            ->name('traffic-violation.assign');
+        Route::post('traffic-violation/{traffic_violation}/status', [TrafficViolationController::class, 'status'])
+            ->name('traffic-violation.status');
+
+        Route::resource('traffic-violation', TrafficViolationController::class);
     }
 );
 //-------------------------------Option-------------------------------------------
