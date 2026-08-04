@@ -1298,5 +1298,19 @@
     "Renter Notified": "تم إشعار المكتري",
     "Contested": "مطعون فيه",
     "Written Off": "مشطوب",
-    "Unknown": "غير معروف"
+    "Unknown": "غير معروف",
+    "Re-run match": "إعادة تشغيل المطابقة",
+    "Confirm this renter": "تأكيد هذا المكتري",
+    "Unlink": "إلغاء الربط",
+    "Assign a rental": "إسناد عملية كراء",
+    "Assign": "إسناد",
+    "Select a rental": "اختر عملية كراء",
+    "Search rentals…": "البحث عن عمليات الكراء…",
+    "Recovery": "الاسترداد",
+    "The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.": "رقم اللوحة لا يطابق أي سيارة في الأسطول، لذا لا توجد عملية كراء للاختيار منها. صحّح رقم اللوحة أولًا.",
+    "Picking a rental here overrides the automatic match and keeps it through later edits.": "اختيار عملية كراء هنا يتجاوز المطابقة التلقائية ويحافظ عليها عند التعديلات اللاحقة.",
+    "Match refreshed.": "تم تحديث المطابقة.",
+    "Rental unlinked.": "تم إلغاء ربط عملية الكراء.",
+    "Rental linked to this violation.": "تم ربط عملية الكراء بهذه المخالفة.",
+    "That booking could not be found.": "تعذر العثور على هذا الحجز."
 }

@@ -675,5 +675,19 @@
   "Contested": "Betwist",
   "Written Off": "Afgeschreven",
   "Unknown": "Onbekend",
-  "Company": "Bedrijf"
+  "Company": "Bedrijf",
+  "Re-run match": "Koppeling opnieuw uitvoeren",
+  "Confirm this renter": "Deze huurder bevestigen",
+  "Unlink": "Ontkoppelen",
+  "Assign a rental": "Een verhuur toewijzen",
+  "Assign": "Toewijzen",
+  "Select a rental": "Selecteer een verhuur",
+  "Search rentals…": "Zoek verhuringen…",
+  "Recovery": "Verhaal",
+  "The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.": "Het kenteken komt met geen enkel voertuig in het wagenpark overeen, dus er is geen verhuur om uit te kiezen. Corrigeer eerst het kenteken.",
+  "Picking a rental here overrides the automatic match and keeps it through later edits.": "Een verhuur kiezen overschrijft de automatische koppeling en behoudt deze bij latere wijzigingen.",
+  "Match refreshed.": "Koppeling vernieuwd.",
+  "Rental unlinked.": "Verhuur ontkoppeld.",
+  "Rental linked to this violation.": "Verhuur gekoppeld aan deze overtreding.",
+  "That booking could not be found.": "Die boeking kon niet worden gevonden."
 }

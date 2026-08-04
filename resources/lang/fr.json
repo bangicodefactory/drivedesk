@@ -1309,5 +1309,19 @@
   "Renter Notified": "Locataire informé",
   "Contested": "Contesté",
   "Written Off": "Passé en perte",
-  "Unknown": "Inconnu"
+  "Unknown": "Inconnu",
+  "Re-run match": "Relancer la recherche",
+  "Confirm this renter": "Confirmer ce locataire",
+  "Unlink": "Dissocier",
+  "Assign a rental": "Attribuer une location",
+  "Assign": "Attribuer",
+  "Select a rental": "Sélectionner une location",
+  "Search rentals…": "Rechercher des locations…",
+  "Recovery": "Recouvrement",
+  "The plate does not match any vehicle in the fleet, so there is no rental to choose from. Correct the plate first.": "L'immatriculation ne correspond à aucun véhicule du parc, il n'y a donc aucune location à choisir. Corrigez d'abord l'immatriculation.",
+  "Picking a rental here overrides the automatic match and keeps it through later edits.": "Choisir une location ici remplace la correspondance automatique et la conserve lors des modifications ultérieures.",
+  "Match refreshed.": "Correspondance actualisée.",
+  "Rental unlinked.": "Location dissociée.",
+  "Rental linked to this violation.": "Location associée à cette contravention.",
+  "That booking could not be found.": "Cette réservation est introuvable."
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
 use App\Models\TrafficViolation;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\ViolationMatcher;
 use Carbon\Carbon;
@@ -126,7 +128,110 @@ class TrafficViolationController extends Controller
             'candidates' => $this->candidatesFor($trafficViolation),
             'statuses'      => TrafficViolation::$statuses,
             'liableParties' => TrafficViolation::$liableParties,
+            'assignableBookings' => $this->assignableBookings($trafficViolation),
         ]);
+    }
+
+    /**
+     * Re-run the match. Bookings are edited after the fact — a corrected end
+     * date can turn an unmatched violation into an obvious one.
+     */
+    public function rematch(TrafficViolation $trafficViolation)
+    {
+        if (! \Auth::user()->can('edit traffic violation')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+            return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
+        }
+
+        $this->applyMatch($trafficViolation);
+        $trafficViolation->save();
+
+        return redirect()->back()->with('success', __('Match refreshed.'));
+    }
+
+    /**
+     * Pin the violation to a booking by hand, or confirm the proposed one.
+     *
+     * A manual assignment outranks the matcher and survives later edits, so it
+     * records who decided and when.
+     */
+    public function assign(Request $request, TrafficViolation $trafficViolation)
+    {
+        if (! \Auth::user()->can('edit traffic violation')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+            return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
+        }
+
+        $validator = \Validator::make($request->all(), ['booking_id' => 'nullable|integer']);
+        if ($validator->fails()) {
+            return redirect()->back()->with('error', $validator->getMessageBag()->first());
+        }
+
+        $bookingId = $request->input('booking_id');
+
+        // Detach: hand the violation back to the unmatched queue.
+        if (empty($bookingId)) {
+            $trafficViolation->booking_id       = null;
+            $trafficViolation->driver_user_id   = null;
+            $trafficViolation->match_confidence = TrafficViolation::CONFIDENCE_NONE;
+            $trafficViolation->match_source     = TrafficViolation::SOURCE_MANUAL;
+            $trafficViolation->confirmed_by     = \Auth::id();
+            $trafficViolation->confirmed_at     = now();
+            $trafficViolation->save();
+
+            return redirect()->back()->with('success', __('Rental unlinked.'));
+        }
+
+        $booking = Booking::where('parent_id', parentId())->find($bookingId);
+
+        if ($booking === null) {
+            return redirect()->back()->with('error', __('That booking could not be found.'));
+        }
+
+        $trafficViolation->booking_id       = $booking->id;
+        $trafficViolation->driver_user_id   = (int) ($booking->getAttributes()['driver'] ?? 0) ?: null;
+        $trafficViolation->match_confidence = TrafficViolation::CONFIDENCE_EXACT;
+        $trafficViolation->match_source     = TrafficViolation::SOURCE_MANUAL;
+        $trafficViolation->matched_at       = now();
+        $trafficViolation->confirmed_by     = \Auth::id();
+        $trafficViolation->confirmed_at     = now();
+        $trafficViolation->save();
+
+        return redirect()->back()->with('success', __('Rental linked to this violation.'));
+    }
+
+    /** Move the violation along the recovery workflow. Marked by hand. */
+    public function status(Request $request, TrafficViolation $trafficViolation)
+    {
+        if (! \Auth::user()->can('edit traffic violation')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+            return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
+        }
+
+        $validator = \Validator::make($request->all(), [
+            'status'           => 'required|in:'.implode(',', array_keys(TrafficViolation::$statuses)),
+            'liable_party'     => 'required|in:'.implode(',', array_keys(TrafficViolation::$liableParties)),
+            'amount_recovered' => 'nullable|numeric',
+        ]);
+        if ($validator->fails()) {
+            return redirect()->back()->with('error', $validator->getMessageBag()->first());
+        }
+
+        $trafficViolation->status           = $request->input('status');
+        $trafficViolation->liable_party     = $request->input('liable_party');
+        $trafficViolation->amount_recovered = $request->input('amount_recovered') ?: 0;
+        $trafficViolation->save();
+
+        return redirect()->back()->with('success', __('Traffic violation successfully updated.'));
     }
 
     public function edit(TrafficViolation $trafficViolation)
@@ -292,6 +397,40 @@ class TrafficViolationController extends Controller
             $violation->booking_id     = null;
             $violation->driver_user_id = null;
         }
+    }
+
+    /**
+     * Bookings the owner can pin this violation to by hand.
+     *
+     * Scoped to the resolved vehicle: reassigning across vehicles would almost
+     * always mean the plate is wrong, which is an edit, not an assignment. If
+     * the plate resolved to nothing there is nothing sensible to offer.
+     *
+     * @return array<int,array{id:int,label:string}>
+     */
+    private function assignableBookings(TrafficViolation $violation): array
+    {
+        if (empty($violation->vehicle_id)) {
+            return [];
+        }
+
+        return Booking::where('parent_id', $violation->parent_id)
+            ->where('vehicle', $violation->vehicle_id)
+            ->orderByDesc('start_date')
+            ->limit(100)
+            ->get()
+            ->map(function (Booking $booking) {
+                $attributes = $booking->getAttributes();
+                $driver     = User::find((int) ($attributes['driver'] ?? 0));
+
+                return [
+                    'id'    => $booking->id,
+                    'label' => '#'.$booking->booking_id
+                        .' · '.($driver->name ?? __('Unknown renter'))
+                        .' · '.$attributes['start_date'].' → '.$attributes['end_date'],
+                ];
+            })
+            ->all();
     }
 
     /**
