@@ -45,6 +45,7 @@ function TrafficViolationShow({
     statuses = {},
     liableParties = {},
     assignableBookings = [],
+    matchIsStale = false,
 }) {
     const t = useTranslation();
     const { auth } = usePage().props;
@@ -147,6 +148,13 @@ function TrafficViolationShow({
                             <span className="text-sm text-muted-foreground">
                                 {t('More than one rental could fit — confirm before acting on this.')}
                             </span>
+                        )}
+                        {/* Tonal badge, not amber text: coloured text on a tint
+                            fails WCAG AA — see components/ui/badge.jsx. */}
+                        {matchIsStale && (
+                            <Badge variant="warning">
+                                {t('The rentals have changed since this was matched — re-run the match.')}
+                            </Badge>
                         )}
 
                         {canEdit && (

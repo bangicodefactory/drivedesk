@@ -1335,5 +1335,6 @@
   "Line :line: unreadable time.": "Ligne :line : heure illisible.",
   "Line :line: reference :reference already imported.": "Ligne :line : la référence :reference a déjà été importée.",
   "Line :line: unreadable amount.": "Ligne :line : montant illisible.",
-  "Stopped at row :max — split the file and import the rest separately.": "Arrêté à la ligne :max — divisez le fichier et importez le reste séparément."
+  "Stopped at row :max — split the file and import the rest separately.": "Arrêté à la ligne :max — divisez le fichier et importez le reste séparément.",
+  "The rentals have changed since this was matched — re-run the match.": "Les locations ont changé depuis cette correspondance — relancez la recherche."
 }

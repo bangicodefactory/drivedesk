@@ -290,6 +290,37 @@ class ViolationMatcherTest extends TestCase
         $this->assertNull($this->matchWithPeopleAt('2026-06-03 14:32:00')['best']['second_driver']);
     }
 
+    public function test_a_second_driver_from_another_vehicles_agreement_is_not_borrowed(): void
+    {
+        // Same renter, two cars out at the same instant. Keying the second-driver
+        // lookup by driver alone would hand the other car's extra driver to this
+        // violation.
+        $booking = $this->booking('2026-06-01 09:00:00', '2026-06-05 18:00:00');
+        $driverId = $booking->getAttributes()['driver'];
+
+        $otherVehicle = Vehicle::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'license_plate' => '55555 B 5',
+        ]);
+        $otherSecondDriver = User::factory()->create(['parent_id' => $this->owner->id, 'type' => 'driver']);
+
+        // The agreement carrying a driver2 belongs to the *other* vehicle.
+        RentalAgreement::factory()->create([
+            'parent_id'         => $this->owner->id,
+            'vehicle'           => $otherVehicle->id,
+            'driver'            => $driverId,
+            'driver2'           => $otherSecondDriver->id,
+            'rental_start_date' => '2026-06-01 09:00:00',
+            'rental_end_date'   => '2026-06-05 18:00:00',
+            'status'            => 'completed',
+        ]);
+
+        $result = $this->matchWithPeopleAt('2026-06-03 14:32:00');
+
+        $this->assertSame($this->vehicle->id, $result['vehicle']->id);
+        $this->assertNull($result['best']['second_driver']);
+    }
+
     public function test_match_alone_issues_no_query_per_candidate(): void
     {
         // The importer runs match() once per row; loading a User and an

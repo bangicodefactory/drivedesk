@@ -355,6 +355,46 @@ class TrafficViolationControllerTest extends TestCase
         $this->assertDatabaseCount('traffic_violations', 0);
     }
 
+    public function test_uploaded_notice_is_stored_under_a_content_derived_extension(): void
+    {
+        Storage::fake('public');
+
+        // Genuine PNG bytes under an .html client name — UploadedFile::fake()
+        // keys its generator off the extension, so it cannot express this.
+        // `mimes:` validates content (guessExtension) and passes; keeping the
+        // client extension for storage would serve it as text/html from our own
+        // origin, and a PNG carrying <script> in a comment chunk is stored XSS.
+        $source = storage_path('app/'.uniqid('polyglot_').'.png');
+        imagepng(imagecreatetruecolor(10, 10), $source);
+
+        $file = new UploadedFile($source, 'payload.html', null, null, true);
+
+        $this->actingAs($this->owner)
+            ->post(route('traffic-violation.store'), $this->validPayload(['document' => $file]))
+            ->assertSessionHas('success');
+
+        $document = TrafficViolation::first()->document;
+
+        $this->assertStringEndsNotWith('.html', $document);
+        $this->assertMatchesRegularExpression('/\.(png|jpg|jpeg)$/', $document);
+    }
+
+    public function test_uploaded_notice_name_is_slugged(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->owner)->post(
+            route('traffic-violation.store'),
+            $this->validPayload(['document' => UploadedFile::fake()->image('../../étrange nom!.png')])
+        );
+
+        $document = TrafficViolation::first()->document;
+
+        $this->assertStringNotContainsString('/', $document);
+        $this->assertStringNotContainsString(' ', $document);
+        $this->assertStringNotContainsString('!', $document);
+    }
+
     public function test_store_rejects_a_non_numeric_amount(): void
     {
         $this->actingAs($this->owner)
