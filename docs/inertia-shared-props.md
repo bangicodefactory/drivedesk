@@ -47,6 +47,7 @@ overrides live in `config/clients/<client>.php`.
 | `multi_branch` | `false` | Multi-branch fleet management |
 | `tva_renumber` | `true` | TVA invoice renumbering |
 | `signatures` | `true` | Digital signature pad |
+| `traffic_violations` | `false` | Traffic violation (contravention / PV) tracking — BAN-260 |
 
 ### Reading props in a page component
 
