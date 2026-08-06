@@ -188,6 +188,58 @@ class LocaleUrlTest extends TestCase
 
     // ── The locale set itself ────────────────────────────────────────────────
 
+    public function test_every_public_locale_actually_has_the_gateway_copy(): void
+    {
+        // The gateway's dg_* keys lived only in ary.json, so
+        // t('dg_…', 'English default') fell back to the inline English and /fr
+        // and /en rendered identical pages — hreflang advertising three URLs
+        // with the same content, which Google discounts. Structure alone is not
+        // enough; a locale URL has to serve that locale's words.
+        $this->asClient('drivedesk');
+
+        $keys = fn (string $locale) => array_keys(array_filter(
+            json_decode(file_get_contents(resource_path("lang/{$locale}.json")), true) ?: [],
+            fn ($key) => str_starts_with($key, 'dg_'),
+            ARRAY_FILTER_USE_KEY
+        ));
+
+        $reference = $keys('en');
+        $this->assertNotEmpty($reference, 'en.json has no gateway copy');
+
+        foreach (Locales::forPublicUrls() as $locale) {
+            $this->assertEqualsCanonicalizing(
+                $reference,
+                $keys($locale),
+                "{$locale}.json is missing gateway copy, so /{$locale} would render English"
+            );
+        }
+    }
+
+    public function test_each_locale_serves_its_own_words_not_a_fallback(): void
+    {
+        // Guards the same thing end to end: two locale URLs returning the same
+        // headline means the hreflang cluster is decorative.
+        $this->asClient('drivedesk');
+
+        // The headline is rendered client-side, so assert on the translation
+        // payload the page ships rather than on markup that does not exist yet.
+        $copy = function (string $path) {
+            $html = $this->get($path)->getContent();
+            preg_match('/"dg_hero_line1":"(.*?)"/', $html, $m);
+
+            return $m[1] ?? '';
+        };
+
+        $en = $copy('/en');
+        $fr = $copy('/fr');
+
+        // Both must be present *and* differ. Asserting only that they differ
+        // passes when a key is missing entirely — which is the bug, not the fix.
+        $this->assertNotSame('', $en, '/en ships no hero copy');
+        $this->assertNotSame('', $fr, '/fr ships no hero copy');
+        $this->assertNotSame($en, $fr, '/en and /fr ship the same hero copy');
+    }
+
     public function test_public_locales_exclude_what_the_app_cannot_serve(): void
     {
         $this->asClient('drivedesk');
