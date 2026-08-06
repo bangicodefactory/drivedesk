@@ -49,20 +49,26 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
         'XSS',
     ]
 );
-// Public landing (client) home page using new modular Blade layout
-Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
+// Public B2C rental storefront: the fleet/booking landing plus the pages its
+// layout partials link to. Guarded by `feature:public_storefront` (BAN-261) so a
+// client whose public face is not a rental storefront 404s the whole family
+// instead of serving pages aimed at the opposite audience.
+Route::middleware('feature:public_storefront')->group(function () {
+    // Public landing (client) home page using new modular Blade layout
+    Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
 
-// Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
-Route::view('/contact', 'client.pages.contact')->name('contact');
-Route::get('/search', function (\Illuminate\Http\Request $request) {
-    $q = $request->get('q');
-    return view('client.pages.search', compact('q'));
-})->name('search');
-Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
-    $data = $request->validate(['email' => 'required|email']);
-    // TODO: store subscription or dispatch job
-    return back()->with('status', 'Subscribed with ' . $data['email']);
-})->name('newsletter.subscribe');
+    // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
+    Route::view('/contact', 'client.pages.contact')->name('contact');
+    Route::get('/search', function (\Illuminate\Http\Request $request) {
+        $q = $request->get('q');
+        return view('client.pages.search', compact('q'));
+    })->name('search');
+    Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
+        $data = $request->validate(['email' => 'required|email']);
+        // TODO: store subscription or dispatch job
+        return back()->with('status', 'Subscribed with ' . $data['email']);
+    })->name('newsletter.subscribe');
+});
 
 // "Book a demo" form on the demo-gateway landing — guarded so the endpoint only
 // exists for clients that expose the marketing landing (drivedesk). 404 otherwise.

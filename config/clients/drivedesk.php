@@ -30,6 +30,11 @@ return [
         'cash_split'      => true,   // split cash over the ceiling into compliant receipts
         'invoice_on_full_payment' => true,  // emit invoices only once a booking is fully paid
         'traffic_violations' => true,  // BAN-260: part of the full demo surface
+        // DriveDesk sells the platform to rental agencies; its public face is
+        // the B2B demo gateway at /, not a B2C rental storefront. The storefront
+        // pages targeted the opposite audience (and /landing shipped seeded demo
+        // fleet + invented testimonials), so they are off here. BAN-261.
+        'public_storefront' => false,
     ],
 
     /*
