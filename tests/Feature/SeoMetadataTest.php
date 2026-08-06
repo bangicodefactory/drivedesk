@@ -115,17 +115,63 @@ class SeoMetadataTest extends TestCase
         // is the worst possible tag to hand over.
         $this->asClient('drivedesk');
 
-        $html = $this->get('/', ['Host' => 'evil.example.com'])->getContent();
+        // Absolute URL, not a Host header: Laravel's test client builds the
+        // request from its own base URL, so a header never reaches
+        // getSchemeAndHttpHost() and the assertion would pass with or without
+        // the fix.
+        $html = $this->get('http://evil.example.com/')->getContent();
 
-        $this->assertStringNotContainsString('evil.example.com', $html);
+        // Scoped to the tags this PR owns. Vite's asset URLs and Ziggy's `url`
+        // are also host-derived, but that is pre-existing framework behaviour
+        // and the real fix for it is enabling TrustHosts — tracked separately.
         $this->assertStringContainsString('<link rel="canonical" href="'.rtrim(config('app.url'), '/').'/">', $html);
+        $this->assertStringNotContainsString('rel="canonical" href="http://evil', $html);
+        $this->assertStringNotContainsString('property="og:url" content="http://evil', $html);
+        $this->assertStringNotContainsString('hreflang="x-default" href="http://evil', $html);
+    }
+
+    public function test_an_unset_app_url_does_not_send_canonicals_to_localhost(): void
+    {
+        // config/app.php defaults `url` to the truthy string 'http://localhost',
+        // so a plain `?:` fallback never fires and every canonical, hreflang and
+        // sitemap entry would silently point at localhost in production —
+        // invisible to the deploy smoke test, which curls vars.APP_URL directly.
+        $this->asClient('drivedesk');
+        config(['app.url' => 'http://localhost']);
+
+        $html = $this->get('http://drivedesk.ma/')->getContent();
+
+        $this->assertStringNotContainsString('href="http://localhost/"', $html);
+        $this->assertStringContainsString('<link rel="canonical" href="http://drivedesk.ma/">', $html);
+    }
+
+    public function test_an_empty_app_url_falls_back_to_the_request_host(): void
+    {
+        $this->asClient('drivedesk');
+        config(['app.url' => '']);
+
+        $html = $this->get('http://drivedesk.ma/')->getContent();
+
+        $this->assertStringContainsString('<link rel="canonical" href="http://drivedesk.ma/">', $html);
+    }
+
+    public function test_a_configured_app_url_still_beats_a_spoofed_host(): void
+    {
+        // The fallback must not become a way back in for the Host header.
+        $this->asClient('drivedesk');
+        config(['app.url' => 'https://drivedesk.ma']);
+
+        $html = $this->get('http://evil.example.com/')->getContent();
+
+        $this->assertStringContainsString('<link rel="canonical" href="https://drivedesk.ma/">', $html);
+        $this->assertStringNotContainsString('rel="canonical" href="http://evil', $html);
     }
 
     public function test_a_spoofed_host_cannot_choose_the_sitemap_urls(): void
     {
         $this->asClient('drivedesk');
 
-        $xml = $this->get('/sitemap.xml', ['Host' => 'evil.example.com'])->getContent();
+        $xml = $this->get('http://evil.example.com/sitemap.xml')->getContent();
 
         $this->assertStringNotContainsString('evil.example.com', $xml);
     }
