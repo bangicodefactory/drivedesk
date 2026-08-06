@@ -31,6 +31,11 @@ return [
         // match it to the booking + renter that held the vehicle at that
         // instant. Off by default so an unconfigured client is unchanged.
         'traffic_violations' => false,
+        // Public B2C rental storefront: /landing (fleet + booking widget),
+        // /contact, /search, /newsletter/subscribe. On by default because that
+        // is today's behavior for every existing client (§10.2 rule 2). Turn it
+        // off for clients whose public face is not a rental storefront.
+        'public_storefront' => true,
     ],
 
     /*

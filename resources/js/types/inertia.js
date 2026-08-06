@@ -68,6 +68,7 @@
  * @property {boolean} signatures
  * @property {boolean} cash_split
  * @property {boolean} traffic_violations
+ * @property {boolean} public_storefront
  */
 
 /**
