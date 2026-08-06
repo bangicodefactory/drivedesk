@@ -297,21 +297,36 @@ class SeoMetadataTest extends TestCase
         }
     }
 
-    public function test_public_pages_ship_only_the_routes_they_need(): void
+    public function test_public_pages_ship_the_routes_reachable_without_a_page_load(): void
     {
+        // A `public` Ziggy group once trimmed this page to 7 routes. It shipped
+        // broken: @routes writes window.Ziggy once per *document*, and Inertia
+        // navigates without one. Clicking "Log in" on the gateway is a
+        // client-side visit, so Login.jsx rendered against the 7-route list and
+        // route('password.request') threw — working only after a reload.
+        //
+        // So the marketing page must carry what the pages it links to need, and
+        // login leads into the whole app.
         $this->asClient('drivedesk');
 
         $html = $this->get('/')->getContent();
 
-        // Everything DemoGateway.jsx calls route() for must be present…
+        // Named directly by DemoGateway.jsx…
         foreach (['"login"', '"demo.request"'] as $route) {
-            $this->assertStringContainsString($route, $html, "public Ziggy group dropped {$route}");
+            $this->assertStringContainsString($route, $html, "Ziggy dropped {$route}");
         }
 
-        // …and the admin surface must not be.
-        foreach (['"booking.index"', '"vehicle.index"', '"tva.index"'] as $route) {
-            $this->assertStringNotContainsString($route, $html, "admin route {$route} leaked to a public page");
+        // …and by Login.jsx, which is one client-side click away.
+        foreach (['"password.request"', '"password.email"'] as $route) {
+            $this->assertStringContainsString(
+                $route,
+                $html,
+                "{$route} is missing, so clicking Log in without a page load throws"
+            );
         }
+
+        // The full list, since login opens onto the admin.
+        $this->assertStringContainsString('"booking.index"', $html);
     }
 
     public function test_the_storefront_landing_keeps_its_vehicle_detail_route(): void
