@@ -49,6 +49,20 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
         'XSS',
     ]
 );
+// Locale-prefixed public home (BAN-263): /fr, /en, /ar serve the same page in a
+// named language, so each has a real indexable URL that hreflang can point at.
+// `/` stays the x-default and serves the client's guest default.
+//
+// The constraint is the exact locale list, so this cannot swallow a literal path
+// like /login or /landing — and it is declared after them regardless.
+// `feature:demo_gateway` so this only exists for clients with a public product
+// page. Without it an internal-only tenant would gain three URLs that merely
+// redirect to login.
+Route::get('/{locale}', [HomeController::class, 'index'])
+    ->where('locale', \App\Support\Locales::routeConstraint())
+    ->middleware(['XSS', 'feature:demo_gateway'])
+    ->name('public.home.locale');
+
 // Crawler-facing endpoints (BAN-262). Generated, not static, because which
 // pages exist depends on the client's feature flags.
 Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');

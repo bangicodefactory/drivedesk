@@ -21,6 +21,13 @@ class SeoController extends Controller
 
         if (feature('demo_gateway')) {
             $urls[] = ['loc' => $base.'/', 'priority' => '1.0', 'changefreq' => 'weekly'];
+
+            // Each locale has its own indexable URL (BAN-263); listing them is
+            // how the alternates get discovered without waiting for a crawl of
+            // the x-default page.
+            foreach (\App\Support\Locales::forPublicUrls() as $locale) {
+                $urls[] = ['loc' => $base.'/'.$locale, 'priority' => '0.9', 'changefreq' => 'weekly'];
+            }
         }
 
         if (feature('public_storefront')) {
