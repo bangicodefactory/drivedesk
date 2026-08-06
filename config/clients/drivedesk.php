@@ -38,6 +38,19 @@ return [
     ],
 
     /*
+     * Public SEO copy (BAN-262). Written in English rather than the guest
+     * default locale (`ary`): the buyer here is a rental-agency owner, the
+     * product is sold beyond Morocco, and a crawler is served the guest locale
+     * regardless of who is searching. Description is 149 chars.
+     */
+    'seo' => [
+        'title'       => 'DriveDesk — Car Rental Management Software',
+        'description' => 'Run your car rental agency from one place: fleet, bookings, contracts, e-signature, invoicing and planning. Multilingual, white-label. Book a demo.',
+        'site_name'   => 'DriveDesk',
+        'og_image'    => '/images/drivedesk-og.png',
+    ],
+
+    /*
      * Explicit provider class — Str::studly('drivedesk') yields 'Drivedesk',
      * not 'DriveDesk'.
      */

@@ -1,3 +1,22 @@
+// Self-hosted page fonts (BAN-262). These were three render-blocking requests to
+// fonts.googleapis.com, which also contradicted app.blade.php's own claim that
+// the app makes no external font request — and put an EU-visitor GDPR question
+// on the one page aimed at buyers. Imported here rather than in app.jsx so Vite
+// keeps them in this page's chunk; the admin app never downloads them.
+// Weights mirror exactly what the Google URL requested, so nothing shifts.
+import '@fontsource/hanken-grotesk/400.css';
+import '@fontsource/hanken-grotesk/500.css';
+import '@fontsource/hanken-grotesk/600.css';
+import '@fontsource/hanken-grotesk/700.css';
+import '@fontsource/hanken-grotesk/800.css';
+import '@fontsource/saira-condensed/800.css';
+import '@fontsource/cairo/400.css';
+import '@fontsource/cairo/500.css';
+import '@fontsource/cairo/600.css';
+import '@fontsource/cairo/700.css';
+import '@fontsource/cairo/800.css';
+import '@fontsource/cairo/900.css';
+
 import { useState } from 'react';
 import { Head, usePage, Link } from '@inertiajs/react';
 import { z } from 'zod';
@@ -168,10 +187,7 @@ export default function DemoGateway() {
             {/* On phones the nav gets crowded (brand + login + CTA); hide the nav
                 CTA — the hero has a prominent "Book a demo" right below. */}
             <style>{`@media (max-width: 640px){ .dg-nav-cta{ display: none; } }`}</style>
-            <Head title="DriveDesk — Car Rental Management, simplified">
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Saira+Condensed:ital,wght@1,800&family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-            </Head>
+            <Head title="DriveDesk — Car Rental Management Software" />
 
             {/* Nav */}
             <nav style={{ position: 'sticky', top: 0, zIndex: 30, backdropFilter: 'blur(14px)', background: 'rgba(14,15,17,.72)', borderBottom: `1px solid ${C.line}` }}>
