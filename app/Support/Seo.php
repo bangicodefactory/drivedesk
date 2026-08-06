@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,6 +25,12 @@ use Illuminate\Support\Facades\Auth;
  */
 class Seo
 {
+    /**
+     * config/app.php's fallback for `url`. Reaching this value means APP_URL was
+     * never set for the deploy, not that localhost is the intended origin.
+     */
+    private const UNCONFIGURED_APP_URL = 'http://localhost';
+
     /**
      * Route names that are public marketing surfaces. Everything not listed is
      * noindex. Kept as an allowlist on purpose: a new admin route should never
@@ -118,10 +123,26 @@ class Seo
      *
      * APP_URL is set per deploy and is what these tags actually mean. The
      * request host is only a fallback for environments that never set it.
+     *
+     * Note config/app.php defaults `url` to the truthy string 'http://localhost',
+     * so "APP_URL is unset" cannot be detected with a plain `?:` — trusting it
+     * would silently point every canonical, hreflang and sitemap entry at
+     * localhost in production, with nothing to notice: the deploy smoke test
+     * curls vars.APP_URL directly rather than anything the page emits.
+     *
+     * The scheme matters too. Google treats http:// and https:// as different
+     * URLs, so an http value on an https site produces canonicals pointing at a
+     * URL that redirects. Both clients pin APP_URL to https://.
      */
     public static function baseUrl(Request $request): string
     {
-        return rtrim(config('app.url') ?: $request->getSchemeAndHttpHost(), '/');
+        $configured = rtrim((string) config('app.url'), '/');
+
+        if ($configured === '' || $configured === self::UNCONFIGURED_APP_URL) {
+            return rtrim($request->getSchemeAndHttpHost(), '/');
+        }
+
+        return $configured;
     }
 
     /**
