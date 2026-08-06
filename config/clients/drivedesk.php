@@ -48,6 +48,13 @@ return [
         'description' => 'Run your car rental agency from one place: fleet, bookings, contracts, e-signature, invoicing and planning. Multilingual, white-label. Book a demo.',
         'site_name'   => 'DriveDesk',
         'og_image'    => '/images/drivedesk-og.png',
+        // Prose for llms.txt. With SSR off, an assistant that does not execute
+        // JavaScript sees an empty document, so this is the only description of
+        // the product it can read.
+        'llms_summary' => 'DriveDesk is car rental management software for rental agencies. '
+            .'It covers fleet management, bookings, rental contracts with in-app e-signature, '
+            .'invoicing and VAT, expenses, and a visual planning board. It is multilingual and '
+            .'white-label: each agency runs it on its own domain and branding.',
     ],
 
     /*

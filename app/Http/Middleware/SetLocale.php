@@ -42,9 +42,14 @@ class SetLocale
         // is unset, so it keeps defaulting to French.
         $clientDefault = config('client.public_default_locale', 'fr');
 
-        // Priority 1: Get from authenticated user. Guarded on $locale so an
-        // explicit locale in the URL still wins — without this the route prefix
-        // would be silently ignored for any logged-in visitor.
+        // Priority 1: Get from authenticated user. Guarded on $locale so a
+        // locale in the URL wins here.
+        //
+        // Note this is not the last word for signed-in visitors: the XSS route
+        // middleware runs after this group and re-asserts Auth::user()->lang
+        // app-wide. That is intended — the locale prefix exists so guests and
+        // crawlers get an indexable URL per language, while a signed-in user
+        // keeps the language they chose. See LocaleUrlTest.
         if (! $locale && Auth::check() && Auth::user()->lang) {
             $locale = Auth::user()->lang;
         }

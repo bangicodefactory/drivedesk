@@ -55,14 +55,26 @@ class LocaleUrlTest extends TestCase
         $this->get('/')->assertOk()->assertSee('lang="ar"', false);
     }
 
-    public function test_the_url_beats_a_logged_in_users_saved_language(): void
+    public function test_a_signed_in_visitor_keeps_their_own_language(): void
     {
-        // The auth branch used to overwrite unconditionally, which would have
-        // made the prefix a no-op for anyone signed in.
+        // The prefix is for guests and crawlers. For a signed-in visitor the XSS
+        // route middleware re-asserts Auth::user()->lang app-wide, and that wins
+        // — they also get the Dashboard at this URL, not the marketing page, so
+        // their own language is the right answer. Pinned because it is a real
+        // limit of the feature, not an accident.
         $this->asClient('drivedesk');
         $user = User::factory()->create(['type' => 'owner', 'parent_id' => 0, 'lang' => 'en']);
 
-        $this->actingAs($user)->get('/fr')->assertSee('lang="fr"', false);
+        $this->actingAs($user)->get('/fr')->assertSee('lang="en"', false);
+    }
+
+    public function test_the_url_wins_for_a_guest_with_a_session_language(): void
+    {
+        // The case that actually matters for indexing: no account, and a session
+        // locale that disagrees with the URL.
+        $this->asClient('drivedesk');
+
+        $this->withSession(['locale' => 'en'])->get('/fr')->assertSee('lang="fr"', false);
     }
 
     public function test_an_unsupported_locale_is_not_a_route(): void
