@@ -14,7 +14,16 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
-        // \App\Http\Middleware\TrustHosts::class,
+        // Rejects requests whose Host header is not this deploy's own domain
+        // (#210). Without it `Host` is attacker-controlled, and several absolute
+        // URLs in every response derive from it — including Vite's <script src>,
+        // so a poisoned cache could serve script tags pointing at another origin.
+        //
+        // Laravel makes this a no-op in the `local` environment and under tests,
+        // so it only takes effect on real deploys (APP_ENV=production). The
+        // pattern comes from APP_URL and covers its subdomains, so both the apex
+        // and www. are trusted for each client.
+        \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
