@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -17,8 +18,21 @@ use Tests\TestCase;
  */
 class SeoMetadataTest extends TestCase
 {
+    use AsInstalledApp;
     use RefreshDatabase;
     use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markAppInstalled();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeInstalledMarkerIfCreated();
+        parent::tearDown();
+    }
 
     // ── The demo gateway is the indexable page ────────────────────────────────
 

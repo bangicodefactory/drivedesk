@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -20,8 +21,21 @@ use Tests\TestCase;
  */
 class PublicStorefrontTest extends TestCase
 {
+    use AsInstalledApp;
     use RefreshDatabase;
     use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markAppInstalled();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeInstalledMarkerIfCreated();
+        parent::tearDown();
+    }
 
     /** Every route in the storefront family, as [method, uri]. */
     public static function storefrontRoutes(): array
