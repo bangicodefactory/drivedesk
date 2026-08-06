@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Support\Locales;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -18,8 +19,21 @@ use Tests\TestCase;
  */
 class LocaleUrlTest extends TestCase
 {
+    use AsInstalledApp;
     use RefreshDatabase;
     use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markAppInstalled();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeInstalledMarkerIfCreated();
+        parent::tearDown();
+    }
 
     // ── The prefix actually switches language ────────────────────────────────
 
@@ -119,7 +133,11 @@ class LocaleUrlTest extends TestCase
     {
         $this->asClient('drivedesk');
 
-        $this->get('/fr')->assertSee('<link rel="canonical" href="http://127.0.0.1:8002/fr">', false);
+        // Host-agnostic: APP_URL differs between .env and CI's .env.example.
+        $this->assertMatchesRegularExpression(
+            '#<link rel="canonical" href="https?://[^"]+/fr">#',
+            $this->get('/fr')->getContent()
+        );
     }
 
     public function test_pages_without_locale_urls_emit_no_hreflang(): void
