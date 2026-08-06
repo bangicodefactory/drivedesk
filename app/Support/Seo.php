@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Support\Locales;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Server-rendered SEO metadata for the Blade shell (BAN-262).
@@ -33,9 +34,13 @@ class Seo
      * @var array<int,string>
      */
     private const INDEXABLE_ROUTES = [
-        'client.home',   // /landing — B2C storefront (feature: public_storefront)
-        'contact',
-        'search',
+        // /landing — B2C storefront (feature: public_storefront).
+        //
+        // `contact` and `search` are deliberately absent: they are Route::view /
+        // closure routes rendering client.layouts.app, not this shell, so listing
+        // them here would be dead config implying an SEO treatment they never
+        // receive. Move them onto the Inertia shell before adding them back.
+        'client.home',
     ];
 
     /** @return array<string,mixed> */
@@ -50,7 +55,7 @@ class Seo
             'title'       => $seo['title'] ?? config('app.name', 'RentCar'),
             'description' => $seo['description'] ?? null,
             'canonical'   => self::canonical($request),
-            'image'       => self::image($seo),
+            'image'       => self::image($seo, self::baseUrl($request)),
             'siteName'    => config('client.name') ? ($seo['site_name'] ?? config('app.name')) : config('app.name'),
             'locale'      => app()->getLocale(),
             'htmlLang'    => self::htmlLang(),
@@ -60,7 +65,7 @@ class Seo
             // hreflang only makes sense on the page that actually exists per
             // locale; the storefront has no locale URLs yet.
             'alternates'  => $isGateway && $indexable
-                ? Locales::alternatesFor($request->getSchemeAndHttpHost())
+                ? Locales::alternatesFor(self::baseUrl($request))
                 : [],
         ];
     }
@@ -74,6 +79,16 @@ class Seo
     /** Guests only ever reach a public page; anything else must not be indexed. */
     private static function isIndexable(?string $routeName, bool $isGateway): bool
     {
+        // A crawler is never signed in, so nothing an authenticated user sees is
+        // ever the indexable version of a URL. This is not only an SEO nit:
+        // HomeController@index returns the *Dashboard* for a signed-in user at
+        // "/" and "/{locale}", and "indexable" also selects the trimmed public
+        // Ziggy group — so without this guard the dashboard rendered there with
+        // 7 routes and its sidebar's route('booking.index') threw client-side.
+        if (Auth::check()) {
+            return false;
+        }
+
         // The gateway only exists for clients that enable it.
         if ($isGateway) {
             return (bool) feature('demo_gateway');
@@ -92,7 +107,25 @@ class Seo
     }
 
     /**
-     * Canonical URL: scheme + host + path, no query string.
+     * The site's own origin, from configuration — never from the request.
+     *
+     * `Host` is attacker-controlled (TrustHosts is disabled in app/Http/Kernel),
+     * so deriving canonical / og:url / hreflang / JSON-LD from
+     * getSchemeAndHttpHost() lets a spoofed header emit
+     * `<link rel="canonical" href="http://evil.example.com/">`. Behind any
+     * caching layer that is textbook cache-poisoning, and a canonical is exactly
+     * the tag you least want an attacker to choose.
+     *
+     * APP_URL is set per deploy and is what these tags actually mean. The
+     * request host is only a fallback for environments that never set it.
+     */
+    public static function baseUrl(Request $request): string
+    {
+        return rtrim(config('app.url') ?: $request->getSchemeAndHttpHost(), '/');
+    }
+
+    /**
+     * Canonical URL: origin + path, no query string.
      *
      * Query parameters on these pages are filters and tracking tags, never
      * distinct content, so folding them onto the bare path is correct and stops
@@ -100,8 +133,10 @@ class Seo
      */
     private static function canonical(Request $request): string
     {
-        return rtrim($request->getSchemeAndHttpHost().'/'.ltrim($request->path(), '/'), '/')
-            ?: $request->getSchemeAndHttpHost();
+        $base = self::baseUrl($request);
+        $path = trim($request->path(), '/');
+
+        return $path === '' ? $base.'/' : $base.'/'.$path;
     }
 
     /**
@@ -114,7 +149,7 @@ class Seo
      * ahead of the asset landing, and the tag simply starts working when the
      * file appears.
      */
-    private static function image(array $seo): ?string
+    private static function image(array $seo, string $base): ?string
     {
         $image = $seo['og_image'] ?? null;
 
@@ -128,7 +163,9 @@ class Seo
 
         $relative = ltrim($image, '/');
 
-        return file_exists(public_path($relative)) ? asset($relative) : null;
+        // Built from $base, not asset(): asset() resolves against the request
+        // root, which carries the same Host-header problem as the canonical.
+        return file_exists(public_path($relative)) ? $base.'/'.$relative : null;
     }
 
     /**
@@ -169,14 +206,14 @@ class Seo
 
         $seo  = config('client.seo', []);
         $name = $seo['site_name'] ?? config('app.name', 'RentCar');
-        $url  = $request->getSchemeAndHttpHost();
+        $url  = self::baseUrl($request);
 
         $organization = array_filter([
             '@type'       => 'Organization',
             '@id'         => $url.'/#organization',
             'name'        => $name,
             'url'         => $url,
-            'logo'        => self::image($seo),
+            'logo'        => self::image($seo, $url),
             'description' => $seo['description'] ?? null,
         ]);
 

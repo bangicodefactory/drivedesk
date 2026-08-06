@@ -105,7 +105,59 @@ class SeoMetadataTest extends TestCase
         $this->assertStringContainsString('Organization', $html);
     }
 
+    // ── Absolute URLs come from config, not the request ──────────────────────
+
+    public function test_a_spoofed_host_header_cannot_choose_the_canonical(): void
+    {
+        // TrustHosts is disabled in app/Http/Kernel, so `Host` is attacker
+        // controlled. Deriving canonical/og:url/hreflang from it lets a spoofed
+        // header point them at another domain — cache-poisonable, and a canonical
+        // is the worst possible tag to hand over.
+        $this->asClient('drivedesk');
+
+        $html = $this->get('/', ['Host' => 'evil.example.com'])->getContent();
+
+        $this->assertStringNotContainsString('evil.example.com', $html);
+        $this->assertStringContainsString('<link rel="canonical" href="'.rtrim(config('app.url'), '/').'/">', $html);
+    }
+
+    public function test_a_spoofed_host_cannot_choose_the_sitemap_urls(): void
+    {
+        $this->asClient('drivedesk');
+
+        $xml = $this->get('/sitemap.xml', ['Host' => 'evil.example.com'])->getContent();
+
+        $this->assertStringNotContainsString('evil.example.com', $xml);
+    }
+
     // ── Everything else must not be indexed ──────────────────────────────────
+
+    public function test_an_authenticated_visitor_at_the_root_is_not_treated_as_public(): void
+    {
+        // HomeController@index returns the Dashboard for a signed-in user at "/".
+        // Marking that indexable also selected the trimmed public Ziggy group, so
+        // the dashboard rendered with 7 routes and its sidebar's
+        // route('booking.index') threw client-side.
+        $this->asClient('drivedesk');
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $html = $this->actingAs($owner)->get('/')->getContent();
+
+        $this->assertStringContainsString('noindex', $html);
+        $this->assertStringNotContainsString('og:title', $html);
+        $this->assertStringContainsString('"booking.index"', $html, 'the dashboard lost the routes it needs');
+    }
+
+    public function test_an_authenticated_visitor_on_a_locale_url_is_not_treated_as_public(): void
+    {
+        $this->asClient('drivedesk');
+        $owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $html = $this->actingAs($owner)->get('/fr')->getContent();
+
+        $this->assertStringContainsString('noindex', $html);
+        $this->assertStringContainsString('"booking.index"', $html);
+    }
 
     public function test_login_is_noindex(): void
     {
@@ -250,6 +302,18 @@ class SeoMetadataTest extends TestCase
         // BAN-261 removed the storefront for this client; listing it would point
         // crawlers at a 404.
         $this->assertStringNotContainsString('/landing', $xml);
+    }
+
+    public function test_the_sitemap_omits_pages_that_do_not_use_this_shell(): void
+    {
+        // /contact and /search render client.layouts.app, so they carry no
+        // canonical or robots directive — and /contact was 500ing on one client.
+        $this->asClient('directonderweg');
+
+        $xml = $this->get('/sitemap.xml')->getContent();
+
+        $this->assertStringNotContainsString('/contact', $xml);
+        $this->assertStringNotContainsString('/search', $xml);
     }
 
     public function test_sitemap_lists_the_storefront_for_clients_that_keep_it(): void

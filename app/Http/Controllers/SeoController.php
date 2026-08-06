@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Seo;
 use Illuminate\Http\Request;
 
 /**
@@ -16,7 +17,8 @@ class SeoController extends Controller
     /** XML sitemap covering only pages this client actually serves and indexes. */
     public function sitemap(Request $request)
     {
-        $base = $request->getSchemeAndHttpHost();
+        // Configured origin, never the request Host — see Seo::baseUrl().
+        $base = Seo::baseUrl($request);
         $urls = [];
 
         if (feature('demo_gateway')) {
@@ -32,7 +34,11 @@ class SeoController extends Controller
 
         if (feature('public_storefront')) {
             $urls[] = ['loc' => $base.'/landing', 'priority' => '0.9', 'changefreq' => 'weekly'];
-            $urls[] = ['loc' => $base.'/contact', 'priority' => '0.5', 'changefreq' => 'monthly'];
+            // /contact and /search are intentionally absent: they render
+            // client.layouts.app rather than the Inertia shell, so they carry no
+            // canonical or robots directive, and /contact was returning 500 on
+            // at least one client. Listing a page we do not control the SEO of —
+            // and have not verified renders — is how you get 500s into a sitemap.
         }
 
         // A sitemap listing nothing is worse than none — it tells Google the
@@ -62,7 +68,7 @@ class SeoController extends Controller
 
         $seo  = config('client.seo', []);
         $name = $seo['site_name'] ?? config('app.name');
-        $base = $request->getSchemeAndHttpHost();
+        $base = Seo::baseUrl($request);
 
         $body = "# {$name}\n\n";
 
@@ -70,14 +76,20 @@ class SeoController extends Controller
             $body .= "> {$seo['description']}\n\n";
         }
 
-        $body .= "{$name} is car rental management software for rental agencies. It covers "
-            ."fleet management, bookings, rental contracts with in-app e-signature, invoicing "
-            ."and VAT, expenses, and a visual planning board. It is multilingual and "
-            ."white-label: each agency runs it on its own domain and branding.\n\n"
-            ."## Pages\n\n"
-            ."- [Home]({$base}/): product overview and demo request form\n\n"
-            ."## Contact\n\n"
-            ."Book a 20-minute demo from the home page.\n";
+        // Client-specific prose lives with the rest of the client's SEO copy, not
+        // hardcoded in shared controller code.
+        if (! empty($seo['llms_summary'])) {
+            $body .= $seo['llms_summary']."\n\n";
+        }
+
+        $body .= "## Pages\n\n"
+            ."- [Home]({$base}/): product overview and demo request form\n";
+
+        foreach (\App\Support\Locales::forPublicUrls() as $locale) {
+            $body .= "- [Home ({$locale})]({$base}/{$locale})\n";
+        }
+
+        $body .= "\n## Contact\n\nBook a demo from the home page.\n";
 
         return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
     }
