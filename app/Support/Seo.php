@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 
 /**
@@ -41,8 +42,8 @@ class Seo
     public static function forRequest(Request $request): array
     {
         $routeName  = optional($request->route())->getName();
-        $isHome     = $request->path() === '/';
-        $indexable  = self::isIndexable($routeName, $isHome);
+        $isGateway  = self::isGateway($request, $routeName);
+        $indexable  = self::isIndexable($routeName, $isGateway);
         $seo        = config('client.seo', []);
 
         return [
@@ -56,14 +57,25 @@ class Seo
             'dir'         => self::isRtl() ? 'rtl' : 'ltr',
             'indexable'   => $indexable,
             'twitterSite' => $seo['twitter'] ?? null,
+            // hreflang only makes sense on the page that actually exists per
+            // locale; the storefront has no locale URLs yet.
+            'alternates'  => $isGateway && $indexable
+                ? Locales::alternatesFor($request->getSchemeAndHttpHost())
+                : [],
         ];
     }
 
-    /** Guests only ever reach a public page; anything else must not be indexed. */
-    private static function isIndexable(?string $routeName, bool $isHome): bool
+    /** The product's public home, unprefixed (`/`) or locale-prefixed (`/fr`). */
+    private static function isGateway(Request $request, ?string $routeName): bool
     {
-        // The demo gateway lives at "/" and only exists for clients that enable it.
-        if ($isHome) {
+        return $request->path() === '/' || $routeName === 'public.home.locale';
+    }
+
+    /** Guests only ever reach a public page; anything else must not be indexed. */
+    private static function isIndexable(?string $routeName, bool $isGateway): bool
+    {
+        // The gateway only exists for clients that enable it.
+        if ($isGateway) {
             return (bool) feature('demo_gateway');
         }
 
@@ -149,7 +161,9 @@ class Seo
      */
     public static function jsonLd(Request $request): ?array
     {
-        if ($request->path() !== '/' || ! feature('demo_gateway')) {
+        $routeName = optional($request->route())->getName();
+
+        if (! self::isGateway($request, $routeName) || ! feature('demo_gateway')) {
             return null;
         }
 

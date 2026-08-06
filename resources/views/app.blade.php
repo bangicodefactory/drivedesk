@@ -17,6 +17,14 @@
     @endif
     <link rel="canonical" href="{{ $seo['canonical'] }}">
 
+    {{-- hreflang needs a distinct URL per language. Locale used to live only in
+         the session, so every language shared one URL and a crawler — which has
+         no session — only ever saw the guest default. Public pages are now also
+         served under /fr, /en, /ar; "/" remains the x-default. --}}
+    @foreach($seo['alternates'] as $alternate)
+        <link rel="alternate" hreflang="{{ $alternate['hreflang'] }}" href="{{ $alternate['href'] }}">
+    @endforeach
+
     {{-- Only genuine marketing pages are indexable; the admin app, auth screens
          and the installer are noindex even though they are merely unlinked, so a
          leaked URL cannot be indexed. --}}
