@@ -15,25 +15,20 @@
 return [
 
     /*
-     * Public marketing pages need a handful of routes, not the app's ~500. The
-     * shell emits this group instead of the full list when the page is one of
-     * the indexable ones (see App\Support\Seo and app.blade.php), which drops
-     * ~22KB from the document a first-time visitor downloads.
+     * There is deliberately no `groups` block.
      *
-     * Over-filtering breaks route() at runtime and fails silently until someone
-     * clicks — SeoMetadataTest asserts each name below is actually present.
+     * A `public` group once trimmed marketing pages to 7 routes to save ~22KB.
+     * It shipped broken: @routes writes window.Ziggy once per *document*, and
+     * Inertia moves between pages without a document load. Landing on / and
+     * clicking "Log in" is a client-side visit, so the Login page rendered
+     * against the 7-route list and route('password.request') threw. It worked
+     * on reload, which made it look intermittent rather than systematic.
+     *
+     * The route list therefore has to cover everything reachable without a
+     * document load. Since the login link leads into the whole admin, that is
+     * effectively every route — per-page trimming cannot work here. `except`
+     * below is still safe because it drops routes no JavaScript ever names.
      */
-    'groups' => [
-        'public' => [
-            'login',                 // nav + "already have credentials" links
-            'demo.request',          // the B2B gateway's demo form
-            'client.home',           // storefront landing
-            'client.details',        // storefront vehicle detail
-            'contact',
-            'search',
-            'newsletter.subscribe',
-        ],
-    ],
 
     'except' => [
         // Install/update wizards — guarded by InstallerGuard, never reachable

@@ -69,15 +69,21 @@
          imported in resources/js/app.jsx and bundled by Vite — no external CDN
          request. Family name 'Nunito Variable' is first in font-sans. --}}
 
-    {{-- Public pages get the trimmed `public` route group (config/ziggy.php);
-         the app itself still gets everything. The full list is ~22KB inlined
-         into every response, which a first-time marketing visitor should not
-         pay for. --}}
-    @if($seo['indexable'])
-        @routes('public')
-    @else
-        @routes
-    @endif
+    {{-- Every page ships the full route list, deliberately.
+
+         This used to emit a trimmed `public` group on marketing pages to save
+         ~22KB. That was unsound: @routes writes window.Ziggy once per
+         *document*, and Inertia navigates between pages *without* a document
+         load. Landing on / and clicking "Log in" is a client-side visit, so
+         Login.jsx rendered while Ziggy still held the 7 public routes and
+         route('password.request') threw — the page only worked on a reload,
+         which is what made it look intermittent.
+
+         Any per-page trimming has this shape, so the route list has to be the
+         union of everything reachable without a document load — which, in a SPA
+         where login leads to the whole admin, is everything. `except` in
+         config/ziggy.php still drops routes nothing ever calls. --}}
+    @routes
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     @inertiaHead
