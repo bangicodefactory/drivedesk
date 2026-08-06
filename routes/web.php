@@ -49,6 +49,11 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
         'XSS',
     ]
 );
+// Crawler-facing endpoints (BAN-262). Generated, not static, because which
+// pages exist depends on the client's feature flags.
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/llms.txt', [\App\Http\Controllers\SeoController::class, 'llms'])->name('seo.llms');
+
 // Public B2C rental storefront: the fleet/booking landing plus the pages its
 // layout partials link to. Guarded by `feature:public_storefront` (BAN-261) so a
 // client whose public face is not a rental storefront 404s the whole family
