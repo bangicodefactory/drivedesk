@@ -53,7 +53,23 @@ function applyBranding(branding) {
 }
 
 createInertiaApp({
-    title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'RentCar'}`,
+    // The suffix comes from the server-rendered <meta name="app-name">, which is
+    // the client's own name from config/clients/<client>.php. It used to fall
+    // back to the build-time VITE_APP_NAME and, when that was unset on a deploy,
+    // every public page rendered "… - RentCar" — leaking the white-label
+    // template name onto a client's commercial domain. A page that sets no
+    // title now gets the app name alone instead of a bare " - RentCar".
+    title: (title) => {
+        const appName = document.querySelector('meta[name="app-name"]')?.content
+            || import.meta.env.VITE_APP_NAME
+            || 'RentCar';
+
+        if (!title) return appName;
+
+        // A page whose own title already names the product (the marketing
+        // gateway does) would otherwise render "DriveDesk — … - DriveDesk".
+        return title.includes(appName) ? title : `${title} - ${appName}`;
+    },
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.jsx');
         return pages[`./Pages/${name}.jsx`]();

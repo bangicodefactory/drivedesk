@@ -49,20 +49,45 @@ Route::get('/', [HomeController::class, 'index'])->middleware(
         'XSS',
     ]
 );
-// Public landing (client) home page using new modular Blade layout
-Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
+// Locale-prefixed public home (BAN-263): /fr, /en, /ar serve the same page in a
+// named language, so each has a real indexable URL that hreflang can point at.
+// `/` stays the x-default and serves the client's guest default.
+//
+// The constraint is the exact locale list, so this cannot swallow a literal path
+// like /login or /landing — and it is declared after them regardless.
+// `feature:demo_gateway` so this only exists for clients with a public product
+// page. Without it an internal-only tenant would gain three URLs that merely
+// redirect to login.
+Route::get('/{locale}', [HomeController::class, 'index'])
+    ->where('locale', \App\Support\Locales::routeConstraint())
+    ->middleware(['XSS', 'feature:demo_gateway'])
+    ->name('public.home.locale');
 
-// Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
-Route::view('/contact', 'client.pages.contact')->name('contact');
-Route::get('/search', function (\Illuminate\Http\Request $request) {
-    $q = $request->get('q');
-    return view('client.pages.search', compact('q'));
-})->name('search');
-Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
-    $data = $request->validate(['email' => 'required|email']);
-    // TODO: store subscription or dispatch job
-    return back()->with('status', 'Subscribed with ' . $data['email']);
-})->name('newsletter.subscribe');
+// Crawler-facing endpoints (BAN-262). Generated, not static, because which
+// pages exist depends on the client's feature flags.
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/llms.txt', [\App\Http\Controllers\SeoController::class, 'llms'])->name('seo.llms');
+
+// Public B2C rental storefront: the fleet/booking landing plus the pages its
+// layout partials link to. Guarded by `feature:public_storefront` (BAN-261) so a
+// client whose public face is not a rental storefront 404s the whole family
+// instead of serving pages aimed at the opposite audience.
+Route::middleware('feature:public_storefront')->group(function () {
+    // Public landing (client) home page using new modular Blade layout
+    Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
+
+    // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
+    Route::view('/contact', 'client.pages.contact')->name('contact');
+    Route::get('/search', function (\Illuminate\Http\Request $request) {
+        $q = $request->get('q');
+        return view('client.pages.search', compact('q'));
+    })->name('search');
+    Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
+        $data = $request->validate(['email' => 'required|email']);
+        // TODO: store subscription or dispatch job
+        return back()->with('status', 'Subscribed with ' . $data['email']);
+    })->name('newsletter.subscribe');
+});
 
 // "Book a demo" form on the demo-gateway landing — guarded so the endpoint only
 // exists for clients that expose the marketing landing (drivedesk). 404 otherwise.

@@ -18,6 +18,7 @@ return [
         'cash_split'      => false,  // keep today's behavior: reject cash over the ceiling
         'invoice_on_full_payment' => false,  // keep today's behavior: one invoice per payment
         'traffic_violations' => true,  // BAN-260: the client receives fines for rented vehicles
+        'public_storefront' => true,  // BAN-261: unchanged — keeps today's behavior
     ],
 
     /*

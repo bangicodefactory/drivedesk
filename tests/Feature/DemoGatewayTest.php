@@ -6,47 +6,28 @@ use App\Mail\DemoRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
 class DemoGatewayTest extends TestCase
 {
+    use AsInstalledApp;
     use RefreshDatabase;
     use WithClient;
-
-    private bool $createdInstalledMarker = false;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // HomeController@index's guest branch hands off to the installer when
-        // the app isn't installed — `setup()` is storage/installed, which a
-        // fresh CI checkout lacks. Without the marker a guest GET / redirects to
-        // /install instead of reaching the demo-gateway / login branches these
-        // tests assert. Production/CI always run installed; create the marker to
-        // match that, removing it in tearDown if we created it so we never leave
-        // a stray marker on a dev box that wasn't installed. (That guard used to
-        // be header('location:install'); die; — replaced by a redirect in #145;
-        // the die() previously killed the coverage run from this very test.)
-        //
-        // NOTE: storage/installed is a process-global file; InstallerGuardTest
-        // *removes* it to assert the not-installed path. Safe under the
-        // single-process `php artisan test` we run today, but these two classes
-        // would race if the suite is ever switched to --parallel.
-        $marker = setup();
-        if (! file_exists($marker)) {
-            @mkdir(dirname($marker), 0755, true);
-            file_put_contents($marker, '');
-            $this->createdInstalledMarker = true;
-        }
+        // See Tests\Concerns\AsInstalledApp — a fresh CI checkout has no
+        // storage/installed marker, so a guest GET / would 302 to the installer.
+        $this->markAppInstalled();
     }
 
     protected function tearDown(): void
     {
-        if ($this->createdInstalledMarker && file_exists(setup())) {
-            @unlink(setup());
-        }
+        $this->removeInstalledMarkerIfCreated();
 
         parent::tearDown();
     }
