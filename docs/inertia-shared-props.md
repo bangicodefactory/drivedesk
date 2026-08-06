@@ -48,6 +48,7 @@ overrides live in `config/clients/<client>.php`.
 | `tva_renumber` | `true` | TVA invoice renumbering |
 | `signatures` | `true` | Digital signature pad |
 | `traffic_violations` | `false` | Traffic violation (contravention / PV) tracking — BAN-260 |
+| `public_storefront` | `true` | Public B2C rental storefront (`/landing`, `/contact`, `/search`, newsletter) — off for DriveDesk, BAN-261 |
 
 ### Reading props in a page component
 

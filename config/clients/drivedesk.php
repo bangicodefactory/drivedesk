@@ -30,6 +30,31 @@ return [
         'cash_split'      => true,   // split cash over the ceiling into compliant receipts
         'invoice_on_full_payment' => true,  // emit invoices only once a booking is fully paid
         'traffic_violations' => true,  // BAN-260: part of the full demo surface
+        // DriveDesk sells the platform to rental agencies; its public face is
+        // the B2B demo gateway at /, not a B2C rental storefront. The storefront
+        // pages targeted the opposite audience (and /landing shipped seeded demo
+        // fleet + invented testimonials), so they are off here. BAN-261.
+        'public_storefront' => false,
+    ],
+
+    /*
+     * Public SEO copy (BAN-262). Written in English rather than the guest
+     * default locale (`ary`): the buyer here is a rental-agency owner, the
+     * product is sold beyond Morocco, and a crawler is served the guest locale
+     * regardless of who is searching. Description is 149 chars.
+     */
+    'seo' => [
+        'title'       => 'DriveDesk — Car Rental Management Software',
+        'description' => 'Run your car rental agency from one place: fleet, bookings, contracts, e-signature, invoicing and planning. Multilingual, white-label. Book a demo.',
+        'site_name'   => 'DriveDesk',
+        'og_image'    => '/images/drivedesk-og.png',
+        // Prose for llms.txt. With SSR off, an assistant that does not execute
+        // JavaScript sees an empty document, so this is the only description of
+        // the product it can read.
+        'llms_summary' => 'DriveDesk is car rental management software for rental agencies. '
+            .'It covers fleet management, bookings, rental contracts with in-app e-signature, '
+            .'invoicing and VAT, expenses, and a visual planning board. It is multilingual and '
+            .'white-label: each agency runs it on its own domain and branding.',
     ],
 
     /*
