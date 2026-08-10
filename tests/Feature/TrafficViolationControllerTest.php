@@ -38,6 +38,10 @@ class TrafficViolationControllerTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
+        // The module is what is under test, not any client's configuration.
+        // directonderweg turned the flag off (2026-08-10); these suites assert the
+        // feature itself, so they force it on rather than inheriting a client's.
+        config(['client.features.traffic_violations' => true]);
 
         foreach (self::PERMISSIONS as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
@@ -146,6 +150,20 @@ class TrafficViolationControllerTest extends TestCase
     }
 
     // ── Feature flag ─────────────────────────────────────────────────────────
+
+    public function test_the_module_is_off_for_directonderweg_by_its_own_configuration(): void
+    {
+        // setUp forces the flag on so the rest of this suite can exercise the
+        // module. Re-applying the client re-reads config/clients/directonderweg.php,
+        // so this asserts what that client actually runs — not a forced value.
+        $this->asClient('directonderweg');
+
+        $this->assertFalse(feature('traffic_violations'));
+
+        $this->actingAs($this->owner)
+            ->get(route('traffic-violation.index'))
+            ->assertNotFound();
+    }
 
     public function test_module_is_404_when_the_feature_is_off(): void
     {
