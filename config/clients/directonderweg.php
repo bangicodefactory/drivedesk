@@ -15,7 +15,11 @@ return [
         'multi_branch'    => false,
         'tva_renumber'    => true,
         'signatures'      => true,
-        'cash_split'      => false,  // keep today's behavior: reject cash over the ceiling
+        // Cash over `cash_payment_max` (5000 MAD, CGI art. 193) is split into
+        // compliant receipts instead of being refused at the counter. Each
+        // receipt gets its own facture, on distinct days, with the rental days
+        // apportioned. Turned on for this client 2026-08-10.
+        'cash_split'      => true,
         'invoice_on_full_payment' => false,  // keep today's behavior: one invoice per payment
         'traffic_violations' => true,  // BAN-260: the client receives fines for rented vehicles
         'public_storefront' => true,  // BAN-261: unchanged — keeps today's behavior
