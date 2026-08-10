@@ -151,14 +151,16 @@ class TrafficViolationControllerTest extends TestCase
 
     // ── Feature flag ─────────────────────────────────────────────────────────
 
-    public function test_the_module_is_off_for_directonderweg_by_its_own_configuration(): void
+    public function test_a_client_with_the_flag_off_gets_a_404_not_a_half_rendered_page(): void
     {
+        // The *outcome* of the flag being off, asserted against a client that
+        // really has it off. Which clients those are is ClientFeatureMatrixTest's
+        // job; this is about what a user hits.
+        //
         // setUp forces the flag on so the rest of this suite can exercise the
-        // module. Re-applying the client re-reads config/clients/directonderweg.php,
-        // so this asserts what that client actually runs — not a forced value.
+        // module — re-applying the client re-reads
+        // config/clients/directonderweg.php and undoes that override.
         $this->asClient('directonderweg');
-
-        $this->assertFalse(feature('traffic_violations'));
 
         $this->actingAs($this->owner)
             ->get(route('traffic-violation.index'))

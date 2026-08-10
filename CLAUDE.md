@@ -329,6 +329,14 @@ must follow.
 6. **Every test that exercises a client-specific path declares its
    client** with the `WithClient` trait (`$this->asClient('acme')`).
    The default test client is `directonderweg`, matching prod today.
+   **But `asClient()` picks a realistic tenant — it must not supply the
+   flag under test.** A suite that inherits a live client's flag changes
+   meaning the day that client's config changes: enabling `cash_split`
+   broke five cash tests, and disabling `traffic_violations` would have
+   404'd 101 tests, none of which were about those clients. Force the
+   flag you are testing (`config(['client.features.x' => true])`), and
+   assert what a client actually runs in `ClientFeatureMatrixTest` —
+   the one place that reads the real per-client config.
 7. **When adding a new client**, do it as a single PR that:
    - adds `config/clients/<new>.php`,
    - adds `app/Clients/<NewClient>/` (even if just a stub),
