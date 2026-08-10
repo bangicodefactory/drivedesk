@@ -565,6 +565,8 @@ class BookingControllerTest extends TestCase
 
     public function test_bulk_mark_paid_skips_cash_over_5000(): void
     {
+        // The skip branch, pinned explicitly — directonderweg now splits instead.
+        config(['client.features.cash_split' => false]);
         $big = $this->makeBooking(['amount' => 6000, 'payment_status' => 'impaye']);
 
         $this->actingAs($this->owner)
@@ -689,6 +691,9 @@ class BookingControllerTest extends TestCase
 
     public function test_payment_store_rejects_cash_above_5000(): void
     {
+        // Pins the refusal branch itself, so it no longer depends on which
+        // clients happen to have cash_split off (directonderweg now has it on).
+        config(['client.features.cash_split' => false]);
         $booking = $this->makeBooking(['amount' => 10000]);
 
         $this->actingAs($this->owner)
@@ -810,7 +815,10 @@ class BookingControllerTest extends TestCase
 
     public function test_payment_store_still_rejects_cash_over_cap_when_flag_off(): void
     {
-        // Flag defaults off for directonderweg — behavior unchanged.
+        // Set explicitly rather than inherited: directonderweg turned cash_split
+        // on (2026-08-10), and this test is about the off branch, not about any
+        // particular client's current setting.
+        config(['client.features.cash_split' => false]);
         $booking = $this->makeBooking(['amount' => 13000]);
 
         $this->actingAs($this->owner)
@@ -847,6 +855,7 @@ class BookingControllerTest extends TestCase
 
     public function test_split_preview_returns_false_when_flag_off(): void
     {
+        config(['client.features.cash_split' => false]);
         $booking = $this->makeBooking(['amount' => 13000]);
 
         $this->actingAs($this->owner)
@@ -1081,6 +1090,8 @@ class BookingControllerTest extends TestCase
 
     public function test_payment_store_inertia_error_returns_redirect_not_json(): void
     {
+        // Relies on cash-over-cap being an *error*, so pin the refusal branch.
+        config(['client.features.cash_split' => false]);
         $booking = $this->makeBooking(['amount' => 10000]);
 
         $this->actingAs($this->owner)
