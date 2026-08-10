@@ -36,6 +36,10 @@ class TrafficViolationActionsTest extends TestCase
     {
         parent::setUp();
         $this->asClient('directonderweg');
+        // The module is what is under test, not any client's configuration.
+        // directonderweg turned the flag off (2026-08-10); these suites assert the
+        // feature itself, so they force it on rather than inheriting a client's.
+        config(['client.features.traffic_violations' => true]);
 
         foreach (self::PERMISSIONS as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
