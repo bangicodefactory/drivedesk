@@ -21,7 +21,11 @@ return [
         // apportioned. Turned on for this client 2026-08-10.
         'cash_split'      => true,
         'invoice_on_full_payment' => false,  // keep today's behavior: one invoice per payment
-        'traffic_violations' => true,  // BAN-260: the client receives fines for rented vehicles
+        // Off 2026-08-10. The module and its table stay in place — only the
+        // routes and the sidebar entry disappear, so turning it back on is a
+        // config flip with no data migration. Any rows already recorded are
+        // retained, just unreachable while this is false.
+        'traffic_violations' => false,
         'public_storefront' => true,  // BAN-261: unchanged — keeps today's behavior
     ],
 
