@@ -56,6 +56,18 @@ class ClientFeatureMatrixTest extends TestCase
         $this->assertFalse(feature('invoice_on_full_payment'));
     }
 
+    public function test_directonderweg_does_not_run_traffic_violations(): void
+    {
+        // Turned off 2026-08-10. Every traffic-violation suite forces the flag
+        // on so it can exercise the module, so this is the only thing standing
+        // between a stray re-enable and a module appearing for a client that
+        // does not want it. The 404 that results is asserted next to the module
+        // in TrafficViolationControllerTest.
+        $this->asClient('directonderweg');
+
+        $this->assertFalse(feature('traffic_violations'));
+    }
+
     public function test_drivedesk_keeps_its_full_demo_surface(): void
     {
         $this->asClient('drivedesk');
@@ -63,6 +75,7 @@ class ClientFeatureMatrixTest extends TestCase
         $this->assertTrue(feature('cash_split'));
         $this->assertTrue(feature('invoice_on_full_payment'));
         $this->assertTrue(feature('demo_gateway'));
+        $this->assertTrue(feature('traffic_violations'));
         // The B2C storefront stays off — DriveDesk sells the platform (BAN-261).
         $this->assertFalse(feature('public_storefront'));
     }
