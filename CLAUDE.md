@@ -333,7 +333,11 @@ must follow.
    flag under test.** A suite that inherits a live client's flag changes
    meaning the day that client's config changes: enabling `cash_split`
    broke five cash tests, and disabling `traffic_violations` would have
-   404'd 101 tests, none of which were about those clients. Force the
+   404'd ~80 tests across three suites, none of which were about those
+   clients. (The fourth suite, `ViolationMatcherTest`, calls the service
+   directly and never touches a route, so it was unaffected — which is
+   itself the tell: route-level tests inherit client config, unit-level
+   ones do not.) Force the
    flag you are testing (`config(['client.features.x' => true])`), and
    assert what a client actually runs in `ClientFeatureMatrixTest` —
    the one place that reads the real per-client config.

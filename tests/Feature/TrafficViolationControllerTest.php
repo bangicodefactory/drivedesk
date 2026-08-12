@@ -153,14 +153,16 @@ class TrafficViolationControllerTest extends TestCase
 
     public function test_a_client_with_the_flag_off_gets_a_404_not_a_half_rendered_page(): void
     {
-        // The *outcome* of the flag being off, asserted against a client that
-        // really has it off. Which clients those are is ClientFeatureMatrixTest's
-        // job; this is about what a user hits.
+        // The *outcome* of the flag being off, for any client. Which clients
+        // actually have it off is ClientFeatureMatrixTest's job; this is about
+        // what a user hits.
         //
-        // setUp forces the flag on so the rest of this suite can exercise the
-        // module — re-applying the client re-reads
-        // config/clients/directonderweg.php and undoes that override.
-        $this->asClient('directonderweg');
+        // Forced rather than inherited from a real client: a test that borrows a
+        // live client's `false` changes meaning the day that client flips it.
+        // This is the client-config layer specifically — the sibling test below
+        // covers the .env override, which returns from feature() before the
+        // client layer is ever read (helper.php:838).
+        config(['client.features.traffic_violations' => false]);
 
         $this->actingAs($this->owner)
             ->get(route('traffic-violation.index'))
