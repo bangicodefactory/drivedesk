@@ -1,0 +1,182 @@
+/* DriveDesk sales deck — 16:9 slides, one per printed page.
+   Shared by the EN / FR / AR decks. RTL handled via [dir=rtl] overrides. */
+
+@page { size: 297mm 167mm; margin: 0; }
+
+:root{
+  --ink:#181210;
+  --soft:#5f5854;
+  --faint:#938a85;
+  --brand:#e2571f;
+  --brand-lt:#f5893f;
+  --brand-deep:#7a2e10;
+  --wash:#fdf2ec;
+  --line:#e9e2dd;
+  --ok:#1f7a4d;
+  --stop:#b02a1e;
+  --dark1:#171110;
+  --dark2:#2e150c;
+  --dark3:#5c2410;
+}
+
+*{box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+
+body{
+  margin:0;
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+  background:#5a5250;
+  -webkit-font-smoothing:antialiased;
+}
+body[dir="rtl"]{
+  font-family:"Segoe UI","Tahoma","Cairo",Arial,sans-serif;
+}
+
+/* ---------- slide frame ---------- */
+.slide{
+  width:297mm; height:167mm;
+  position:relative; overflow:hidden;
+  background:#fff;
+  padding:14mm 16mm 12mm;
+  page-break-after:always;
+  display:flex; flex-direction:column;
+  margin:0 auto 6mm;
+}
+.slide:last-child{ page-break-after:auto; margin-bottom:0 }
+
+@media screen{
+  body{ padding:8mm 0 }
+  .slide{ box-shadow:0 3mm 12mm rgba(0,0,0,.35) }
+}
+
+/* slide number + rule */
+.slide::after{
+  content:attr(data-n);
+  position:absolute; bottom:6mm; right:16mm;
+  font-size:8pt; color:var(--faint); letter-spacing:.1em;
+}
+[dir="rtl"] .slide::after{ right:auto; left:16mm }
+
+/* ---------- dark slides ---------- */
+.slide.dark{
+  background:linear-gradient(150deg,var(--dark1) 0%,var(--dark2) 48%,var(--dark3) 100%);
+  color:#fff;
+}
+.slide.dark::after{ color:rgba(255,255,255,.4) }
+.slide.dark .kicker{ color:var(--brand-lt) }
+.slide.dark h2{ color:#fff }
+.slide.dark .lead{ color:#e9d9d1 }
+
+/* ---------- type ---------- */
+.kicker{
+  font-size:9pt; font-weight:800; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--brand); margin-bottom:4mm;
+}
+[dir="rtl"] .kicker{ letter-spacing:0 }
+
+h1{ font-size:40pt; line-height:1.04; font-weight:800; letter-spacing:-.025em; margin:0 0 6mm; }
+h1 em{ font-style:normal; color:var(--brand-lt) }
+h2{ font-size:26pt; line-height:1.1; font-weight:800; letter-spacing:-.02em; margin:0 0 3mm; }
+h2 em{ font-style:normal; color:var(--brand) }
+h3{ font-size:13pt; font-weight:700; margin:0 0 2mm; color:var(--brand-deep) }
+.lead{ font-size:13pt; line-height:1.45; color:var(--soft); max-width:190mm; margin:0 0 6mm }
+.slide.title .lead{ max-width:150mm }
+p{ margin:0 0 3mm; font-size:11pt; line-height:1.5 }
+ul{ margin:0; padding-left:6mm; }
+[dir="rtl"] ul{ padding-left:0; padding-right:6mm }
+li{ font-size:11.5pt; line-height:1.5; margin-bottom:2.5mm }
+li b, strong{ font-weight:700 }
+.body{ flex:1; min-height:0; display:flex; flex-direction:column; }
+
+/* ---------- title slide ---------- */
+.slide.title{ justify-content:center; }
+.slide.title .foot{
+  position:absolute; bottom:12mm; left:16mm; right:16mm;
+  font-size:9.5pt; color:#c6ada2;
+  border-top:1px solid rgba(255,255,255,.16); padding-top:4mm;
+}
+
+/* ---------- layout helpers ---------- */
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:0 10mm; flex:1; min-height:0 }
+.two.wide-r{ grid-template-columns:0.82fr 1.18fr }
+.two.wide-l{ grid-template-columns:1.18fr 0.82fr }
+.three{ display:grid; grid-template-columns:repeat(3,1fr); gap:6mm; flex:1; min-height:0 }
+.four{ display:grid; grid-template-columns:repeat(4,1fr); gap:5mm; }
+.vcenter{ display:flex; flex-direction:column; justify-content:center }
+
+/* every grid cell is a flex column that can shrink, so a .shot inside it
+   grows to fill the slide instead of leaving dead space at the bottom */
+.two > *, .three > *{ display:flex; flex-direction:column; min-height:0 }
+
+/* ---------- shot ---------- */
+.shot{
+  border:1px solid var(--line); border-radius:2mm; overflow:hidden;
+  background:#fff; box-shadow:0 1mm 4mm rgba(0,0,0,.10);
+  min-height:0; display:flex; flex:1;
+}
+.slide > .shot{ flex:1 1 auto }
+.shot img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block }
+.shot.fit img{ object-fit:contain; object-position:center }
+/* .doc — crop the admin sidebar (≈17% of the capture width) out of a
+   document screenshot so the document itself fills the frame */
+.shot.doc{ align-items:flex-start }
+.shot.doc img{
+  width:120.2%; height:auto; max-width:none; flex:none;
+  margin-left:-20.2%; object-fit:fill;
+}
+/* the source capture is always LTR (sidebar on the left), so the crop stays
+   on the left even in an RTL deck */
+.cap{ font-size:8.5pt; color:var(--faint); margin-top:2mm; line-height:1.35 }
+
+/* ---------- cards ---------- */
+.card{
+  border:1px solid var(--line); border-top:2.5mm solid var(--brand);
+  border-radius:0 0 2mm 2mm; padding:5mm 5mm 4mm; background:#fdfcfb;
+  display:flex; flex-direction:column;
+}
+.card h3{ font-size:12pt; margin-bottom:2mm }
+.card p{ font-size:10pt; color:var(--soft); margin:0 }
+
+/* stat tiles */
+.stat{ text-align:center; padding:5mm 3mm; border:1px solid var(--line); border-radius:2mm; background:#fdfcfb }
+.stat .n{ font-size:30pt; font-weight:800; color:var(--brand); line-height:1; letter-spacing:-.03em }
+.stat .l{ font-size:9.5pt; color:var(--soft); margin-top:2.5mm; line-height:1.3 }
+.slide.dark .stat{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14) }
+.slide.dark .stat .n{ color:var(--brand-lt) }
+.slide.dark .stat .l{ color:#dcc9c0 }
+
+/* ---------- table ---------- */
+table{ width:100%; border-collapse:collapse; font-size:10.5pt }
+th{
+  text-align:left; background:var(--wash); color:var(--brand-deep);
+  font-size:8.5pt; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  padding:2.5mm 3mm; border-bottom:1.5px solid #f2d8c8;
+}
+[dir="rtl"] th{ text-align:right; letter-spacing:0 }
+td{ padding:2.8mm 3mm; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45 }
+td b{ color:var(--brand-deep) }
+
+/* ---------- pull quote / statement ---------- */
+.quote{
+  font-size:19pt; line-height:1.32; font-weight:600; letter-spacing:-.01em;
+  max-width:200mm;
+}
+.quote em{ font-style:normal; color:var(--brand-lt) }
+
+/* ---------- checklist ---------- */
+.chk{ list-style:none; padding:0; margin:0 }
+.chk li{ position:relative; padding-left:7mm; margin-bottom:3mm }
+[dir="rtl"] .chk li{ padding-left:0; padding-right:7mm }
+.chk li::before{
+  content:"✓"; position:absolute; left:0; top:-.2mm;
+  color:var(--ok); font-weight:800; font-size:11pt;
+}
+[dir="rtl"] .chk li::before{ left:auto; right:0 }
+.chk.x li::before{ content:"—"; color:var(--faint) }
+
+/* ---------- footer note ---------- */
+.note{
+  margin-top:auto; padding-top:4mm; border-top:1px solid var(--line);
+  font-size:9pt; color:var(--faint); line-height:1.4;
+}
+.slide.dark .note{ border-color:rgba(255,255,255,.15); color:#bfa79d }
