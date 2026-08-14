@@ -1,0 +1,6 @@
+node_modules
+out
+.remotion
+
+# copied in at build time by scripts/sync-shots.mjs — the originals live in ../screenshots
+public/shots
