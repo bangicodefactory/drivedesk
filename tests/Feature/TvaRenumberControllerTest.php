@@ -18,7 +18,7 @@ class TvaRenumberControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         // TvaRenumberController has no can() permission check — any authenticated
         // user may call all three routes. Tests below document that behavior.

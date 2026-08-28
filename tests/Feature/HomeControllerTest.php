@@ -20,7 +20,7 @@ class HomeControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         Permission::firstOrCreate(['name' => 'manage reminder', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'manage booking', 'guard_name' => 'web']);

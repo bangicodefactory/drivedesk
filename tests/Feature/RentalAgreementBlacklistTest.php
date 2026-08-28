@@ -29,7 +29,7 @@ class RentalAgreementBlacklistTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         Permission::firstOrCreate(['name' => 'create rental agreement', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

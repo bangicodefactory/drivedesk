@@ -25,7 +25,7 @@ class DevDataSeederGuardTest extends TestCase
 
     public function test_seeder_refuses_to_run_in_production_on_a_non_demo_client(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off
+        $this->asClient('acme'); // demo_gateway off
         $this->app['env'] = 'production';
 
         $this->expectException(\RuntimeException::class);

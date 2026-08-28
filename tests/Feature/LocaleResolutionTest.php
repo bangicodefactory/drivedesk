@@ -10,7 +10,7 @@ use Tests\TestCase;
 /**
  * BAN-262: drivedesk defaults anonymous/guest visitors to Moroccan Arabic
  * (Darija, 'ary') via its public_default_locale, loading lang/ary.json. Other
- * clients (directonderweg) are unset and keep their existing 'fr' default, so
+ * clients (the acme fixture) are unset and keep their existing 'fr' default, so
  * their observable behaviour is unchanged. Locale resolution is exercised via
  * the guest login page (shared 'locale'/'translations' props) — the same
  * SetLocale + translation pipeline the marketing landing uses.
@@ -33,9 +33,9 @@ class LocaleResolutionTest extends TestCase
             );
     }
 
-    public function test_directonderweg_guest_still_defaults_to_french(): void
+    public function test_a_client_without_a_public_default_locale_falls_back_to_french(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->get(route('login'))
             ->assertOk()

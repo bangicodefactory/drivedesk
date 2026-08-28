@@ -41,7 +41,7 @@ class TrafficViolationImportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
         // The module is what is under test, not any client's configuration.
         // directonderweg turned the flag off (2026-08-10); these suites assert the
         // feature itself, so they force it on rather than inheriting a client's.

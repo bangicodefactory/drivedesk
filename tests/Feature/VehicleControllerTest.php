@@ -23,7 +23,7 @@ class VehicleControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage vehicle', 'create vehicle', 'edit vehicle', 'delete vehicle'];
         foreach ($perms as $p) {

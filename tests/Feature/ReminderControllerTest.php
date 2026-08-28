@@ -24,7 +24,7 @@ class ReminderControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage reminder', 'create reminder', 'edit reminder', 'delete reminder'];
         foreach ($perms as $p) {

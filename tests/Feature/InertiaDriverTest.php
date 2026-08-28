@@ -30,7 +30,7 @@ class InertiaDriverTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage driver', 'create driver', 'edit driver', 'delete driver', 'show driver'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

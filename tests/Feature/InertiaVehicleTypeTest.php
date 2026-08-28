@@ -24,7 +24,7 @@ class InertiaVehicleTypeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage vehicle type', 'create vehicle type', 'edit vehicle type', 'delete vehicle type'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

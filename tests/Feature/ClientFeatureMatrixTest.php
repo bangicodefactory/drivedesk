@@ -28,49 +28,16 @@ class ClientFeatureMatrixTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
-    public function test_directonderweg_takes_no_online_payments(): void
-    {
-        // All four are `true` in _default.php and deliberately overridden, so
-        // this client is the exception. Payments are recorded, never taken.
-        $this->asClient('directonderweg');
-
-        $this->assertFalse(feature('paypal'));
-        $this->assertFalse(feature('stripe'));
-        $this->assertFalse(feature('subscriptions'));
-        $this->assertFalse(feature('booking_payment'));
-    }
-
-    public function test_directonderweg_splits_cash_over_the_ceiling(): void
-    {
-        $this->asClient('directonderweg');
-
-        $this->assertTrue(feature('cash_split'), 'cash over 5000 would be refused at the counter');
-        $this->assertSame(5000, (int) config('client.cash_payment_max'));
-    }
-
-    public function test_directonderweg_still_invoices_every_payment_immediately(): void
-    {
-        // Deliberately off: one facture per payment, including partials.
-        $this->asClient('directonderweg');
-
-        $this->assertFalse(feature('invoice_on_full_payment'));
-    }
-
-    public function test_directonderweg_does_not_run_traffic_violations(): void
-    {
-        // Turned off 2026-08-10. Every traffic-violation suite forces the flag
-        // on so it can exercise the module, so this is the only thing standing
-        // between a stray re-enable and a module appearing for a client that
-        // does not want it. The 404 that results is asserted next to the module
-        // in TrafficViolationControllerTest.
-        $this->asClient('directonderweg');
-
-        $this->assertFalse(feature('traffic_violations'));
-    }
-
     public function test_drivedesk_keeps_its_full_demo_surface(): void
     {
+        // All four are `true` in _default.php; drivedesk is the showcase tenant
+        // and keeps the whole surface on except the B2C storefront.
         $this->asClient('drivedesk');
+
+        $this->assertTrue(feature('paypal'));
+        $this->assertTrue(feature('stripe'));
+        $this->assertTrue(feature('subscriptions'));
+        $this->assertTrue(feature('booking_payment'));
 
         $this->assertTrue(feature('cash_split'));
         $this->assertTrue(feature('invoice_on_full_payment'));
@@ -86,9 +53,10 @@ class ClientFeatureMatrixTest extends TestCase
      * This is the assertion that would have failed before the flag flip, and the
      * one that fails if someone flips it back.
      */
-    public function test_a_cash_payment_over_the_ceiling_splits_for_directonderweg(): void
+    public function test_a_cash_payment_over_the_ceiling_splits_for_drivedesk(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('drivedesk');
+        $this->assertSame(5000, (int) config('client.cash_payment_max'));
 
         // `create booking payment` is the one booking.payment.store checks —
         // without it the request redirects back and records nothing.

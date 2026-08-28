@@ -27,7 +27,7 @@ class RentalAgreementControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = [
             'manage rental agreement',

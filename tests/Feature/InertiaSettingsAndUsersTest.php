@@ -24,7 +24,7 @@ class InertiaSettingsAndUsersTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage user', 'manage role', 'manage setting'] as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);

@@ -32,7 +32,7 @@ class InertiaAddonTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage addon', 'create addon', 'edit addon', 'delete addon'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

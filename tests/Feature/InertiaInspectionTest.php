@@ -28,7 +28,7 @@ class InertiaInspectionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage inspection', 'create inspection', 'edit inspection', 'show inspection', 'delete inspection'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
