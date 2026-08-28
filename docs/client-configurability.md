@@ -14,7 +14,9 @@ in `CLAUDE.md` section 10. Read that section first if you haven't.
 - Differences between clients span four categories: branding,
   integrations/credentials, feature toggles, and business-logic
   variants.
-- Today: 1 client (`directonderweg`). 12-month horizon: 2–5.
+- Today: 1 client (`drivedesk`, the product's own demo tenant). The original
+  customer, `directonderweg`, moved to its own repo (`bangicodefactory/rentcar`)
+  in the 2026-08 repo split. 12-month horizon: 2–5.
 - Customization happens at three layers: **runtime (admin UI),
   deploy-time (env), and code-level (per-client namespace)**.
 
@@ -38,24 +40,24 @@ Precedence at runtime: **runtime > env > config > core defaults**.
 A single env variable selects the active client per deployment:
 
 ```dotenv
-# .env (production for client "directonderweg")
-APP_CLIENT=directonderweg
+# .env (production for client "drivedesk")
+APP_CLIENT=drivedesk
 ```
 
 There is no detection magic — the deployment explicitly says which
 client it is. The current production deployment uses
-`APP_CLIENT=directonderweg`; that's also the default in
+`APP_CLIENT=drivedesk`; that's also the default in
 `config/app.php` so local dev "just works" without setting it.
 
 ```php
 // config/app.php
-'client' => env('APP_CLIENT', 'directonderweg'),
+'client' => env('APP_CLIENT', 'drivedesk'),
 ```
 
 Anywhere in the code:
 
 ```php
-config('app.client'); // 'directonderweg'
+config('app.client'); // 'drivedesk'
 ```
 
 ---
@@ -65,12 +67,12 @@ config('app.client'); // 'directonderweg'
 ```
 app/
   Clients/
-    DirectOnderweg/
+    DriveDesk/
       Providers/
-        DirectOnderwegServiceProvider.php
+        DriveDeskServiceProvider.php
       Services/
-        DirectOnderwegPricingService.php
-        DirectOnderwegTvaService.php
+        DriveDeskPricingService.php
+        DriveDeskTvaService.php
       Seeders/
         BrandingSeeder.php
     AcmeRentals/                              # hypothetical second client
@@ -87,7 +89,7 @@ app/
 config/
   clients/
     _default.php                              # baseline that every client inherits
-    directonderweg.php
+    drivedesk.php
     acme.php
   features.php                                # feature flag defaults
 ```
@@ -105,9 +107,9 @@ custom infrastructure required.
 Example for the current client:
 
 ```php
-// config/clients/directonderweg.php
+// config/clients/drivedesk.php
 return [
-    'name'           => 'Direct Onderweg',
+    'name'           => 'DriveDesk',
     'default_locale' => 'nl',
     'supported_locales' => ['nl', 'fr', 'en', 'ar'],
 
@@ -122,16 +124,16 @@ return [
 
     'bindings' => [
         \App\Contracts\PricingServiceContract::class
-            => \App\Clients\DirectOnderweg\Services\DirectOnderwegPricingService::class,
+            => \App\Clients\DriveDesk\Services\DriveDeskPricingService::class,
         \App\Contracts\TvaServiceContract::class
-            => \App\Clients\DirectOnderweg\Services\DirectOnderwegTvaService::class,
+            => \App\Clients\DriveDesk\Services\DriveDeskTvaService::class,
     ],
 
     'branding_seed' => [
-        'app_name'      => 'Direct Onderweg',
+        'app_name'      => 'DriveDesk',
         'theme_color'   => 'color1',
         'company_logo'  => 'logo.png',
-        'meta_seo_title'=> 'Direct Onderweg — Car Rental',
+        'meta_seo_title'=> 'DriveDesk — Car Rental Management, simplified',
     ],
 ];
 ```
@@ -205,12 +207,12 @@ the app's own providers that depend on the bindings).
 After this, anywhere in the app:
 
 ```php
-config('client.name');                      // 'Direct Onderweg'
+config('client.name');                      // 'DriveDesk'
 config('client.default_locale');            // 'nl'
 config('client.features.paypal');           // true
 
 $pricing = app(\App\Contracts\PricingServiceContract::class);
-// resolved to App\Clients\DirectOnderweg\Services\DirectOnderwegPricingService
+// resolved to App\Clients\DriveDesk\Services\DriveDeskPricingService
 ```
 
 ---
@@ -318,7 +320,9 @@ the `Setting` model and the `settingsKeys()` helper in
 
 ## 8. Tests
 
-Default test client is `directonderweg` (matches prod today).
+Default test client is `drivedesk` (matches prod today). Route-level suites
+that need a neutral non-demo tenant use `asClient('acme')`, a fixture under
+`tests/Fixtures/clients/` loaded by `WithClient` when no real config exists.
 
 ```php
 // tests/Concerns/WithClient.php
@@ -343,9 +347,9 @@ class PricingTest extends TestCase
 {
     use WithClient, RefreshDatabase;
 
-    public function test_directonderweg_charges_eu_vat(): void
+    public function test_drivedesk_charges_eu_vat(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('drivedesk');
         // ...
     }
 
@@ -362,7 +366,7 @@ class PricingTest extends TestCase
 ```yaml
 strategy:
   matrix:
-    client: [directonderweg, acme]
+    client: [drivedesk, acme]
 env:
   APP_CLIENT: ${{ matrix.client }}
 ```
@@ -436,7 +440,7 @@ jobs:
   test:
     strategy:
       matrix:
-        client: [directonderweg]   # extend as clients onboard
+        client: [drivedesk]   # extend as clients onboard
         php: ['8.3']
     env:
       APP_CLIENT: ${{ matrix.client }}
@@ -460,9 +464,9 @@ on:
     types: [published]
 jobs:
   deploy:
-    environment: production-directonderweg
+    environment: production-drivedesk
     env:
-      APP_CLIENT: directonderweg
+      APP_CLIENT: drivedesk
     steps:
       - uses: actions/checkout@v4
         with:
@@ -500,8 +504,8 @@ Rules:
 ### CODEOWNERS (optional, useful at 3+ clients)
 
 ```
-/app/Clients/DirectOnderweg/      @alice
-/config/clients/directonderweg.php @alice
+/app/Clients/DriveDesk/      @alice
+/config/clients/drivedesk.php @alice
 /app/Clients/Acme/                @bob
 /config/clients/acme.php          @bob
 /CLAUDE.md                        @lead
