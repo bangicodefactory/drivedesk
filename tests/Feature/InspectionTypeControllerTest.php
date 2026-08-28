@@ -19,7 +19,7 @@ class InspectionTypeControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage inspection type', 'create inspection type', 'edit inspection type', 'delete inspection type'];
         foreach ($perms as $p) {

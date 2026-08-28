@@ -64,7 +64,7 @@ client-side error state.
 - **`dev` is the integration branch** (and what the client runs).
   Work happens on **short-lived topic branches off `dev`**, named
   `type/short-description` (e.g. `perf/paginate-driver-lists`,
-  `docs/deploy-runbook`, `ci/deploy-gate-directonderweg`), merged back
+  `docs/deploy-runbook`, `ci/deploy-gate-drivedesk`), merged back
   via PR once CI is green, then **deleted** (local + remote).
   *(The original long-lived `feat/modernization` branch is retired —
   fully merged and deleted in June 2026.)*
@@ -122,7 +122,7 @@ client, and the API does not change** during the migration. Specifically:
   migrations must be **additive and backward-compatible** (nullable
   columns, no destructive `ALTER`/`DROP` on populated columns, no
   rename-in-place), **reversible** (a real `down()`), and land in their
-  own clearly-labeled PR with tests. `directonderweg` runs in production,
+  own clearly-labeled PR with tests. `drivedesk` runs in production,
   so a migration must not change behavior for existing rows — never
   require a backfill to stay correct. *(Historical: schema was frozen for
   the duration of the migration; that constraint no longer applies.)*
@@ -291,8 +291,11 @@ must follow.
 - **One `main` branch is the source of truth.** Every client runs the
   same code, configured differently. No per-client forks.
 - **A single env var, `APP_CLIENT`, selects the active client** at
-  deploy time (e.g. `APP_CLIENT=directonderweg`). The current
-  production client is `directonderweg`; that's the default.
+  deploy time (e.g. `APP_CLIENT=drivedesk`). The current
+  production client is `drivedesk`; that's the default.
+  *(Repo split, 2026-08-28: the original client, `directonderweg`, now
+  lives in its own repo, `bangicodefactory/rentcar`. This repo is the
+  DriveDesk product; core fixes must be applied to both by hand.)*
 - **Configuration layers, from highest precedence to lowest:**
   1. Runtime DB settings (the existing `Setting` model — branding,
      copy, admin-flippable toggles).
@@ -313,7 +316,7 @@ must follow.
    (`feature('paypal')`) or behind an interface bound per client.
    Inline `if ($client === 'acme') { ... }` checks are forbidden.
 2. **Default everything to the current behavior.** The
-   `directonderweg` config must reproduce today's behavior exactly.
+   `drivedesk` config must reproduce today's behavior exactly.
    When you add a flag for a new variant, the default in
    `config/features.php` must keep the existing client unchanged.
 3. **Routes for optional features are guarded by `feature:<name>`
@@ -328,7 +331,9 @@ must follow.
    GitHub Environments for CI/CD, in the server env for the host.
 6. **Every test that exercises a client-specific path declares its
    client** with the `WithClient` trait (`$this->asClient('acme')`).
-   The default test client is `directonderweg`, matching prod today.
+   The default test client is `drivedesk`, matching prod today; suites
+   that need a neutral non-demo tenant use the `acme` fixture from
+   `tests/Fixtures/clients/`.
    **But `asClient()` picks a realistic tenant — it must not supply the
    flag under test.** A suite that inherits a live client's flag changes
    meaning the day that client's config changes: enabling `cash_split`
@@ -387,7 +392,7 @@ must follow.
 
 The multi-client skeleton is part of **Phase 0** of the migration
 (see `docs/migration-plan.md`). The skeleton ships as a no-op:
-`APP_CLIENT=directonderweg`, all flags default to today's behavior,
+`APP_CLIENT=drivedesk`, all flags default to today's behavior,
 no code paths change. Subsequent migration phases use the new
 structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 
@@ -401,8 +406,6 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/perf-audit-plan.md` — how to run the perf audit
 - `docs/perf-audit.md` — (output, created during Phase 0) the findings
 - `docs/client-configurability.md` — multi-client architecture deep-dive
-- `docs/deploy-directonderweg-com.md` — new-host deploy runbook (source of truth)
-- `docs/deploy-namecheap-cpanel.md` — simplified cPanel/Namecheap companion guide
-- `docs/deploy-drivedesk-ma.md` — adding the DriveDesk demo client (`drivedesk.ma`) as a second isolated app on the directonderweg cPanel host
+- `docs/deploy.md` — deploy runbook for `drivedesk.ma` (Namecheap cPanel; source of truth)
 
 Last updated: 2026-07-21.

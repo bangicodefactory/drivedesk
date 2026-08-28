@@ -104,7 +104,7 @@ class LocaleUrlTest extends TestCase
 
     public function test_the_storefront_landing_is_not_captured_either(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->get('/landing')->assertOk();
     }
@@ -156,7 +156,7 @@ class LocaleUrlTest extends TestCase
     {
         // The storefront has no locale variants yet; a lone self-referencing
         // hreflang would be noise.
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $html = $this->get('/landing')->getContent();
 
@@ -167,8 +167,8 @@ class LocaleUrlTest extends TestCase
 
     public function test_locale_urls_do_not_exist_without_the_gateway(): void
     {
-        // directonderweg is internal-only; /fr there would just bounce to login.
-        $this->asClient('directonderweg');
+        // acme is internal-only; /fr there would just bounce to login.
+        $this->asClient('acme');
 
         $this->get('/fr')->assertNotFound();
     }

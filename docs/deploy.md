@@ -1,14 +1,13 @@
-# Deploy `drivedesk.ma` alongside `directonderweg` on the same cPanel host
+# Deploy `drivedesk.ma` (Namecheap cPanel)
 
-DriveDesk is the product's **demo/showcase client** (`demo_gateway` on). This
-guide adds it as a **second, fully isolated app on the same Namecheap cPanel
-account** that already runs `directonderweg.com` — without touching the
-directonderweg production app.
+DriveDesk is the product's **demo/showcase client** (`demo_gateway` on). It runs
+as a **fully isolated app on a shared Namecheap cPanel account** that also hosts
+another Laravel app (`directonderweg.com`, deployed from its own repo,
+`bangicodefactory/rentcar`). Nothing in this guide touches that app.
 
-It assumes the directonderweg deploy is already working (see
-`docs/deploy-namecheap-cpanel.md` and `docs/deploy-directonderweg-com.md`). Only
-the **per-client** pieces are new; the account-level setup (SSH key, PHP 8.4,
-composer) is shared and already done.
+The account-level setup (SSH key, PHP 8.4, composer) is shared and already
+done; only the **per-app** pieces below are DriveDesk's. Appendices A–C cover
+the host quirks (no Redis, SMTP for the demo form, LiteSpeed bridge docroot).
 
 Replace `CPUSER` with the cPanel username (`direxjym`). The host's public IP is
 the same one directonderweg resolves to (today `162.0.217.220`).
@@ -65,18 +64,15 @@ cPanel → **Domains → Create a New Domain**:
 - **Uncheck** "share document root"; set the **Document Root** to
   **`/home/CPUSER/drivedesk/public`** (we create that app dir next).
 
-> If LiteSpeed serves a blank/static page from that docroot (it mis-handled a
-> *symlinked* docroot for directonderweg), use the same **bridge docroot**
-> workaround documented in `docs/deploy-directonderweg-com.md` (a real docroot
-> dir with a small `index.php` that requires the app's bootstrap, per-asset
-> symlinks to `public/build`, and a hand-written `.htaccess`). A docroot set
-> directly to the real `…/drivedesk/public` path usually avoids it.
+> If LiteSpeed serves a blank/static page from that docroot (it mis-handles a
+> *symlinked* docroot), use the **bridge docroot** workaround in Appendix C.
+> That is what `drivedesk.ma` runs today.
 
 ## 3. Put the app on the host
 
 ```bash
 cd ~
-git clone https://github.com/bangicodefactory/rentcar.git drivedesk
+git clone git@github.com:bangicodefactory/drivedesk.git drivedesk
 # private repo: clone over SSH using the existing deploy key (already authorized
 # for directonderweg); the per-deploy `git fetch` reuses it.
 ```
@@ -115,8 +111,8 @@ These three values are the `DB_*` secrets in step 5. Do **not** import any dump.
 ## 5. Create the `production-drivedesk` GitHub Environment
 
 Repo → **Settings → Environments → New environment → `production-drivedesk`**.
-(`deploy.yml` already routes a `drivedesk/vX.Y.Z` tag here — no workflow change
-needed.) Add required reviewers if you want a manual gate.
+(`deploy.yml` routes a bare `vX.Y.Z` tag — drivedesk is the default client —
+and the explicit `drivedesk/vX.Y.Z` form here; no workflow change needed.) Add required reviewers if you want a manual gate.
 
 **Secrets** (encrypted):
 
@@ -130,7 +126,7 @@ needed.) Add required reviewers if you want a manual gate.
 | `DB_DATABASE` | `CPUSER_drivedesk` ← **must differ from directonderweg** |
 | `DB_USERNAME` | `CPUSER_dduser` |
 | `DB_PASSWORD` | the step-4 password |
-| `MAIL_HOST` / `MAIL_USERNAME` / `MAIL_PASSWORD` | **real** SMTP for `drivedesk.ma` (Namecheap Private Email, e.g. `no-reply@drivedesk.ma`) — **mandatory**, see §2.2 of the main runbook: the demo "Book a demo" form and the approval credentials email send inline, so bad SMTP is a user-facing 500 |
+| `MAIL_HOST` / `MAIL_USERNAME` / `MAIL_PASSWORD` | **real** SMTP for `drivedesk.ma` (Namecheap Private Email, e.g. `no-reply@drivedesk.ma`) — **mandatory**, see Appendix B: the demo "Book a demo" form and the approval credentials email send inline, so bad SMTP is a user-facing 500 |
 | `NOCAPTCHA_SITEKEY` / `NOCAPTCHA_SECRET` | reCAPTCHA keys whose allowed-domains include **`drivedesk.ma`** (login uses reCAPTCHA) |
 | `SENTRY_LARAVEL_DSN` | (optional) |
 
@@ -159,8 +155,8 @@ Notes:
 ## 6. First deploy
 
 ```bash
-git tag drivedesk/v1.0.0
-git push origin drivedesk/v1.0.0
+git tag v1.0.38
+git push origin v1.0.38
 ```
 
 The pipeline: resolves `production-drivedesk` → runs the full per-client CI
@@ -226,3 +222,110 @@ login works on the new domain with no extra config.
 Same pattern, no workflow change: commit `config/clients/<client>.php` (+
 `app/Clients/<Client>/` + CI matrix entry), add the addon domain + DB + dir +
 cron, create `production-<client>`, and tag `<client>/vX.Y.Z`.
+
+
+---
+
+## Appendix A — No-Redis option (host without Redis)
+
+`deploy.yml` **defaults all three drivers to `redis`**. On a host without
+Redis you must override them in the Environment **vars**, or the app throws
+connection-refused on cache/session/queue (a hard break, not just slowness):
+
+| Var | No-Redis value |
+| --- | --- |
+| `CACHE_STORE` | `file` |
+| `SESSION_DRIVER` | `file` |
+| `QUEUE_CONNECTION` | `sync` (simplest — see below) |
+
+Leave `REDIS_HOST`/`REDIS_PORT` unset. At this app's scale (single host) the
+impact is negligible: the only hot cache use is the `settings()` helper, and
+`file` sessions are fine on one host. With `sync`, the `ShouldQueue` mailables
+send **inline in the request** (~0.5–2s SMTP round-trip on send-agreement /
+verification emails). If that becomes a problem, switch
+`QUEUE_CONNECTION=database` — but that needs a `jobs` table
+(`php artisan queue:table` + `migrate`) **and** a running worker.
+
+> ⚠️ With `sync`, if SMTP is down/slow the failure surfaces **on the user's
+> request**. Make sure `MAIL_*` is solid before choosing `sync`.
+
+## Appendix B — SMTP is mandatory for the demo gateway
+
+The public "Book a demo" form on `/` emails the product inbox configured as
+`demo_request_to` in `config/clients/drivedesk.php` (today
+`admin@bangicode.ma`). Unlike the other mailables, `App\Mail\DemoRequest` and
+`App\Mail\DemoCredentials` are **not** `ShouldQueue` — they send **inline
+regardless of `QUEUE_CONNECTION`**, so a missing or wrong `MAIL_*` config is
+**always a user-facing 500 on the demo form**, not a silent background failure.
+(Seen locally: `MAIL_USERNAME`/`MAIL_PASSWORD` `null` → SMTP `530 Authentication
+required` → 500.)
+
+All of these must be set and verified **before** go-live:
+
+| Var / Secret | Notes |
+| --- | --- |
+| `MAIL_MAILER` | `smtp` (must **not** be `log` in production — `send()` then "succeeds" and nothing is delivered) |
+| `MAIL_HOST` | SMTP host that can send as the `MAIL_FROM_ADDRESS` domain |
+| `MAIL_PORT` | `587` (STARTTLS) or `465` (TLS) |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | **Real** SMTP credentials — never `null` |
+| `MAIL_ENCRYPTION` | `tls` (or `ssl` for port 465) |
+| `MAIL_FROM_ADDRESS` | A mailbox the SMTP account is allowed to send from |
+
+Smoke-test after deploy: open `/`, submit the demo form, confirm the success
+state **and that the email actually arrives** in the inbox.
+
+### Demo showcase data seeds and refreshes itself
+
+- **On every deploy**, `deploy.yml` runs `php artisan demo:seed --if-demo`
+  right after `client:install`. It's best-effort: a failure logs a warning but
+  never aborts the deploy.
+- **Nightly** (`03:30`, Laravel scheduler — needs the host cron running
+  `schedule:run`), `demo:seed --if-demo` re-anchors the time-relative data to
+  "today" and resets the sandbox.
+
+`demo:seed` is idempotent and **gated to `feature('demo_gateway')`**; it refuses
+to run on a non-demo client unless `--force` (and never in production).
+
+> ⚠️ The nightly run **wipes the demo tenant's transactional data** (bookings,
+> payments, expenses, reminders, agreements, credits, TVA — scoped to the demo
+> owner) and reseeds it. Catalog data (vehicles, places, addons) is preserved.
+> Change the cadence in `app/Console/Kernel.php`.
+
+## Appendix C — LiteSpeed "bridge docroot" workaround
+
+On this host LiteSpeed serves a blank page when an addon domain's document root
+is a **symlink** to `~/drivedesk/public`. The workaround is a real directory
+(`~/drivedesk.ma`) set as the docroot, containing:
+
+1. **`index.php`** that requires the app's bootstrap by absolute path — the
+   stock `public/index.php` with its paths rewritten:
+
+   ```php
+   <?php
+   use Illuminate\Http\Request;
+   define('LARAVEL_START', microtime(true));
+   $app = '/home/CPUSER/drivedesk';
+   if (file_exists($app.'/storage/framework/maintenance.php')) {
+       require $app.'/storage/framework/maintenance.php';
+   }
+   require $app.'/vendor/autoload.php';
+   (require_once $app.'/bootstrap/app.php')
+       ->handleRequest(Request::capture());
+   ```
+
+2. **Per-asset symlinks** into the real `public/` (`build`, `images`,
+   `favicon.ico`, `robots.txt`, `storage` → `../drivedesk/public/…`). Symlinking
+   *files and subdirectories* works; symlinking the docroot itself does not.
+3. The standard Laravel **`.htaccess`** (step 3 above), hand-copied.
+
+Things that bit on first deploy — check them on a fresh clone:
+
+- `storage/framework/{cache/data,sessions,views}` and `bootstrap/cache` are
+  **not in git**; without them `artisan down` 500s.
+- `storage/installed` marker — `rachidlaasri/laravel-installer` redirects `/` to
+  `/install` without it.
+- `APP_KEY` must be `base64:` + 32 bytes; a malformed key is a 500
+  "Unsupported cipher".
+- A foreign `Host` header gets a **404 from LiteSpeed** (unknown vhost) before
+  Laravel's `TrustHosts` 400 ever fires — the app-level guard is a second layer
+  you cannot observe from outside.

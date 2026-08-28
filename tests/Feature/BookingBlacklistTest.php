@@ -29,7 +29,7 @@ class BookingBlacklistTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         Permission::firstOrCreate(['name' => 'create booking', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

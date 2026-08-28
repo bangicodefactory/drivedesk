@@ -121,9 +121,9 @@ class TrustHostsTest extends TestCase
 
     public function test_the_other_clients_domain_is_trusted_under_its_own_app_url(): void
     {
-        $this->asDeployedApp('https://directonderweg.com');
+        $this->asDeployedApp('https://example.com');
 
-        $this->get('https://directonderweg.com/login')->assertOk();
+        $this->get('https://example.com/login')->assertOk();
         $this->get('https://drivedesk.ma/login')->assertStatus(400);
     }
 

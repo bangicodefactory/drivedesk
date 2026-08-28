@@ -109,7 +109,7 @@ version:
 2. Never hard-code client-specific behavior in core code. Gate variants behind
    `feature('flag-name')` or an interface bound by the client's service
    provider.
-3. The `directonderweg` config must remain the default. New flags default to
+3. The `drivedesk` config must remain the default. New flags default to
    the existing behavior so the production client is unchanged.
 4. Secrets (Stripe keys, PayPal credentials, etc.) go in the GitHub
    Environment, never in `config/clients/*.php`.

@@ -3,19 +3,18 @@ name: Deploy
 on:
   push:
     tags:
-      - 'v*'      # legacy / directonderweg:  vX.Y.Z
+      - 'v*'      # drivedesk (default client): vX.Y.Z
       - '*/v*'    # client-scoped:            <client>/vX.Y.Z  (e.g. acme/v1.0.4)
   workflow_dispatch:
     inputs:
       environment:
         description: 'Target environment'
         required: true
-        default: 'staging-directonderweg'
+        default: 'production-drivedesk'
         type: choice
         options:
           # Add <staging|production>-<client> here as each client onboards.
-          - staging-directonderweg
-          - production-directonderweg
+          - production-drivedesk
 
 # NOTE: deploy serialization is set on the `deploy` job (keyed on the resolved
 # target environment) — not here — so two releases to the SAME client queue,
@@ -25,7 +24,7 @@ jobs:
   # Resolve which client/environment this run targets:
   #   • workflow_dispatch       → the chosen `environment` input
   #   • tag  <client>/vX.Y.Z     → production-<client>
-  #   • tag  vX.Y.Z              → production-directonderweg (legacy default)
+  #   • tag  vX.Y.Z              → production-drivedesk (default client)
   # The deploy job's `environment:` then pulls that client's own secrets/vars,
   # so adding a client is just a new config + a new GitHub Environment — no
   # change to this workflow.
@@ -47,7 +46,7 @@ jobs:
             if [[ "$REF" == */v* ]]; then
               CLIENT="${REF%%/*}"
             else
-              CLIENT="directonderweg"   # legacy: plain vX.Y.Z
+              CLIENT="drivedesk"   # default client: plain vX.Y.Z
             fi
             # Guard: only deploy clients that actually exist in the codebase.
             # config/clients/<client>.php is the source of truth, so a stray
@@ -94,8 +93,8 @@ jobs:
       - name: Write .env from secrets
         run: |
           cat > .env <<'ENVEOF'
-          APP_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
-          APP_CLIENT=${{ vars.APP_CLIENT || 'directonderweg' }}
+          APP_NAME="${{ vars.APP_NAME || 'DriveDesk' }}"
+          APP_CLIENT=${{ vars.APP_CLIENT || 'drivedesk' }}
           APP_ENV=${{ vars.APP_ENV || 'production' }}
           APP_DEBUG=false
           APP_URL=${{ vars.APP_URL }}
@@ -127,7 +126,7 @@ jobs:
           MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
           MAIL_ENCRYPTION=tls
           MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}
-          MAIL_FROM_NAME="${{ vars.APP_NAME || 'Direct Onderweg' }}"
+          MAIL_FROM_NAME="${{ vars.APP_NAME || 'DriveDesk' }}"
 
           NOCAPTCHA_SITEKEY=${{ secrets.NOCAPTCHA_SITEKEY }}
           NOCAPTCHA_SECRET=${{ secrets.NOCAPTCHA_SECRET }}

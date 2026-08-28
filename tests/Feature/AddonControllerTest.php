@@ -19,7 +19,7 @@ class AddonControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage addon', 'create addon', 'edit addon', 'delete addon'];
         foreach ($perms as $p) {

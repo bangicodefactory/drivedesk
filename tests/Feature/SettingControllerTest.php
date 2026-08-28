@@ -22,7 +22,7 @@ class SettingControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->owner = User::factory()->create([
             'type'      => 'owner',

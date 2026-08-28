@@ -100,7 +100,7 @@ class DemoApprovalTest extends TestCase
 
     public function test_index_is_404_on_a_non_demo_client(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->actingAs($this->superAdmin)
             ->get(route('demo-requests.index'))
@@ -212,7 +212,7 @@ class DemoApprovalTest extends TestCase
 
     public function test_demo_approval_routes_are_404_on_a_non_demo_client(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off
+        $this->asClient('acme'); // demo_gateway off
         $pending = $this->makePending();
 
         $this->actingAs($this->superAdmin)

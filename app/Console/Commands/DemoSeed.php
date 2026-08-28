@@ -61,7 +61,7 @@ class DemoSeed extends Command
         $forceAllowed = $this->option('force') && ! app()->isProduction();
 
         if (! feature('demo_gateway') && ! $forceAllowed) {
-            $client = config('app.client', 'directonderweg');
+            $client = config('app.client', 'drivedesk');
 
             // --if-demo: deploy/scheduler call this on every client unconditionally;
             // on a real client it's a clean no-op, not a deploy-breaking error.
@@ -83,7 +83,7 @@ class DemoSeed extends Command
             return self::FAILURE;
         }
 
-        $client = config('app.client', 'directonderweg');
+        $client = config('app.client', 'drivedesk');
         $this->info("Seeding demo data for client: {$client}");
 
         // 1. Base data (idempotent): owner + roles/permissions, TVA setup, drivers.

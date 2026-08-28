@@ -32,7 +32,7 @@ class BookingControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         // Create permissions required by BookingController
         $perms = [

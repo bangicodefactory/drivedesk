@@ -24,7 +24,7 @@
                                 <span>{{ rand(5, 30) }} {{ __('instagram_comments') }}</span>
                             </div>
                             <p>{{ __('instagram_caption', ['number' => $i]) }}</p>
-                            <a href="https://www.instagram.com/directonderwegma/" class="theme-btn bg-color w-100 text-center">{{ __('instagram_view_button') }}</a>
+                            <a href="#" class="theme-btn bg-color w-100 text-center">{{ __('instagram_view_button') }}</a>
                         </div>
                     </div>
                 </div>

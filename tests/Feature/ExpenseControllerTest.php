@@ -22,7 +22,7 @@ class ExpenseControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage expense', 'create expense', 'edit expense', 'delete expense'];
         foreach ($perms as $p) {

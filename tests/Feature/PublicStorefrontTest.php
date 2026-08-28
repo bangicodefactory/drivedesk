@@ -58,8 +58,8 @@ class PublicStorefrontTest extends TestCase
 
     public function test_landing_still_serves_clients_that_keep_the_storefront(): void
     {
-        // directonderweg is unchanged by BAN-261 — the flag defaults to on.
-        $this->asClient('directonderweg');
+        // acme keeps the storefront — the flag defaults to on.
+        $this->asClient('acme');
 
         $this->get('/landing')->assertOk();
     }

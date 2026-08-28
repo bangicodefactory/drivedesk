@@ -227,8 +227,8 @@ class SeoMetadataTest extends TestCase
 
     public function test_home_is_noindex_for_a_client_without_the_gateway(): void
     {
-        // directonderweg is internal-only; "/" redirects to login there.
-        $this->asClient('directonderweg');
+        // acme is internal-only; "/" redirects to login there.
+        $this->asClient('acme');
 
         $html = $this->get('/login')->getContent();
 
@@ -332,7 +332,7 @@ class SeoMetadataTest extends TestCase
     public function test_the_storefront_landing_keeps_its_vehicle_detail_route(): void
     {
         // Landing.jsx links every vehicle card through route('client.details').
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $html = $this->get('/landing')->getContent();
 
@@ -369,7 +369,7 @@ class SeoMetadataTest extends TestCase
     {
         // /contact and /search render client.layouts.app, so they carry no
         // canonical or robots directive — and /contact was 500ing on one client.
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $xml = $this->get('/sitemap.xml')->getContent();
 
@@ -379,7 +379,7 @@ class SeoMetadataTest extends TestCase
 
     public function test_sitemap_lists_the_storefront_for_clients_that_keep_it(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $xml = $this->get('/sitemap.xml')->assertOk()->getContent();
 
@@ -388,7 +388,7 @@ class SeoMetadataTest extends TestCase
 
     public function test_sitemap_is_404_when_the_client_has_no_public_pages(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
         config(['features.public_storefront' => false, 'features.demo_gateway' => false]);
 
         // An empty sitemap tells Google the site has no indexable pages, which
@@ -410,7 +410,7 @@ class SeoMetadataTest extends TestCase
 
     public function test_llms_txt_is_404_without_a_public_product_page(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->get('/llms.txt')->assertNotFound();
     }

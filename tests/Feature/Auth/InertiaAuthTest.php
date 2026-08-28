@@ -22,7 +22,7 @@ class InertiaAuthTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
     }
 
     public function test_login_renders_inertia_auth_login_component(): void

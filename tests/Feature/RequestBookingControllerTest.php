@@ -27,7 +27,7 @@ class RequestBookingControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['create booking', 'delete booking'];
         foreach ($perms as $p) {

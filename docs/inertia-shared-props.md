@@ -23,7 +23,7 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
 | `branding.layoutMode` | `'lightmode' \| 'darkmode'` | Drives `ThemeProvider` initial theme |
 | `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
-| `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'directonderweg'`) |
+| `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'drivedesk'`) |
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
 | `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
 | `client.features` | `ClientFeatures` | Feature flags resolved by `ClientServiceProvider` |

@@ -1,14 +1,15 @@
-# rentcar
+# DriveDesk
 
-Multi-client Laravel platform for car rental businesses. Built for
-**Direct Onderweg** (operating in Morocco) and designed to serve multiple
-agencies from one codebase with one isolated deployment per client.
+Car rental management software for rental agencies (Morocco-first), sold as
+**DriveDesk** with a public demo at [drivedesk.ma](https://drivedesk.ma).
+Multi-client Laravel platform: one codebase, one isolated deployment per
+client.
 Features include vehicle and driver management, bookings, rental agreements
 with digital signatures, inspections, expenses, credits, TVA (VAT) handling,
 multi-locale support, reCAPTCHA, and role/permission management.
 
-The repo is `bangicodefactory/rentcar`. The active client is selected at
-deploy time via `APP_CLIENT=directonderweg`. See
+The repo is `bangicodefactory/drivedesk`. The active client is selected at
+deploy time via `APP_CLIENT=drivedesk` (the default). See
 `docs/client-configurability.md` for the multi-client architecture.
 
 ---
@@ -72,7 +73,7 @@ php artisan key:generate
 Minimum required:
 
 ```dotenv
-APP_NAME="Direct Onderweg"
+APP_NAME="DriveDesk"
 APP_URL=http://localhost:8000
 
 DB_CONNECTION=mysql
@@ -83,13 +84,13 @@ DB_USERNAME=root
 DB_PASSWORD=
 
 # Active client for this deployment
-APP_CLIENT=directonderweg
+APP_CLIENT=drivedesk
 
 # Mail (Mailpit defaults)
 MAIL_MAILER=smtp
 MAIL_HOST=127.0.0.1
 MAIL_PORT=1025
-MAIL_FROM_ADDRESS="noreply@directonderweg.local"
+MAIL_FROM_ADDRESS="noreply@drivedesk.local"
 MAIL_FROM_NAME="${APP_NAME}"
 
 # Queue — 'sync' is fine locally
@@ -257,7 +258,7 @@ Neither tool runs during `php artisan test` — `phpunit.xml` sets
 ```
 app/
   Clients/                   # per-client service providers and services
-    DirectOnderweg/
+    DriveDesk/
   Contracts/                 # interfaces (PricingServiceContract, TvaServiceContract)
   Helper/helper.php          # global helper functions (autoloaded)
   Http/Controllers/          # 30 domain controllers + Auth/
@@ -266,7 +267,7 @@ app/
   Mail/                      # mailables
   Providers/
 config/
-  clients/                   # per-client config (_default.php, directonderweg.php)
+  clients/                   # per-client config (_default.php, drivedesk.php)
   features.php               # global feature flag defaults
 database/
   migrations/
@@ -324,7 +325,7 @@ Every event carries:
 
 | Tag | Source |
 | --- | --- |
-| `environment` | `SENTRY_ENVIRONMENT` — e.g. `production-directonderweg`, `staging-directonderweg`, `ci` |
+| `environment` | `SENTRY_ENVIRONMENT` — e.g. `production-drivedesk`, `staging-drivedesk`, `ci` |
 | `release` | `SENTRY_RELEASE` — set to `$GITHUB_SHA` in CI/CD |
 | `user` | Authenticated user ID/email, captured automatically |
 

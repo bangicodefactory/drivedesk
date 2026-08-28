@@ -19,7 +19,7 @@ class ExpenseTypeControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage expense type', 'create expense type', 'edit expense type', 'delete expense type'];
         foreach ($perms as $p) {

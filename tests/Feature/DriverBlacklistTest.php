@@ -25,7 +25,7 @@ class DriverBlacklistTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         Permission::firstOrCreate(['name' => 'manage driver blacklist', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

@@ -12,11 +12,6 @@ use Spatie\Permission\Models\Role;
 
 class DemoRequestController extends Controller
 {
-    /**
-     * Where demo requests are delivered. Central inbox for the product team.
-     */
-    private const RECIPIENT = 'admin@bangicode.ma';
-
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -27,7 +22,8 @@ class DemoRequestController extends Controller
             'message' => 'nullable|string|max:2000',
         ]);
 
-        Mail::to(self::RECIPIENT)->send(new DemoRequest($data));
+        // Central inbox for the product team, per client config (demo_request_to).
+        Mail::to(config('client.demo_request_to'))->send(new DemoRequest($data));
 
         // Persist the request as a *pending* workspace login a super-admin can
         // later approve (BAN-249). The schema is frozen (§4), so there is no

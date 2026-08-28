@@ -12,7 +12,7 @@ class ClientServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        $this->client = config('app.client', 'directonderweg');
+        $this->client = config('app.client', 'drivedesk');
         $default      = config('clients._default', []);
         $specific     = config("clients.{$this->client}", []);
 
@@ -27,8 +27,8 @@ class ClientServiceProvider extends ServiceProvider
 
         // Register the active client's own ServiceProvider.
         // config/clients/<client>.php may supply an explicit 'provider_class' to
-        // avoid Str::studly() producing the wrong casing (e.g. 'directonderweg'
-        // → 'Directonderweg' instead of 'DirectOnderweg').
+        // avoid Str::studly() producing the wrong casing (e.g. 'drivedesk'
+        // → 'Drivedesk' instead of 'DriveDesk').
         // Read from $specific (not $resolved) — _default.php must never define
         // provider_class, and the key is inherently client-specific.
         $clientProvider = $specific['provider_class']
@@ -41,8 +41,8 @@ class ClientServiceProvider extends ServiceProvider
         // The directory under app/Clients/ matches the namespace segment of the
         // client's provider class (App\Clients\<Dir>\...). Derive it from there so
         // the view overlay path and the provider share one source of truth — the
-        // raw slug ('directonderweg') and even Str::studly() ('Directonderweg')
-        // produce the wrong casing for 'DirectOnderweg', which silently no-ops the
+        // raw slug ('drivedesk') and even Str::studly() ('Drivedesk')
+        // produce the wrong casing for a StudlyCase dir like 'DriveDesk', which silently no-ops the
         // overlay on case-sensitive filesystems (BAN-179 regression → Sentry
         // DIRECTONDERWEG-3). Only trust the segment when the class actually lives
         // under App\Clients\<Dir>; a provider class registered elsewhere would

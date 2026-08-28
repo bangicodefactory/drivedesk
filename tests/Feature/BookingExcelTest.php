@@ -24,7 +24,7 @@ class BookingExcelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         Permission::firstOrCreate(['name' => 'create booking', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'delete booking', 'guard_name' => 'web']);

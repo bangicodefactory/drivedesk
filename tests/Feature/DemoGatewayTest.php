@@ -53,7 +53,7 @@ class DemoGatewayTest extends TestCase
 
     public function test_guest_home_redirects_to_login_when_gateway_off(): void
     {
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $this->get('/')->assertRedirect(route('login'));
     }
@@ -89,7 +89,7 @@ class DemoGatewayTest extends TestCase
     public function test_demo_request_is_404_when_gateway_off(): void
     {
         Mail::fake();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         // The route exists but the feature:demo_gateway middleware blocks it.
         $this->post(route('demo.request'), $this->valid)->assertNotFound();

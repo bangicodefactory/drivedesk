@@ -24,7 +24,7 @@ class InertiaPlaceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         foreach (['manage place', 'create place', 'edit place', 'delete place'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);

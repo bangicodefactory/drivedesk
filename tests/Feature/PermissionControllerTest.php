@@ -19,7 +19,7 @@ class PermissionControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 

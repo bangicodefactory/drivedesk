@@ -11,6 +11,9 @@ return [
     // Read by App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
     'public_default_locale' => 'ary',
 
+    // Where the public "Book a demo" form is delivered (DemoRequestController).
+    'demo_request_to' => 'admin@bangicode.ma',
+
     /*
      * DriveDesk is the product's own reference/demo client — the base tenant
      * used to showcase the platform (and to host the marketing site that

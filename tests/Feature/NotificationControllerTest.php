@@ -20,7 +20,7 @@ class NotificationControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage notification', 'create notification', 'edit notification', 'delete notification'];
         foreach ($perms as $p) {

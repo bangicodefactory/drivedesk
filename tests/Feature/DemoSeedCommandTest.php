@@ -21,7 +21,7 @@ class DemoSeedCommandTest extends TestCase
 
     public function test_it_refuses_on_a_non_demo_client_and_seeds_nothing(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off
+        $this->asClient('acme'); // demo_gateway off
 
         $this->artisan('demo:seed')
             ->expectsOutputToContain('Refusing to run')
@@ -33,7 +33,7 @@ class DemoSeedCommandTest extends TestCase
 
     public function test_if_demo_skips_gracefully_on_a_non_demo_client(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off
+        $this->asClient('acme'); // demo_gateway off
 
         // Deploy/scheduler call demo:seed --if-demo unconditionally; on a real
         // client it must be a clean no-op (exit 0), not a deploy-breaking error.
@@ -47,7 +47,7 @@ class DemoSeedCommandTest extends TestCase
 
     public function test_force_is_not_honored_in_production_on_a_real_client(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off
+        $this->asClient('acme'); // demo_gateway off
         $this->app['env'] = 'production';
 
         // demo:seed's refresh step deletes the owner's bookings/payments/factures
@@ -63,7 +63,7 @@ class DemoSeedCommandTest extends TestCase
 
     public function test_force_still_works_outside_production(): void
     {
-        $this->asClient('directonderweg'); // demo_gateway off, env is 'testing'
+        $this->asClient('acme'); // demo_gateway off, env is 'testing'
 
         $this->artisan('demo:seed --force')->assertSuccessful();
 

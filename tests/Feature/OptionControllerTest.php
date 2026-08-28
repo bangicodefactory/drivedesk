@@ -19,7 +19,7 @@ class OptionControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->asClient('directonderweg');
+        $this->asClient('acme');
 
         $perms = ['manage options', 'create options', 'edit options', 'delete options'];
         foreach ($perms as $p) {
