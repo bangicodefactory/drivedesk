@@ -29,7 +29,7 @@
                     {{-- <a href="#"><i class="fab fa-twitter"></i> {{ __('header_top_twitter') }}</a> --}}
                     <a href="https://www.facebook.com/profile.php?id=100075895973021"><i class="fab fa-facebook-f"></i> {{ __('header_top_facebook') }}</a>
                     {{-- <a href="#"><i class="fab fa-pinterest-p"></i> {{ __('header_top_pinterest') }}</a> --}}
-                    <a href="https://www.instagram.com/directonderwegma/"><i class="fab fa-instagram"></i> {{ __('header_top_instagram') }}</a>
+                    <a href="#"><i class="fab fa-instagram"></i> {{ __('header_top_instagram') }}</a>
                 </div>
             </div>
         </div>

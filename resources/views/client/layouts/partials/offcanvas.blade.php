@@ -36,7 +36,7 @@
                     </div>
                     <div class="social-icon d-flex align-items-center">
                         <a href="https://www.facebook.com/profile.php?id=100075895973021"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/directonderwegma/"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
                         
                     </div>
                 </div>
