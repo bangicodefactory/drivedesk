@@ -1,0 +1,21 @@
+{
+  "name": "drivedesk-promo",
+  "version": "1.0.0",
+  "description": "DriveDesk promotional video (Remotion)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-shots": "node scripts/sync-shots.mjs",
+    "dev": "npm run sync-shots && remotion studio src/index.jsx",
+    "render": "npm run sync-shots && remotion render src/index.jsx PromoEN out/DriveDesk-Promo-EN.mp4",
+    "render:fr": "npm run sync-shots && remotion render src/index.jsx PromoFR out/DriveDesk-Promo-FR.mp4",
+    "render:ar": "npm run sync-shots && remotion render src/index.jsx PromoAR out/DriveDesk-Promo-AR.mp4",
+    "render:all": "npm run render && npm run render:fr && npm run render:ar"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.509",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.509"
+  }
+}
