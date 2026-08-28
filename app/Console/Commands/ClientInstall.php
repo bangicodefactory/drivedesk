@@ -16,7 +16,7 @@ class ClientInstall extends Command
     {
         // Note: --client only affects the branding_seed lookup. It does not
         // re-run ClientServiceProvider or swap the active client's bindings.
-        $client = $this->option('client') ?? config('app.client', 'directonderweg');
+        $client = $this->option('client') ?? config('app.client', 'drivedesk');
         $seed   = config("clients.{$client}.branding_seed", []);
 
         if (empty($seed)) {

@@ -116,12 +116,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Selects the active client configuration at deploy time. Defaults to
-    | directonderweg so local dev works without setting APP_CLIENT.
+    | drivedesk so local dev works without setting APP_CLIENT.
     | See docs/client-configurability.md for the full multi-client design.
     |
     */
 
-    'client' => env('APP_CLIENT', 'directonderweg'),
+    'client' => env('APP_CLIENT', 'drivedesk'),
 
     /*
     |--------------------------------------------------------------------------
