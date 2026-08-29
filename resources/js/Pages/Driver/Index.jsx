@@ -88,18 +88,18 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                 the same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('Search drivers…')}
-                        className="pl-8"
+                        className="ps-8"
                     />
                 </div>
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('driver.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Driver')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Driver')}
                         </Link>
                     </Button>
                 )}
@@ -116,7 +116,7 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                                 <TableHead>{t('License Number')}</TableHead>
                                 <TableHead>{t('Issue Date')}</TableHead>
                                 <TableHead>{t('Expiration Date')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -146,7 +146,7 @@ function DriverIndex({ drivers = { data: [] }, filters = {} }) {
                                     <TableCell>{d.issue_date_display ?? '-'}</TableCell>
                                     <TableCell>{d.expiration_date_display ?? '-'}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1 whitespace-nowrap">
+                                        <TableCell className="text-end space-x-1 whitespace-nowrap">
                                             {can('show driver') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('driver.show', d.id)} aria-label={t('Details')}>

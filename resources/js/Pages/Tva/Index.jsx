@@ -144,7 +144,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                 </h1>
                 <Button variant="outline" size="sm" asChild>
                     <Link href={route('tva.renumber.index')}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> {t('Renumber Invoices')}
+                        <RefreshCw className="me-2 h-4 w-4" /> {t('Renumber Invoices')}
                     </Link>
                 </Button>
             </div>
@@ -235,7 +235,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                         <span>{t('Invoices')} ({tvas.total})</span>
                         {selected.length > 0 && (
                             <Button size="sm" variant="outline" onClick={bulkDownload} disabled={downloading}>
-                                <Download className="mr-2 h-4 w-4" />
+                                <Download className="me-2 h-4 w-4" />
                                 {downloading ? t('Preparing…') : `${t('Download Selected')} (${selected.length})`}
                             </Button>
                         )}
@@ -260,7 +260,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                 <TableHead>{t('TTC')}</TableHead>
                                 <TableHead>{t('Method')}</TableHead>
                                 {hasActions && (
-                                    <TableHead className="text-right">{t('Action')}</TableHead>
+                                    <TableHead className="text-end">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -292,7 +292,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                     <TableCell className="font-medium">{t.montant_ttc} Dh</TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{t.payment_method || '—'}</TableCell>
                                     {hasActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('tva.show', t.id)} aria-label="View">

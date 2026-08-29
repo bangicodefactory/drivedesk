@@ -105,7 +105,7 @@ function TrafficViolationIndex({
                 <button
                     type="button"
                     onClick={() => setConfidence('unmatched')}
-                    className="w-full rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-left text-sm hover:bg-warning/20"
+                    className="w-full rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-start text-sm hover:bg-warning/20"
                 >
                     <span className="font-semibold">{unmatchedCount}</span>{' '}
                     {t('violations are not linked to a rental yet. Review them.')}
@@ -115,12 +115,12 @@ function TrafficViolationIndex({
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('Search violations…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
 
@@ -161,11 +161,11 @@ function TrafficViolationIndex({
                         <Dialog open={importOpen} onOpenChange={setImportOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" size="sm">
-                                    <Upload className="mr-2 h-4 w-4" /> {t('Import')}
+                                    <Upload className="me-2 h-4 w-4" /> {t('Import')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-2xl">
-                                <DialogHeader className="border-b px-6 py-4 text-left">
+                                <DialogHeader className="border-b px-6 py-4 text-start">
                                     <DialogTitle>{t('Import Traffic Violations')}</DialogTitle>
                                 </DialogHeader>
                                 <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
@@ -226,7 +226,7 @@ function TrafficViolationIndex({
                                             {t('Cancel')}
                                         </Button>
                                         <Button type="submit">
-                                            <Upload className="mr-2 h-4 w-4" /> {t('Import')}
+                                            <Upload className="me-2 h-4 w-4" /> {t('Import')}
                                         </Button>
                                     </div>
                                 </form>
@@ -235,7 +235,7 @@ function TrafficViolationIndex({
 
                         <Button size="sm" asChild>
                             <Link href={route('traffic-violation.create')}>
-                                <Plus className="mr-2 h-4 w-4" /> {t('Create Traffic Violation')}
+                                <Plus className="me-2 h-4 w-4" /> {t('Create Traffic Violation')}
                             </Link>
                         </Button>
                     </div>
@@ -253,7 +253,7 @@ function TrafficViolationIndex({
                             <TableHead>{t('Match')}</TableHead>
                             <TableHead>{t('Amount')}</TableHead>
                             <TableHead>{t('Status')}</TableHead>
-                            {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                            {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -289,7 +289,7 @@ function TrafficViolationIndex({
                                     <StatusBadge status={violation.status} statuses={statuses} />
                                 </TableCell>
                                 {showActions && (
-                                    <TableCell className="text-right space-x-1">
+                                    <TableCell className="text-end space-x-1">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={route('traffic-violation.show', violation.id)} aria-label={t('View')}>
                                                 <Eye className="h-4 w-4" />

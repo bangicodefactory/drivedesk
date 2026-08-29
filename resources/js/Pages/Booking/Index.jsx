@@ -208,12 +208,12 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative w-full sm:w-72">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('Search bookings…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                     <div className="flex items-center gap-1">
@@ -247,17 +247,17 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                         <>
                             <Button variant="outline" size="sm" asChild>
                                 <a href={route('booking.template')} target="_blank">
-                                    <Download className="mr-2 h-4 w-4" /> {t('Template')}
+                                    <Download className="me-2 h-4 w-4" /> {t('Template')}
                                 </a>
                             </Button>
                             <Dialog open={importOpen} onOpenChange={setImportOpen}>
                                 <DialogTrigger asChild>
                                     <Button variant="outline" size="sm">
-                                        <Upload className="mr-2 h-4 w-4" /> {t('Import Excel')}
+                                        <Upload className="me-2 h-4 w-4" /> {t('Import Excel')}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl">
-                                    <DialogHeader className="border-b px-6 py-4 text-left">
+                                    <DialogHeader className="border-b px-6 py-4 text-start">
                                         <DialogTitle>{t('Import Bookings from Excel')}</DialogTitle>
                                     </DialogHeader>
                                     <form onSubmit={submitImport} className="flex min-h-0 flex-1 flex-col">
@@ -330,7 +330,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                                 {t('Cancel')}
                                             </Button>
                                             <Button type="submit">
-                                                <Upload className="mr-2 h-4 w-4" /> {t('Import')}
+                                                <Upload className="me-2 h-4 w-4" /> {t('Import')}
                                             </Button>
                                         </div>
                                     </form>
@@ -341,7 +341,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                     {can('manage vehicle') && (
                         <Button size="sm" asChild>
                             <Link href={route('booking.create')}>
-                                <Plus className="mr-2 h-4 w-4" /> {t('Create Booking')}
+                                <Plus className="me-2 h-4 w-4" /> {t('Create Booking')}
                             </Link>
                         </Button>
                     )}
@@ -394,7 +394,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                     >
                                         <DialogTrigger asChild>
                                             <Button variant="success" size="sm">
-                                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                <CheckCircle2 className="me-2 h-4 w-4" />
                                                 {t('Mark as Paid')}
                                             </Button>
                                         </DialogTrigger>
@@ -431,7 +431,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                 )}
                                 {can('delete booking') && (
                                     <Button variant="destructive" size="sm" onClick={bulkDelete}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <Trash2 className="me-2 h-4 w-4" />
                                         {t('Delete Selected')}
                                     </Button>
                                 )}
@@ -457,7 +457,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                 <TableHead>{t('Status')}</TableHead>
                                 <TableHead>{t('Payment')}</TableHead>
                                 {(can('edit booking') || can('delete booking') || can('show booking')) && (
-                                    <TableHead className="text-right">{t('Action')}</TableHead>
+                                    <TableHead className="text-end">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -515,7 +515,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                         </Badge>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('booking.show', b.encrypted_id)} aria-label={t('View')}>

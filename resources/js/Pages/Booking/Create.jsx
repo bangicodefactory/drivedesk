@@ -285,7 +285,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     <table className="w-auto text-sm border-collapse">
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground">{t('Duration')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground">{t('Duration')}</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
                                         </tbody>
@@ -300,11 +300,11 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                         )}
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
                                             </tr>
                                             <tr>
-                                                <td className="pr-8 py-1 font-semibold">{t('Total Amount')}</td>
+                                                <td className="pe-8 py-1 font-semibold">{t('Total Amount')}</td>
                                                 <td className="font-semibold">{priceBreakdown.finalTotal} Dh</td>
                                             </tr>
                                         </tbody>

@@ -111,7 +111,7 @@ function Login({ status }) {
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     autoComplete="current-password"
-                                    className="border-white/20 bg-white/10 pr-10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                                    className="border-white/20 bg-white/10 pe-10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
                                     {...register('password')}
                                     {...fieldA11y(errors, 'password')}
                                 />
@@ -119,7 +119,7 @@ function Login({ status }) {
                                     type="button"
                                     aria-label={showPassword ? t('Hide password') : t('Show password')}
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
+                                    className="absolute end-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
                                 >
                                     {showPassword
                                         ? <EyeOff className="h-4 w-4" aria-hidden="true" />

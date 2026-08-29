@@ -51,7 +51,7 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                                 <TableHead>{t('Date')}</TableHead>
                                 <TableHead>{t('Amount')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
-                                <TableHead className="text-right">{t('Action')}</TableHead>
+                                <TableHead className="text-end">{t('Action')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -67,7 +67,7 @@ function CreditShow({ credit, driver, credits = [], chartStatus, chartByMonth })
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{t(c.status)}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right space-x-1">
+                                    <TableCell className="text-end space-x-1">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={route('credit.edit', c.id)} aria-label={t('Edit')}><Pencil className="h-4 w-4" /></Link>
                                         </Button>

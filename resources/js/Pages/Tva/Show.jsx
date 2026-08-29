@@ -26,7 +26,7 @@ function TvaShow({ tva }) {
                 </h1>
                 <Button variant="outline" size="sm" asChild>
                     <Link href={route('tva.edit', tva.id)}>
-                        <Pencil className="mr-2 h-4 w-4" /> {t('Edit')}
+                        <Pencil className="me-2 h-4 w-4" /> {t('Edit')}
                     </Link>
                 </Button>
             </div>

@@ -46,18 +46,18 @@ function OptionIndex({ options = [] }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('Search options…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {can('manage options') && (
                     <Button size="sm" asChild>
                         <Link href={route('option.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Option')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Option')}
                         </Link>
                     </Button>
                 )}
@@ -68,7 +68,7 @@ function OptionIndex({ options = [] }) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{t('Option')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -83,7 +83,7 @@ function OptionIndex({ options = [] }) {
                                 <TableRow key={option.id}>
                                     <TableCell>{option.name}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {can('edit options') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('option.edit', option.id)} aria-label={t('Edit')}>

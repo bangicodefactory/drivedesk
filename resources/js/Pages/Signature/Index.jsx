@@ -27,7 +27,7 @@ function SignatureIndex({ signatures = [] }) {
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('signature.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Add Signature')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Add Signature')}
                         </Link>
                     </Button>
                 )}
@@ -40,7 +40,7 @@ function SignatureIndex({ signatures = [] }) {
                                 <TableHead>{t('Driver')}</TableHead>
                                 <TableHead>{t('Preview')}</TableHead>
                                 <TableHead>{t('Date')}</TableHead>
-                                {can('manage driver') && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {can('manage driver') && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -61,7 +61,7 @@ function SignatureIndex({ signatures = [] }) {
                                     </TableCell>
                                     <TableCell>{sig.created_at}</TableCell>
                                     {can('manage driver') && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {sig.signature_url && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <a

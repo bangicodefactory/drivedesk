@@ -53,18 +53,18 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('Search expenses…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {can('create expense') && (
                     <Button size="sm" asChild>
                         <Link href={route('expense.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Expense')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Expense')}
                         </Link>
                     </Button>
                 )}
@@ -80,7 +80,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                 <TableHead>{t('Date')}</TableHead>
                                 <TableHead>{t('Amount')}</TableHead>
                                 <TableHead>{t('Receipt')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -111,7 +111,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                         ) : '—'}
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {can('edit expense') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('expense.edit', expense.id)} aria-label={t('Edit')}>

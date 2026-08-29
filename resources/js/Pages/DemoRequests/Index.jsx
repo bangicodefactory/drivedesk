@@ -63,7 +63,7 @@ function DemoRequestsIndex({ requests = [] }) {
                             <TableHead>{t('Email')}</TableHead>
                             <TableHead>{t('Phone')}</TableHead>
                             <TableHead>{t('Requested')}</TableHead>
-                            <TableHead className="text-right">{t('Action')}</TableHead>
+                            <TableHead className="text-end">{t('Action')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -81,9 +81,9 @@ function DemoRequestsIndex({ requests = [] }) {
                                 <TableCell>{r.email}</TableCell>
                                 <TableCell>{r.phone || '-'}</TableCell>
                                 <TableCell>{fmt(r.created_at)}</TableCell>
-                                <TableCell className="text-right space-x-1">
+                                <TableCell className="text-end space-x-1">
                                     <Button size="sm" onClick={() => approve(r)}>
-                                        <Check className="mr-1 h-4 w-4" /> {t('Approve')}
+                                        <Check className="me-1 h-4 w-4" /> {t('Approve')}
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -91,7 +91,7 @@ function DemoRequestsIndex({ requests = [] }) {
                                         className="text-destructive hover:text-destructive"
                                         onClick={() => decline(r)}
                                     >
-                                        <X className="mr-1 h-4 w-4" /> {t('Decline')}
+                                        <X className="me-1 h-4 w-4" /> {t('Decline')}
                                     </Button>
                                 </TableCell>
                             </TableRow>

@@ -63,16 +63,16 @@ function Hero({ heroImages }) {
                     </h1>
                     <a href="#search">
                         <Button size="lg" className="mt-2 text-base px-8">
-                            {t('find_car_button', 'Find a Car')} <ArrowRight className="ml-2 h-4 w-4" />
+                            {t('find_car_button', 'Find a Car')} <ArrowRight className="ms-2 h-4 w-4" />
                         </Button>
                     </a>
                 </div>
             </div>
 
-            <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
+            <button onClick={prev} className="absolute start-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
                 <ChevronLeft className="h-5 w-5" />
             </button>
-            <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
+            <button onClick={next} className="absolute end-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
                 <ChevronRight className="h-5 w-5" />
             </button>
 
@@ -212,7 +212,7 @@ function CarRentals({ vehicles }) {
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     onError={e => { e.target.src = '/assets/images/client/default-car.jpg'; }}
                                 />
-                                <Badge className="absolute top-3 right-3">{t('car_model', 'Model')} {v.model}</Badge>
+                                <Badge className="absolute top-3 end-3">{t('car_model', 'Model')} {v.model}</Badge>
                             </div>
                             <CardContent className="p-4 space-y-3">
                                 <div className="flex items-center justify-between">
@@ -235,7 +235,7 @@ function CarRentals({ vehicles }) {
                                     <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" /> {v.fuel_type ?? t('car_petrol', 'Petrol')}</span>
                                 </div>
                                 <Link href={route('client.details', v.id)}>
-                                    <Button className="w-full mt-1">{t('car_book_now', 'Book Now')} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                                    <Button className="w-full mt-1">{t('car_book_now', 'Book Now')} <ArrowRight className="ms-2 h-4 w-4" /></Button>
                                 </Link>
                             </CardContent>
                         </Card>
@@ -308,7 +308,7 @@ function PopularCars() {
                                 onError={e => { e.target.parentElement.style.background = 'hsl(var(--muted))'; e.target.style.display = 'none'; }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                            <p className="absolute bottom-4 left-4 text-white text-xl font-bold">{label}</p>
+                            <p className="absolute bottom-4 start-4 text-white text-xl font-bold">{label}</p>
                         </div>
                     ))}
                 </div>

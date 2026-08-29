@@ -75,18 +75,18 @@ function CreditIndex({ credits = [], drivers = [] }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('Search credits…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {can('manage driver') && (
                     <Button size="sm" asChild>
                         <Link href={route('credit.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Add Credit')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Add Credit')}
                         </Link>
                     </Button>
                 )}
@@ -100,7 +100,7 @@ function CreditIndex({ credits = [], drivers = [] }) {
                                 <TableHead>{t('Amount')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
                                 <TableHead>{t('Date')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -122,7 +122,7 @@ function CreditIndex({ credits = [], drivers = [] }) {
                                     </TableCell>
                                     <TableCell>{credit.credit_date ?? '—'}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             <Button variant="ghost" size="icon" asChild>
                                                 <Link href={route('credit.show', credit.id)} aria-label={t('View')}>
                                                     <Eye className="h-4 w-4" />

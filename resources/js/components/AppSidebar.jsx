@@ -35,7 +35,7 @@ function NavLeaf({ item, isActive, t }) {
                 isActive={isActive(item.route)}
                 tooltip={t(item.label)}
                 // Reserve room on the right so the label truncates before the badge.
-                className={item.badge ? 'pr-14' : undefined}
+                className={item.badge ? 'pe-14' : undefined}
             >
                 <Link href={route(item.route)}>
                     {item.icon && <item.icon />}
@@ -61,7 +61,7 @@ function NavParent({ item, isActive, t }) {
                     <SidebarMenuButton tooltip={t(item.label)} isActive={anyChildActive}>
                         {item.icon && <item.icon />}
                         <span>{t(item.label)}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <ChevronRight className="ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

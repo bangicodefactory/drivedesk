@@ -46,18 +46,18 @@ function VehicleTypeIndex({ types = [] }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('Search types…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {can('manage vehicle type') && (
                     <Button size="sm" asChild>
                         <Link href={route('vehicle-type.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Type')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Type')}
                         </Link>
                     </Button>
                 )}
@@ -69,7 +69,7 @@ function VehicleTypeIndex({ types = [] }) {
                             <TableRow>
                                 <TableHead>{t('Type')}</TableHead>
                                 <TableHead>{t('Notes')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -85,7 +85,7 @@ function VehicleTypeIndex({ types = [] }) {
                                     <TableCell>{type.type}</TableCell>
                                     <TableCell>{type.notes}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1">
                                             {can('edit vehicle type') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('vehicle-type.edit', type.id)} aria-label={t('Edit')}>
