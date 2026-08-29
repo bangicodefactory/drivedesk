@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';
 import * as Sentry from '@sentry/react';
 import { initSentry } from '@/lib/sentry';
+import { resolveTheme } from '@/lib/theme';
 
 // Browser-side error reporting. No-op without VITE_SENTRY_DSN (local/dev stay
 // silent); complements sentry-laravel, which only sees backend errors.
@@ -88,7 +89,7 @@ createInertiaApp({
             applyDirection(event.detail.page.props.locale, event.detail.page.props.branding);
         });
 
-        const initialTheme = branding?.layoutMode === 'darkmode' ? 'dark' : 'light';
+        const initialTheme = resolveTheme(branding);
 
         createRoot(el).render(
             <Sentry.ErrorBoundary
@@ -97,7 +98,7 @@ createInertiaApp({
                 <ThemeProvider
                     attribute="class"
                     defaultTheme={initialTheme}
-                    enableSystem={false}
+                    enableSystem={initialTheme === 'system'}
                 >
                     <App {...props} />
                 </ThemeProvider>
