@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/vehicle_type/create.blade.php (modal fragment ->
 // full Inertia page). Field names match the Blade form 1:1 (type, notes).
@@ -40,14 +42,14 @@ function VehicleTypeCreate() {
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="type">{t('Type')}</Label>
-                                <Input id="type" placeholder={t('Enter type')} {...register('type')} />
-                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                                <Input id="type" placeholder={t('Enter type')} {...register('type')} {...fieldA11y(errors, 'type')} />
+                                <FieldError name="type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="notes">{t('Notes')}</Label>
-                                <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} />
-                                {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
+                                <Textarea id="notes" placeholder={t('Enter notes')} rows={2} {...register('notes')} {...fieldA11y(errors, 'notes')} />
+                                <FieldError name="notes" errors={errors} />
                             </div>
                         </div>
 

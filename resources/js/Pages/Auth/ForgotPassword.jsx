@@ -9,6 +9,8 @@ import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const forgotSchema = z.object({
     email:                  z.string().email('Enter a valid email address'),
@@ -51,8 +53,9 @@ function ForgotPassword({ status }) {
                                 autoComplete="email"
                                 autoFocus
                                 {...register('email')}
+                                {...fieldA11y(errors, 'email')}
                             />
-                            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                            <FieldError name="email" errors={errors} />
                         </div>
 
                         {recaptcha?.enabled && (
@@ -63,9 +66,7 @@ function ForgotPassword({ status }) {
                                     onChange={(token) => setValue('g-recaptcha-response', token ?? '')}
                                     onExpired={() => setValue('g-recaptcha-response', '')}
                                 />
-                                {errors['g-recaptcha-response'] && (
-                                    <p className="text-sm text-destructive mt-1">{errors['g-recaptcha-response'].message}</p>
-                                )}
+                                <FieldError name="g-recaptcha-response" errors={errors} />
                             </div>
                         )}
 
