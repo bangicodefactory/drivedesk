@@ -63,6 +63,8 @@ handbook.
    `Impayé`, `Partiellement Payé`) because they are stored values, not translation keys.
    Cosmetic, but visible in an English demo.
 
+See `docs/product-roadmap.md` §7 for when each gap above may be rewritten.
+
 ## Accuracy
 
 Every product claim in these documents was checked against the code in this repo,
