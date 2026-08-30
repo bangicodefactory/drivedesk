@@ -61,7 +61,7 @@ function NavParent({ item, isActive, t }) {
                     <SidebarMenuButton tooltip={t(item.label)} isActive={anyChildActive}>
                         {item.icon && <item.icon />}
                         <span>{t(item.label)}</span>
-                        <ChevronRight className="ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <ChevronRight className="ms-auto rtl:-scale-x-100 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

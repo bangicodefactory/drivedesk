@@ -57,5 +57,10 @@
     "dg_val_name": "الاسم مطلوب.",
     "dg_val_company": "اسم الوكالة مطلوب.",
     "dg_val_email_required": "البريد الإلكتروني مطلوب.",
-    "dg_val_email_invalid": "أدخِل بريداً إلكترونياً صحيحاً."
+    "dg_val_email_invalid": "أدخِل بريداً إلكترونياً صحيحاً.",
+    "Pagination": "ترقيم الصفحات",
+    "Previous": "السابق",
+    "Next": "التالي",
+    ":from–:to of :total": ":from–:to من :total",
+    "Page :current of :last": "الصفحة :current من :last"
 }

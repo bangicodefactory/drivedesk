@@ -618,5 +618,10 @@
   "System IP": "IP do sistema",
   "State": "Estado",
   "Country": "País",
-  "System": "Sistema"
+  "System": "Sistema",
+    "Pagination": "Paginacja",
+    "Previous": "Poprzednia",
+    "Next": "Następna",
+    ":from–:to of :total": ":from–:to z :total",
+    "Page :current of :last": "Strona :current z :last"
 }

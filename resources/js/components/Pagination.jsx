@@ -3,13 +3,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 
-// Fills Laravel-style `:name` placeholders in a translated string. Missing
-// values render empty (LengthAwarePaginator returns from/to = null past the
-// last page), unknown placeholders are left untouched.
-function fill(template, values) {
-    return template.replace(/:(\w+)/g, (match, key) => (key in values ? String(values[key] ?? '') : match));
-}
-
 // One prev/next control: a Link inside the Button when there is a page to go
 // to, otherwise the same Button disabled. Chevrons flip under dir="rtl".
 function PageControl({ href, label, Icon, iconAfter }) {
@@ -39,12 +32,12 @@ export default function Pagination({ paginator }) {
             className="flex items-center justify-between mt-4 text-sm text-muted-foreground"
         >
             <span>
-                {fill(t(':from–:to of :total'), { from: paginator.from, to: paginator.to, total: paginator.total })}
+                {t(':from–:to of :total', { from: paginator.from, to: paginator.to, total: paginator.total })}
             </span>
             <div className="flex items-center gap-2">
                 <PageControl href={paginator.prev_page_url} label={t('Previous')} Icon={ChevronLeft} />
                 <span className="px-2">
-                    {fill(t('Page :current of :last'), { current: paginator.current_page, last: paginator.last_page })}
+                    {t('Page :current of :last', { current: paginator.current_page, last: paginator.last_page })}
                 </span>
                 <PageControl href={paginator.next_page_url} label={t('Next')} Icon={ChevronRight} iconAfter />
             </div>

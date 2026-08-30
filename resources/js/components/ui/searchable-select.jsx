@@ -80,7 +80,7 @@ export function SearchableSelect({
                                     type="button"
                                     onClick={() => select(o.value)}
                                     className={cn(
-                                        'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground',
+                                        'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-start text-sm hover:bg-accent hover:text-accent-foreground',
                                         String(o.value) === String(value) && 'bg-accent'
                                     )}
                                 >

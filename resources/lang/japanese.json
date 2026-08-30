@@ -618,5 +618,10 @@
   "System IP": "システムIP",
   "State": "州",
   "Country": "国",
-  "System": "システム"
+  "System": "システム",
+    "Pagination": "ページネーション",
+    "Previous": "前へ",
+    "Next": "次へ",
+    ":from–:to of :total": "全 :total 件中 :from–:to 件",
+    "Page :current of :last": ":last ページ中 :current ページ"
 }
