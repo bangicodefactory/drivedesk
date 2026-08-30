@@ -122,10 +122,10 @@ function General({ settings, loginUser }) {
                     </div>
                     <div className="flex gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => { sigRef.current?.clear(); setSigEmpty(true); }}>
-                            <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
+                            <Eraser className="me-2 h-4 w-4" /> {t('Clear')}
                         </Button>
                         <Button type="button" size="sm" disabled={sigEmpty || savingSig} onClick={saveSig}>
-                            <Save className="mr-2 h-4 w-4" /> {savingSig ? t('Saving…') : t('Save Signature')}
+                            <Save className="me-2 h-4 w-4" /> {savingSig ? t('Saving…') : t('Save Signature')}
                         </Button>
                     </div>
                 </CardContent>

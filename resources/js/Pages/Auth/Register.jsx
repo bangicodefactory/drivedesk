@@ -9,6 +9,8 @@ import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const registerSchema = z.object({
     name:                   z.string().min(1, 'Name is required').max(255),
@@ -48,38 +50,38 @@ function Register() {
                     <form onSubmit={submit('post', route('register'), { onError: () => captchaRef.current?.reset() })} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="name">{t('Full name')}</Label>
-                            <Input id="name" autoComplete="name" autoFocus {...register('name')} />
-                            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                            <Input id="name" autoComplete="name" autoFocus {...register('name')} {...fieldA11y(errors, 'name')} />
+                            <FieldError name="name" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="email">{t('Email')}</Label>
-                            <Input id="email" type="email" autoComplete="email" {...register('email')} />
-                            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                            <Input id="email" type="email" autoComplete="email" {...register('email')} {...fieldA11y(errors, 'email')} />
+                            <FieldError name="email" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="company_name">{t('Company name')}</Label>
-                            <Input id="company_name" {...register('company_name')} />
-                            {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
+                            <Input id="company_name" {...register('company_name')} {...fieldA11y(errors, 'company_name')} />
+                            <FieldError name="company_name" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="city">{t('City')}</Label>
-                            <Input id="city" {...register('city')} />
-                            {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
+                            <Input id="city" {...register('city')} {...fieldA11y(errors, 'city')} />
+                            <FieldError name="city" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="password">{t('Password')}</Label>
-                            <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
-                            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                            <Input id="password" type="password" autoComplete="new-password" {...register('password')} {...fieldA11y(errors, 'password')} />
+                            <FieldError name="password" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="password_confirmation">{t('Confirm password')}</Label>
-                            <Input id="password_confirmation" type="password" autoComplete="new-password" {...register('password_confirmation')} />
-                            {errors.password_confirmation && <p className="text-sm text-destructive">{errors.password_confirmation.message}</p>}
+                            <Input id="password_confirmation" type="password" autoComplete="new-password" {...register('password_confirmation')} {...fieldA11y(errors, 'password_confirmation')} />
+                            <FieldError name="password_confirmation" errors={errors} />
                         </div>
 
                         {recaptcha?.enabled && (
@@ -90,9 +92,7 @@ function Register() {
                                     onChange={(token) => setValue('g-recaptcha-response', token ?? '')}
                                     onExpired={() => setValue('g-recaptcha-response', '')}
                                 />
-                                {errors['g-recaptcha-response'] && (
-                                    <p className="text-sm text-destructive mt-1">{errors['g-recaptcha-response'].message}</p>
-                                )}
+                                <FieldError name="g-recaptcha-response" errors={errors} className="mt-1" />
                             </div>
                         )}
 

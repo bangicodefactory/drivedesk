@@ -256,30 +256,30 @@ function TvaReport({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{t('Month')}</TableHead>
-                                <TableHead className="text-right">{t('Invoices')}</TableHead>
-                                <TableHead className="text-right">{t('Total HT')}</TableHead>
-                                <TableHead className="text-right">{t('Total TVA')}</TableHead>
-                                <TableHead className="text-right">{t('Total TTC')}</TableHead>
+                                <TableHead className="text-end">{t('Invoices')}</TableHead>
+                                <TableHead className="text-end">{t('Total HT')}</TableHead>
+                                <TableHead className="text-end">{t('Total TVA')}</TableHead>
+                                <TableHead className="text-end">{t('Total TTC')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {(monthlyStats ?? []).map((row) => (
                                 <TableRow key={row.month_name}>
                                     <TableCell>{row.month_name}</TableCell>
-                                    <TableCell className="text-right">{row.count}</TableCell>
-                                    <TableCell className="text-right">{fmt(row.ht_amount)} MAD</TableCell>
-                                    <TableCell className="text-right">{fmt(row.tva_amount)} MAD</TableCell>
-                                    <TableCell className="text-right">{fmt(row.ttc_amount)} MAD</TableCell>
+                                    <TableCell className="text-end">{row.count}</TableCell>
+                                    <TableCell className="text-end">{fmt(row.ht_amount)} MAD</TableCell>
+                                    <TableCell className="text-end">{fmt(row.tva_amount)} MAD</TableCell>
+                                    <TableCell className="text-end">{fmt(row.ttc_amount)} MAD</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                         <tfoot>
                             <tr className="border-t-2 font-bold bg-muted/50">
                                 <td className="px-4 py-2">{t('Total')}</td>
-                                <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_invoices, 0)}</td>
-                                <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_ht_amount)} MAD</td>
-                                <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_tva_amount)} MAD</td>
-                                <td className="px-4 py-2 text-right">{fmt(yearlyStats.total_ttc_amount)} MAD</td>
+                                <td className="px-4 py-2 text-end">{fmt(yearlyStats.total_invoices, 0)}</td>
+                                <td className="px-4 py-2 text-end">{fmt(yearlyStats.total_ht_amount)} MAD</td>
+                                <td className="px-4 py-2 text-end">{fmt(yearlyStats.total_tva_amount)} MAD</td>
+                                <td className="px-4 py-2 text-end">{fmt(yearlyStats.total_ttc_amount)} MAD</td>
                             </tr>
                         </tfoot>
                     </Table>
@@ -297,9 +297,9 @@ function TvaReport({
                             <TableRow>
                                 <TableHead>{t('Rank')}</TableHead>
                                 <TableHead>{t('Client Name')}</TableHead>
-                                <TableHead className="text-right">{t('Invoices')}</TableHead>
-                                <TableHead className="text-right">{t('Total TVA')}</TableHead>
-                                <TableHead className="text-right">{t('Total TTC')}</TableHead>
+                                <TableHead className="text-end">{t('Invoices')}</TableHead>
+                                <TableHead className="text-end">{t('Total TVA')}</TableHead>
+                                <TableHead className="text-end">{t('Total TTC')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -307,9 +307,9 @@ function TvaReport({
                                 <TableRow key={i}>
                                     <TableCell>{i + 1}</TableCell>
                                     <TableCell>{c.client_name}</TableCell>
-                                    <TableCell className="text-right">{c.count}</TableCell>
-                                    <TableCell className="text-right">{fmt(c.total_tva)} MAD</TableCell>
-                                    <TableCell className="text-right">{fmt(c.total_ttc)} MAD</TableCell>
+                                    <TableCell className="text-end">{c.count}</TableCell>
+                                    <TableCell className="text-end">{fmt(c.total_tva)} MAD</TableCell>
+                                    <TableCell className="text-end">{fmt(c.total_ttc)} MAD</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -329,9 +329,9 @@ function TvaReport({
                                 <TableRow>
                                     <TableHead>{t('Rank')}</TableHead>
                                     <TableHead>{t('Car')}</TableHead>
-                                    <TableHead className="text-right">{t('Rentals')}</TableHead>
-                                    <TableHead className="text-right">{t('Total Days')}</TableHead>
-                                    <TableHead className="text-right">{t('Avg Value (HT)')}</TableHead>
+                                    <TableHead className="text-end">{t('Rentals')}</TableHead>
+                                    <TableHead className="text-end">{t('Total Days')}</TableHead>
+                                    <TableHead className="text-end">{t('Avg Value (HT)')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -339,9 +339,9 @@ function TvaReport({
                                     <TableRow key={i}>
                                         <TableCell>{i + 1}</TableCell>
                                         <TableCell title={c.car_name}>{c.car_name?.length > 25 ? c.car_name.slice(0, 25) + '…' : c.car_name}</TableCell>
-                                        <TableCell className="text-right">{c.rental_count}</TableCell>
-                                        <TableCell className="text-right">{fmt(c.total_rental_days, 0)}</TableCell>
-                                        <TableCell className="text-right">{fmt(c.average_rental_value_ht)} MAD</TableCell>
+                                        <TableCell className="text-end">{c.rental_count}</TableCell>
+                                        <TableCell className="text-end">{fmt(c.total_rental_days, 0)}</TableCell>
+                                        <TableCell className="text-end">{fmt(c.average_rental_value_ht)} MAD</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -359,9 +359,9 @@ function TvaReport({
                                 <TableRow>
                                     <TableHead>{t('Rank')}</TableHead>
                                     <TableHead>{t('Car')}</TableHead>
-                                    <TableHead className="text-right">{t('Revenue (HT)')}</TableHead>
-                                    <TableHead className="text-right">{t('TVA')}</TableHead>
-                                    <TableHead className="text-right">{t('Revenue (TTC)')}</TableHead>
+                                    <TableHead className="text-end">{t('Revenue (HT)')}</TableHead>
+                                    <TableHead className="text-end">{t('TVA')}</TableHead>
+                                    <TableHead className="text-end">{t('Revenue (TTC)')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -369,9 +369,9 @@ function TvaReport({
                                     <TableRow key={i}>
                                         <TableCell>{i + 1}</TableCell>
                                         <TableCell title={c.car_name}>{c.car_name?.length > 25 ? c.car_name.slice(0, 25) + '…' : c.car_name}</TableCell>
-                                        <TableCell className="text-right">{fmt(c.total_revenue_ht)} MAD</TableCell>
-                                        <TableCell className="text-right">{fmt(c.total_tva)} MAD</TableCell>
-                                        <TableCell className="text-right">{fmt(c.total_revenue_ttc)} MAD</TableCell>
+                                        <TableCell className="text-end">{fmt(c.total_revenue_ht)} MAD</TableCell>
+                                        <TableCell className="text-end">{fmt(c.total_tva)} MAD</TableCell>
+                                        <TableCell className="text-end">{fmt(c.total_revenue_ttc)} MAD</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

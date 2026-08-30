@@ -113,18 +113,18 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('Search reminders…')}
-                        className="pl-8"
+                        className="ps-8"
                     />
                 </div>
                 {can('create reminder') && (
                     <Button size="sm" asChild>
                         <Link href={route('reminder.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Reminder')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Reminder')}
                         </Link>
                     </Button>
                 )}
@@ -140,7 +140,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                 <TableHead>{t('Reminder Date')}</TableHead>
                                 <TableHead>{t('Days')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -168,7 +168,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                         </Badge>
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit reminder') && reminder.status !== 'completed' && (
                                                 <Button
                                                     variant="ghost"

@@ -61,7 +61,7 @@ export default function FleetAvailability({ data }) {
 
                     {vehicles.map((v) => (
                         <div key={v.id} className="flex items-center border-b py-2 last:border-0">
-                            <div className="w-40 shrink-0 pr-2">
+                            <div className="w-40 shrink-0 pe-2">
                                 <p className="truncate text-sm font-medium">{v.name}</p>
                                 <p className="truncate text-xs text-muted-foreground">{v.license_plate}</p>
                             </div>

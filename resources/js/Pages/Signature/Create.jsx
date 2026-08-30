@@ -116,10 +116,10 @@ function SignatureCreate({ drivers }) {
 
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" onClick={clear}>
-                                <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
+                                <Eraser className="me-2 h-4 w-4" /> {t('Clear')}
                             </Button>
                             <Button type="submit" disabled={submitting || isEmpty || !userId}>
-                                <Save className="mr-2 h-4 w-4" /> {t('Save Signature')}
+                                <Save className="me-2 h-4 w-4" /> {t('Save Signature')}
                             </Button>
                         </div>
                     </form>

@@ -34,6 +34,9 @@ describe('Login page', () => {
         // react-hook-form runs validation async on submit
         const error = await screen.findByText(/enter a valid work email/i);
         expect(error).toBeInTheDocument();
+        expect(error).toHaveAttribute('role', 'alert');
+        expect(screen.getByLabelText('Work email')).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByLabelText('Work email')).toHaveAttribute('aria-describedby', error.id);
     });
 
     it('shows a forgot-password link', () => {

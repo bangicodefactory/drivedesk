@@ -40,7 +40,7 @@ function Stars() {
             {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
             ))}
-            <span className="text-sm text-muted-foreground ml-1">2 Reviews</span>
+            <span className="text-sm text-muted-foreground ms-1">2 Reviews</span>
         </div>
     );
 }

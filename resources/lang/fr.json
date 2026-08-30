@@ -1387,5 +1387,10 @@
   "dg_val_name": "Votre nom est obligatoire.",
   "dg_val_company": "Le nom de votre agence est obligatoire.",
   "dg_val_email_required": "L'e-mail est obligatoire.",
-  "dg_val_email_invalid": "Saisissez une adresse e-mail valide."
+  "dg_val_email_invalid": "Saisissez une adresse e-mail valide.",
+    "Pagination": "Pagination",
+    "Previous": "Précédent",
+    "Next": "Suivant",
+    ":from–:to of :total": ":from–:to sur :total",
+    "Page :current of :last": "Page :current sur :last"
 }

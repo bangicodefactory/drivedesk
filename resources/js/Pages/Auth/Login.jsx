@@ -9,6 +9,8 @@ import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const loginSchema = z.object({
     email:                  z.string().email('Enter a valid work email address'),
@@ -86,10 +88,9 @@ function Login({ status }) {
                                 placeholder={t('you@agency.com')}
                                 className="border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
                                 {...register('email')}
+                                {...fieldA11y(errors, 'email')}
                             />
-                            {errors.email && (
-                                <p className="text-xs text-red-400">{errors.email.message}</p>
-                            )}
+                            <FieldError name="email" errors={errors} className="text-xs text-red-400" />
                         </div>
 
                         {/* Password with show/hide toggle */}
@@ -110,14 +111,15 @@ function Login({ status }) {
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     autoComplete="current-password"
-                                    className="border-white/20 bg-white/10 pr-10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                                    className="border-white/20 bg-white/10 pe-10 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
                                     {...register('password')}
+                                    {...fieldA11y(errors, 'password')}
                                 />
                                 <button
                                     type="button"
                                     aria-label={showPassword ? t('Hide password') : t('Show password')}
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
+                                    className="absolute end-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
                                 >
                                     {showPassword
                                         ? <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -125,9 +127,7 @@ function Login({ status }) {
                                     }
                                 </button>
                             </div>
-                            {errors.password && (
-                                <p className="text-xs text-red-400">{errors.password.message}</p>
-                            )}
+                            <FieldError name="password" errors={errors} className="text-xs text-red-400" />
                         </div>
 
                         {/* Keep me signed in */}
@@ -153,11 +153,7 @@ function Login({ status }) {
                                     onExpired={() => setValue('g-recaptcha-response', '')}
                                     theme="dark"
                                 />
-                                {errors['g-recaptcha-response'] && (
-                                    <p className="mt-1 text-xs text-red-400">
-                                        {errors['g-recaptcha-response'].message}
-                                    </p>
-                                )}
+                                <FieldError name="g-recaptcha-response" errors={errors} className="mt-1 text-xs text-red-400" />
                             </div>
                         )}
 

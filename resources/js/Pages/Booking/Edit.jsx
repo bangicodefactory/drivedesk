@@ -297,7 +297,7 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                     <table className="w-auto text-sm border-collapse">
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground">{t('Duration')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground">{t('Duration')}</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
                                         </tbody>
@@ -312,11 +312,11 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                         )}
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
                                             </tr>
                                             <tr>
-                                                <td className="pr-8 py-1 font-semibold">{t('Total Amount')}</td>
+                                                <td className="pe-8 py-1 font-semibold">{t('Total Amount')}</td>
                                                 <td className="font-semibold">{priceBreakdown.finalTotal} Dh</td>
                                             </tr>
                                         </tbody>

@@ -1,10 +1,12 @@
 import './bootstrap';
 import '@fontsource-variable/nunito'; // self-hosted brand typeface (replaces Google Fonts CDN)
+import { useEffect } from 'react';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider, useTheme } from 'next-themes';
 import * as Sentry from '@sentry/react';
 import { initSentry } from '@/lib/sentry';
+import { resolveTheme } from '@/lib/theme';
 
 // Browser-side error reporting. No-op without VITE_SENTRY_DSN (local/dev stay
 // silent); complements sentry-laravel, which only sees backend errors.
@@ -52,6 +54,21 @@ function applyBranding(branding) {
 
 }
 
+// Follows tenant layout_mode changes during the SPA session: Settings >
+// Branding saves via Inertia (no full reload), but next-themes only reads
+// defaultTheme at mount. Bridges later shared-prop changes to setTheme.
+function ThemeSync() {
+    const { setTheme } = useTheme();
+    useEffect(
+        () =>
+            router.on('navigate', (event) => {
+                setTheme(resolveTheme(event.detail.page.props.branding));
+            }),
+        [setTheme]
+    );
+    return null;
+}
+
 createInertiaApp({
     // The suffix comes from the server-rendered <meta name="app-name">, which is
     // the client's own name from config/clients/<client>.php. It used to fall
@@ -88,7 +105,7 @@ createInertiaApp({
             applyDirection(event.detail.page.props.locale, event.detail.page.props.branding);
         });
 
-        const initialTheme = branding?.layoutMode === 'darkmode' ? 'dark' : 'light';
+        const initialTheme = resolveTheme(branding);
 
         createRoot(el).render(
             <Sentry.ErrorBoundary
@@ -97,8 +114,9 @@ createInertiaApp({
                 <ThemeProvider
                     attribute="class"
                     defaultTheme={initialTheme}
-                    enableSystem={false}
+                    enableSystem
                 >
+                    <ThemeSync />
                     <App {...props} />
                 </ThemeProvider>
             </Sentry.ErrorBoundary>

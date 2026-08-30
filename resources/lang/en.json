@@ -887,7 +887,10 @@
     "dg_cta_line2_pre": "on ",
     "dg_cta_highlight": "autopilot.",
     "dg_cta_sub": "See DriveDesk on your own fleet. A 20-minute demo, no commitment.",
-    "dg_footer_tagline": "Car-rental management, simplified."
+    "dg_footer_tagline": "Car-rental management, simplified.",
+    "Pagination": "Pagination",
+    "Previous": "Previous",
+    "Next": "Next",
+    ":from–:to of :total": ":from–:to of :total",
+    "Page :current of :last": "Page :current of :last"
 }
-
-
