@@ -92,7 +92,7 @@ function Register() {
                                     onChange={(token) => setValue('g-recaptcha-response', token ?? '')}
                                     onExpired={() => setValue('g-recaptcha-response', '')}
                                 />
-                                <FieldError name="g-recaptcha-response" errors={errors} />
+                                <FieldError name="g-recaptcha-response" errors={errors} className="mt-1" />
                             </div>
                         )}
 

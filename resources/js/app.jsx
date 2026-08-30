@@ -98,7 +98,7 @@ createInertiaApp({
                 <ThemeProvider
                     attribute="class"
                     defaultTheme={initialTheme}
-                    enableSystem={initialTheme === 'system'}
+                    enableSystem
                 >
                     <App {...props} />
                 </ThemeProvider>

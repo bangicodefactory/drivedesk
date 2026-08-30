@@ -91,7 +91,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                             {t(br.status)}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-end space-x-1">
+                                    <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={route('booking_requests.show', br.encrypted_id)} aria-label={t('View')}>
                                                 <Eye className="h-4 w-4" />

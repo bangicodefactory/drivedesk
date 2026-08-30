@@ -15,7 +15,9 @@
  * @returns {{'aria-invalid'?: true, 'aria-describedby'?: string}}
  */
 export function fieldA11y(errors, name) {
-    if (!errors?.[name]) return {};
+    // Gate on the message, not the error object: FieldError renders nothing
+    // without a message, and aria-describedby must not point at a missing id.
+    if (!errors?.[name]?.message) return {};
     return {
         'aria-invalid': true,
         'aria-describedby': fieldErrorId(name),

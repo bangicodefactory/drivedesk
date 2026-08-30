@@ -515,7 +515,7 @@ function BookingIndex({ bookings, statuses, paymentStatuses, paymentMethods = []
                                         </Badge>
                                     </TableCell>
                                     {(can('edit booking') || can('delete booking') || can('show booking')) && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('booking.show', b.encrypted_id)} aria-label={t('View')}>

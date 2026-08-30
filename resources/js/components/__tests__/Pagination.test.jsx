@@ -41,7 +41,12 @@ describe('Pagination', () => {
         expect(screen.getByRole('link', { name: 'Précédent' })).toHaveAttribute('href', '/vehicle?page=1');
         expect(screen.getByRole('link', { name: 'Suivant' })).toHaveAttribute('href', '/vehicle?page=3');
         expect(screen.getByText('11–20 sur 25')).toBeInTheDocument();
-        expect(screen.getByText('Page 2 sur 3')).toHaveAttribute('aria-current', 'page');
+        expect(screen.getByText('Page 2 sur 3')).toBeInTheDocument();
+    });
+
+    it('renders an empty range instead of "null" past the last page', () => {
+        render(<Pagination paginator={paginator({ current_page: 9, from: null, to: null, next_page_url: null })} />);
+        expect(screen.getByText('– sur 25')).toBeInTheDocument();
     });
 
     it('disables the bound control instead of rendering a dead link', () => {

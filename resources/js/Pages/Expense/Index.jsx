@@ -111,7 +111,7 @@ function ExpenseIndex({ expenses = { data: [] }, filters = {} }) {
                                         ) : '—'}
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit expense') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('expense.edit', expense.id)} aria-label={t('Edit')}>

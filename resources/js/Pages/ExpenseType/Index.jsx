@@ -78,7 +78,7 @@ function ExpenseTypeIndex({ types = [] }) {
                                 <TableRow key={type.id}>
                                     <TableCell>{type.title}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit expense type') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('expense-type.edit', type.id)} aria-label={t('Edit')}>

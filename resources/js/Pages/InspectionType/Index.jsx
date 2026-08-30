@@ -83,7 +83,7 @@ function InspectionTypeIndex({ types = [] }) {
                                 <TableRow key={type.id}>
                                     <TableCell>{type.type}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit inspection type') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('inspection-type.edit', type.id)} aria-label={t('Edit')}>

@@ -168,7 +168,7 @@ function ReminderIndex({ reminders = [], stats = {} }) {
                                         </Badge>
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit reminder') && reminder.status !== 'completed' && (
                                                 <Button
                                                     variant="ghost"

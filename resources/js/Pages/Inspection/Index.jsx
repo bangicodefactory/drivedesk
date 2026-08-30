@@ -147,7 +147,7 @@ function InspectionIndex({ inspections = [] }) {
                                         )}
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show inspection') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('inspection.show', inspection.id_encrypted)} aria-label={t('Details')}>

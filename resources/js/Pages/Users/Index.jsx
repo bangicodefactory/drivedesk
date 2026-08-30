@@ -91,7 +91,7 @@ function UsersIndex({ users }) {
                                             {u.is_active ? t('Active') : t('Inactive')}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-end space-x-1">
+                                    <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                         {canEdit && (
                                             <Button variant="ghost" size="icon" asChild>
                                                 <Link href={route('users.edit', u.id)} aria-label={t('Edit')}>

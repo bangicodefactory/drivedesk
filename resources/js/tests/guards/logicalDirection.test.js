@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, globSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, sep } from 'node:path';
 
 // Pages must use direction-aware utilities (text-end, ms-/me-/ps-/pe-,
@@ -15,9 +15,11 @@ const EXEMPT = new Set([
 ]);
 
 describe('logical direction utilities', () => {
-    const files = globSync('Pages/**/*.jsx', { cwd: ROOT })
-        .map((f) => f.split(sep).join('/'))
-        .filter((f) => !f.includes('__tests__') && !EXEMPT.has(f));
+    // readdirSync({ recursive }) rather than fs.globSync: CI runs Node 20,
+    // where globSync is still experimental.
+    const files = readdirSync(join(ROOT, 'Pages'), { recursive: true })
+        .map((f) => 'Pages/' + String(f).split(sep).join('/'))
+        .filter((f) => f.endsWith('.jsx') && !f.includes('__tests__') && !EXEMPT.has(f));
 
     it('finds page files', () => {
         expect(files.length).toBeGreaterThan(50);

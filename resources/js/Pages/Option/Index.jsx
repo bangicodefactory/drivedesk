@@ -83,7 +83,7 @@ function OptionIndex({ options = [] }) {
                                 <TableRow key={option.id}>
                                     <TableCell>{option.name}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit options') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('option.edit', option.id)} aria-label={t('Edit')}>

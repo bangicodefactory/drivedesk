@@ -124,7 +124,7 @@ function RentalAgreementIndex({ agreements = { data: [] }, statuses, filters = {
                                         </Badge>
                                     </TableCell>
                                     {(can('edit rental agreement') || can('delete rental agreement') || can('show rental agreement')) && (
-                                        <TableCell className="text-end space-x-1 whitespace-nowrap">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse whitespace-nowrap">
                                             {can('show rental agreement') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('rental-agreement.show', a.encrypted_id)} aria-label={t('View')}>

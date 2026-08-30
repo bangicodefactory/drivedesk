@@ -81,7 +81,7 @@ function DemoRequestsIndex({ requests = [] }) {
                                 <TableCell>{r.email}</TableCell>
                                 <TableCell>{r.phone || '-'}</TableCell>
                                 <TableCell>{fmt(r.created_at)}</TableCell>
-                                <TableCell className="text-end space-x-1">
+                                <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                     <Button size="sm" onClick={() => approve(r)}>
                                         <Check className="me-1 h-4 w-4" /> {t('Approve')}
                                     </Button>

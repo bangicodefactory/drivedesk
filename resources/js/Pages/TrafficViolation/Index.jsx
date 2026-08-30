@@ -289,7 +289,7 @@ function TrafficViolationIndex({
                                     <StatusBadge status={violation.status} statuses={statuses} />
                                 </TableCell>
                                 {showActions && (
-                                    <TableCell className="text-end space-x-1">
+                                    <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={route('traffic-violation.show', violation.id)} aria-label={t('View')}>
                                                 <Eye className="h-4 w-4" />

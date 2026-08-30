@@ -21,7 +21,7 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `branding.logoUrl` | `string` | Logo filename from the `Setting` model |
 | `branding.faviconUrl` | `string` | Favicon filename from the `Setting` model |
 | `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
-| `branding.layoutMode` | `'lightmode' \| 'darkmode'` | Drives `ThemeProvider` initial theme |
+| `branding.layoutMode` | `'lightmode' \| 'darkmode' \| 'systemmode'` | Drives `ThemeProvider` initial theme via `resolveTheme()` in `resources/js/lib/theme.js`; `systemmode` follows `prefers-color-scheme` |
 | `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
 | `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'drivedesk'`) |
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |

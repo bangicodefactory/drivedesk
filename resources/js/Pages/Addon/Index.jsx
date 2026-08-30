@@ -89,7 +89,7 @@ function AddonIndex({ addons = [] }) {
                                     <TableCell>{addon.price_formatted ?? addon.price}</TableCell>
                                     <TableCell>{addon.billing_type}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit addon') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('addon.edit', addon.id)} aria-label={t('Edit')}>

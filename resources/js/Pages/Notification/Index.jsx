@@ -89,7 +89,7 @@ function NotificationIndex({ notifications = [] }) {
                                         </Badge>
                                     </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1 whitespace-nowrap">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse whitespace-nowrap">
                                             {can('edit notification') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('notification.edit', n.id)} aria-label={t('Edit')}>

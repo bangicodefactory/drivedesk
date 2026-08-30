@@ -15,6 +15,11 @@ describe('fieldA11y', () => {
         });
     });
 
+    it('stays silent for an error without a message, matching FieldError', () => {
+        expect(fieldA11y({ type: { type: 'server', message: '' } }, 'type')).toEqual({});
+        expect(fieldA11y({ type: { type: 'custom' } }, 'type')).toEqual({});
+    });
+
     it('derives a stable id from the field name', () => {
         expect(fieldErrorId('g-recaptcha-response')).toBe('g-recaptcha-response-error');
     });

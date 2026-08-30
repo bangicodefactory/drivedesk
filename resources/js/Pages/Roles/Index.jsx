@@ -78,7 +78,7 @@ function RolesIndex({ roles }) {
                                     <TableCell>
                                         <Badge variant="secondary">{r.permissions_count}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-end space-x-1">
+                                    <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                         {canEdit && (
                                             <Button variant="ghost" size="icon" asChild>
                                                 <Link href={route('role.edit', r.id)} aria-label={t('Edit')}>

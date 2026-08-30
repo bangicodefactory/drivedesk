@@ -94,7 +94,7 @@ function PlaceIndex({ places = [] }) {
                                     <TableCell>{p.depo_name ? p.depo_name : '-'}</TableCell>
                                     <TableCell>{p.depo_address ? p.depo_address : '-'}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit place') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('place.edit', p.id)} aria-label={t('Edit')}>

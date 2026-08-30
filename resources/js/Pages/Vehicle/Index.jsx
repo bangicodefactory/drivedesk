@@ -106,7 +106,7 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                     <TableCell>{v.registration_expiry_date_display ?? '-'}</TableCell>
                                     <TableCell>{v.engine_type}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show vehicle') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('vehicle.show', v.id)} aria-label={t('Details')}>

@@ -70,10 +70,10 @@ function Hero({ heroImages }) {
             </div>
 
             <button onClick={prev} className="absolute start-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
             </button>
             <button onClick={next} className="absolute end-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 transition-colors">
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
             </button>
 
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">

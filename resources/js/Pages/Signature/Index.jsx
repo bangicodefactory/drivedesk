@@ -61,7 +61,7 @@ function SignatureIndex({ signatures = [] }) {
                                     </TableCell>
                                     <TableCell>{sig.created_at}</TableCell>
                                     {can('manage driver') && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {sig.signature_url && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <a

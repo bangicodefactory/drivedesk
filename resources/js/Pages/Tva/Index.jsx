@@ -292,7 +292,7 @@ function TvaIndex({ tvas, filters, all_ids = [] }) {
                                     <TableCell className="font-medium">{t.montant_ttc} Dh</TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{t.payment_method || '—'}</TableCell>
                                     {hasActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show booking') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('tva.show', t.id)} aria-label="View">

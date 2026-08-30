@@ -85,7 +85,7 @@ function VehicleTypeIndex({ types = [] }) {
                                     <TableCell>{type.type}</TableCell>
                                     <TableCell>{type.notes}</TableCell>
                                     {showActions && (
-                                        <TableCell className="text-end space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('edit vehicle type') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('vehicle-type.edit', type.id)} aria-label={t('Edit')}>
