@@ -48,7 +48,7 @@ engineering view of the same question, reconciled with the code.
 | Coupons | **Schema-only** | `*create_coupons_table*`, ~10 orphan keys in `resources/lang/en.json` |
 | Multi-branch | **Flag-only** — `multi_branch` has no enforcement point; Places are pick-up points with a surcharge, not branches | `config/features.php` |
 | SMS, WhatsApp | **Absent** (`ReminderController` has a commented `sendSMSNotification`) | — |
-| Reminder e-mails | **Absent** — reminders show in-app only | — |
+| Reminder e-mails | **Broken, silently** — `ReminderController` calls `Mail::send('emails.reminder_notification')` / `'emails.daily_reminder_summary'` and the daily summary is scheduled, but the views live under `resources/views/email/` (singular) and `daily_reminder_summary.blade.php` does not exist; the `try/catch` downgrades the exception to `Log::error` | `app/Http/Controllers/ReminderController.php:447,631`, `app/Console/Kernel.php` |
 | Deposit / caution, franchise, km limit, late fee | **Absent** — mentioned in contract terms text only | `config/clients/drivedesk.php` `terms.rental_agreement` |
 | Vehicle document expiry (assurance / vignette / visite technique) | **Absent** as fields — only `registration_expiry` exists | `vehicles` table |
 | Weekly / monthly rate cards | **Absent** — daily rate + manual discount | `vehicles.daily_rate` |
@@ -60,9 +60,13 @@ engineering view of the same question, reconciled with the code.
 
 ### Hygiene debt found on the way
 
-- 8 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
-  `subscriptions`, `booking_payment`, `excel_import`, `multi_branch`,
-  `tva_renumber`, `signatures`. Flipping them changes nothing.
+- 7 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
+  `booking_payment`, `excel_import`, `multi_branch`, `tva_renumber`,
+  `signatures`. Flipping them changes nothing. (`subscriptions` *is* read —
+  seven `feature('subscriptions')` branches in the still-shipped Blade
+  `admin/menu.blade.php` and `dashboard/super_admin.blade.php`, one of which
+  also hides the Logged History menu entry — so it must not be deleted before
+  that Blade is retired.)
 - `app/Http/Controllers/HomeController.php` imports five classes that do not
   exist (`Contact`, `Fuel`, `NoticeBoard`, `Service`, `Support`).
 - `routes/web.php`: `ui-test/*` (15 unauthenticated Blade previews) and
@@ -79,9 +83,15 @@ engineering view of the same question, reconciled with the code.
 - `docs/phase6-execution-plan.md` reports ~13 % of the Blade port done; the
   `resources/js/Pages/` tree shows it is essentially complete. The Phase 6 exit
   gate ("`resources/views/` only holds `app.blade.php` + email/PDF") is still not
-  met: `tva/create`, `booking/payment`, `booking_requests/*`, `logged_history/*`,
-  `user_permission/*`, `settings/testmail`, and the whole `client/**` storefront
-  remain Blade.
+  met. Still Blade and still routed: `tva/create`, `booking/payment`,
+  `booking_requests/*`, `logged_history/*`, `user_permission/*`,
+  `settings/testmail`, `reminder/days_remaining` (returned by
+  `ReminderController.php:297`), `auth/confirm-password`, and the whole
+  `client/**` storefront — plus the scaffolding they extend:
+  `layouts/{app,auth,guest,landing}`, `admin/{menu,content,header,footer,head}`,
+  `dashboard/{index,super_admin}`, `driver/new_create`,
+  `reminder/_date_modal`, `tva/{days_remaining,_date_modal}`, `partials/alerts`.
+  Roughly 30 files, not 7.
 - Two vitest conventions coexist (`Pages/**/__tests__/` and
   `resources/js/tests/`), duplicating e.g. the Login test; no coverage threshold.
 
@@ -209,7 +219,8 @@ CSS-first config) does not apply until that upgrade lands.
 
 1. **Form errors are never announced.** `components/ui/form.jsx` is dead code —
    no page imports it. 63 pages hand-roll `Label + Input + <p class="text-destructive">`;
-   the whole admin has one `aria-invalid` (`Pages/Auth/ResetPassword.jsx`).
+   the only `aria-invalid` under `resources/js/` is inside that unused primitive —
+   no page sets it.
 2. **RTL breaks on every list page.** 189 physical-direction utilities
    (`text-right`, `ml-`/`mr-`/`pl-`/`pr-`) across 49 files; ~24 index pages
    override `TableHead`'s `text-start` with `text-right` on the actions column
@@ -244,8 +255,9 @@ CSS-first config) does not apply until that upgrade lands.
     and those 9 are the most complex forms (`Booking/{Create,Edit}`,
     `RentalAgreement/{Create,Edit}`, `Credit/*`, `Notification/*`, `Tva/Edit`),
     i.e. the ones without client-side validation.
-13. Loading states: `Skeleton` used once (`dashboard/StatCard.jsx`); no global
-    Inertia progress indicator; submit buttons disable but show no spinner.
+13. Loading states: `Skeleton` used once (`dashboard/StatCard.jsx`); submit
+    buttons disable but show no spinner. (Inertia's default top progress bar is
+    active — `app.jsx` passes no `progress` option — so that part is fine.)
 14. Only `en`/`fr`/`ar` are exposed in `AdminLayout.jsx`; the `ar.json` bundle
     (89 KB) is inlined into every page's props.
 
@@ -272,17 +284,21 @@ CSS-first config) does not apply until that upgrade lands.
 Rules for every item: additive, reversible migrations only; default behaviour
 unchanged for the existing client; variant behaviour behind a flag; tests first.
 
-### Tranche 0 — foundation (PR 1 and PR 2, see plan)
+### Tranche 0 — foundation
+
+Items 0.1 (first slice) to 0.4 are implemented on branch
+`ux/a11y-rtl-foundation` (PR #4, commits BAN-271/273/274/275). The rest of
+0.1 and items 0.5–0.7 are follow-up PRs.
 
 | # | Item | Effort |
 | --- | --- | :-: |
-| 0.1 | Accessible field errors: `FieldError` + `fieldA11y()` helpers, adopted on a first slice (PR 1), then every form page in module-sized commits (PR 2) | S + M |
+| 0.1 | Accessible field errors: `FieldError` + `fieldA11y()` helpers (`resources/js/components/FieldError.jsx`, `resources/js/lib/fieldA11y.js`), adopted on a first slice in PR #4, then every remaining form page in module-sized commits | S + M |
 | 0.2 | RTL sweep: physical → logical utilities (`text-end`, `ms-`/`me-`/`ps-`/`pe-`, `start-`/`end-`) with a guard test | S |
 | 0.3 | `Pagination.jsx`: `<nav aria-label>`, translated labels, `aria-current` | S |
 | 0.4 | System theme: honour `systemmode` in `app.jsx` (`enableSystem`) | S |
 | 0.5 | `<h1>` + `<Head>` title per page, skip link + `<main>` in `AdminLayout` | S |
 | 0.6 | Accessible combobox for `searchable-select.jsx` (roles, arrow keys, Escape, i18n) | S |
-| 0.7 | Global Inertia progress indicator + submit spinners | S |
+| 0.7 | Submit spinners on form buttons (`isSubmitting` currently only disables) | S |
 
 ### Tranche 1 — Moroccan table stakes (S/M, additive schema)
 
@@ -294,8 +310,9 @@ unchanged for the existing client; variant behaviour behind a flag; tests first.
 | 1.4 | WhatsApp share (`wa.me` deep link with prefilled text) on Booking/Show, RentalAgreement/Show, Tva/Show; `+212` phone normalisation | `whatsapp` | S |
 | 1.5 | Weekly / monthly rates on vehicles, chosen by `PricingServiceContract`; seasonal grid later | — | S–M |
 | 1.6 | Dashboard "Départs du jour" / "Retours du jour" lists | — | S |
-| 1.7 | Defaults hygiene: timezone `Africa/Casablanca`, RIB/IBAN instead of IFSC (add columns, keep old key), ICE 15-digit validator on drivers/companies/tvas | — | S |
-| 1.8 | Reminder e-mails actually sent (the mailables exist) | — | S |
+| 1.7 | Defaults hygiene: a per-client `default_timezone` in `config/clients/drivedesk.php` (`Africa/Casablanca`) read by `settingsKeys()` — the core default stays `Pacific/Tahiti` so other tenants are unchanged (CLAUDE.md §10.2 rules 1–2); RIB/IBAN instead of IFSC (add columns, keep old key); ICE 15-digit validator on drivers/companies/tvas | — | S |
+| 1.8 | Reminder e-mails: fix the `emails.*` → `email.*` view namespace in `ReminderController`, add the missing `daily_reminder_summary` template, and stop swallowing the exception (surface via Sentry) | — | S |
+| 1.9 | Late-return fee: grace period + hourly/daily rate on the booking, computed by `PricingServiceContract` and shown on the contract | — | S |
 
 ### Tranche 2 — differentiators (M/L)
 
@@ -304,9 +321,9 @@ unchanged for the existing client; variant behaviour behind a flag; tests first.
 | 2.1 | État des lieux: guided multi-photo capture on Inspections (departure/return pairs, timestamp, signature), mobile-first, PDF | `inspection_photos` | M |
 | 2.2 | Bilingual FR/AR contract PDF with true RTL (dompdf + Cairo, per-client terms in both languages) | — | M |
 | 2.3 | DGI e-invoicing: UBL 2.1 export per `tvas` row, ICE/IF validation, then a clearance adapter when the DGI API is published | `e_invoicing` | M–L |
-| 2.4 | PV: resident / non-resident routing, advance + re-invoice line with processing fee | `traffic_violations` | S |
-| 2.5 | Cahier des charges compliance file (fleet count vs 7, CNSS, licence, bonds, expiries) | `compliance_file` | S–M |
-| 2.6 | Online deposit prepay via YouCan Pay / CMI, replacing the dead Stripe/PayPal settings | `online_payment` | M |
+| 2.4 | PV: resident / non-resident routing, advance + re-invoice line with processing fee | `traffic_violations` (existing) | S |
+| 2.5 | Cahier des charges compliance file (fleet count vs 7, CNSS, licence, bonds, expiries) | `compliance_file` (new) | S–M |
+| 2.6 | Online deposit prepay via YouCan Pay / CMI, replacing the dead Stripe/PayPal settings. Becomes the enforcement point of the **existing** `booking_payment` flag (no new key); `stripe` / `paypal` are retired in the same PR | `booking_payment` (existing) | M |
 | 2.7 | Shared `DataTable` (server pagination, sort, per-page, bulk) extracted from `Booking/Index.jsx`, adopted on the 16 client-filtered lists | — | M |
 | 2.8 | Mobile: table → card fallback, `md:grid-cols-2` forms, responsive Settings/Auth | — | M |
 | 2.9 | Contract creation wizard with CIN/permis capture | — | M |
@@ -317,29 +334,47 @@ unchanged for the existing client; variant behaviour behind a flag; tests first.
 
 | # | Item | Flag | Effort |
 | --- | --- | --- | :-: |
-| 3.1 | Per-agency storefront / embeddable booking widget (port the Blade storefront) | `public_storefront` | M |
-| 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` | L |
-| 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` | L |
-| 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` | M |
+| 3.1 | Per-agency storefront / embeddable booking widget (port the Blade storefront) | `public_storefront` (existing) | M |
+| 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` (new) | L |
+| 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` (new) | L |
+| 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` (new, shared with 1.4) | M |
 | 3.5 | Accounting CSV export (Sage / EBP formats) | — | S |
-| 3.6 | Real multi-branch (fleet per branch, branch on bookings/users) | `multi_branch` | L |
+| 3.6 | Real multi-branch (fleet per branch, branch on bookings/users) — the enforcement point of the existing `multi_branch` flag | `multi_branch` (existing) | L |
 
-### Cleanup (Phase 7 backlog, see `docs/migration-plan.md`)
+### Cleanup
 
-Remove dead coupon / subscription / package schema and translation keys; drop
-the dangling `HomeController` imports; delete `ui-test/*` and `/hello`; finish
-or remove `/newsletter/subscribe`; delete the ten dead locale bundles and the
-`nl` declaration; remove `composer.lock.backup`; rename `rentcar` → DriveDesk in
-`package.json`, `.env.example`, `CLAUDE.md`; correct `docs/phase6-execution-plan.md`;
-finish the Blade tail; merge the two vitest trees; for each of the eight no-op
-feature flags either add an enforcement point or delete the flag.
+Ordered by the constraints in `CLAUDE.md` §4/§8 and `docs/migration-plan.md`
+Phase 7 (item 0: "leave the DB tables in place; drop them in a post-migration
+schema cleanup PR after Phase 8"). The "additive only" rule at the top of §6
+applies here too.
+
+*Safe now (no schema, no translation keys):* drop the dangling `HomeController`
+imports; delete `ui-test/*` and `/hello`; finish or remove
+`/newsletter/subscribe`; remove `composer.lock.backup`; rename `rentcar` →
+DriveDesk in `package.json`, `.env.example`, `CLAUDE.md`; correct
+`docs/phase6-execution-plan.md`; merge the two vitest trees; remove the
+unservable `nl` entry from `supported_locales`; for each of the seven no-op
+flags either add its enforcement point (2.6, 3.6) or delete the key with a
+matching edit to every `config/clients/*.php`.
+
+*Phase 6 exit gate:* finish the Blade tail (~30 files, list in §1) — which also
+retires the Blade `feature('subscriptions')` branches, after which that flag
+can go too.
+
+*After Phase 8 only, each in its own ticket:* drop the `coupons`,
+`coupon_histories`, `subscriptions`, `package_transactions` tables; remove the
+orphan coupon / subscription translation keys and the ten locale bundles
+`SetLocale` never serves (CLAUDE.md §4 requires a follow-up ticket for any key
+removal).
 
 ---
 
 ## 7. Consequences for sales collateral
 
-`docs/sales/README.md` "Known gaps" stays accurate. Once Tranche 1 ships, the
-handbook's §9 lines for *deposit / late fee*, *reminder e-mails* and *daily
-rates only* can be rewritten; §9's *online payment* line changes only with 2.6,
-and *photo damage capture* only with 2.1. Do not update the decks before the
-corresponding item is merged and verified in the running app.
+`docs/sales/README.md` "Known gaps" stays accurate. Each handbook §9 line maps
+to one backlog item and may be rewritten only after that item is merged and
+verified in the running app: *automatic deposit and late-fee calculation* →
+1.2 **and** 1.9 (both; deposit alone does not clear the line); *reminder
+e-mails / SMS* → 1.8 (e-mail half only — SMS stays a no); *daily rates only* →
+1.5; *online payment* → 2.6; *photo damage capture* → 2.1; *multi-branch* →
+3.6; *accounting integration* → 3.5; *mobile app* → 3.3.
