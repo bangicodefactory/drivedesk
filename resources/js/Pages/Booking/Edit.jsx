@@ -210,55 +210,61 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
                                     placeholder={t('Select Vehicle')}
                                     searchPlaceholder={t('Search vehicle…')}
                                     ariaLabel={t('Vehicle')}
+                                    {...fieldA11y(serverErrors, 'vehicle')}
                                 />
+                                <FieldError name="vehicle" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Driver')}</Label>
                                 <Select defaultValue={String(booking.driver ?? '')} onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Driver')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'driver')}><SelectValue placeholder={t('Select Driver')} /></SelectTrigger>
                                     <SelectContent>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="driver" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Pickup Address')}</Label>
                                 <Select defaultValue={String(booking.pickup_address ?? '')} onValueChange={(v) => setValue('pickup_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'pickup_address')}><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="pickup_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Drop Off Address')}</Label>
                                 <Select defaultValue={String(booking.drop_off_address ?? '')} onValueChange={(v) => setValue('drop_off_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'drop_off_address')}><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="drop_off_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Status')}</Label>
                                 <Select defaultValue={booking.status} onValueChange={(v) => setValue('status', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'status')}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {statuses?.map((s) => (
                                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="status" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -268,7 +274,8 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
                             <div className="space-y-1">
                                 <Label htmlFor="daily_price">{t('Price per day')}</Label>
-                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} onBlur={() => recalculate(true)} />
+                                <Input id="daily_price" type="number" step="any" min="0" {...register('daily_price')} {...fieldA11y(serverErrors, 'daily_price')} onBlur={() => recalculate(true)} />
+                                <FieldError name="daily_price" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">

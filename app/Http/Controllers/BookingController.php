@@ -323,7 +323,13 @@ class BookingController extends Controller
 
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
-            return redirect()->back()->with('error', $messages->first());
+
+            // BAN-285: withErrors() is what writes session('errors'), which is the
+            // only source Inertia's shared `errors` prop reads. The flash is kept
+            // so anything still reading session('error') is unaffected.
+            return redirect()->back()
+                ->withErrors($validator)
+                ->with('error', $messages->first());
         }
 
         // 🔹 Blacklist check (BAN-252): warn-and-override. If the driver is
@@ -572,7 +578,13 @@ class BookingController extends Controller
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+
+                // BAN-285: withErrors() is what writes session('errors'), which is
+                // the only source Inertia's shared `errors` prop reads. The flash is
+                // kept so anything still reading session('error') is unaffected.
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->with('error', $messages->first());
             }
 
             $bookingStatus = $booking->status != $request->status;

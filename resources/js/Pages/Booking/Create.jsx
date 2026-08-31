@@ -210,37 +210,40 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                             <div className="space-y-1">
                                 <Label>{t('Pickup Address')}</Label>
                                 <Select onValueChange={(v) => setValue('pickup_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'pickup_address')}><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="pickup_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Drop Off Address')}</Label>
                                 <Select onValueChange={(v) => setValue('drop_off_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'drop_off_address')}><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="drop_off_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Status')}</Label>
                                 <Select defaultValue={statuses?.[0]?.value} onValueChange={(v) => setValue('status', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'status')}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {statuses?.map((s) => (
                                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="status" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
