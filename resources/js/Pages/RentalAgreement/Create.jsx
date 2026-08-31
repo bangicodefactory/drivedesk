@@ -15,6 +15,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { confirmBlacklist } from '@/lib/blacklist';
 import { BlacklistNotice } from '@/components/BlacklistNotice';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
     const t = useTranslation();
@@ -81,8 +83,9 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     placeholder={t('Select Driver')}
                                     searchPlaceholder={t('Search driver…')}
                                     ariaLabel={t('Driver')}
+                                    {...fieldA11y(serverErrors, 'driver')}
                                 />
-                                {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
+                                <FieldError name="driver" errors={serverErrors} />
                                 <BlacklistNotice drivers={drivers} selectedIds={[watch('driver')]} />
                             </div>
 
@@ -108,8 +111,9 @@ function RentalAgreementCreate({ vehicles, drivers, statuses, defaultTerms }) {
                                     placeholder={t('Select Vehicle')}
                                     searchPlaceholder={t('Search vehicle…')}
                                     ariaLabel={t('Vehicle')}
+                                    {...fieldA11y(serverErrors, 'vehicle')}
                                 />
-                                {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
+                                <FieldError name="vehicle" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">

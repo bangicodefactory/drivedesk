@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function CreditEdit({ credit, drivers = [], statuses = {} }) {
     const t = useTranslation();
@@ -37,33 +39,34 @@ function CreditEdit({ credit, drivers = [], statuses = {} }) {
                                 placeholder={t('Select driver…')}
                                 searchPlaceholder={t('Search driver…')}
                                 ariaLabel={t('Driver')}
+                                {...fieldA11y(errors, 'driver_id')}
                             />
-                            {errors.driver_id && <p className="text-sm text-destructive">{errors.driver_id}</p>}
+                            <FieldError name="driver_id" errors={errors} />
                         </div>
 
                         <div className="space-y-1">
                             <Label>{t('Amount (Dh)')}</Label>
-                            <Input type="number" step="0.01" min="0" value={data.amount} onChange={(e) => setData('amount', e.target.value)} />
-                            {errors.amount && <p className="text-sm text-destructive">{errors.amount}</p>}
+                            <Input type="number" step="0.01" min="0" value={data.amount} onChange={(e) => setData('amount', e.target.value)} {...fieldA11y(errors, 'amount')} />
+                            <FieldError name="amount" errors={errors} />
                         </div>
 
                         <div className="space-y-1">
                             <Label>{t('Status')}</Label>
                             <Select value={data.status} onValueChange={(v) => setData('status', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectTrigger {...fieldA11y(errors, 'status')}><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {Object.entries(statuses).map(([val, label]) => (
                                         <SelectItem key={val} value={val}>{t(label)}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.status && <p className="text-sm text-destructive">{errors.status}</p>}
+                            <FieldError name="status" errors={errors} />
                         </div>
 
                         <div className="space-y-1">
                             <Label>{t('Date')}</Label>
-                            <Input type="date" value={data.credit_date} onChange={(e) => setData('credit_date', e.target.value)} />
-                            {errors.credit_date && <p className="text-sm text-destructive">{errors.credit_date}</p>}
+                            <Input type="date" value={data.credit_date} onChange={(e) => setData('credit_date', e.target.value)} {...fieldA11y(errors, 'credit_date')} />
+                            <FieldError name="credit_date" errors={errors} />
                         </div>
 
                         <div className="flex gap-2 pt-2">

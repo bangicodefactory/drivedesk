@@ -11,6 +11,8 @@ import {
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function splitDateTime(datetime) {
     if (!datetime) return { date: '', time: '' };
@@ -72,14 +74,14 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             <div className="space-y-1">
                                 <Label>{t('Driver')}</Label>
                                 <Select defaultValue={String(agreement.driver ?? '')} onValueChange={(v) => setValue('driver', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'driver')}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {drivers.map((d) => (
                                             <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
+                                <FieldError name="driver" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">

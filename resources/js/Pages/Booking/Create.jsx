@@ -18,6 +18,8 @@ import { confirmBlacklist } from '@/lib/blacklist';
 import { formatDt } from '@/lib/datetime';
 import { BlacklistNotice } from '@/components/BlacklistNotice';
 import axios from 'axios';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, addons }) {
     const t = useTranslation();
@@ -166,14 +168,14 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
 
                             <div className="space-y-1">
                                 <Label htmlFor="start_date_time">{t('Start Date & Time')}</Label>
-                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} />
-                                {serverErrors?.start_date_time && <p className="text-sm text-destructive">{serverErrors.start_date_time}</p>}
+                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} {...fieldA11y(serverErrors, 'start_date_time')} />
+                                <FieldError name="start_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label htmlFor="end_date_time">{t('End Date & Time')}</Label>
-                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} />
-                                {serverErrors?.end_date_time && <p className="text-sm text-destructive">{serverErrors.end_date_time}</p>}
+                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} {...fieldA11y(serverErrors, 'end_date_time')} />
+                                <FieldError name="end_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -185,8 +187,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     placeholder={t('Select Vehicle')}
                                     searchPlaceholder={t('Search vehicle…')}
                                     ariaLabel={t('Vehicle')}
+                                    {...fieldA11y(serverErrors, 'vehicle')}
                                 />
-                                {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
+                                <FieldError name="vehicle" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -198,8 +201,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     placeholder={t('Select Driver')}
                                     searchPlaceholder={t('Search driver…')}
                                     ariaLabel={t('Driver')}
+                                    {...fieldA11y(serverErrors, 'driver')}
                                 />
-                                {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
+                                <FieldError name="driver" errors={serverErrors} />
                                 <BlacklistNotice drivers={drivers} selectedIds={[watch('driver')]} />
                             </div>
 
