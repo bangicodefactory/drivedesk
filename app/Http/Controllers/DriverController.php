@@ -296,7 +296,11 @@ class DriverController extends Controller
 
     public function show($id)
     {
-        $user = User::find($id);
+        $user = User::where('parent_id', parentId())->find($id);
+        if (!$user) {
+            abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+        }
+
         $name = explode(' ', $user->name);
         $user->first_name = isset($name[0]) ? $name[0] : null;
         $user->last_name = isset($name[1]) ? $name[1] : null;
@@ -390,7 +394,11 @@ class DriverController extends Controller
 
     public function edit($id)
     {
-        $user = User::find($id);
+        $user = User::where('parent_id', parentId())->find($id);
+        if (!$user) {
+            abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+        }
+
         $name = explode(' ', $user->name);
         $user->first_name = isset($name[0]) ? $name[0] : null;
         $user->last_name = isset($name[1]) ? $name[1] : null;
@@ -423,7 +431,11 @@ class DriverController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
-            $user = User::find($id);
+            $user = User::where('parent_id', parentId())->find($id);
+            if (!$user) {
+                abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+            }
+
             $user->name = $request->first_name . ' ' . $request->last_name;
             $user->email = $request->email;
             $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -496,7 +508,11 @@ class DriverController extends Controller
     public function destroy($id)
     {
         if (\Auth::user()->can('delete driver')) {
-            $user = User::find($id);
+            $user = User::where('parent_id', parentId())->find($id);
+            if (!$user) {
+                abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+            }
+
             $user->delete();
             $driver = Driver::where('user_id', $id)->delete();
 

@@ -316,7 +316,9 @@ class BookingController extends Controller
                 'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                 'start_date_time' => 'required|date',
                 'end_date_time' => 'required|date|after:start_date_time',
-                'driver' => 'required|exists:users,id',
+                // BAN-291: tenant-scoped, for the same reason as `vehicle` —
+                // a bare exists: rule ignores the model's global scope.
+                'driver' => ['required', \Illuminate\Validation\Rule::exists('users', 'id')->where('parent_id', parentId())],
                 'pickup_address' => 'required|string',
                 'drop_off_address' => 'required|string',
                 'status' => 'required|string',
@@ -604,7 +606,8 @@ class BookingController extends Controller
                     'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
-                    'driver' => 'required|exists:users,id',
+                    // BAN-291: tenant-scoped, see store().
+                    'driver' => ['required', \Illuminate\Validation\Rule::exists('users', 'id')->where('parent_id', parentId())],
                     'pickup_address' => 'required',
                     'drop_off_address' => 'required',
                     'status' => 'required',

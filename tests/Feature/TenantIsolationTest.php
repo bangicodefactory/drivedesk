@@ -45,6 +45,7 @@ class TenantIsolationTest extends TestCase
         foreach ([
             'manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking',
             'create booking payment', 'delete booking payment',
+            'show driver', 'edit driver', 'delete driver',
         ] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
@@ -247,6 +248,85 @@ class TenantIsolationTest extends TestCase
             ])
             ->assertRedirect()
             ->assertSessionHasErrors(['vehicle']);
+    }
+
+    // -- Driver (BAN-291) ----------------------------------------------------
+
+    /**
+     * The drivers table was only half the story: DriverController resolved the
+     * *user* with a bare User::find($id) and dereferenced it immediately, so
+     * show/edit leaked another tenant's driver and update/destroy wrote to one.
+     * Scoping only the Driver profile would have left those writes intact and
+     * merely made them fail halfway — the paymentDestroy shape from BAN-289.
+     */
+    public function test_driver_show_answers_404_for_another_tenants_driver(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->owner->givePermissionTo('show driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.show', $foreignDriver->id))
+            ->assertStatus(404);
+    }
+
+    public function test_driver_update_cannot_write_to_another_tenants_user(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+        $originalName = $foreignDriver->name;
+
+        $this->owner->givePermissionTo('edit driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $foreignDriver->id), [
+                'first_name' => 'Hijacked',
+                'last_name'  => 'Name',
+                'email'      => 'hijack@example.test',
+            ])
+            ->assertStatus(404);
+
+        $this->assertSame($originalName, $foreignDriver->fresh()->name);
+    }
+
+    public function test_driver_destroy_cannot_delete_another_tenants_user(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->owner->givePermissionTo('delete driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->delete(route('driver.destroy', $foreignDriver->id))
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('users', ['id' => $foreignDriver->id]);
+    }
+
+    public function test_booking_store_rejects_another_tenants_driver_in_validation(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $ownVehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.store'), [
+                'vehicle'          => $ownVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $foreignDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['driver']);
     }
 
     private function ownBooking(): Booking
