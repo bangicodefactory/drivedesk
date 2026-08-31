@@ -330,18 +330,35 @@ works correctly and is not affected. What silently never reaches the user as
 a field-specific message is any rule that exists **only** on the server and
 has no zod counterpart — a uniqueness check, a file `mimes`/`max` rule, a
 cross-field business rule — the user gets only a generic flash string with no
-indication of which field to fix. It is also fully broken (no error ever
-shown at all, not even generically per-field) on the handful of pages that
-both lack a client-side schema for that field *and* sit behind one of the 17
-broken controllers: `Booking/{Create,Edit}` (vehicle, driver, start/end
-date), `Credit/{Create,Edit}`, and `Signature/Create` (`user_id`,
-`signature`). `RentalAgreementController` is clean (`store()` and `update()`
-both already call `withErrors($validator)`) — its `vehicle` field's missing
-error display on `Edit.jsx` was a pure frontend gap, fixed in BAN-283.
+indication of which field to fix.
 
-**Why not fixed in PR #5:** this is 17 controllers deep, and
+**Two corrections to the first draft of this item**, found when BAN-285 went
+to implement it — both were wrong in the direction of overstating the damage:
+
+- **`CreditController` is not affected.** It uses `$request->validate()`,
+  which throws `ValidationException` and lets Laravel's handler populate the
+  error bag. `CreditControllerTest` already asserts
+  `assertSessionHasErrors(['driver_id'])` and passes.
+- **`SignatureController` was affected, but not for this reason.** It also
+  uses `$request->validate()` — correctly — but inside a `try` whose
+  `catch (\Exception $e)` swallowed the `ValidationException`, logged it and
+  flattened it into the same generic flash. `SignatureControllerTest` even
+  carried a comment documenting the behaviour. Fixed in BAN-285 by validating
+  before the `try`.
+
+`RentalAgreementController` is likewise clean — `store()` and `update()` both
+call `withErrors($validator)`; its `vehicle` field's missing error display on
+`Edit.jsx` was a pure frontend gap, fixed in BAN-283.
+
+So the genuinely broken set is the `\Validator::make` + manual-return
+controllers listed above. **`BookingController` (store + update) is done**
+(BAN-285, with the happy- and failure-path `update()` tests that did not
+exist before); the other 16 remain.
+
+**Why it was not fixed in PR #5** (Booking has since been done in BAN-285,
+the rest still stand): this is 17 controllers deep, and
 `BookingController::update()` — one of the two highest-traffic entry
-points — has **zero existing test coverage** (not even a happy path). Per
+points — had **zero existing test coverage** (not even a happy path). Per
 CLAUDE.md §3 ("the controller's endpoints must already have feature-test
 coverage for both the happy path and at least one failure path... If they
 don't, write the tests first"), fixing this properly means a happy-path +
