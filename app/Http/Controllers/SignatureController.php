@@ -56,13 +56,16 @@ class SignatureController extends Controller
     }
     public function store(Request $request)
     {
+        // BAN-285: validated before the try. A ValidationException thrown inside
+        // it would be caught by the generic catch(\Exception) below, logged as an
+        // error and flattened into a flash — so the field-level messages never
+        // reached session('errors') and the SPA could not show them.
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'signature' => 'required'
+        ]);
+
         try {
-            // Validate request
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'signature' => 'required'
-            ]);
-    
             // Get the base64 image data
             $signature = $request->input('signature');
             

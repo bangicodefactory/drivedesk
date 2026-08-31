@@ -324,6 +324,103 @@ class BookingControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    /**
+     * BAN-285: the failing field must reach Inertia's `errors` shared prop, not
+     * only the generic `error` flash. Inertia populates that prop from
+     * session('errors'), which only withErrors() writes — so a controller that
+     * flashes `$messages->first()` leaves every field-level message invisible in
+     * the SPA, and the FieldError/fieldA11y wiring (BAN-271/278) inert.
+     */
+    public function test_store_puts_the_failing_fields_in_the_error_bag(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('booking.store'), [
+                // vehicle + driver omitted; both are `required`.
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle', 'driver']);
+    }
+
+    // ── BookingController::update ─────────────────────────────────────────────
+
+    public function test_update_persists_changes_and_redirects(): void
+    {
+        $booking = $this->makeBooking(['status' => 'yet_to_start', 'amount' => 100]);
+        $pickup  = Place::factory()->create();
+        $dropOff = Place::factory()->create();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), [
+                'vehicle'          => $this->vehicle->id,
+                'start_date_time'  => '2026-07-01 09:00',
+                'end_date_time'    => '2026-07-04 18:00',
+                'driver'           => $this->driver->id,
+                'pickup_address'   => (string) $pickup->id,
+                'drop_off_address' => (string) $dropOff->id,
+                'status'           => 'yet_to_start',
+                'amount'           => 450,
+                'daily_price'      => 150,
+            ])
+            ->assertRedirect();
+
+        $booking->refresh();
+        $this->assertEquals(450, (int) $booking->amount);
+        $this->assertEquals('2026-07-01', $booking->start_date);
+        $this->assertEquals((string) $pickup->id, (string) $booking->pickup_address);
+    }
+
+    public function test_update_puts_the_failing_fields_in_the_error_bag(): void
+    {
+        $booking = $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), [
+                // vehicle + daily_price omitted; both are `required` on update.
+                'start_date_time'  => '2026-07-01 09:00',
+                'end_date_time'    => '2026-07-04 18:00',
+                'driver'           => $this->driver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 450,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle', 'daily_price']);
+    }
+
+    /**
+     * BAN-285 review: update()'s `vehicle`/`driver` rules were bare `required`
+     * where store() already had `exists`, so an id that resolves to no row got
+     * past validation and reached `Vehicle::find(...)->id` / `User::find(...)->email`,
+     * fatalling on a null deref. Reproduces as a stale Edit tab whose vehicle was
+     * deleted in another window. The failure must be a field error, not a 500.
+     */
+    public function test_update_rejects_ids_that_resolve_to_no_row(): void
+    {
+        $booking = $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), [
+                'vehicle'          => 999999, // no such vehicle
+                'start_date_time'  => '2026-07-01 09:00',
+                'end_date_time'    => '2026-07-04 18:00',
+                'driver'           => 999998, // no such user
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 450,
+                'daily_price'      => 150,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle', 'driver']);
+    }
+
     // ── BookingController::show ───────────────────────────────────────────────
 
     public function test_show_returns_404_for_other_tenant(): void

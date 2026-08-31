@@ -323,7 +323,13 @@ class BookingController extends Controller
 
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
-            return redirect()->back()->with('error', $messages->first());
+
+            // BAN-285: withErrors() is what writes session('errors'), which is the
+            // only source Inertia's shared `errors` prop reads. The flash is kept
+            // so anything still reading session('error') is unaffected.
+            return redirect()->back()
+                ->withErrors($validator)
+                ->with('error', $messages->first());
         }
 
         // 🔹 Blacklist check (BAN-252): warn-and-override. If the driver is
@@ -497,7 +503,16 @@ class BookingController extends Controller
 
             // All drivers for the tenant (newest first); see create() — a capped
             // slice made older drivers unfindable in the picker (BAN-266).
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
+            // Flag blacklisted drivers so the picker can warn before submit (BAN-252),
+            // matching create(). update() enforces the same gate server-side.
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $driversProp = $drivers->map(fn($d) => [
+                'id'               => $d->id,
+                'name'             => $d->name,
+                'blacklisted'      => $blacklists->has($d->id),
+                'blacklist_reason' => optional($blacklists->get($d->id))->reason,
+            ])->values();
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
@@ -542,7 +557,7 @@ class BookingController extends Controller
                     'details'         => $booking->details,
                 ],
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'  => $drivers->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
+                'drivers'  => $driversProp,
                 'statuses' => collect(Booking::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
                 'places'   => $places->map(fn($p) => ['id' => $p->id, 'name' => $p->name]),
                 'addons'   => $addon->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
@@ -558,10 +573,13 @@ class BookingController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    // BAN-285 review: `exists` mirrors store()'s rules. Without them a
+                    // stale or foreign id reached Vehicle::find()/User::find() below
+                    // and fatalled on a null deref instead of returning a field error.
+                    'vehicle' => 'required|exists:vehicles,id',
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
-                    'driver' => 'required',
+                    'driver' => 'required|exists:users,id',
                     'pickup_address' => 'required',
                     'drop_off_address' => 'required',
                     'status' => 'required',
@@ -572,7 +590,25 @@ class BookingController extends Controller
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+
+                // BAN-285: withErrors() is what writes session('errors'), which is
+                // the only source Inertia's shared `errors` prop reads. The flash is
+                // kept so anything still reading session('error') is unaffected.
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->with('error', $messages->first());
+            }
+
+            // BAN-285 review: same warn-and-override gate store() applies (BAN-252).
+            // Without it a booking could be created with a clean driver and then
+            // edited onto a blacklisted one, bypassing the check entirely.
+            $blacklist = DriverBlacklist::where('parent_id', parentId())
+                ->where('driver_user_id', $request->driver)
+                ->whereNull('lifted_at')
+                ->first();
+            if ($blacklist && !$request->boolean('acknowledge_blacklist')) {
+                return redirect()->back()->withInput()
+                    ->with('error', __('This driver is blacklisted: ') . $blacklist->reason);
             }
 
             $bookingStatus = $booking->status != $request->status;
@@ -607,6 +643,11 @@ class BookingController extends Controller
             ];
             $booking->daily_price_final = $request->daily_price;
             $booking->save();
+
+            // Record the override if the owner proceeded past a blacklist warning.
+            if ($blacklist) {
+                $blacklist->recordOverride('booking', $booking->id, (int) $request->driver);
+            }
 
             //update dynamic with tva section
             // $tva = Tva::where('booking_id', $booking->id)->first();
