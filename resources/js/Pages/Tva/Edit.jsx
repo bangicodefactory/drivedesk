@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Pencil } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     facture_number: z.string().min(1, 'Required'),
@@ -98,19 +100,15 @@ function TvaEdit({ tva }) {
                         {/* Facture Number */}
                         <div className="space-y-1">
                             <Label htmlFor="facture_number">{t('Facture Number')}</Label>
-                            <Input id="facture_number" {...register('facture_number')} />
-                            {errors.facture_number && (
-                                <p className="text-sm text-destructive">{errors.facture_number.message}</p>
-                            )}
+                            <Input id="facture_number" {...register('facture_number')} {...fieldA11y(errors, 'facture_number')} />
+                            <FieldError name="facture_number" errors={errors} />
                         </div>
 
                         {/* Facture Date */}
                         <div className="space-y-1">
                             <Label htmlFor="facture_date">{t('Facture Date')}</Label>
-                            <Input id="facture_date" type="date" {...register('facture_date')} />
-                            {errors.facture_date && (
-                                <p className="text-sm text-destructive">{errors.facture_date.message}</p>
-                            )}
+                            <Input id="facture_date" type="date" {...register('facture_date')} {...fieldA11y(errors, 'facture_date')} />
+                            <FieldError name="facture_date" errors={errors} />
                         </div>
 
                         {/* Quantity — read-only */}
@@ -126,11 +124,9 @@ function TvaEdit({ tva }) {
                                 id="unit_price_ht"
                                 type="number"
                                 step="0.01"
-                                {...register('unit_price_ht')}
+                                {...register('unit_price_ht')} {...fieldA11y(errors, 'unit_price_ht')}
                             />
-                            {errors.unit_price_ht && (
-                                <p className="text-sm text-destructive">{errors.unit_price_ht.message}</p>
-                            )}
+                            <FieldError name="unit_price_ht" errors={errors} />
                         </div>
 
                         {/* Total HT — auto-calculated, read-only */}
@@ -166,11 +162,9 @@ function TvaEdit({ tva }) {
                                 id="montant_ttc"
                                 type="number"
                                 step="0.01"
-                                {...register('montant_ttc')}
+                                {...register('montant_ttc')} {...fieldA11y(errors, 'montant_ttc')}
                             />
-                            {errors.montant_ttc && (
-                                <p className="text-sm text-destructive">{errors.montant_ttc.message}</p>
-                            )}
+                            <FieldError name="montant_ttc" errors={errors} />
                         </div>
 
                         <div className="md:col-span-2 flex justify-end gap-2 pt-2">

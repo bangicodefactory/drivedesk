@@ -14,6 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import axios from 'axios';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 // Shared formatter emits the "Y/m/d H:i" the backend parses with
 // Carbon::createFromFormat — the old local helper left dashes, which Carbon
 // rejected (JAVASCRIPT-4), so the rate/availability calls here silently failed.
@@ -189,14 +191,14 @@ function BookingEdit({ booking, vehicles: initialVehicles, drivers, statuses, pl
 
                             <div className="space-y-1">
                                 <Label htmlFor="start_date_time">{t('Start Date & Time')}</Label>
-                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} />
-                                {serverErrors?.start_date_time && <p className="text-sm text-destructive">{serverErrors.start_date_time}</p>}
+                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} {...fieldA11y(serverErrors, 'start_date_time')} />
+                                <FieldError name="start_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label htmlFor="end_date_time">{t('End Date & Time')}</Label>
-                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} />
-                                {serverErrors?.end_date_time && <p className="text-sm text-destructive">{serverErrors.end_date_time}</p>}
+                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} {...fieldA11y(serverErrors, 'end_date_time')} />
+                                <FieldError name="end_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">

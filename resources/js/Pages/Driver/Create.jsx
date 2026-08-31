@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/driver/create.blade.php.
 // Field names match the Blade form 1:1 (first_name, last_name, email,
@@ -81,26 +83,26 @@ function DriverCreate({ gender = {} }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="first_name">{t('First Name')}</Label>
-                                <Input id="first_name" placeholder={t('Enter First Name')} {...register('first_name')} />
-                                {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+                                <Input id="first_name" placeholder={t('Enter First Name')} {...register('first_name')} {...fieldA11y(errors, 'first_name')} />
+                                <FieldError name="first_name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="last_name">{t('Last Name')}</Label>
-                                <Input id="last_name" placeholder={t('Enter First Name')} {...register('last_name')} />
-                                {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
+                                <Input id="last_name" placeholder={t('Enter First Name')} {...register('last_name')} {...fieldA11y(errors, 'last_name')} />
+                                <FieldError name="last_name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="email">{t('Email')}</Label>
-                                <Input id="email" placeholder={t('Enter Email')} {...register('email')} />
-                                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                                <Input id="email" placeholder={t('Enter Email')} {...register('email')} {...fieldA11y(errors, 'email')} />
+                                <FieldError name="email" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="phone_number">{t('Phone Number')}</Label>
-                                <Input id="phone_number" placeholder={t('Enter Phone Number')} {...register('phone_number')} />
-                                {errors.phone_number && <p className="text-sm text-destructive">{errors.phone_number.message}</p>}
+                                <Input id="phone_number" placeholder={t('Enter Phone Number')} {...register('phone_number')} {...fieldA11y(errors, 'phone_number')} />
+                                <FieldError name="phone_number" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -110,7 +112,7 @@ function DriverCreate({ gender = {} }) {
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="gender"><SelectValue placeholder={t('Gender')} /></SelectTrigger>
+                                            <SelectTrigger id="gender" {...fieldA11y(errors, 'gender')}><SelectValue placeholder={t('Gender')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(gender).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -119,7 +121,7 @@ function DriverCreate({ gender = {} }) {
                                         </Select>
                                     )}
                                 />
-                                {errors.gender && <p className="text-sm text-destructive">{errors.gender.message}</p>}
+                                <FieldError name="gender" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -129,32 +131,32 @@ function DriverCreate({ gender = {} }) {
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="birth_date">{t('Birth date')}</Label>
-                                <Input id="birth_date" type="date" {...register('birth_date')} />
-                                {errors.birth_date && <p className="text-sm text-destructive">{errors.birth_date.message}</p>}
+                                <Input id="birth_date" type="date" {...register('birth_date')} {...fieldA11y(errors, 'birth_date')} />
+                                <FieldError name="birth_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
                                 <Label htmlFor="address">{t('Address')}</Label>
-                                <Textarea id="address" placeholder={t('Enter address')} rows={1} {...register('address')} />
-                                {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
+                                <Textarea id="address" placeholder={t('Enter address')} rows={1} {...register('address')} {...fieldA11y(errors, 'address')} />
+                                <FieldError name="address" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
                                 <Label htmlFor="license_number">{t('License Number')}</Label>
-                                <Input id="license_number" placeholder={t('Enter license number')} {...register('license_number')} />
-                                {errors.license_number && <p className="text-sm text-destructive">{errors.license_number.message}</p>}
+                                <Input id="license_number" placeholder={t('Enter license number')} {...register('license_number')} {...fieldA11y(errors, 'license_number')} />
+                                <FieldError name="license_number" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="issue_date">{t('Issue Date')}</Label>
-                                <Input id="issue_date" type="date" {...register('issue_date')} />
-                                {errors.issue_date && <p className="text-sm text-destructive">{errors.issue_date.message}</p>}
+                                <Input id="issue_date" type="date" {...register('issue_date')} {...fieldA11y(errors, 'issue_date')} />
+                                <FieldError name="issue_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="expiration_date">{t('Expiration Date')}</Label>
-                                <Input id="expiration_date" type="date" {...register('expiration_date')} />
-                                {errors.expiration_date && <p className="text-sm text-destructive">{errors.expiration_date.message}</p>}
+                                <Input id="expiration_date" type="date" {...register('expiration_date')} {...fieldA11y(errors, 'expiration_date')} />
+                                <FieldError name="expiration_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">

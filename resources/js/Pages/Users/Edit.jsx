@@ -12,6 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     name:      z.string().min(1, 'Name is required'),
@@ -42,14 +44,14 @@ function UsersEdit({ user, userRoles = [] }) {
                     <form onSubmit={submit('put', route('users.update', user.id))} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="name">{t('Name')}</Label>
-                            <Input id="name" {...register('name')} />
-                            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                            <Input id="name" {...register('name')} {...fieldA11y(errors, 'name')} />
+                            <FieldError name="name" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="email">{t('Email')}</Label>
-                            <Input id="email" type="email" {...register('email')} />
-                            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                            <Input id="email" type="email" {...register('email')} {...fieldA11y(errors, 'email')} />
+                            <FieldError name="email" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
@@ -59,7 +61,7 @@ function UsersEdit({ user, userRoles = [] }) {
                                 control={control}
                                 render={({ field }) => (
                                     <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger id="role"><SelectValue placeholder={t('Select a role')} /></SelectTrigger>
+                                        <SelectTrigger id="role" {...fieldA11y(errors, 'role')}><SelectValue placeholder={t('Select a role')} /></SelectTrigger>
                                         <SelectContent>
                                             {userRoles.map((r) => (
                                                 <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
@@ -68,7 +70,7 @@ function UsersEdit({ user, userRoles = [] }) {
                                     </Select>
                                 )}
                             />
-                            {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
+                            <FieldError name="role" errors={errors} />
                         </div>
 
                         <div className="flex items-center gap-3">

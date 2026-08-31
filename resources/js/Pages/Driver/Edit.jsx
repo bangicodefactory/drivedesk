@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/driver/edit.blade.php.
 // Submits PUT to route('driver.update') via a spoofed _method=PUT (matches the
@@ -89,20 +91,20 @@ function DriverEdit({ driver, user = {}, gender = {} }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="first_name">{t('First Name')}</Label>
-                                <Input id="first_name" placeholder={t('Enter First Name')} {...register('first_name')} />
-                                {errors.first_name && <p className="text-sm text-destructive">{errors.first_name.message}</p>}
+                                <Input id="first_name" placeholder={t('Enter First Name')} {...register('first_name')} {...fieldA11y(errors, 'first_name')} />
+                                <FieldError name="first_name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="last_name">{t('Last Name')}</Label>
-                                <Input id="last_name" placeholder={t('Enter First Name')} {...register('last_name')} />
-                                {errors.last_name && <p className="text-sm text-destructive">{errors.last_name.message}</p>}
+                                <Input id="last_name" placeholder={t('Enter First Name')} {...register('last_name')} {...fieldA11y(errors, 'last_name')} />
+                                <FieldError name="last_name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="email">{t('Email')}</Label>
-                                <Input id="email" placeholder={t('Enter Email')} {...register('email')} />
-                                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                                <Input id="email" placeholder={t('Enter Email')} {...register('email')} {...fieldA11y(errors, 'email')} />
+                                <FieldError name="email" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">

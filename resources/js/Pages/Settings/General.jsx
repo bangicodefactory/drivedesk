@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     application_name: z.string().min(1, 'Application name is required'),
@@ -62,8 +64,8 @@ function General({ settings, loginUser }) {
                     <form onSubmit={submit('post', route('setting.general'), { forceFormData: true })} className="space-y-4">
                         <div className="space-y-1">
                             <Label htmlFor="application_name">{t('Application Name')}</Label>
-                            <Input id="application_name" {...register('application_name')} />
-                            {errors.application_name && <p className="text-sm text-destructive">{errors.application_name.message}</p>}
+                            <Input id="application_name" {...register('application_name')} {...fieldA11y(errors, 'application_name')} />
+                            <FieldError name="application_name" errors={errors} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">

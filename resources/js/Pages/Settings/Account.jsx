@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     name:    z.string().min(1, 'Name is required').max(255),
@@ -44,14 +46,14 @@ function Account({ loginUser }) {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name">{t('Name')}</Label>
-                                <Input id="name" placeholder={t('Enter your name')} autoComplete="name" {...register('name')} />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                <Input id="name" placeholder={t('Enter your name')} autoComplete="name" {...register('name')} {...fieldA11y(errors, 'name')} />
+                                <FieldError name="name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="email">{t('Email Address')}</Label>
-                                <Input id="email" type="email" placeholder={t('Enter your email')} autoComplete="email" {...register('email')} />
-                                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                                <Input id="email" type="email" placeholder={t('Enter your email')} autoComplete="email" {...register('email')} {...fieldA11y(errors, 'email')} />
+                                <FieldError name="email" errors={errors} />
                             </div>
                         </div>
 
@@ -62,8 +64,9 @@ function Account({ loginUser }) {
                                 type="file"
                                 accept="image/*"
                                 onChange={(e) => setValue('profile', e.target.files?.[0] ?? null)}
+                                {...fieldA11y(errors, 'profile')}
                             />
-                            {errors.profile && <p className="text-sm text-destructive">{errors.profile.message}</p>}
+                            <FieldError name="profile" errors={errors} />
                         </div>
 
                         <div className="flex justify-end">

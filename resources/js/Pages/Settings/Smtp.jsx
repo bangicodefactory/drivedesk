@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     sender_name:       z.string().min(1, 'Required'),
@@ -72,8 +74,8 @@ function Smtp({ settings }) {
                             ].map(([key, label, type]) => (
                                 <div key={key} className="space-y-1">
                                     <Label htmlFor={key}>{t(label)}</Label>
-                                    <Input id={key} type={type} autoComplete="off" {...register(key)} />
-                                    {errors[key] && <p className="text-sm text-destructive">{errors[key].message}</p>}
+                                    <Input id={key} type={type} autoComplete="off" {...register(key)} {...fieldA11y(errors, key)} />
+                                    <FieldError name={key} errors={errors} />
                                 </div>
                             ))}
                         </div>

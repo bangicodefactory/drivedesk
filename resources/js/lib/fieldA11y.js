@@ -10,14 +10,18 @@
  *   <Input id="type" {...register('type')} {...fieldA11y(errors, 'type')} />
  *   <FieldError name="type" errors={errors} />
  *
- * @param {Record<string, {message?: string}>|undefined} errors  RHF formState.errors
+ * `errors` accepts either shape used in this codebase: react-hook-form's
+ * `formState.errors` (`{ [name]: { message } }`) or Inertia's own `useForm`
+ * errors (`{ [name]: string }`).
+ *
+ * @param {Record<string, {message?: string}|string>|undefined} errors
  * @param {string} name  Field name as registered
  * @returns {{'aria-invalid'?: true, 'aria-describedby'?: string}}
  */
 export function fieldA11y(errors, name) {
     // Gate on the message, not the error object: FieldError renders nothing
     // without a message, and aria-describedby must not point at a missing id.
-    if (!errors?.[name]?.message) return {};
+    if (!fieldErrorMessage(errors, name)) return {};
     return {
         'aria-invalid': true,
         'aria-describedby': fieldErrorId(name),
@@ -27,4 +31,11 @@ export function fieldA11y(errors, name) {
 /** The id `FieldError` renders for `name`, and `fieldA11y` points at. */
 export function fieldErrorId(name) {
     return `${name}-error`;
+}
+
+/** Extracts a field's message from either error-object shape, or undefined. */
+export function fieldErrorMessage(errors, name) {
+    const error = errors?.[name];
+    if (!error) return undefined;
+    return typeof error === 'string' ? error || undefined : error.message;
 }

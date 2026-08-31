@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     CURRENCY_SYMBOL:        z.string().min(1, 'Required'),
@@ -88,13 +90,13 @@ function Payment({ settings }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <Label htmlFor="CURRENCY_SYMBOL">{t('Currency Icon')}</Label>
-                                <Input id="CURRENCY_SYMBOL" {...register('CURRENCY_SYMBOL')} />
-                                {errors.CURRENCY_SYMBOL && <p className="text-sm text-destructive">{errors.CURRENCY_SYMBOL.message}</p>}
+                                <Input id="CURRENCY_SYMBOL" {...register('CURRENCY_SYMBOL')} {...fieldA11y(errors, 'CURRENCY_SYMBOL')} />
+                                <FieldError name="CURRENCY_SYMBOL" errors={errors} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="CURRENCY">{t('Currency Code')}</Label>
-                                <Input id="CURRENCY" {...register('CURRENCY')} />
-                                {errors.CURRENCY && <p className="text-sm text-destructive">{errors.CURRENCY.message}</p>}
+                                <Input id="CURRENCY" {...register('CURRENCY')} {...fieldA11y(errors, 'CURRENCY')} />
+                                <FieldError name="CURRENCY" errors={errors} />
                             </div>
                         </div>
 

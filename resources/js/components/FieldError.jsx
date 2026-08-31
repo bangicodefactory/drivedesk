@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { fieldErrorId } from '@/lib/fieldA11y';
+import { fieldErrorId, fieldErrorMessage } from '@/lib/fieldA11y';
 
 /**
  * Validation message for one form field, announced to assistive technology.
@@ -9,7 +9,7 @@ import { fieldErrorId } from '@/lib/fieldA11y';
  * under every input.
  */
 export default function FieldError({ name, errors, className }) {
-    const message = errors?.[name]?.message;
+    const message = fieldErrorMessage(errors, name);
     if (!message) return null;
 
     return (
