@@ -514,7 +514,16 @@ class TvaController extends Controller
         $dueByBooking = [];
 
         foreach ($payments as $payment) {
-            $booking = Booking::with('drivers')->find($payment->booking_id);
+            // BAN-292: acrossTenants() is required here, not optional. This action
+            // is deliberately cross-tenant — step 1 above soft-deletes every
+            // business's factures for the month and this loop regenerates them,
+            // keyed by the booking's own parent_id. Under the BelongsToTenant
+            // scope (BAN-288) a plain owner running generation resolved null for
+            // every other business's booking and skipped it, so their invoices
+            // were deleted and never recreated. The existing regression test
+            // passes because it generates as a super admin, who bypasses the
+            // scope; the data loss only appeared for a non-super-admin.
+            $booking = Booking::acrossTenants()->with('drivers')->find($payment->booking_id);
             if (!$booking) {
                 continue;
             }

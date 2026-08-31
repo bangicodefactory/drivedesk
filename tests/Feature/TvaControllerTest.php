@@ -862,6 +862,43 @@ class TvaControllerTest extends TestCase
         $this->assertEquals(['1', '2'], $active);
     }
 
+    /**
+     * BAN-292: generation deletes every business's factures for the month and
+     * regenerates them from all payments in that month. When the Booking model
+     * gained a tenant scope (BAN-288), a plain owner running generation resolved
+     * null for every *other* business's booking and skipped it — so those
+     * invoices were deleted and never recreated. The neighbouring regression
+     * test does not catch this because it generates as a super admin, who
+     * bypasses the scope.
+     */
+    public function test_generate_regenerates_other_businesses_invoices_too(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->seedCompanySettings($otherOwner->id);
+
+        $otherBooking = \App\Models\Booking::factory()->create(['parent_id' => $otherOwner->id]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $otherBooking->id,
+            'parent_id'  => $otherOwner->id,
+            'date'       => '2024-01-15',
+            'amount'     => 120.00,
+        ]);
+
+        $this->bookingPaymentOn('2024-01-10');   // the acting owner's own
+
+        // Generate twice as a plain owner: the second run exercises the
+        // delete-then-regenerate path against rows that already exist.
+        foreach ([1, 2] as $_) {
+            $this->actingAs($this->owner)
+                ->post(route('tva.generate'), ['month' => '2024-01'])
+                ->assertRedirect()->assertSessionHas('success');
+        }
+
+        // Both businesses still have a live facture for the month.
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['parent_id' => $otherOwner->id, 'deleted_at' => null]);
+    }
+
     public function test_generate_numbers_by_booking_parent_not_generating_user(): void
     {
         // IST-230 Finding 1: numbering must follow the BOOKING's business, not

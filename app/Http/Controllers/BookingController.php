@@ -497,13 +497,27 @@ class BookingController extends Controller
     public function edit($id)
     {
         if (\Auth::user()->can('edit booking')) {
+            // BAN-292: mirror show()'s fallback — an unencrypted id (a stale
+            // bookmark, an old link) threw DecryptException here and answered 500.
+            try {
+                $decryptedId = Crypt::decrypt($id);
+            } catch (\Exception $e) {
+                $decryptedId = $id;
+            }
+
             // BAN-289: the tenant scope (BAN-288) makes another tenant's booking
             // resolve to null here. Without this guard the next line dereferenced it
             // and answered 500; show() has always answered 404 for the same case.
-            $booking = Booking::find(Crypt::decrypt($id));
+            $booking = Booking::find($decryptedId);
             if (!$booking) {
                 abort(404);
             }
+
+            // BAN-292: the policy was registered but nothing invoked it, so the
+            // "explicit backstop" it documents provided nothing. The scope already
+            // stops a foreign id resolving; this covers a model arriving from
+            // acrossTenants() or a relation, which the scope never sees.
+            $this->authorize('update', $booking);
 
             $booking->start_date_time = date('Y/m/d H:i', strtotime($booking->start_date . ' ' . $booking->start_time));
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
@@ -1516,6 +1530,12 @@ class BookingController extends Controller
             $isCash = $paymentMethodNormalized === 'espece';
             $booking = Booking::find($id);
             if (!$booking) {
+                // BAN-292: every other failure branch here answers JSON to a
+                // non-Inertia AJAX caller; a bare abort() handed them an HTML
+                // error page their handler could not parse.
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => __('Booking not found.')], 404);
+                }
                 abort(404); // BAN-289: was a null deref inside the record* helpers.
             }
 

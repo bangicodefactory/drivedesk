@@ -30,6 +30,14 @@ use Illuminate\Support\Facades\Auth;
  *    pass an explicit `parent_id` or run unauthenticated — so today it is used
  *    only by tests that assert a foreign row still exists.
  *
+ * **Do not apply this trait to the auth provider model** (`App\Models\User`,
+ * per `config/auth.php`). The scope calls `Auth::check()`, which resolves the
+ * guard, which calls `retrieveById()`, which queries that model again — through
+ * this same scope. `SessionGuard::user()` has no re-entrancy guard, so it
+ * recurses without bound rather than failing safe. Where a user row needs
+ * constraining, scope the lookup at the call site instead (see
+ * `DriverController`, BAN-291).
+ *
  * @see docs/product-roadmap.md — Tranche S.1
  */
 trait BelongsToTenant
