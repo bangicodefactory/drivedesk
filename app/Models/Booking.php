@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Booking extends Model
 {
     use HasFactory;
+    // Tenant isolation (roadmap Tranche S.1): constrains every query to the
+    // caller's tenant, so another tenant's booking cannot resolve by id.
+    use BelongsToTenant;
 
     protected $fillable = [
         'booking_id',

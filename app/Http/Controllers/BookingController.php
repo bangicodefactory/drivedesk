@@ -497,7 +497,28 @@ class BookingController extends Controller
     public function edit($id)
     {
         if (\Auth::user()->can('edit booking')) {
-            $booking = Booking::find(Crypt::decrypt($id));
+            // BAN-292: mirror show()'s fallback — an unencrypted id (a stale
+            // bookmark, an old link) threw DecryptException here and answered 500.
+            try {
+                $decryptedId = Crypt::decrypt($id);
+            } catch (\Exception $e) {
+                $decryptedId = $id;
+            }
+
+            // BAN-289: the tenant scope (BAN-288) makes another tenant's booking
+            // resolve to null here. Without this guard the next line dereferenced it
+            // and answered 500; show() has always answered 404 for the same case.
+            $booking = Booking::find($decryptedId);
+            if (!$booking) {
+                abort(404);
+            }
+
+            // BAN-292: the policy was registered but nothing invoked it, so the
+            // "explicit backstop" it documents provided nothing. The scope already
+            // stops a foreign id resolving; this covers a model arriving from
+            // acrossTenants() or a relation, which the scope never sees.
+            $this->authorize('update', $booking);
+
             $booking->start_date_time = date('Y/m/d H:i', strtotime($booking->start_date . ' ' . $booking->start_time));
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
 
@@ -1443,7 +1464,18 @@ class BookingController extends Controller
 
     public function paymentCreate($id)
     {
+        // BAN-289: this action had no permission check of any kind, and no tenant
+        // filter — it rendered whatever booking the id resolved to. paymentSplitPreview
+        // is the correct shape and is mirrored here.
+        if (!\Auth::user()->can('create booking payment')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $booking = Booking::find($id);
+        if (!$booking) {
+            abort(404);
+        }
+
         $paymentMethod = BookingPayment::$paymentMethod;
         
         // Calculate default quantity (total days adjusted by payment amount)
@@ -1497,6 +1529,15 @@ class BookingController extends Controller
             $paymentMethodNormalized = strtolower($request->payment_method);
             $isCash = $paymentMethodNormalized === 'espece';
             $booking = Booking::find($id);
+            if (!$booking) {
+                // BAN-292: every other failure branch here answers JSON to a
+                // non-Inertia AJAX caller; a bare abort() handed them an HTML
+                // error page their handler could not parse.
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => __('Booking not found.')], 404);
+                }
+                abort(404); // BAN-289: was a null deref inside the record* helpers.
+            }
 
             if ($isCash && $numericAmount > $cashMax) {
                 if (!feature('cash_split')) {
@@ -1594,15 +1635,25 @@ class BookingController extends Controller
     public function paymentDestroy($booking_id, $id)
     {
         if (\Auth::user()->can('delete booking payment')) {
-            $payment = BookingPayment::find($id);
+            // BAN-289: the booking is resolved *first*. It used to be looked up
+            // after the delete, so once the tenant scope (BAN-288) made a foreign
+            // booking return null the request destroyed the payment and its TVA
+            // rows and then 500'd before updating payment_status — a
+            // half-completed cross-tenant write. BookingPayment is not
+            // tenant-scoped itself, so the payment is additionally constrained to
+            // this booking rather than found by id alone.
+            $bookinmg = Booking::find($booking_id);
+            if (!$bookinmg) {
+                abort(404);
+            }
+
+            $payment = BookingPayment::where('booking_id', $bookinmg->id)->find($id);
             if ($payment) {
                 // Delete linked TVA records created for this payment via idpaiment
                 Tva::where('idpaiment', $payment->id)->delete();
-                
                 $payment->delete();
             }
 
-            $bookinmg = Booking::find($booking_id);
             if ($bookinmg->getTotalDueAmount() <= 0) {
                 $status = 'paye';
             } elseif ($bookinmg->getTotalDueAmount() == $bookinmg->getTotalAmount()) {
