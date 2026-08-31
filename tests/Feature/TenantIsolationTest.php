@@ -45,6 +45,7 @@ class TenantIsolationTest extends TestCase
         foreach ([
             'manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking',
             'create booking payment', 'delete booking payment',
+            'create rental agreement',
         ] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
