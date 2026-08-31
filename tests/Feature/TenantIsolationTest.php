@@ -376,6 +376,48 @@ class TenantIsolationTest extends TestCase
             ->assertSessionHasErrors(['driver']);
     }
 
+    // -- BAN-295: TVA endpoints that carried no auth middleware ---------------
+
+    /**
+     * Both /tva/bulk-download and /tva/generate were declared outside every
+     * Route::group, so neither had `auth`. bulk-download also had no permission
+     * check and no tenant constraint: arbitrary invoice ids returned a zip of
+     * any tenant's factures. /tva/generate is destructive — it soft-deletes
+     * every business's factures for the month before regenerating them.
+     */
+    public function test_tva_bulk_download_rejects_an_unauthenticated_caller(): void
+    {
+        $this->post(route('tva.bulk.download'), ['invoice_ids' => [1]])
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_tva_generate_rejects_an_unauthenticated_caller(): void
+    {
+        $this->post(route('tva.generate'), ['month' => '2026-01'])
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_tva_bulk_download_requires_the_tva_permission(): void
+    {
+        $this->actingAs($this->owner)   // holds booking perms, not manage tva
+            ->post(route('tva.bulk.download'), ['invoice_ids' => [1]])
+            ->assertRedirect();
+    }
+
+    // -- BAN-295: driver reads were ungated ----------------------------------
+
+    public function test_driver_show_requires_the_show_driver_permission(): void
+    {
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        // A second owner-tenant user with no driver permissions at all.
+        $staff = User::factory()->create(['type' => 'manager', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($staff)
+            ->get(route('driver.show', $ownDriver->id))
+            ->assertRedirect();
+    }
+
     private function ownBooking(): Booking
     {
         $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);

@@ -111,11 +111,22 @@ class TvaController extends Controller
     }
     public function bulkDownload(Request $request)
     {
+        // BAN-295: this action had no permission check and no tenant constraint,
+        // on a route that carried no auth middleware either — so arbitrary invoice
+        // ids returned a zip of any tenant's factures.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $request->validate([
             'invoice_ids' => 'required|array',
         ]);
 
-        $invoices = Tva::whereIn('id', $request->invoice_ids)->get();
+        $query = Tva::whereIn('id', $request->invoice_ids);
+        if (\Auth::user()->type !== 'super admin') {
+            $query->where('parent_id', parentId());
+        }
+        $invoices = $query->get();
         $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");
         $zip = new \ZipArchive;
@@ -462,6 +473,13 @@ class TvaController extends Controller
 
     public function generateMonthlyTva(Request $request)
     {
+        // BAN-295: this action had no permission check, on a route that carried no
+        // auth middleware either — and it is destructive, soft-deleting every
+        // business's factures for the month before regenerating them.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $request->validate([
             'month' => 'required|date_format:Y-m',
         ]);
@@ -490,6 +508,24 @@ class TvaController extends Controller
         $payments = $paymentQuery->get();
 
         $setting = settings();
+
+        // BAN-295: settings() is keyed on the *generating* user's parentId(), so
+        // hoisting it stamped that tenant's company identity onto every other
+        // business's regenerated facture — wrong supplier name, address and
+        // ICE/RC/IF on a legally numbered document. Resolved per booking instead,
+        // memoised so a month with many payments still reads each tenant once.
+        $settingsByParent = [];
+        $settingsFor = function ($pid) use (&$settingsByParent) {
+            if (!array_key_exists($pid, $settingsByParent)) {
+                $rows = \DB::table('settings')->where('parent_id', $pid)->get();
+                $details = settingsKeys();
+                foreach ($rows as $row) {
+                    $details[$row->name] = $row->value;
+                }
+                $settingsByParent[$pid] = $details;
+            }
+            return $settingsByParent[$pid];
+        };
         $createdCount = 0;
 
         // Per-year numbering: invoice numbers reset to 1 at the start of each
@@ -604,8 +640,9 @@ class TvaController extends Controller
             $tva->facture_date = $payment->date ?? $monthStart->toDateString();
             $tva->client_name = $driverName;
             $tva->client_address = $driverAddress;
-            $tva->company_name = $setting['company_name'];
-            $tva->company_address = $setting['company_address'];
+            $bookingSetting = $settingsFor($bookingParentId);
+            $tva->company_name = $bookingSetting['company_name'];
+            $tva->company_address = $bookingSetting['company_address'];
             $tva->designation = trim($vehicleName . (($vehicleName && $vehicleLicensePlate) ? ' - ' : '') . $vehicleLicensePlate);
             $tva->idpaiment = $payment->id;
             $tva->quantity = number_format($totalDays, 2, '.', '');
@@ -613,9 +650,9 @@ class TvaController extends Controller
             $tva->total_ht = number_format($totalHt, 2, '.', '');
             $tva->tva = number_format($tvaAmount, 2, '.', '');
             $tva->montant_ttc = number_format($paymentTtc, 2, '.', '');
-            $tva->ice_number = $setting['ice'];
-            $tva->rc_number = $setting['rc'];
-            $tva->nif_number = $setting['if'];
+            $tva->ice_number = $bookingSetting['ice'];
+            $tva->rc_number = $bookingSetting['rc'];
+            $tva->nif_number = $bookingSetting['if'];
             // `generated_date` is a NOT NULL timestamp in the DB schema.
             $tva->generated_date = $payment->date ?? now();
             $tva->total_amount = number_format($paymentTtc, 2, '.', '');

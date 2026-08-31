@@ -316,9 +316,11 @@ class BookingController extends Controller
                 'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                 'start_date_time' => 'required|date',
                 'end_date_time' => 'required|date|after:start_date_time',
-                // BAN-291: tenant-scoped, for the same reason as `vehicle` —
-                // a bare exists: rule ignores the model's global scope.
-                'driver' => ['required', \Illuminate\Validation\Rule::exists('users', 'id')->where('parent_id', parentId())],
+                // BAN-295: tenantExistsRule() keeps the tenant constraint but
+                // exempts super admins, matching the vehicle rule and
+                // findDriverUser(). The bare where('parent_id', parentId()) here
+                // rejected every driver for them.
+                'driver' => ['required', tenantExistsRule('users')],
                 'pickup_address' => 'required|string',
                 'drop_off_address' => 'required|string',
                 'status' => 'required|string',
@@ -606,8 +608,8 @@ class BookingController extends Controller
                     'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
-                    // BAN-291: tenant-scoped, see store().
-                    'driver' => ['required', \Illuminate\Validation\Rule::exists('users', 'id')->where('parent_id', parentId())],
+                    // BAN-295: tenant-scoped and super-admin-safe, see store().
+                    'driver' => ['required', tenantExistsRule('users')],
                     'pickup_address' => 'required',
                     'drop_off_address' => 'required',
                     'status' => 'required',

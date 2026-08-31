@@ -528,7 +528,12 @@ Route::delete('signature/{signature}', [SignatureController::class, 'destroy'])-
 Route::get('/drivers/search', [App\Http\Controllers\RentalAgreementController::class, 'searchDrivers'])->name('drivers.search');
 
 
-Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name('tva.bulk.download');
+// BAN-295: was declared outside every Route::group, so it carried no auth
+// middleware at all — any caller with a CSRF token could POST invoice ids and
+// receive a zip of any tenant's factures. Permission and tenant scoping are
+// enforced in the controller.
+Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])
+    ->middleware(['auth', 'XSS'])->name('tva.bulk.download');
 
 // --------------------------------------------------------------------------
 // Sentry smoke-test — local env only, any authenticated user.
@@ -542,7 +547,10 @@ if (app()->environment('local')) {
 }
 
 // genere tva par mois
-Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])->name('tva.generate');
+// BAN-295: likewise unauthenticated. This one is destructive — it soft-deletes
+// every business's factures for the month before regenerating them.
+Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])
+    ->middleware(['auth', 'XSS'])->name('tva.generate');
 
 // --------------------------------------------------------------------------
 // UI COMPONENT TEST ROUTES (temporary for style / JS debugging)

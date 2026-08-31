@@ -296,6 +296,13 @@ class DriverController extends Controller
 
     public function show($id)
     {
+        // BAN-295: this action had no permission check, so any authenticated user
+        // in the tenant — including a driver or client login — could read every
+        // driver's licence number, birth date, address and document filenames.
+        if (!\Auth::user()->can('show driver')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $user = $this->findDriverUser($id);
         if (!$user) {
             abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
@@ -394,6 +401,11 @@ class DriverController extends Controller
 
     public function edit($id)
     {
+        // BAN-295: as show() — no permission check existed here either.
+        if (!\Auth::user()->can('edit driver')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $user = $this->findDriverUser($id);
         if (!$user) {
             abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
@@ -442,7 +454,15 @@ class DriverController extends Controller
             $user->save();
 
             if (!empty($user)) {
-                $driver = Driver::where('user_id', $id)->first();
+                // BAN-295: a user can be type=driver with no drivers row — the Users
+                // module creates exactly that — and the tenant scope can also hide a
+                // profile whose parent_id disagrees. Either way this used to fatal
+                // *after* $user->save() above, leaving the user renamed and the
+                // profile untouched. firstOrNew keeps the write whole.
+                $driver = Driver::firstOrNew(
+                    ['user_id' => $id],
+                    ['parent_id' => $user->parent_id, 'driver_id' => $this->driverNumber()]
+                );
                 $driver->gender = $request->gender;
                 $driver->age = !empty($request->age) ? $request->age : 0;
                 $driver->birth_date = !empty($request->birth_date) ? $request->birth_date : null;
