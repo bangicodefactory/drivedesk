@@ -40,7 +40,12 @@ class TenantIsolationTest extends TestCase
         parent::setUp();
         $this->asClient('acme');
 
-        foreach (['manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking'] as $p) {
+        // The two payment permissions are created but deliberately not granted
+        // below: one test asserts paymentCreate() refuses without them.
+        foreach ([
+            'manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking',
+            'create booking payment', 'delete booking payment',
+        ] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
