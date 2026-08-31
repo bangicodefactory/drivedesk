@@ -392,11 +392,15 @@ class TvaControllerTest extends TestCase
     // NOTE: bulkDownload is registered OUTSIDE the auth middleware group.
     // Unauthenticated requests are NOT redirected to login — this is a security gap.
 
-    public function test_bulk_download_is_publicly_accessible_documents_missing_auth(): void
+    public function test_bulk_download_requires_authentication(): void
     {
-        // No actingAs — unauthenticated request should hit validation, not login redirect
+        // BAN-295: this test previously asserted the opposite — that an
+        // unauthenticated POST reached validation — pinning the fact that the
+        // route sat outside every Route::group and carried no auth middleware.
+        // Combined with the missing tenant constraint in bulkDownload(), that
+        // let any caller with a CSRF token fetch a zip of any tenant's factures.
         $this->post(route('tva.bulk.download'), [])
-            ->assertSessionHasErrors(['invoice_ids']);
+            ->assertRedirect(route('login'));
     }
 
     public function test_bulk_download_rejects_missing_invoice_ids(): void
@@ -547,11 +551,13 @@ class TvaControllerTest extends TestCase
     // NOTE: tva.generate is registered OUTSIDE the auth middleware group.
     // Unauthenticated requests hit validation, not a login redirect.
 
-    public function test_generate_monthly_tva_validates_when_unauthenticated(): void
+    public function test_generate_monthly_tva_requires_authentication(): void
     {
-        // Outside auth middleware — no login redirect, just validation
+        // BAN-295: as above. This endpoint is destructive — it soft-deletes every
+        // business's factures for the month before regenerating them — and it was
+        // reachable without logging in.
         $this->post(route('tva.generate'), [])
-            ->assertSessionHasErrors(['month']);
+            ->assertRedirect(route('login'));
     }
 
     public function test_generate_monthly_tva_validates_month_format(): void
@@ -876,7 +882,26 @@ class TvaControllerTest extends TestCase
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->seedCompanySettings($otherOwner->id);
 
-        $otherBooking = \App\Models\Booking::factory()->create(['parent_id' => $otherOwner->id]);
+        // A real driver + profile for the other business, so the regenerated
+        // facture's client address can be asserted (BAN-293).
+        $otherDriverUser = User::factory()->create([
+            'type'      => 'driver',
+            'parent_id' => $otherOwner->id,
+        ]);
+        \App\Models\Driver::factory()->create([
+            // driver_id must be overridden: DriverFactory defaults it to a
+            // 'DR-####' string while the column is an integer, so the factory
+            // cannot be used unmodified.
+            'driver_id' => 1,
+            'user_id'   => $otherDriverUser->id,
+            'parent_id' => $otherOwner->id,
+            'address'   => '12 Rue Autre, Casablanca',
+        ]);
+
+        $otherBooking = \App\Models\Booking::factory()->create([
+            'parent_id' => $otherOwner->id,
+            'driver'    => $otherDriverUser->id,
+        ]);
         \App\Models\BookingPayment::factory()->create([
             'booking_id' => $otherBooking->id,
             'parent_id'  => $otherOwner->id,
@@ -897,6 +922,14 @@ class TvaControllerTest extends TestCase
         // Both businesses still have a live facture for the month.
         $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('tvas', ['parent_id' => $otherOwner->id, 'deleted_at' => null]);
+
+        // BAN-293: the driver profile is fetched inside the same cross-tenant
+        // loop. Once Driver gained the tenant scope it resolved null for the
+        // other business and the address silently fell back to ''.
+        $this->assertDatabaseHas('tvas', [
+            'parent_id'      => $otherOwner->id,
+            'client_address' => '12 Rue Autre, Casablanca',
+        ]);
     }
 
     public function test_generate_numbers_by_booking_parent_not_generating_user(): void

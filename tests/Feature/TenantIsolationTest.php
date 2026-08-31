@@ -45,6 +45,8 @@ class TenantIsolationTest extends TestCase
         foreach ([
             'manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking',
             'create booking payment', 'delete booking payment',
+            'show driver', 'edit driver', 'delete driver',
+            'create rental agreement',
         ] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
@@ -193,6 +195,298 @@ class TenantIsolationTest extends TestCase
             ->assertStatus(404);
 
         $this->assertDatabaseHas('booking_payments', ['id' => $payment->id]);
+    }
+
+    // -- Vehicle (BAN-290) ---------------------------------------------------
+
+    public function test_another_tenants_vehicle_does_not_resolve(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->owner);
+
+        $this->assertNull(Vehicle::find($foreignVehicle->id));
+    }
+
+    public function test_super_admin_still_sees_every_tenants_vehicles(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $this->actingAs($superAdmin);
+
+        $this->assertNotNull(Vehicle::find($foreignVehicle->id));
+    }
+
+    /**
+     * A bare `exists:vehicles,id` rule queries the table directly and ignores
+     * the model's global scope, so another tenant's vehicle id passed
+     * validation and then resolved to null inside the action. The rule is now
+     * scoped, so the failure is a field error rather than a 500.
+     */
+    public function test_booking_store_rejects_another_tenants_vehicle_in_validation(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.store'), [
+                'vehicle'          => $foreignVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $ownDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle']);
+    }
+
+    // -- Driver (BAN-291) ----------------------------------------------------
+
+    /**
+     * The drivers table was only half the story: DriverController resolved the
+     * *user* with a bare User::find($id) and dereferenced it immediately, so
+     * show/edit leaked another tenant's driver and update/destroy wrote to one.
+     * Scoping only the Driver profile would have left those writes intact and
+     * merely made them fail halfway — the paymentDestroy shape from BAN-289.
+     */
+    public function test_driver_show_answers_404_for_another_tenants_driver(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->owner->givePermissionTo('show driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->get(route('driver.show', $foreignDriver->id))
+            ->assertStatus(404);
+    }
+
+    public function test_driver_update_cannot_write_to_another_tenants_user(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+        $originalName = $foreignDriver->name;
+
+        $this->owner->givePermissionTo('edit driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $foreignDriver->id), [
+                'first_name' => 'Hijacked',
+                'last_name'  => 'Name',
+                'email'      => 'hijack@example.test',
+            ])
+            ->assertStatus(404);
+
+        $this->assertSame($originalName, $foreignDriver->fresh()->name);
+    }
+
+    public function test_driver_destroy_cannot_delete_another_tenants_user(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->owner->givePermissionTo('delete driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->delete(route('driver.destroy', $foreignDriver->id))
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('users', ['id' => $foreignDriver->id]);
+    }
+
+    /**
+     * BAN-293: the roadmap requires a super-admin path test alongside every
+     * cross-tenant one. BAN-291's inline where('parent_id', parentId()) had no
+     * bypass, so a super admin — whose parentId() is their own id, never any
+     * tenant's parent_id — got 404 on every driver in the system, while the
+     * Driver model queries in the same request resolved fine.
+     */
+    public function test_super_admin_can_still_open_any_tenants_driver(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        // There is no Gate::before for super admins in this app — permissions come
+        // through roles like anyone else — and show() is permission-gated as of
+        // BAN-295, so the grant is part of the scenario, not incidental.
+        $superAdmin->givePermissionTo('show driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($superAdmin)
+            ->get(route('driver.show', $foreignDriver->id))
+            ->assertOk();
+    }
+
+    /**
+     * BAN-293: these endpoints scoped by tenant but not by type, so any
+     * same-tenant user id was accepted. update() renamed the row and saved it
+     * before crashing on the missing driver profile — a partial write, the
+     * paymentDestroy shape again. blacklist() already constrained type.
+     */
+    public function test_driver_update_refuses_a_same_tenant_non_driver_user(): void
+    {
+        $employee = User::factory()->create([
+            'type'      => 'manager',
+            'parent_id' => $this->owner->id,
+            'name'      => 'Payroll Manager',
+        ]);
+
+        $this->owner->givePermissionTo('edit driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $employee->id), [
+                'first_name' => 'Renamed',
+                'last_name'  => 'Employee',
+                'email'      => 'renamed@example.test',
+            ])
+            ->assertStatus(404);
+
+        $this->assertSame('Payroll Manager', $employee->fresh()->name);
+    }
+
+    public function test_booking_store_rejects_another_tenants_driver_in_validation(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $ownVehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.store'), [
+                'vehicle'          => $ownVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $foreignDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['driver']);
+    }
+
+    // -- BAN-295: TVA endpoints that carried no auth middleware ---------------
+
+    /**
+     * Both /tva/bulk-download and /tva/generate were declared outside every
+     * Route::group, so neither had `auth`. bulk-download also had no permission
+     * check and no tenant constraint: arbitrary invoice ids returned a zip of
+     * any tenant's factures. /tva/generate is destructive — it soft-deletes
+     * every business's factures for the month before regenerating them.
+     */
+    public function test_tva_bulk_download_rejects_an_unauthenticated_caller(): void
+    {
+        $this->post(route('tva.bulk.download'), ['invoice_ids' => [1]])
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_tva_generate_rejects_an_unauthenticated_caller(): void
+    {
+        $this->post(route('tva.generate'), ['month' => '2026-01'])
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_tva_bulk_download_requires_the_tva_permission(): void
+    {
+        $this->actingAs($this->owner)   // holds booking perms, not manage tva
+            ->post(route('tva.bulk.download'), ['invoice_ids' => [1]])
+            ->assertRedirect();
+    }
+
+    // -- BAN-295: driver reads were ungated ----------------------------------
+
+    public function test_driver_show_requires_the_show_driver_permission(): void
+    {
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        // A second owner-tenant user with no driver permissions at all.
+        $staff = User::factory()->create(['type' => 'manager', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($staff)
+            ->get(route('driver.show', $ownDriver->id))
+            ->assertRedirect();
+    }
+
+    /**
+     * BAN-294: the scoped exists rule needs the same super-admin exemption the
+     * model scope has. A bare where('parent_id', parentId()) rejected every
+     * vehicle for a super admin — parentId() returns their own id, which is
+     * never a vehicle's parent_id — so they could not save a booking at all,
+     * not even re-saving one with its vehicle unchanged.
+     */
+    public function test_super_admin_can_save_a_booking_against_any_vehicle(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('create booking');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)->firstOrFail();
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->post(route('booking.store'), [
+                'vehicle'          => $foreignVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $foreignDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertSessionHasNoErrors();
+    }
+
+    /**
+     * BAN-294: RentalAgreementController validated `vehicle` as `required` only,
+     * with no exists of any kind, and then dereferenced Vehicle::find() when
+     * creating the companion booking. Under the tenant scope a foreign id
+     * resolved null and fatalled there — after the agreement row was already
+     * saved, outside any transaction, leaving an agreement with no booking.
+     */
+    public function test_rental_agreement_rejects_another_tenants_vehicle(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)->firstOrFail();
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->owner->givePermissionTo('create rental agreement');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->post(route('rental-agreement.store'), [
+                'vehicle'            => $foreignVehicle->id,
+                'driver'             => $ownDriver->id,
+                'rental_start_date'  => '2026-07-01',
+                'rental_start_time'  => '09:00',
+                'rental_end_date'    => '2026-07-04',
+                'rental_end_time'    => '18:00',
+                'rental_duration'    => 3,
+                'status'             => 'active',
+                'create_booking'     => 1,
+            ])
+            ->assertSessionHasErrors(['vehicle']);
+
+        $this->assertDatabaseCount('rental_agreements', 0);
     }
 
     private function ownBooking(): Booking

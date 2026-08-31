@@ -117,7 +117,7 @@ class RentalAgreementController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    'vehicle' => ['required', tenantExistsRule('vehicles')], // BAN-294
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',
@@ -238,7 +238,16 @@ class RentalAgreementController extends Controller
                 ]);
                 $booking->amount = (int) round($totalRate);
 
+                // BAN-294: this dereference was unguarded, and store()/update()
+                // validate `vehicle` as `required` only — no exists. Once Vehicle
+                // gained the tenant scope a foreign id resolved to null and fatalled
+                // here, *after* the agreement row was already saved and outside any
+                // transaction, leaving an agreement with no companion booking.
                 $vehicle = Vehicle::find($request->vehicle);
+                if (!$vehicle) {
+                    abort(404);
+                }
+
                 $booking->vehicle_details = [
                     'id' => $vehicle->id,
                     'name' => $vehicle->name,
@@ -365,7 +374,7 @@ class RentalAgreementController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    'vehicle' => ['required', tenantExistsRule('vehicles')], // BAN-294
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',

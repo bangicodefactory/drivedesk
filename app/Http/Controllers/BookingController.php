@@ -310,10 +310,18 @@ class BookingController extends Controller
         $validator = \Validator::make(
             $request->all(),
             [
-                'vehicle' => 'required|exists:vehicles,id',
+                // BAN-294: tenantExistsRule() keeps the tenant constraint but
+                // exempts super admins — the bare where('parent_id', parentId())
+                // here rejected every vehicle for them, since parentId() returns
+                // their own id and that is never a vehicle's parent_id.
+                'vehicle' => ['required', tenantExistsRule('vehicles')],
                 'start_date_time' => 'required|date',
                 'end_date_time' => 'required|date|after:start_date_time',
-                'driver' => 'required|exists:users,id',
+                // BAN-295: tenantExistsRule() keeps the tenant constraint but
+                // exempts super admins, matching the vehicle rule and
+                // findDriverUser(). The bare where('parent_id', parentId()) here
+                // rejected every driver for them.
+                'driver' => ['required', tenantExistsRule('users')],
                 'pickup_address' => 'required|string',
                 'drop_off_address' => 'required|string',
                 'status' => 'required|string',
@@ -597,10 +605,12 @@ class BookingController extends Controller
                     // BAN-285 review: `exists` mirrors store()'s rules. Without them a
                     // stale or foreign id reached Vehicle::find()/User::find() below
                     // and fatalled on a null deref instead of returning a field error.
-                    'vehicle' => 'required|exists:vehicles,id',
+                    // BAN-294: tenant-scoped and super-admin-safe, see store().
+                    'vehicle' => ['required', tenantExistsRule('vehicles')],
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
-                    'driver' => 'required|exists:users,id',
+                    // BAN-295: tenant-scoped and super-admin-safe, see store().
+                    'driver' => ['required', tenantExistsRule('users')],
                     'pickup_address' => 'required',
                     'drop_off_address' => 'required',
                     'status' => 'required',
