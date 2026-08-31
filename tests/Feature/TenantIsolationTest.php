@@ -321,6 +321,11 @@ class TenantIsolationTest extends TestCase
             ->where('type', 'driver')->firstOrFail();
 
         $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        // There is no Gate::before for super admins in this app — permissions come
+        // through roles like anyone else — and show() is permission-gated as of
+        // BAN-295, so the grant is part of the scenario, not incidental.
+        $superAdmin->givePermissionTo('show driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->actingAs($superAdmin)
             ->get(route('driver.show', $foreignDriver->id))
