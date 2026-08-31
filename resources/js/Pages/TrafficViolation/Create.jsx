@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Module-level, per the useZodForm contract — an inline schema silently goes
 // stale between renders. Client-side validation is UX only; the Laravel rules
@@ -63,8 +65,8 @@ function TrafficViolationCreate() {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="license_plate">{t('License Plate')}</Label>
-                                <Input id="license_plate" placeholder={t('Enter license plate')} {...register('license_plate')} />
-                                {errors.license_plate && <p className="text-sm text-destructive">{errors.license_plate.message}</p>}
+                                <Input id="license_plate" placeholder={t('Enter license plate')} {...register('license_plate')} {...fieldA11y(errors, 'license_plate')} />
+                                <FieldError name="license_plate" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -74,14 +76,14 @@ function TrafficViolationCreate() {
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="occurred_date">{t('Violation Date')}</Label>
-                                <Input id="occurred_date" type="date" {...register('occurred_date')} />
-                                {errors.occurred_date && <p className="text-sm text-destructive">{errors.occurred_date.message}</p>}
+                                <Input id="occurred_date" type="date" {...register('occurred_date')} {...fieldA11y(errors, 'occurred_date')} />
+                                <FieldError name="occurred_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="occurred_time">{t('Violation Time')}</Label>
-                                <Input id="occurred_time" type="time" {...register('occurred_time')} />
-                                {errors.occurred_time && <p className="text-sm text-destructive">{errors.occurred_time.message}</p>}
+                                <Input id="occurred_time" type="time" {...register('occurred_time')} {...fieldA11y(errors, 'occurred_time')} />
+                                <FieldError name="occurred_time" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -101,8 +103,8 @@ function TrafficViolationCreate() {
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="amount">{t('Amount')}</Label>
-                                <Input id="amount" type="number" step="0.01" placeholder={t('Enter amount')} {...register('amount')} />
-                                {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                                <Input id="amount" type="number" step="0.01" placeholder={t('Enter amount')} {...register('amount')} {...fieldA11y(errors, 'amount')} />
+                                <FieldError name="amount" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">

@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/vehicle/edit.blade.php.
 // Submits PUT to route('vehicle.update') via a spoofed _method=PUT (matches the
@@ -89,8 +91,8 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name">{t('Vehicle Name')}</Label>
-                                <Input id="name" placeholder={t('Enter vehicle name')} {...register('name')} />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                <Input id="name" placeholder={t('Enter vehicle name')} {...register('name')} {...fieldA11y(errors, 'name')} />
+                                <FieldError name="name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -100,7 +102,7 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
+                                            <SelectTrigger id="type" {...fieldA11y(errors, 'type')}><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(types).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -109,43 +111,43 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                         </Select>
                                     )}
                                 />
-                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                                <FieldError name="type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="model">{t('Model')}</Label>
-                                <Input id="model" placeholder={t('Enter model')} {...register('model')} />
-                                {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
+                                <Input id="model" placeholder={t('Enter model')} {...register('model')} {...fieldA11y(errors, 'model')} />
+                                <FieldError name="model" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="engine_type">{t('Engine Type')}</Label>
-                                <Input id="engine_type" placeholder={t('Enter engine type')} {...register('engine_type')} />
-                                {errors.engine_type && <p className="text-sm text-destructive">{errors.engine_type.message}</p>}
+                                <Input id="engine_type" placeholder={t('Enter engine type')} {...register('engine_type')} {...fieldA11y(errors, 'engine_type')} />
+                                <FieldError name="engine_type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="engine_no">{t('Engine Number')}</Label>
-                                <Input id="engine_no" placeholder={t('Enter engine number')} {...register('engine_no')} />
-                                {errors.engine_no && <p className="text-sm text-destructive">{errors.engine_no.message}</p>}
+                                <Input id="engine_no" placeholder={t('Enter engine number')} {...register('engine_no')} {...fieldA11y(errors, 'engine_no')} />
+                                <FieldError name="engine_no" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="license_plate">{t('License Plate')}</Label>
-                                <Input id="license_plate" placeholder={t('Enter license plate')} {...register('license_plate')} />
-                                {errors.license_plate && <p className="text-sm text-destructive">{errors.license_plate.message}</p>}
+                                <Input id="license_plate" placeholder={t('Enter license plate')} {...register('license_plate')} {...fieldA11y(errors, 'license_plate')} />
+                                <FieldError name="license_plate" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="registration_expiry_date">{t('Registration Expiry Date')}</Label>
-                                <Input id="registration_expiry_date" type="date" {...register('registration_expiry_date')} />
-                                {errors.registration_expiry_date && <p className="text-sm text-destructive">{errors.registration_expiry_date.message}</p>}
+                                <Input id="registration_expiry_date" type="date" {...register('registration_expiry_date')} {...fieldA11y(errors, 'registration_expiry_date')} />
+                                <FieldError name="registration_expiry_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="daily_rate">{t('Daily Rate')}</Label>
-                                <Input id="daily_rate" type="number" step="any" placeholder={t('Enter daily rate')} {...register('daily_rate')} />
-                                {errors.daily_rate && <p className="text-sm text-destructive">{errors.daily_rate.message}</p>}
+                                <Input id="daily_rate" type="number" step="any" placeholder={t('Enter daily rate')} {...register('daily_rate')} {...fieldA11y(errors, 'daily_rate')} />
+                                <FieldError name="daily_rate" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -154,11 +156,9 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                     id="year_of_first_immatriculation"
                                     type="number"
                                     placeholder={t('Enter Year of First Immatriculation')}
-                                    {...register('year_of_ﬁrst_immatriculation')}
+                                    {...register('year_of_ﬁrst_immatriculation')} {...fieldA11y(errors, 'year_of_ﬁrst_immatriculation')}
                                 />
-                                {errors['year_of_ﬁrst_immatriculation'] && (
-                                    <p className="text-sm text-destructive">{errors['year_of_ﬁrst_immatriculation'].message}</p>
-                                )}
+                                <FieldError name="year_of_ﬁrst_immatriculation" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -168,7 +168,7 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="gearbox"><SelectValue placeholder={t('Gearbox')} /></SelectTrigger>
+                                            <SelectTrigger id="gearbox" {...fieldA11y(errors, 'gearbox')}><SelectValue placeholder={t('Gearbox')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(gearbox).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -177,7 +177,7 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                         </Select>
                                     )}
                                 />
-                                {errors.gearbox && <p className="text-sm text-destructive">{errors.gearbox.message}</p>}
+                                <FieldError name="gearbox" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -187,7 +187,7 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="fuel_type"><SelectValue placeholder={t('Fuel Type')} /></SelectTrigger>
+                                            <SelectTrigger id="fuel_type" {...fieldA11y(errors, 'fuel_type')}><SelectValue placeholder={t('Fuel Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(fuelType).map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -196,19 +196,19 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                                         </Select>
                                     )}
                                 />
-                                {errors.fuel_type && <p className="text-sm text-destructive">{errors.fuel_type.message}</p>}
+                                <FieldError name="fuel_type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="number_of_seats">{t('Number of Seats')}</Label>
-                                <Input id="number_of_seats" type="number" {...register('number_of_seats')} />
-                                {errors.number_of_seats && <p className="text-sm text-destructive">{errors.number_of_seats.message}</p>}
+                                <Input id="number_of_seats" type="number" {...register('number_of_seats')} {...fieldA11y(errors, 'number_of_seats')} />
+                                <FieldError name="number_of_seats" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="kilometers">{t('Kilometer')}</Label>
-                                <Input id="kilometers" type="number" {...register('kilometers')} />
-                                {errors.kilometers && <p className="text-sm text-destructive">{errors.kilometers.message}</p>}
+                                <Input id="kilometers" type="number" {...register('kilometers')} {...fieldA11y(errors, 'kilometers')} />
+                                <FieldError name="kilometers" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">

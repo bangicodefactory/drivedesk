@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/option/edit.blade.php.
 // Submits PUT to route('option.update') via a spoofed _method=PUT (matches the
@@ -38,8 +40,8 @@ function OptionEdit({ option = {} }) {
                     <form onSubmit={submit('post', route('option.update', option.id))}>
                         <div className="space-y-1.5">
                             <Label htmlFor="name">{t('Option')}</Label>
-                            <Input id="name" placeholder={t('Enter option')} {...register('name')} />
-                            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                            <Input id="name" placeholder={t('Enter option')} {...register('name')} {...fieldA11y(errors, 'name')} />
+                            <FieldError name="name" errors={errors} />
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">

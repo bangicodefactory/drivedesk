@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/place/create.blade.php.
 // Field names match the Blade form 1:1 (name, city, island, price, depo_name,
@@ -48,26 +50,26 @@ function PlaceCreate() {
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name">{t('Name')}</Label>
-                                <Input id="name" placeholder={t('Enter place name')} {...register('name')} />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                <Input id="name" placeholder={t('Enter place name')} {...register('name')} {...fieldA11y(errors, 'name')} />
+                                <FieldError name="name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="city">{t('City')}</Label>
-                                <Input id="city" placeholder={t('Enter city')} {...register('city')} />
-                                {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
+                                <Input id="city" placeholder={t('Enter city')} {...register('city')} {...fieldA11y(errors, 'city')} />
+                                <FieldError name="city" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="island">{t('Island')}</Label>
-                                <Input id="island" placeholder={t('Enter island')} {...register('island')} />
-                                {errors.island && <p className="text-sm text-destructive">{errors.island.message}</p>}
+                                <Input id="island" placeholder={t('Enter island')} {...register('island')} {...fieldA11y(errors, 'island')} />
+                                <FieldError name="island" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="price">{t('Price')}</Label>
-                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} />
-                                {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} {...fieldA11y(errors, 'price')} />
+                                <FieldError name="price" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
