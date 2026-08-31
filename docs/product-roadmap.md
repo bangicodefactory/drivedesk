@@ -341,10 +341,30 @@ decision on approach before any code moves:
 3. `Route::bind` / `scopeBindings()` on the resource routes (smallest diff,
    but silent about intent at the call site).
 
-Whichever is chosen, each converted action needs a cross-tenant test in the
-same commit, mirroring `test_show_returns_404_for_other_tenant`. Suggested
-sequence: Booking/Vehicle/Driver first (the highest-value records), then the
-rest by cluster.
+**A constraint that rules out the naive version of all three**, found while
+reviewing BAN-287: `parentId()` (`app/Helper/helper.php`) returns the *caller's
+own id* for a super admin, not a tenant's:
+
+```php
+if (\Auth::user()->type == 'owner' || \Auth::user()->type == 'super admin') {
+    return \Auth::user()->id;
+}
+return \Auth::user()->parent_id;
+```
+
+A super admin's id is never any tenant's `parent_id`, so a blanket
+`where('parent_id', parentId())` + `abort(404)` locks super admins out of every
+record in the system — the exact "locks legitimate users out" failure this item
+warns about. Any approach needs an explicit super-admin bypass, and the
+super-admin path needs its own test alongside the cross-tenant one. This is also
+why BAN-287 did **not** opportunistically add the check to Booking's
+`update()`/`destroy()` while fixing the other two findings there.
+
+Whichever is chosen, each converted action needs a cross-tenant test **and** a
+super-admin-still-has-access test in the same commit, mirroring
+`test_show_returns_404_for_other_tenant`. Suggested sequence:
+Booking/Vehicle/Driver first (the highest-value records), then the rest by
+cluster.
 
 ### Tranche 0 — foundation
 
