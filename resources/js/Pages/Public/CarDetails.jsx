@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/select';
 import { Star, Car, Fuel, Settings2, Wrench, Tag, Users, Calendar, MapPin } from 'lucide-react';
 import PublicLayout from '@/Layouts/PublicLayout';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -159,18 +161,18 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="name">Your Name *</Label>
-                                        <Input id="name" placeholder="Enter your name" {...register('name')} />
-                                        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                        <Input id="name" placeholder="Enter your name" {...register('name')} {...fieldA11y(errors, 'name')} />
+                                        <FieldError name="name" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="email">Email *</Label>
-                                        <Input id="email" type="email" placeholder="Enter your email" {...register('email')} />
-                                        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                                        <Input id="email" type="email" placeholder="Enter your email" {...register('email')} {...fieldA11y(errors, 'email')} />
+                                        <FieldError name="email" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="phone_number">Phone Number *</Label>
-                                        <Input id="phone_number" placeholder="+212 6XX XXX XXX" {...register('phone_number')} />
-                                        {errors.phone_number && <p className="text-sm text-destructive">{errors.phone_number.message}</p>}
+                                        <Input id="phone_number" placeholder="+212 6XX XXX XXX" {...register('phone_number')} {...fieldA11y(errors, 'phone_number')} />
+                                        <FieldError name="phone_number" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="company_name">Company Name (Optional)</Label>
@@ -203,7 +205,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                             control={control}
                                             render={({ field }) => (
                                                 <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger id="pickup_address"><SelectValue placeholder="Select Location" /></SelectTrigger>
+                                                    <SelectTrigger id="pickup_address" {...fieldA11y(errors, 'pickup_address')}><SelectValue placeholder="Select Location" /></SelectTrigger>
                                                     <SelectContent>
                                                         {places.map(p => (
                                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -212,7 +214,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                                 </Select>
                                             )}
                                         />
-                                        {errors.pickup_address && <p className="text-sm text-destructive">{errors.pickup_address.message}</p>}
+                                        <FieldError name="pickup_address" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="drop_off_address">Drop-off Location *</Label>
@@ -221,7 +223,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                             control={control}
                                             render={({ field }) => (
                                                 <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger id="drop_off_address"><SelectValue placeholder="Select Location" /></SelectTrigger>
+                                                    <SelectTrigger id="drop_off_address" {...fieldA11y(errors, 'drop_off_address')}><SelectValue placeholder="Select Location" /></SelectTrigger>
                                                     <SelectContent>
                                                         {places.map(p => (
                                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -230,30 +232,30 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                                 </Select>
                                             )}
                                         />
-                                        {errors.drop_off_address && <p className="text-sm text-destructive">{errors.drop_off_address.message}</p>}
+                                        <FieldError name="drop_off_address" errors={errors} />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="start_date">Pick-up Date *</Label>
-                                        <Input id="start_date" type="date" min={today} {...register('start_date')} />
-                                        {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
+                                        <Input id="start_date" type="date" min={today} {...register('start_date')} {...fieldA11y(errors, 'start_date')} />
+                                        <FieldError name="start_date" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="start_time">Pick-up Time *</Label>
-                                        <Input id="start_time" type="time" {...register('start_time')} />
-                                        {errors.start_time && <p className="text-sm text-destructive">{errors.start_time.message}</p>}
+                                        <Input id="start_time" type="time" {...register('start_time')} {...fieldA11y(errors, 'start_time')} />
+                                        <FieldError name="start_time" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="end_date">Drop-off Date *</Label>
-                                        <Input id="end_date" type="date" min={today} {...register('end_date')} />
-                                        {errors.end_date && <p className="text-sm text-destructive">{errors.end_date.message}</p>}
+                                        <Input id="end_date" type="date" min={today} {...register('end_date')} {...fieldA11y(errors, 'end_date')} />
+                                        <FieldError name="end_date" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="end_time">Drop-off Time *</Label>
-                                        <Input id="end_time" type="time" {...register('end_time')} />
-                                        {errors.end_time && <p className="text-sm text-destructive">{errors.end_time.message}</p>}
+                                        <Input id="end_time" type="time" {...register('end_time')} {...fieldA11y(errors, 'end_time')} />
+                                        <FieldError name="end_time" errors={errors} />
                                     </div>
                                 </div>
 

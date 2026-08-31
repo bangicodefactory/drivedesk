@@ -11,6 +11,8 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     company_name:                    z.string().min(1, 'Required'),
@@ -89,23 +91,23 @@ function Company({ settings, timezones }) {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="company_name">{t('Name')}</Label>
-                                <Input id="company_name" placeholder={t('Enter company name')} {...register('company_name')} />
-                                {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
+                                <Input id="company_name" placeholder={t('Enter company name')} {...register('company_name')} {...fieldA11y(errors, 'company_name')} />
+                                <FieldError name="company_name" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="company_email">{t('Email')}</Label>
-                                <Input id="company_email" type="email" placeholder={t('Enter company email')} {...register('company_email')} />
-                                {errors.company_email && <p className="text-sm text-destructive">{errors.company_email.message}</p>}
+                                <Input id="company_email" type="email" placeholder={t('Enter company email')} {...register('company_email')} {...fieldA11y(errors, 'company_email')} />
+                                <FieldError name="company_email" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="company_phone">{t('Phone Number')}</Label>
-                                <Input id="company_phone" placeholder={t('Enter company phone')} {...register('company_phone')} />
-                                {errors.company_phone && <p className="text-sm text-destructive">{errors.company_phone.message}</p>}
+                                <Input id="company_phone" placeholder={t('Enter company phone')} {...register('company_phone')} {...fieldA11y(errors, 'company_phone')} />
+                                <FieldError name="company_phone" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="company_address">{t('Address')}</Label>
-                                <Textarea id="company_address" rows={2} placeholder={t('Enter company address')} {...register('company_address')} />
-                                {errors.company_address && <p className="text-sm text-destructive">{errors.company_address.message}</p>}
+                                <Textarea id="company_address" rows={2} placeholder={t('Enter company address')} {...register('company_address')} {...fieldA11y(errors, 'company_address')} />
+                                <FieldError name="company_address" errors={errors} />
                             </div>
                         </div>
 
@@ -149,13 +151,13 @@ function Company({ settings, timezones }) {
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
                                     <Label htmlFor="CURRENCY_SYMBOL">{t('Currency Icon')}</Label>
-                                    <Input id="CURRENCY_SYMBOL" placeholder={t('e.g. €')} {...register('CURRENCY_SYMBOL')} />
-                                    {errors.CURRENCY_SYMBOL && <p className="text-sm text-destructive">{errors.CURRENCY_SYMBOL.message}</p>}
+                                    <Input id="CURRENCY_SYMBOL" placeholder={t('e.g. €')} {...register('CURRENCY_SYMBOL')} {...fieldA11y(errors, 'CURRENCY_SYMBOL')} />
+                                    <FieldError name="CURRENCY_SYMBOL" errors={errors} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="CURRENCY">{t('Currency Code')}</Label>
-                                    <Input id="CURRENCY" placeholder={t('e.g. EUR')} {...register('CURRENCY')} />
-                                    {errors.CURRENCY && <p className="text-sm text-destructive">{errors.CURRENCY.message}</p>}
+                                    <Input id="CURRENCY" placeholder={t('e.g. EUR')} {...register('CURRENCY')} {...fieldA11y(errors, 'CURRENCY')} />
+                                    <FieldError name="CURRENCY" errors={errors} />
                                 </div>
                             </div>
                         </div>

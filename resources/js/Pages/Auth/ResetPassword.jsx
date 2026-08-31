@@ -6,6 +6,8 @@ import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const resetSchema = z.object({
     token:                 z.string(),
@@ -35,12 +37,8 @@ function ResetPassword({ token, email }) {
                 <CardContent>
                     <form onSubmit={submit('post', route('password.update'))} className="space-y-4">
                         {/* Hidden field — server errors on token still surface here */}
-                        <input type="hidden" {...register('token')} />
-                        {errors.token && (
-                            <p className="text-sm text-destructive" role="alert">
-                                {errors.token.message}
-                            </p>
-                        )}
+                        <input type="hidden" {...register('token')} {...fieldA11y(errors, 'token')} />
+                        <FieldError name="token" errors={errors} />
 
                         <div className="space-y-1.5">
                             <Label htmlFor="email">{t('Email')}</Label>
@@ -48,9 +46,9 @@ function ResetPassword({ token, email }) {
                                 id="email"
                                 type="email"
                                 autoComplete="email"
-                                {...register('email')}
+                                {...register('email')} {...fieldA11y(errors, 'email')}
                             />
-                            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                            <FieldError name="email" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
@@ -60,9 +58,9 @@ function ResetPassword({ token, email }) {
                                 type="password"
                                 autoComplete="new-password"
                                 autoFocus
-                                {...register('password')}
+                                {...register('password')} {...fieldA11y(errors, 'password')}
                             />
-                            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                            <FieldError name="password" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
@@ -71,9 +69,9 @@ function ResetPassword({ token, email }) {
                                 id="password_confirmation"
                                 type="password"
                                 autoComplete="new-password"
-                                {...register('password_confirmation')}
+                                {...register('password_confirmation')} {...fieldA11y(errors, 'password_confirmation')}
                             />
-                            {errors.password_confirmation && <p className="text-sm text-destructive">{errors.password_confirmation.message}</p>}
+                            <FieldError name="password_confirmation" errors={errors} />
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
