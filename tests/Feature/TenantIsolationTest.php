@@ -307,6 +307,53 @@ class TenantIsolationTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $foreignDriver->id]);
     }
 
+    /**
+     * BAN-293: the roadmap requires a super-admin path test alongside every
+     * cross-tenant one. BAN-291's inline where('parent_id', parentId()) had no
+     * bypass, so a super admin — whose parentId() is their own id, never any
+     * tenant's parent_id — got 404 on every driver in the system, while the
+     * Driver model queries in the same request resolved fine.
+     */
+    public function test_super_admin_can_still_open_any_tenants_driver(): void
+    {
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('driver.show', $foreignDriver->id))
+            ->assertOk();
+    }
+
+    /**
+     * BAN-293: these endpoints scoped by tenant but not by type, so any
+     * same-tenant user id was accepted. update() renamed the row and saved it
+     * before crashing on the missing driver profile — a partial write, the
+     * paymentDestroy shape again. blacklist() already constrained type.
+     */
+    public function test_driver_update_refuses_a_same_tenant_non_driver_user(): void
+    {
+        $employee = User::factory()->create([
+            'type'      => 'manager',
+            'parent_id' => $this->owner->id,
+            'name'      => 'Payroll Manager',
+        ]);
+
+        $this->owner->givePermissionTo('edit driver');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->put(route('driver.update', $employee->id), [
+                'first_name' => 'Renamed',
+                'last_name'  => 'Employee',
+                'email'      => 'renamed@example.test',
+            ])
+            ->assertStatus(404);
+
+        $this->assertSame('Payroll Manager', $employee->fresh()->name);
+    }
+
     public function test_booking_store_rejects_another_tenants_driver_in_validation(): void
     {
         $foreignDriver = User::where('parent_id', $this->otherOwner->id)

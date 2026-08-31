@@ -552,7 +552,12 @@ class TvaController extends Controller
             $driverAddress = '';
             if ($booking->drivers) {
                 $driverName = $booking->drivers->name ?? 'N/A';
-                $driver = Driver::where('user_id', $booking->driver)->first();
+                // BAN-293: acrossTenants() for the same reason as the Booking
+                // lookup above — this loop regenerates every business's factures,
+                // and once Driver gained the tenant scope (BAN-291) a plain owner
+                // resolved null for other businesses' drivers, silently reissuing
+                // their invoices with a blank client address.
+                $driver = Driver::acrossTenants()->where('user_id', $booking->driver)->first();
                 $driverAddress = $driver->address ?? '';
             }
 

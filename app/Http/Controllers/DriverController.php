@@ -296,7 +296,7 @@ class DriverController extends Controller
 
     public function show($id)
     {
-        $user = User::where('parent_id', parentId())->find($id);
+        $user = $this->findDriverUser($id);
         if (!$user) {
             abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
         }
@@ -394,7 +394,7 @@ class DriverController extends Controller
 
     public function edit($id)
     {
-        $user = User::where('parent_id', parentId())->find($id);
+        $user = $this->findDriverUser($id);
         if (!$user) {
             abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
         }
@@ -431,7 +431,7 @@ class DriverController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
-            $user = User::where('parent_id', parentId())->find($id);
+            $user = $this->findDriverUser($id);
             if (!$user) {
                 abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
             }
@@ -508,7 +508,7 @@ class DriverController extends Controller
     public function destroy($id)
     {
         if (\Auth::user()->can('delete driver')) {
-            $user = User::where('parent_id', parentId())->find($id);
+            $user = $this->findDriverUser($id);
             if (!$user) {
                 abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
             }
@@ -526,5 +526,32 @@ class DriverController extends Controller
     {
         $max = Driver::where('parent_id', parentId())->max('driver_id');
         return ($max ?? 0) + 1;
+    }
+
+    /**
+     * Resolve a driver's user row for this module.
+     *
+     * BAN-293, two corrections to BAN-291's inline guard:
+     *
+     * - **Super admins are not constrained by tenant.** `parentId()` returns a
+     *   super admin's own id, which is never any tenant's `parent_id`, so the
+     *   plain `where('parent_id', parentId())` 404'd them on every driver in the
+     *   system. `BelongsToTenant` already exempts them; this call-site scoping
+     *   has to do the same or the two disagree inside one request.
+     * - **Constrained to `type = 'driver'`**, matching `blacklist()`. Without it
+     *   these endpoints accepted any same-tenant user id — an employee, a client,
+     *   the owner's own account — and `update()`/`destroy()` would rename or
+     *   delete them, then crash on the missing driver profile with the user row
+     *   already written.
+     */
+    private function findDriverUser($id): ?User
+    {
+        $query = User::where('type', 'driver');
+
+        if (\Auth::user()->type !== 'super admin') {
+            $query->where('parent_id', parentId());
+        }
+
+        return $query->find($id);
     }
 }

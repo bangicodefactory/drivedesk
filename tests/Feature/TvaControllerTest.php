@@ -876,7 +876,22 @@ class TvaControllerTest extends TestCase
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->seedCompanySettings($otherOwner->id);
 
-        $otherBooking = \App\Models\Booking::factory()->create(['parent_id' => $otherOwner->id]);
+        // A real driver + profile for the other business, so the regenerated
+        // facture's client address can be asserted (BAN-293).
+        $otherDriverUser = User::factory()->create([
+            'type'      => 'driver',
+            'parent_id' => $otherOwner->id,
+        ]);
+        \App\Models\Driver::factory()->create([
+            'user_id'   => $otherDriverUser->id,
+            'parent_id' => $otherOwner->id,
+            'address'   => '12 Rue Autre, Casablanca',
+        ]);
+
+        $otherBooking = \App\Models\Booking::factory()->create([
+            'parent_id' => $otherOwner->id,
+            'driver'    => $otherDriverUser->id,
+        ]);
         \App\Models\BookingPayment::factory()->create([
             'booking_id' => $otherBooking->id,
             'parent_id'  => $otherOwner->id,
@@ -897,6 +912,14 @@ class TvaControllerTest extends TestCase
         // Both businesses still have a live facture for the month.
         $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('tvas', ['parent_id' => $otherOwner->id, 'deleted_at' => null]);
+
+        // BAN-293: the driver profile is fetched inside the same cross-tenant
+        // loop. Once Driver gained the tenant scope it resolved null for the
+        // other business and the address silently fell back to ''.
+        $this->assertDatabaseHas('tvas', [
+            'parent_id'      => $otherOwner->id,
+            'client_address' => '12 Rue Autre, Casablanca',
+        ]);
     }
 
     public function test_generate_numbers_by_booking_parent_not_generating_user(): void
