@@ -123,6 +123,11 @@ class PlaceController extends Controller
         $totalRate=0;
         $considerDays=1;
         $vehicle = Vehicle::find($request->vahicle_id);
+        if (!$vehicle) {
+            // BAN-290: the tenant scope makes a foreign or stale id resolve to
+            // null here; without this the calculation below dereferenced it.
+            return response()->json(['status' => false, 'message' => __('Vehicle not found.')], 404);
+        }
         $start_date_time=$request->start_date_time;
         $end_date_time=$request->end_date_time;
         $pickup_place=$request->pickup_place;

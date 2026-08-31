@@ -195,6 +195,60 @@ class TenantIsolationTest extends TestCase
         $this->assertDatabaseHas('booking_payments', ['id' => $payment->id]);
     }
 
+    // -- Vehicle (BAN-290) ---------------------------------------------------
+
+    public function test_another_tenants_vehicle_does_not_resolve(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->owner);
+
+        $this->assertNull(Vehicle::find($foreignVehicle->id));
+    }
+
+    public function test_super_admin_still_sees_every_tenants_vehicles(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $this->actingAs($superAdmin);
+
+        $this->assertNotNull(Vehicle::find($foreignVehicle->id));
+    }
+
+    /**
+     * A bare `exists:vehicles,id` rule queries the table directly and ignores
+     * the model's global scope, so another tenant's vehicle id passed
+     * validation and then resolved to null inside the action. The rule is now
+     * scoped, so the failure is a field error rather than a 500.
+     */
+    public function test_booking_store_rejects_another_tenants_vehicle_in_validation(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)
+            ->firstOrFail();
+
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking.store'), [
+                'vehicle'          => $foreignVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $ownDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle']);
+    }
+
     private function ownBooking(): Booking
     {
         $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);

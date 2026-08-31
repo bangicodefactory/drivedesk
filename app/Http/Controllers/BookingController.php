@@ -310,7 +310,10 @@ class BookingController extends Controller
         $validator = \Validator::make(
             $request->all(),
             [
-                'vehicle' => 'required|exists:vehicles,id',
+                // BAN-290: scoped to the tenant. A bare exists: rule queries the
+                // table directly and ignores the model's global scope, so another
+                // tenant's vehicle id passed validation and then resolved to null.
+                'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                 'start_date_time' => 'required|date',
                 'end_date_time' => 'required|date|after:start_date_time',
                 'driver' => 'required|exists:users,id',
@@ -597,7 +600,8 @@ class BookingController extends Controller
                     // BAN-285 review: `exists` mirrors store()'s rules. Without them a
                     // stale or foreign id reached Vehicle::find()/User::find() below
                     // and fatalled on a null deref instead of returning a field error.
-                    'vehicle' => 'required|exists:vehicles,id',
+                    // BAN-290: tenant-scoped, see store().
+                    'vehicle' => ['required', \Illuminate\Validation\Rule::exists('vehicles', 'id')->where('parent_id', parentId())],
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
                     'driver' => 'required|exists:users,id',
