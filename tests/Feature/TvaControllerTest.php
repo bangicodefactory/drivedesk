@@ -883,6 +883,10 @@ class TvaControllerTest extends TestCase
             'parent_id' => $otherOwner->id,
         ]);
         \App\Models\Driver::factory()->create([
+            // driver_id must be overridden: DriverFactory defaults it to a
+            // 'DR-####' string while the column is an integer, so the factory
+            // cannot be used unmodified.
+            'driver_id' => 1,
             'user_id'   => $otherDriverUser->id,
             'parent_id' => $otherOwner->id,
             'address'   => '12 Rue Autre, Casablanca',
