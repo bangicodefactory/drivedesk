@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\BookingPayment;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
@@ -125,6 +127,79 @@ class TenantIsolationTest extends TestCase
 
         $this->assertNotNull(Booking::find($this->foreignBooking->id));
         $this->assertCount(1, Booking::all());
+    }
+
+    // ── BAN-289: paths the scope turned into 500s ────────────────────────────
+    // Making a foreign row unresolvable is only half the job — several actions
+    // dereferenced the result of Booking::find() with no null check, so the
+    // scope converted a silent cross-tenant leak into a 500. These pin the 404.
+
+    public function test_edit_answers_404_for_another_tenants_booking(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('booking.edit', Crypt::encrypt($this->foreignBooking->id)))
+            ->assertStatus(404);
+    }
+
+    public function test_payment_create_answers_404_for_another_tenants_booking(): void
+    {
+        $this->owner->givePermissionTo('create booking payment');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->get(route('booking.payment.create', $this->foreignBooking->id))
+            ->assertStatus(404);
+    }
+
+    /** paymentCreate() previously had no permission check of any kind. */
+    public function test_payment_create_requires_the_payment_permission(): void
+    {
+        $own = $this->ownBooking();
+
+        $this->actingAs($this->owner)   // holds booking perms, not the payment one
+            ->get(route('booking.payment.create', $own->id))
+            ->assertRedirect();
+    }
+
+    /**
+     * The regression that mattered most: paymentDestroy() deleted the payment
+     * and its TVA rows *before* looking the booking up, so under the scope a
+     * cross-tenant call destroyed rows and then 500'd — a half-completed write
+     * against another tenant. The payment must survive intact.
+     */
+    public function test_payment_destroy_does_not_delete_another_tenants_payment(): void
+    {
+        $this->owner->givePermissionTo('delete booking payment');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $payment = BookingPayment::create([
+            'booking_id'     => $this->foreignBooking->id,
+            'amount'         => 100,
+            'date'           => '2026-07-01',
+            'payment_method' => 'espece',
+            'parent_id'      => $this->otherOwner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->delete(route('booking.payment.destroy', [
+                'id'  => $this->foreignBooking->id,
+                'pid' => $payment->id,
+            ]))
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('booking_payments', ['id' => $payment->id]);
+    }
+
+    private function ownBooking(): Booking
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
+        $driver  = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        return Booking::factory()->create([
+            'vehicle'   => $vehicle->id,
+            'driver'    => $driver->id,
+            'parent_id' => $this->owner->id,
+        ]);
     }
 
     public function test_a_tenant_still_reaches_its_own_booking(): void

@@ -19,13 +19,16 @@ use Illuminate\Support\Facades\Auth;
  *
  * 1. **No authenticated user.** Console commands, seeders and queue jobs run
  *    outside a request. `parentId()` dereferences `Auth::user()` and would
- *    fatal, and there is no tenant to scope to anyway.
+ *    fatal, and there is no tenant to scope to anyway (`DevDataSeeder` creates
+ *    bookings this way).
  * 2. **Super admins.** `parentId()` returns the *caller's own id* for a super
  *    admin, which is never any tenant's `parent_id` — scoping on it would hide
  *    every row in the system from them.
- * 3. **An explicit opt-out**, `Model::acrossTenants()`, for the few legitimate
- *    cross-tenant reads (super-admin reporting, the violation matcher). Named
- *    so it is greppable and obvious in review.
+ * 3. **An explicit opt-out**, `Model::acrossTenants()`, for legitimate
+ *    cross-tenant reads. Named so it is greppable and obvious in review. No
+ *    production code needs it yet — `ViolationMatcher` and the seeders already
+ *    pass an explicit `parent_id` or run unauthenticated — so today it is used
+ *    only by tests that assert a foreign row still exists.
  *
  * @see docs/product-roadmap.md — Tranche S.1
  */
@@ -44,7 +47,11 @@ trait BelongsToTenant
         // A row created inside a request belongs to the caller's tenant unless
         // it says otherwise, so the scope can find it again afterwards.
         static::creating(function ($model) {
-            if (empty($model->parent_id) && static::tenantScopeApplies()) {
+            // is_null, not empty(): `parent_id` is NOT NULL default 0 and
+            // BookingFactory sets 0 deliberately, so empty() would silently rewrite
+            // an intentionally out-of-tenant fixture to the caller's tenant and mask
+            // a real isolation failure.
+            if (is_null($model->parent_id) && static::tenantScopeApplies()) {
                 $model->parent_id = parentId();
             }
         });

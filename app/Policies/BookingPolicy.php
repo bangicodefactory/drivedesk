@@ -16,7 +16,12 @@ use App\Models\User;
  * somewhere else.
  *
  * Permission (`can('edit booking')`) answers *what* a user may do; this answers
- * *which rows* they may do it to. The controllers check both.
+ * *which rows* they may do it to.
+ *
+ * Note that `$model->save()` and `->delete()` go through `newModelQuery()`,
+ * which does **not** apply global scopes — so a model obtained via
+ * `acrossTenants()` can still be written across tenants. That is the gap this
+ * policy exists to close, and it only closes it where a caller invokes it.
  */
 class BookingPolicy
 {
