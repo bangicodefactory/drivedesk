@@ -100,13 +100,14 @@ function RentalAgreementEdit({ agreement, vehicles, drivers, statuses }) {
                             <div className="space-y-1">
                                 <Label>{t('Vehicle')}</Label>
                                 <Select defaultValue={String(agreement.vehicle ?? '')} onValueChange={(v) => setValue('vehicle', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'vehicle')}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {vehicles.map((v) => (
                                             <SelectItem key={v.id} value={String(v.id)}>{v.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="vehicle" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">

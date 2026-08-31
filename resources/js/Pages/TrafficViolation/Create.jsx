@@ -113,7 +113,9 @@ function TrafficViolationCreate() {
                                     id="document"
                                     type="file"
                                     onChange={(e) => setValue('document', e.target.files?.[0] ?? null)}
+                                    {...fieldA11y(errors, 'document')}
                                 />
+                                <FieldError name="document" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
