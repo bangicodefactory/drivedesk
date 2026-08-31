@@ -284,6 +284,68 @@ CSS-first config) does not apply until that upgrade lands.
 Rules for every item: additive, reversible migrations only; default behaviour
 unchanged for the existing client; variant behaviour behind a flag; tests first.
 
+### Tranche S — security (ahead of everything below)
+
+| # | Item | Effort |
+| --- | --- | :-: |
+| S.1 | **Tenant isolation is not enforced on 44 of 59 route-model-bound actions** — see below | M |
+
+#### S.1: `parent_id` is checked on read paths but not on most write paths
+
+Found by audit while implementing 0.8 (BAN-286), prompted by a review finding
+that flagged `BookingController::update()` specifically; the pattern turned out
+to be systemic rather than local to Booking.
+
+Multiple owners share one database by design — `HomeController` reports
+`User::where('type','owner')->count()` to the super-admin as
+"totalOrganization", and `parent_id` is the tenant boundary used consistently
+by the read paths (dashboards and every `index()`).
+
+`BookingController::show()` shows the intended pattern:
+
+```php
+$booking = Booking::where('id', $decryptedId)
+    ->where('parent_id', parentId())
+    ->first();
+if (!$booking) { abort(404); }
+```
+
+But most `show`/`edit`/`update`/`destroy` actions take a route-model-bound
+instance (`public function update(Request $request, Addon $addon)`), check only
+the **permission**, and then read or write whatever row the id resolved to.
+Permission is not ownership: a user holding `edit addon` in tenant A can `PUT
+/addon/{id}` for tenant B's addon. There is no global scope on the models and
+no tenant middleware on the routes — the permission check is the only gate.
+
+Audit (`show`/`edit`/`update`/`destroy` with a model-typed parameter, checked
+for any `parent_id` / `parentId()` reference in the body): **44 of 59 have
+none**, spanning Addon, Booking (`destroy`), Expense, ExpenseType, Inspection,
+InspectionType, Notification, Option, Place, Reminder, ReminderType,
+RentalAgreement (`destroy`), Signature (`destroy`), Vehicle, VehicleType.
+
+Isolation is already a deliberate, tested concept elsewhere —
+`BookingControllerTest`, `CreditControllerTest`, `TvaControllerTest` and the
+TrafficViolation suites all carry cross-tenant tests — so this is an
+inconsistently applied rule, not an unconsidered one.
+
+**Not fixed in BAN-285/286, deliberately.** It is a change to production
+authorization across ~44 endpoints; done wrong it either leaves the hole open
+or locks legitimate users out of their own records. It needs an explicit
+decision on approach before any code moves:
+
+1. a global scope or `BelongsToTenant` trait on the models (broadest, one
+   place, but changes every query in the app including super-admin views,
+   which legitimately read across tenants);
+2. `Gate`/policy per model, enforced via `authorize()` in each action
+   (explicit and testable, ~44 call sites);
+3. `Route::bind` / `scopeBindings()` on the resource routes (smallest diff,
+   but silent about intent at the call site).
+
+Whichever is chosen, each converted action needs a cross-tenant test in the
+same commit, mirroring `test_show_returns_404_for_other_tenant`. Suggested
+sequence: Booking/Vehicle/Driver first (the highest-value records), then the
+rest by cluster.
+
 ### Tranche 0 — foundation
 
 Items 0.1–0.4 are implemented on branch `ux/a11y-rtl-foundation` (PR #4,
@@ -305,12 +367,14 @@ to hand-roll `{errors.x && <p>}` now uses `FieldError` + `fieldA11y`. Items
 
 #### 0.8 in detail: controllers flash a generic error instead of `withErrors()`
 
-Found while landing PR #5. Across **17 controllers** (`Addon`, `Booking`,
+Found while landing PR #5. Across **19 controllers** — `Addon`, `Booking`,
 `Driver`, `Expense`, `ExpenseType`, `Inspection`, `InspectionType`,
 `Notification`, `Option`, `Permission`, `Place`, `Reminder`, `ReminderType`,
-`Role`, `Setting`, `TrafficViolation`, `User`, `VehicleType` — `Vehicle` does
-it correctly for its duplicate-plate check but not its two required-field
-checks), every `\Validator::make(...)->fails()` branch does:
+`Role`, `Setting`, `TrafficViolation`, `User`, `Vehicle`, `VehicleType`
+(`Vehicle` does it correctly for its duplicate-plate check but not for its two
+required-field checks; `TrafficViolation` writes the same bug as
+`$validator->getMessageBag()->first()`) — every `\Validator::make(...)->fails()`
+branch does:
 
 ```php
 return redirect()->back()->with('error', $messages->first());
@@ -353,7 +417,18 @@ call `withErrors($validator)`; its `vehicle` field's missing error display on
 So the genuinely broken set is the `\Validator::make` + manual-return
 controllers listed above. **`BookingController` (store + update) is done**
 (BAN-285, with the happy- and failure-path `update()` tests that did not
-exist before); the other 16 remain.
+exist before); **18 remain**.
+
+Verify the remaining count with:
+
+```bash
+grep -rl 'messages->first()' app/Http/Controllers/          # 18, incl. the now-fixed Booking
+grep -rl 'getMessageBag()->first()' app/Http/Controllers/   # TrafficViolation
+```
+
+Booking still matches the first grep because BAN-285 kept the flash *alongside*
+`withErrors()`; it is fixed. (An earlier revision of this item said "16 remain",
+which undercounted — corrected in BAN-286.)
 
 **Why it was not fixed in PR #5** (Booking has since been done in BAN-285,
 the rest still stand): this is 17 controllers deep, and
