@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     _method: z.string().optional(),
@@ -51,8 +53,8 @@ function ExpenseEdit({ expense = {}, vehicles = {}, types = {} }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="title">{t('Title')}</Label>
-                                <Input id="title" placeholder={t('Enter title')} {...register('title')} />
-                                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                                <Input id="title" placeholder={t('Enter title')} {...register('title')} {...fieldA11y(errors, 'title')} />
+                                <FieldError name="title" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -62,7 +64,7 @@ function ExpenseEdit({ expense = {}, vehicles = {}, types = {} }) {
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
+                                            <SelectTrigger id="type" {...fieldA11y(errors, 'type')}><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(types).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -71,7 +73,7 @@ function ExpenseEdit({ expense = {}, vehicles = {}, types = {} }) {
                                         </Select>
                                     )}
                                 />
-                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                                <FieldError name="type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -94,14 +96,14 @@ function ExpenseEdit({ expense = {}, vehicles = {}, types = {} }) {
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="date">{t('Date')}</Label>
-                                <Input id="date" type="date" {...register('date')} />
-                                {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
+                                <Input id="date" type="date" {...register('date')} {...fieldA11y(errors, 'date')} />
+                                <FieldError name="date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="amount">{t('Amount')}</Label>
-                                <Input id="amount" type="number" step="0.01" placeholder={t('Enter amount')} {...register('amount')} />
-                                {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                                <Input id="amount" type="number" step="0.01" placeholder={t('Enter amount')} {...register('amount')} {...fieldA11y(errors, 'amount')} />
+                                <FieldError name="amount" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
