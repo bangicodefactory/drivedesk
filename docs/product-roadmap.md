@@ -548,3 +548,35 @@ verified in the running app: *automatic deposit and late-fee calculation* →
 e-mails / SMS* → 1.8 (e-mail half only — SMS stays a no); *daily rates only* →
 1.5; *online payment* → 2.6; *photo damage capture* → 2.1; *multi-branch* →
 3.6; *accounting integration* → 3.5; *mobile app* → 3.3.
+
+### 7.1 Deliberate behaviour changes (not "same functionality")
+
+Most work here preserves observable behaviour per `CLAUDE.md` §4. Where it does
+not, the change and its cost are recorded here so nobody has to reconstruct the
+reasoning from a diff.
+
+**Blacklist gate now fires on booking *edit*, not only create (BAN-287).**
+
+- *What changed.* `BookingController::update()` applies the same BAN-252
+  warn-and-override gate `store()` already had, and records the override.
+  `Booking/Edit.jsx` gained the `BlacklistNotice` and the confirm prompt, which
+  it needs — without them the server would refuse the edit with no way to
+  accept it.
+- *Why it is justified.* The gap was a bypass: a booking could be created with a
+  clean driver and then edited onto a blacklisted one, with nothing recorded.
+  The salesperson's handbook already tells prospects the blacklist stops
+  "anyone trying to create a booking or a contract" and that "it fires on both
+  bookings and contracts" — so this closes a gap between what is *sold* and what
+  was *enforced*, rather than inventing a new restriction. No collateral needs
+  rewriting; it became true.
+- *What it costs.* The gate keys on the booking's driver being blacklisted, not
+  on the driver having changed — matching `store()`. So editing any field of a
+  booking whose driver was blacklisted *after* the booking was created now costs
+  one confirm click. Ordinary edits are untouched: `confirmBlacklist()`
+  early-returns when no selected driver is flagged, so there is no prompt and no
+  extra request.
+- *If that proves annoying in practice*, the narrower rule is to gate only when
+  `driver` differs from the stored value. It was not chosen because it diverges
+  from `store()` and would let a pre-existing blacklisted driver ride along
+  silently through every future edit — the quieter behaviour is also the one
+  that loses the audit trail.
