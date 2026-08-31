@@ -123,14 +123,6 @@ class PlaceController extends Controller
         $totalRate=0;
         $considerDays=1;
         $vehicle = Vehicle::find($request->vahicle_id);
-        // BAN-290: reject an id that was supplied but did not resolve — the
-        // tenant scope makes another tenant's (or a deleted) vehicle return
-        // null here, and the calculation below dereferences it. A *missing*
-        // id stays valid: these endpoints are also called to price places and
-        // add-ons alone, with no vehicle chosen yet.
-        if ($request->filled('vahicle_id') && !$vehicle) {
-            return response()->json(['status' => false, 'message' => __('Vehicle not found.')], 404);
-        }
         $start_date_time=$request->start_date_time;
         $end_date_time=$request->end_date_time;
         $pickup_place=$request->pickup_place;

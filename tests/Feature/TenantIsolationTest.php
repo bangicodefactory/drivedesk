@@ -46,6 +46,7 @@ class TenantIsolationTest extends TestCase
             'manage booking', 'create booking', 'show booking', 'edit booking', 'delete booking',
             'create booking payment', 'delete booking payment',
             'show driver', 'edit driver', 'delete driver',
+            'create rental agreement',
         ] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
@@ -416,6 +417,71 @@ class TenantIsolationTest extends TestCase
         $this->actingAs($staff)
             ->get(route('driver.show', $ownDriver->id))
             ->assertRedirect();
+    }
+
+    /**
+     * BAN-294: the scoped exists rule needs the same super-admin exemption the
+     * model scope has. A bare where('parent_id', parentId()) rejected every
+     * vehicle for a super admin — parentId() returns their own id, which is
+     * never a vehicle's parent_id — so they could not save a booking at all,
+     * not even re-saving one with its vehicle unchanged.
+     */
+    public function test_super_admin_can_save_a_booking_against_any_vehicle(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('create booking');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)->firstOrFail();
+        $foreignDriver = User::where('parent_id', $this->otherOwner->id)
+            ->where('type', 'driver')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->post(route('booking.store'), [
+                'vehicle'          => $foreignVehicle->id,
+                'start_date_time'  => '2026-06-01 09:00',
+                'end_date_time'    => '2026-06-04 18:00',
+                'driver'           => $foreignDriver->id,
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 300,
+            ])
+            ->assertSessionHasNoErrors();
+    }
+
+    /**
+     * BAN-294: RentalAgreementController validated `vehicle` as `required` only,
+     * with no exists of any kind, and then dereferenced Vehicle::find() when
+     * creating the companion booking. Under the tenant scope a foreign id
+     * resolved null and fatalled there — after the agreement row was already
+     * saved, outside any transaction, leaving an agreement with no booking.
+     */
+    public function test_rental_agreement_rejects_another_tenants_vehicle(): void
+    {
+        $foreignVehicle = Vehicle::acrossTenants()
+            ->where('parent_id', $this->otherOwner->id)->firstOrFail();
+        $ownDriver = User::factory()->driver()->create(['parent_id' => $this->owner->id]);
+
+        $this->owner->givePermissionTo('create rental agreement');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->actingAs($this->owner)
+            ->post(route('rental-agreement.store'), [
+                'vehicle'            => $foreignVehicle->id,
+                'driver'             => $ownDriver->id,
+                'rental_start_date'  => '2026-07-01',
+                'rental_start_time'  => '09:00',
+                'rental_end_date'    => '2026-07-04',
+                'rental_end_time'    => '18:00',
+                'rental_duration'    => 3,
+                'status'             => 'active',
+                'create_booking'     => 1,
+            ])
+            ->assertSessionHasErrors(['vehicle']);
+
+        $this->assertDatabaseCount('rental_agreements', 0);
     }
 
     private function ownBooking(): Booking

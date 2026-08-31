@@ -769,13 +769,13 @@ if (!function_exists('defaultDriverCreate')) {
                     $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle?->name,($vehicle?->types?->type ?? '-'),$vehicle?->model,$vehicle?->license_plate,$agreement->terms_condition,$agreement->status];
                 }
                 if ($notification->module == 'agreement_status') {
                     $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
-                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$agreement->terms_condition,$agreement->status];
+                    $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle?->name,($vehicle?->types?->type ?? '-'),$vehicle?->model,$vehicle?->license_plate,$agreement->terms_condition,$agreement->status];
                 }
 
                 $return['subject'] = str_replace($search, $replace, $notification->subject);
@@ -841,5 +841,33 @@ if (!function_exists('feature')) {
         }
 
         return (bool) config("client.features.{$name}", false);
+    }
+}
+
+if (!function_exists('tenantExistsRule')) {
+    /**
+     * An `exists` rule constrained to the caller's tenant.
+     *
+     * A bare `exists:table,id` queries the table directly and ignores a model's
+     * BelongsToTenant scope, so another tenant's id passes validation and then
+     * resolves to null inside the action — validation and model access
+     * disagreeing about what exists.
+     *
+     * Mirrors BelongsToTenant::tenantScopeApplies(): super admins and
+     * unauthenticated callers (the public booking-request flow) are not
+     * constrained, because parentId() returns a super admin's own id — never
+     * any row's parent_id — which would reject every value.
+     *
+     * @see docs/product-roadmap.md — Tranche S.1
+     */
+    function tenantExistsRule(string $table, string $column = 'id')
+    {
+        $rule = \Illuminate\Validation\Rule::exists($table, $column);
+
+        if (\Auth::check() && \Auth::user()->type !== 'super admin') {
+            $rule->where('parent_id', parentId());
+        }
+
+        return $rule;
     }
 }

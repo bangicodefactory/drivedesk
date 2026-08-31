@@ -51,7 +51,7 @@ class RequestBookingController extends Controller
      {
          // Validate the request
          $validator = Validator::make($request->all(), [
-             'vehicle_id'       => 'required|exists:vehicles,id',
+             'vehicle_id'       => ['required', tenantExistsRule('vehicles')], // BAN-294
              'name'             => 'required|string|max:255',
              'email'            => 'required|email',
              'phone_number'     => 'required|string|max:20',
