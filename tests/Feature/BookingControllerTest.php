@@ -394,6 +394,33 @@ class BookingControllerTest extends TestCase
             ->assertSessionHasErrors(['vehicle', 'daily_price']);
     }
 
+    /**
+     * BAN-285 review: update()'s `vehicle`/`driver` rules were bare `required`
+     * where store() already had `exists`, so an id that resolves to no row got
+     * past validation and reached `Vehicle::find(...)->id` / `User::find(...)->email`,
+     * fatalling on a null deref. Reproduces as a stale Edit tab whose vehicle was
+     * deleted in another window. The failure must be a field error, not a 500.
+     */
+    public function test_update_rejects_ids_that_resolve_to_no_row(): void
+    {
+        $booking = $this->makeBooking();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), [
+                'vehicle'          => 999999, // no such vehicle
+                'start_date_time'  => '2026-07-01 09:00',
+                'end_date_time'    => '2026-07-04 18:00',
+                'driver'           => 999998, // no such user
+                'pickup_address'   => 'Airport',
+                'drop_off_address' => 'Hotel',
+                'status'           => 'yet_to_start',
+                'amount'           => 450,
+                'daily_price'      => 150,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['vehicle', 'driver']);
+    }
+
     // ── BookingController::show ───────────────────────────────────────────────
 
     public function test_show_returns_404_for_other_tenant(): void
