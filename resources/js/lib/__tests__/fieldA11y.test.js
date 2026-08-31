@@ -23,4 +23,12 @@ describe('fieldA11y', () => {
     it('derives a stable id from the field name', () => {
         expect(fieldErrorId('g-recaptcha-response')).toBe('g-recaptcha-response-error');
     });
+
+    it('supports Inertia useForm errors, a plain string per field', () => {
+        expect(fieldA11y({ driver_id: 'The driver id field is required.' }, 'driver_id')).toEqual({
+            'aria-invalid': true,
+            'aria-describedby': 'driver_id-error',
+        });
+        expect(fieldA11y({ driver_id: '' }, 'driver_id')).toEqual({});
+    });
 });

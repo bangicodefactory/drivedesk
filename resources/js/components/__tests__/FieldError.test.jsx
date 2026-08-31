@@ -20,4 +20,9 @@ describe('FieldError', () => {
         render(<FieldError name="email" errors={{ email: { message: 'Bad' } }} className="text-xs text-red-400" />);
         expect(screen.getByRole('alert')).toHaveClass('text-red-400');
     });
+
+    it('renders Inertia useForm errors, a plain string per field', () => {
+        render(<FieldError name="driver_id" errors={{ driver_id: 'The driver id field is required.' }} />);
+        expect(screen.getByRole('alert')).toHaveTextContent('The driver id field is required.');
+    });
 });
