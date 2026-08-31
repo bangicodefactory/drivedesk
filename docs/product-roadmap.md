@@ -286,19 +286,77 @@ unchanged for the existing client; variant behaviour behind a flag; tests first.
 
 ### Tranche 0 — foundation
 
-Items 0.1 (first slice) to 0.4 are implemented on branch
-`ux/a11y-rtl-foundation` (PR #4, commits BAN-271/273/274/275). The rest of
-0.1 and items 0.5–0.7 are follow-up PRs.
+Items 0.1–0.4 are implemented on branch `ux/a11y-rtl-foundation` (PR #4,
+commits BAN-271/273/274/275). Item 0.1's remaining pages are implemented on
+`ux/a11y-forms-adoption` (PR #5, commits BAN-278–283) — every page that used
+to hand-roll `{errors.x && <p>}` now uses `FieldError` + `fieldA11y`. Items
+0.5–0.8 are follow-up PRs.
 
 | # | Item | Effort |
 | --- | --- | :-: |
-| 0.1 | Accessible field errors: `FieldError` + `fieldA11y()` helpers (`resources/js/components/FieldError.jsx`, `resources/js/lib/fieldA11y.js`), adopted on a first slice in PR #4, then every remaining form page in module-sized commits | S + M |
+| 0.1 | Accessible field errors: `FieldError` + `fieldA11y()` helpers (`resources/js/components/FieldError.jsx`, `resources/js/lib/fieldA11y.js`), adopted across every form page (PR #4, PR #5) | S + M |
 | 0.2 | RTL sweep: physical → logical utilities (`text-end`, `ms-`/`me-`/`ps-`/`pe-`, `start-`/`end-`) with a guard test | S |
 | 0.3 | `Pagination.jsx`: `<nav aria-label>`, translated labels, `aria-current` | S |
 | 0.4 | System theme: honour `systemmode` in `app.jsx` (`enableSystem`) | S |
 | 0.5 | `<h1>` + `<Head>` title per page, skip link + `<main>` in `AdminLayout` | S |
 | 0.6 | Accessible combobox for `searchable-select.jsx` (roles, arrow keys, Escape, i18n) | S |
 | 0.7 | Submit spinners on form buttons (`isSubmitting` currently only disables) | S |
+| 0.8 | **Server-only validation never reaches the user as a field-level message** — see below | M |
+
+#### 0.8 in detail: controllers flash a generic error instead of `withErrors()`
+
+Found while landing PR #5. Across **17 controllers** (`Addon`, `Booking`,
+`Driver`, `Expense`, `ExpenseType`, `Inspection`, `InspectionType`,
+`Notification`, `Option`, `Permission`, `Place`, `Reminder`, `ReminderType`,
+`Role`, `Setting`, `TrafficViolation`, `User`, `VehicleType` — `Vehicle` does
+it correctly for its duplicate-plate check but not its two required-field
+checks), every `\Validator::make(...)->fails()` branch does:
+
+```php
+return redirect()->back()->with('error', $messages->first());
+```
+
+instead of
+
+```php
+return redirect()->back()->withErrors($validator);
+```
+
+**Impact is narrower than it first looks.** Inertia's `errors` shared prop is
+only populated by `withErrors()`. For the ~45 pages on `useZodForm`, the zod
+schema mirrors most `required` rules and validates client-side before any
+request is sent — so the common "left a required field blank" case already
+works correctly and is not affected. What silently never reaches the user as
+a field-specific message is any rule that exists **only** on the server and
+has no zod counterpart — a uniqueness check, a file `mimes`/`max` rule, a
+cross-field business rule — the user gets only a generic flash string with no
+indication of which field to fix. It is also fully broken (no error ever
+shown at all, not even generically per-field) on the handful of pages that
+both lack a client-side schema for that field *and* sit behind one of the 17
+broken controllers: `Booking/{Create,Edit}` (vehicle, driver, start/end
+date), `Credit/{Create,Edit}`, and `Signature/Create` (`user_id`,
+`signature`). `RentalAgreementController` is clean (`store()` and `update()`
+both already call `withErrors($validator)`) — its `vehicle` field's missing
+error display on `Edit.jsx` was a pure frontend gap, fixed in BAN-283.
+
+**Why not fixed in PR #5:** this is 17 controllers deep, and
+`BookingController::update()` — one of the two highest-traffic entry
+points — has **zero existing test coverage** (not even a happy path). Per
+CLAUDE.md §3 ("the controller's endpoints must already have feature-test
+coverage for both the happy path and at least one failure path... If they
+don't, write the tests first"), fixing this properly means a happy-path +
+failure-path test for every affected action before touching it — a
+correctly-scoped, separate PR (or a few, split by domain like PR #5's
+commits), not a rider on an accessibility PR.
+
+**Suggested approach:** one PR per controller-cluster (mirroring BAN-279–282's
+grouping works well), each PR: (1) add the missing happy/failure-path test(s)
+in their own commit, (2) change `with('error', $messages->first())` →
+`withErrors($validator)->with('error', $messages->first())` (keep the flash;
+some UI may still read `session('error')`), (3) verify the corresponding
+`FieldError`/`fieldA11y` wiring (already in place from PR #4/#5) now actually
+renders. `Booking` and `RentalAgreement` should go first — they're the pages
+with zero client-side fallback today.
 
 ### Tranche 1 — Moroccan table stakes (S/M, additive schema)
 
