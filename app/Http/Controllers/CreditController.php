@@ -137,7 +137,9 @@ class CreditController extends Controller
         }
 
         $request->validate([
-            'driver_id' => 'required|exists:users,id',
+            // BAN-296: tenant-scoped. users has no global scope (it is the auth
+            // provider), so this rule is what stops crediting another tenant's driver.
+            'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',
             'credit_date' => 'nullable|date',
@@ -195,7 +197,9 @@ class CreditController extends Controller
         }
 
         $request->validate([
-            'driver_id' => 'required|exists:users,id',
+            // BAN-296: tenant-scoped. users has no global scope (it is the auth
+            // provider), so this rule is what stops crediting another tenant's driver.
+            'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',
             'credit_date' => 'nullable|date',

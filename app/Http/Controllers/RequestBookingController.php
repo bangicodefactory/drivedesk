@@ -55,8 +55,8 @@ class RequestBookingController extends Controller
              'name'             => 'required|string|max:255',
              'email'            => 'required|email',
              'phone_number'     => 'required|string|max:20',
-             'pickup_address'   => 'required|exists:places,id',
-             'drop_off_address' => 'required|exists:places,id',
+             'pickup_address'   => ['required', tenantExistsRule('places')], // BAN-296: tenant-scoped; a bare exists: ignores the model's global scope.
+             'drop_off_address'   => ['required', tenantExistsRule('places')], // BAN-296: tenant-scoped; a bare exists: ignores the model's global scope.
              'start_date'       => 'required|date',
              'end_date'         => 'required|date|after:start_date',
              'start_time'       => 'required',
