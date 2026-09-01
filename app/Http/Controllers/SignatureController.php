@@ -25,7 +25,13 @@ class SignatureController extends Controller
             // ->with('drivers')  // Eager load the drivers relationship
             // ->orderBy('created_at', 'desc')
             // ->get();
-            $signatures = Signature::with('user')->orderBy('created_at', 'desc')->get();
+            // BAN-297: signatures has no parent_id, so the tenant link is the
+            // owning user. Without this the list showed every tenant's signature
+            // images and driver names to anyone holding 'manage driver'.
+            $signatures = Signature::with('user')
+                ->whereHas('user', fn ($q) => $this->constrainToTenant($q))
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -133,6 +139,13 @@ class SignatureController extends Controller
 
     public function destroy(Signature $signature){
         if (\Auth::user()->can('delete driver')) {
+            // BAN-297: implicit binding is unscoped and signatures has no
+            // parent_id, so any signature was deletable by id, from any tenant.
+            $owner = \App\Models\User::query();
+            $this->constrainToTenant($owner);
+            if (!$owner->whereKey($signature->user_id)->exists()) {
+                abort(404);
+            }
             
             \Log::info('Signature Path: ' . $signature->signature_path);
             \Log::info('Signature ID: ' . $signature->id);
@@ -150,4 +163,23 @@ class SignatureController extends Controller
         }
     }
 
+    /**
+     * Constrain a users query to the caller's tenant.
+     *
+     * A user belongs to tenant T when parent_id = T, or when the row *is* T
+     * (the owner, whose parent_id is 0). Super admins are unconstrained, as in
+     * BelongsToTenant.
+     */
+    private function constrainToTenant($query)
+    {
+        if (\Auth::check() && \Auth::user()->type === 'super admin') {
+            return $query;
+        }
+
+        $tenantId = parentId();
+
+        return $query->where(function ($q) use ($tenantId) {
+            $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);
+        });
+    }
 }

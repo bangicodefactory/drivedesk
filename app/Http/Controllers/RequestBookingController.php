@@ -55,8 +55,12 @@ class RequestBookingController extends Controller
              'name'             => 'required|string|max:255',
              'email'            => 'required|email',
              'phone_number'     => 'required|string|max:20',
-             'pickup_address'   => ['required', tenantExistsRule('places')], // BAN-296: tenant-scoped; a bare exists: ignores the model's global scope.
-             'drop_off_address'   => ['required', tenantExistsRule('places')], // BAN-296: tenant-scoped; a bare exists: ignores the model's global scope.
+             'pickup_address'   => ['required', tenantExistsRule('places')], // BAN-297: constrains authenticated submissions only. This endpoint is the
+             // public booking-request form, and tenantExistsRule() deliberately
+             // returns a bare exists: for guests, so the anonymous path is unchanged.
+             'drop_off_address'   => ['required', tenantExistsRule('places')], // BAN-297: constrains authenticated submissions only. This endpoint is the
+             // public booking-request form, and tenantExistsRule() deliberately
+             // returns a bare exists: for guests, so the anonymous path is unchanged.
              'start_date'       => 'required|date',
              'end_date'         => 'required|date|after:start_date',
              'start_time'       => 'required',

@@ -392,6 +392,17 @@ if (!function_exists('userLoggedHistory')) {
         function specificPlacesRateCalculation($placeId)
         {
             $place = Place::where('id', $placeId)->first();
+
+            // BAN-297: guard the deref, as placesRateCalculation() above already
+            // does. Place is tenant-scoped now, so a place outside the caller's
+            // tenant — including a legacy row still at the parent_id = 0 column
+            // default — resolves to null here. Unguarded, the quote rendered a
+            // blank place name and the pickup/drop-off fee silently became 0 in
+            // the customer's total.
+            if (!$place) {
+                return ['place' => null, 'final_price' => 0];
+            }
+
             $placeData['place'] = $place->name;
             // $placeData['final_price'] = priceFormat($place->price);
             $placeData['final_price'] = $place->price;
