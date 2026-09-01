@@ -865,7 +865,19 @@ if (!function_exists('tenantExistsRule')) {
         $rule = \Illuminate\Validation\Rule::exists($table, $column);
 
         if (\Auth::check() && \Auth::user()->type !== 'super admin') {
-            $rule->where('parent_id', parentId());
+            $tenantId = parentId();
+
+            if ($table === 'users') {
+                // A user belongs to tenant T when parent_id = T *or* it is the
+                // owner row itself (id = T, parent_id = 0). Matching only on
+                // parent_id rejected the owner — so an owner could not be the
+                // subject of their own signature or credit.
+                $rule->where(function ($q) use ($tenantId) {
+                    $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);
+                });
+            } else {
+                $rule->where('parent_id', $tenantId);
+            }
         }
 
         return $rule;
