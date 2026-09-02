@@ -212,7 +212,8 @@ class InspectionControllerTest extends TestCase
         ], $overrides);
     }
 
-    // InspectionFactory includes columns not in the DB schema (meter_reading_outgoing, outgoing_date, etc.).
+    // Builds the row explicitly so each test can name the columns it cares about.
+    // (InspectionFactory used to set columns that are not in the schema; fixed in BAN-297.)
     private function makeInspection(array $overrides = []): Inspection
     {
         return Inspection::create(array_merge([
