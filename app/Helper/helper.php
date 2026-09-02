@@ -396,9 +396,14 @@ if (!function_exists('userLoggedHistory')) {
             // BAN-297: guard the deref, as placesRateCalculation() above already
             // does. Place is tenant-scoped now, so a place outside the caller's
             // tenant — including a legacy row still at the parent_id = 0 column
-            // default — resolves to null here. Unguarded, the quote rendered a
-            // blank place name and the pickup/drop-off fee silently became 0 in
-            // the customer's total.
+            // default — resolves to null here, and $place->name below raised a
+            // warning that Laravel turns into an ErrorException (a 500).
+            //
+            // This guard only stops the fatal. It still reports a 0 fee, which
+            // would be a silently short quote, so the one caller
+            // (PlaceController::getPlaceRateCalculation) rejects an unresolvable
+            // place id up front rather than pricing it. Keep that check there if
+            // another caller is ever added.
             if (!$place) {
                 return ['place' => null, 'final_price' => 0];
             }
