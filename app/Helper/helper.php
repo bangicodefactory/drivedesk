@@ -871,18 +871,25 @@ if (!function_exists('tenantExistsRule')) {
      *
      * @see docs/product-roadmap.md — Tranche S.1
      */
-    function tenantExistsRule(string $table, string $column = 'id')
+    function tenantExistsRule(string $table, string $column = 'id', bool $includeTenantOwner = false)
     {
         $rule = \Illuminate\Validation\Rule::exists($table, $column);
 
         if (\Auth::check() && \Auth::user()->type !== 'super admin') {
             $tenantId = parentId();
 
-            if ($table === 'users') {
+            if ($includeTenantOwner) {
                 // A user belongs to tenant T when parent_id = T *or* it is the
                 // owner row itself (id = T, parent_id = 0). Matching only on
-                // parent_id rejected the owner — so an owner could not be the
-                // subject of their own signature or credit.
+                // parent_id rejected the owner, so an owner could not be the
+                // subject of their own signature.
+                //
+                // Opt-in, not automatic for the users table: most FKs that point
+                // at users mean "a driver of this tenant" (booking.driver,
+                // credit.driver_id), and every picker that feeds them lists
+                // type = 'driver' rows only. Widening those to accept the owner
+                // row would loosen a security rule for fields that never needed
+                // it. Pass true only where the owner is a legitimate subject.
                 $rule->where(function ($q) use ($tenantId) {
                     $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);
                 });

@@ -138,7 +138,9 @@ class CreditController extends Controller
 
         $request->validate([
             // BAN-296: tenant-scoped. users has no global scope (it is the auth
-            // provider), so this rule is what stops crediting another tenant's driver.
+            // provider), so this rule is what stops crediting another tenant's
+            // driver. No includeTenantOwner: a credit's subject is a driver
+            // (parent_id = T), which is all the picker in create()/edit() lists.
             'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',
@@ -198,7 +200,9 @@ class CreditController extends Controller
 
         $request->validate([
             // BAN-296: tenant-scoped. users has no global scope (it is the auth
-            // provider), so this rule is what stops crediting another tenant's driver.
+            // provider), so this rule is what stops crediting another tenant's
+            // driver. No includeTenantOwner: a credit's subject is a driver
+            // (parent_id = T), which is all the picker in create()/edit() lists.
             'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',

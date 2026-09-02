@@ -67,7 +67,10 @@ class SignatureController extends Controller
         // error and flattened into a flash — so the field-level messages never
         // reached session('errors') and the SPA could not show them.
         $request->validate([
-            'user_id' => ['required', tenantExistsRule('users')], // BAN-296: tenant-scoped; a bare exists: ignores the model's global scope.
+            // BAN-296: tenant-scoped; a bare exists: ignores the model's global
+            // scope. includeTenantOwner: the signature subject may be the tenant
+            // owner themselves, whose row is id = T with parent_id = 0.
+            'user_id' => ['required', tenantExistsRule('users', 'id', includeTenantOwner: true)],
             'signature' => 'required'
         ]);
 

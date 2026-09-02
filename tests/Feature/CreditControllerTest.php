@@ -139,6 +139,29 @@ class CreditControllerTest extends TestCase
             ->assertSessionHasErrors(['driver_id']);
     }
 
+    public function test_store_rejects_another_tenants_driver(): void
+    {
+        $otherOwner  = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $otherDriver = User::factory()->driver()->create(['parent_id' => $otherOwner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('credit.store'), $this->validCreditPayload(['driver_id' => $otherDriver->id]))
+            ->assertSessionHasErrors(['driver_id']);
+    }
+
+    /**
+     * BAN-296: tenantExistsRule() takes includeTenantOwner and credit does not
+     * pass it. A credit's subject is a driver (parent_id = T); the owner row
+     * (id = T, parent_id = 0) is not one, and the create/edit picker never
+     * offers it. Only the signature subject opts the owner row in.
+     */
+    public function test_store_rejects_the_tenant_owner_as_driver(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('credit.store'), $this->validCreditPayload(['driver_id' => $this->owner->id]))
+            ->assertSessionHasErrors(['driver_id']);
+    }
+
     public function test_store_rejects_negative_amount(): void
     {
         $this->actingAs($this->owner)
