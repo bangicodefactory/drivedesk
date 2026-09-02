@@ -134,14 +134,17 @@ class InspectionController extends Controller
 
     public function edit($id)
     {
-        // BAN-297: as show() — without this the page rendered with a null
-        // inspection prop and the React component faulted.
-        $inspection = Inspection::find(Crypt::decrypt($id));
-        if (!$inspection) {
-            abort(404);
-        }
-
         if (\Auth::user()->can('edit inspection')) {
+            // BAN-297: as show() — without this the page rendered with a null
+            // inspection prop and the React component faulted. The permission
+            // check stays ahead of the lookup so a caller without 'edit
+            // inspection' keeps getting the permission-denied redirect for every
+            // id, and cannot tell an id that exists from one that does not.
+            $inspection = Inspection::find(Crypt::decrypt($id));
+            if (!$inspection) {
+                abort(404);
+            }
+
             $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
             $vehicles->prepend(__('Select Vehicle'),'');
             $status=Inspection::$status;

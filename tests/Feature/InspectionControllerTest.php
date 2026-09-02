@@ -196,6 +196,45 @@ class InspectionControllerTest extends TestCase
         $this->assertDatabaseMissing('inspections', ['id' => $inspection->id]);
     }
 
+    // ── BAN-297: tenant scope + guard ordering ───────────────────────
+
+    public function test_show_answers_404_for_another_tenants_inspection(): void
+    {
+        $foreign = $this->makeForeignInspection();
+
+        $this->actingAs($this->owner)
+            ->get(route('inspection.show', Crypt::encrypt($foreign->id)))
+            ->assertStatus(404);
+    }
+
+    public function test_edit_answers_404_for_another_tenants_inspection(): void
+    {
+        $foreign = $this->makeForeignInspection();
+
+        $this->actingAs($this->owner)
+            ->get(route('inspection.edit', Crypt::encrypt($foreign->id)))
+            ->assertStatus(404);
+    }
+
+    /**
+     * The 404 guard must sit behind the permission check: a caller without
+     * 'edit inspection' gets the same permission-denied redirect whether or not
+     * the id resolves, so the response cannot be used to probe which ids exist.
+     */
+    public function test_edit_denied_without_permission_answers_the_same_for_known_and_unknown_ids(): void
+    {
+        $noPerms    = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $inspection = $this->makeInspection();
+
+        $this->actingAs($noPerms)
+            ->get(route('inspection.edit', Crypt::encrypt($inspection->id)))
+            ->assertSessionHas('error');
+
+        $this->actingAs($noPerms)
+            ->get(route('inspection.edit', Crypt::encrypt(999999)))
+            ->assertSessionHas('error');
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array
@@ -214,6 +253,23 @@ class InspectionControllerTest extends TestCase
 
     // Builds the row explicitly so each test can name the columns it cares about.
     // (InspectionFactory used to set columns that are not in the schema; fixed in BAN-297.)
+    /** An inspection owned by a different tenant, built with the scope off. */
+    private function makeForeignInspection(): Inspection
+    {
+        $otherOwner   = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $otherVehicle = Vehicle::factory()->create(['parent_id' => $otherOwner->id]);
+
+        return Inspection::create([
+            'vehicle'                => $otherVehicle->id,
+            'inspector'              => $otherOwner->id,
+            'inspection_date'        => now()->format('Y-m-d'),
+            'meter_reading_incoming' => 0,
+            'incoming_date'          => now()->format('Y-m-d'),
+            'status'                 => 'pending',
+            'parent_id'              => $otherOwner->id,
+        ]);
+    }
+
     private function makeInspection(array $overrides = []): Inspection
     {
         return Inspection::create(array_merge([
