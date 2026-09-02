@@ -38,16 +38,15 @@ class TenantScopeCoverageTest extends TestCase
     /**
      * Models whose factory cannot insert, with a builder that can.
      *
-     * InspectionFactory sets meter_reading_outgoing / outgoing_date /
-     * outgoing_time / incoming_time and NotificationFactory sets enabled_sms —
-     * none of which are columns. Factories are hydrated inside
-     * Model::unguarded(), so $fillable does not filter them and the insert
-     * fails. InspectionControllerTest and NotificationControllerTest hand-roll
-     * their rows for the same reason.
+     * Kept deliberately short: a factory that cannot insert is a bug in the
+     * factory, and the fix belongs there so every other suite gets it too.
+     * InspectionFactory and NotificationFactory were repaired for exactly
+     * that reason and now go through the default path in makeRow().
+     *
+     * DriverFactory types driver_id as a 'DR-####' string into an integer
+     * column, and DriverBlacklist has no factory at all.
      */
     private const BUILDERS = [
-        \App\Models\Inspection::class      => 'buildInspection',
-        \App\Models\Notification::class    => 'buildNotification',
         \App\Models\Driver::class          => 'buildDriver',
         \App\Models\DriverBlacklist::class => 'buildDriverBlacklist',
     ];
@@ -91,34 +90,6 @@ class TenantScopeCoverageTest extends TestCase
         ksort($cases);
 
         return $cases;
-    }
-
-    private function buildInspection(int $parentId)
-    {
-        $vehicle = \App\Models\Vehicle::factory()->create(['parent_id' => $parentId]);
-
-        return \App\Models\Inspection::create([
-            'vehicle'                => $vehicle->id,
-            'inspector'              => $this->owner->id,
-            'inspection_date'        => now()->format('Y-m-d'),
-            'meter_reading_incoming' => 0,
-            'incoming_date'          => now()->format('Y-m-d'),
-            'status'                 => 'pending',
-            'parent_id'              => $parentId,
-        ]);
-    }
-
-    private function buildNotification(int $parentId)
-    {
-        return \App\Models\Notification::create([
-            'module'        => 'new_booking',
-            'name'          => 'New booking',
-            'subject'       => 'Test Subject',
-            'message'       => 'Test message.',
-            'short_code'    => '{company_name}',
-            'enabled_email' => 0,
-            'parent_id'     => $parentId,
-        ]);
     }
 
     /** DriverFactory types driver_id as a 'DR-####' string; the column is an integer. */
