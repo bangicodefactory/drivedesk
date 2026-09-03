@@ -504,7 +504,10 @@ class TvaController extends Controller
         // what a run produces. Whether generation *should* span businesses is a
         // product question (the loop is keyed by each booking's own parent_id and
         // a test depends on it), so it is left as-is rather than changed by a
-        // side effect of the scope. Every other Tva path is now scoped.
+        // side effect of the scope. The rest of this method needs the same
+        // treatment for the same reason — see the due-amount and
+        // lastFactureNumberForYear() notes below. An earlier version of this
+        // comment claimed 'every other Tva path is now scoped', which was wrong.
         $deleteQuery = Tva::acrossTenants()
             ->whereYear('facture_date', $monthStart->year)
             ->whereMonth('facture_date', $monthStart->month);
@@ -579,7 +582,18 @@ class TvaController extends Controller
             // booking still has an outstanding balance gets no facture — skip it.
             // Round to cents (float amounts) so a residual isn't read as owing.
             if (feature('invoice_on_full_payment')) {
-                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalDueAmount(), 2);
+                // BAN-299: getTotalDueAmount() walks Booking::payments(), and
+                // BookingPayment is tenant-scoped as of BAN-298 — so for another
+                // business's booking the relation returned nothing, the booking
+                // looked entirely unpaid, and `continue` below skipped it. Step 1
+                // has already deleted its factures, so they were deleted and never
+                // regenerated: the BAN-292 loss, reintroduced. Only reachable with
+                // invoice_on_full_payment on, which drivedesk runs and the acme test
+                // fixture disables — the CLAUDE.md 10.2.6 trap exactly.
+                $paid = (float) BookingPayment::acrossTenants()
+                    ->where('booking_id', $booking->id)
+                    ->sum('amount');
+                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalAmount() - $paid, 2);
                 if ($due > 0) {
                     continue;
                 }
@@ -695,7 +709,13 @@ class TvaController extends Controller
      */
     private function lastFactureNumberForYear(int $year, $parentId): int
     {
-        $numbers = Tva::query()
+        // BAN-299: acrossTenants() — the tenant scope injected
+        // `tvas.parent_id = parentId()` here, contradicting the explicit
+        // parent_id below (the *booking's* business). For any other business the
+        // seed was therefore always 0, so a second month reissued facture 1 and
+        // duplicated a legal invoice number. The whereNull branch could never
+        // match under the scope either.
+        $numbers = Tva::acrossTenants()
             ->where(fn ($q) => $parentId === null
                 ? $q->whereNull('parent_id')
                 : $q->where('parent_id', $parentId))

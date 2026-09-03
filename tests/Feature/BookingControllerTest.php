@@ -580,7 +580,11 @@ class BookingControllerTest extends TestCase
 
         $other     = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $theirs    = $this->makeBooking(['parent_id' => $other->id]);
-        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id, 'parent_id' => $this->owner->id]);
+        // BAN-299: belongs to the *other* tenant, which is what the assertion
+        // below claims to prove. My BAN-298 pass scoped every Tva fixture to the
+        // acting owner mechanically, which quietly made this one a same-tenant
+        // row and stopped it covering a foreign TVA at all.
+        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id, 'parent_id' => $other->id]);
 
         $this->actingAs($this->owner)
             ->post(route('booking.bulk-destroy'), ['ids' => [$mine->id, $theirs->id]])
@@ -593,7 +597,7 @@ class BookingControllerTest extends TestCase
 
         // …the other tenant's rows untouched.
         $this->assertDatabaseHas('bookings', ['id' => $theirs->id]);
-        $this->assertDatabaseHas('tvas', ['id' => $theirTva->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['id' => $theirTva->id, 'deleted_at' => null]);  // table-level read, unaffected by the scope
     }
 
     public function test_bulk_destroy_requires_delete_booking_permission(): void

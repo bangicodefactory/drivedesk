@@ -989,7 +989,10 @@ class BookingController extends Controller
      */
     private function flushBookingFactures(Booking $booking): void
     {
-        $invoicedPaymentIds = Tva::withTrashed()
+        // BAN-299: acrossTenants() because tvas.parent_id is nullable with no
+        // backfill; scoping this guard would hide pre-July-2025 factures and
+        // re-issue invoices that already exist.
+        $invoicedPaymentIds = Tva::acrossTenants()->withTrashed()
             ->where('booking_id', $booking->id)
             ->whereNotNull('idpaiment')
             ->pluck('idpaiment')
@@ -1649,9 +1652,9 @@ class BookingController extends Controller
             // after the delete, so once the tenant scope (BAN-288) made a foreign
             // booking return null the request destroyed the payment and its TVA
             // rows and then 500'd before updating payment_status — a
-            // half-completed cross-tenant write. BookingPayment is not
-            // tenant-scoped itself, so the payment is additionally constrained to
-            // this booking rather than found by id alone.
+            // half-completed cross-tenant write. BookingPayment gained its own
+            // tenant scope in BAN-298, so the id lookup is now guarded twice; the
+            // booking_id constraint stays as the explicit statement of intent.
             $bookinmg = Booking::find($booking_id);
             if (!$bookinmg) {
                 abort(404);

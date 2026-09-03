@@ -883,6 +883,47 @@ class TvaControllerTest extends TestCase
      * test does not catch this because it generates as a super admin, who
      * bypasses the scope.
      */
+    /**
+     * BAN-299: the same loss as BAN-292, but reachable only with
+     * invoice_on_full_payment on. getTotalDueAmount() walks Booking::payments(),
+     * which BookingPayment's tenant scope (BAN-298) emptied for another
+     * business's booking — so it looked unpaid, the loop skipped it, and step 1
+     * had already deleted its factures.
+     *
+     * The flag is forced here rather than inherited: drivedesk runs it on and
+     * the acme test fixture has it off, which is precisely why the neighbouring
+     * test could not catch this (CLAUDE.md 10.2.6).
+     */
+    public function test_generate_regenerates_other_businesses_invoices_when_invoicing_on_full_payment(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->seedCompanySettings($otherOwner->id);
+
+        // Fully paid, so the flag's own rule is satisfied and the only thing that
+        // can skip it is the scope bug.
+        $otherBooking = \App\Models\Booking::factory()->create([
+            'parent_id' => $otherOwner->id,
+            'amount'    => 120.00,
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $otherBooking->id,
+            'parent_id'  => $otherOwner->id,
+            'date'       => '2024-01-15',
+            'amount'     => 120.00,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tvas', [
+            'parent_id'  => $otherOwner->id,
+            'deleted_at' => null,
+        ]);
+    }
+
     public function test_generate_regenerates_other_businesses_invoices_too(): void
     {
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
