@@ -1254,6 +1254,7 @@ class BookingControllerTest extends TestCase
         $tva = Tva::factory()->create([
             'booking_id' => $booking->id,
             'idpaiment'  => $payment->id,
+            'parent_id'  => $this->owner->id,
         ]);
 
         $this->actingAs($this->owner)
