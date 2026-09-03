@@ -25,7 +25,13 @@ class RequestBookingController extends Controller
     {
         $car = Vehicle::with('types')->where('id', $id)->firstOrFail();
 
+        // BAN-297: the storefront belongs to the car's tenant. Everything this
+        // page offers -- similar cars, pickup/drop-off places -- has to come
+        // from that same tenant, or the booking form hands a visitor ids that
+        // storeBooking() must then reject. The visitor is normally a guest, so
+        // the global tenant scope is inert here and parent_id is applied by hand.
         $similarCars = Vehicle::with('types')->where('id', '!=', $id)
+            ->where('parent_id', $car->parent_id)
             ->where(function ($query) use ($car) {
                 $query->where('type', $car->type)
                     ->orWhere('fuel_type', $car->fuel_type)
@@ -38,7 +44,7 @@ class RequestBookingController extends Controller
             ->limit(3)
             ->get();
 
-        $places = Place::all(['id', 'name', 'city']);
+        $places = Place::where('parent_id', $car->parent_id)->get(['id', 'name', 'city']);
 
         return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
     }
@@ -49,14 +55,37 @@ class RequestBookingController extends Controller
 
      public function storeBooking(Request $request)
      {
+         // BAN-297: the tenant comes from the requested vehicle, not from Auth.
+         // This is the public storefront form and its submitter is normally a
+         // guest, for whom tenantExistsRule() is deliberately inert -- scoping
+         // the places on Auth would close nothing on the only path this endpoint
+         // actually serves, while rejecting a signed-in visitor who is browsing
+         // another tenant's storefront. The vehicle picks the tenant, so both
+         // places must belong to it.
+         //
+         // Null when vehicle_id is missing or does not resolve; the vehicle_id
+         // rule below fails the request in that case, so the places fall back to
+         // a bare exists and the outcome is the same.
+         $vehicleTenantId = Vehicle::whereKey($request->input('vehicle_id'))->value('parent_id');
+
+         $placeRule = function () use ($vehicleTenantId) {
+             $rule = \Illuminate\Validation\Rule::exists('places', 'id');
+
+             if ($vehicleTenantId !== null) {
+                 $rule->where('parent_id', $vehicleTenantId);
+             }
+
+             return $rule;
+         };
+
          // Validate the request
          $validator = Validator::make($request->all(), [
              'vehicle_id'       => ['required', tenantExistsRule('vehicles')], // BAN-294
              'name'             => 'required|string|max:255',
              'email'            => 'required|email',
              'phone_number'     => 'required|string|max:20',
-             'pickup_address'   => 'required|exists:places,id',
-             'drop_off_address' => 'required|exists:places,id',
+             'pickup_address'   => ['required', $placeRule()],
+             'drop_off_address' => ['required', $placeRule()],
              'start_date'       => 'required|date',
              'end_date'         => 'required|date|after:start_date',
              'start_time'       => 'required',

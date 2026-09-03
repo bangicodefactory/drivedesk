@@ -39,8 +39,10 @@ class RequestBookingControllerTest extends TestCase
         $this->owner->givePermissionTo($perms);
 
         $this->vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
-        $this->pickup  = Place::factory()->create();
-        $this->dropOff = Place::factory()->create();
+        // BAN-297: the storefront form now takes its tenant from the requested
+        // vehicle, so the places have to sit in the same tenant as $this->vehicle.
+        $this->pickup  = Place::factory()->create(['parent_id' => $this->owner->id]);
+        $this->dropOff = Place::factory()->create(['parent_id' => $this->owner->id]);
     }
 
     // ── unauthenticated ───────────────────────────────────────────────────────
@@ -109,6 +111,48 @@ class RequestBookingControllerTest extends TestCase
         $this->assertDatabaseHas('booking_requests', [
             'amount' => 300.0, // 3 days × 100
         ]);
+    }
+
+    /**
+     * BAN-297: the public form is served to guests, for whom tenantExistsRule()
+     * is inert, so the tenant is taken from the requested vehicle instead. A
+     * place belonging to some other tenant must not be bookable against this
+     * tenant's car, even anonymously.
+     */
+    public function test_store_booking_rejects_a_place_from_another_tenant(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $foreign    = Place::factory()->create(['parent_id' => $otherOwner->id]);
+
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'       => $this->vehicle->id,
+            'name'             => 'Dana',
+            'email'            => 'dana@example.com',
+            'phone_number'     => '+33600000009',
+            'pickup_address'   => $foreign->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-07-01',
+            'end_date'         => '2026-07-04',
+            'start_time'       => '09:00',
+            'end_time'         => '18:00',
+        ])->assertSessionHasErrors(['pickup_address']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
+    public function test_car_details_only_offers_places_from_the_cars_tenant(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $foreign    = Place::factory()->create(['parent_id' => $otherOwner->id]);
+
+        $this->get(route('client.details', $this->vehicle->id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/CarDetails')
+                ->where('places', fn ($places) => collect($places)
+                    ->pluck('id')
+                    ->doesntContain($foreign->id))
+            );
     }
 
     public function test_store_booking_rejects_end_before_start(): void

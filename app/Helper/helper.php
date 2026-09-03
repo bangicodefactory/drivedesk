@@ -392,6 +392,22 @@ if (!function_exists('userLoggedHistory')) {
         function specificPlacesRateCalculation($placeId)
         {
             $place = Place::where('id', $placeId)->first();
+
+            // BAN-297: guard the deref, as placesRateCalculation() above already
+            // does. Place is tenant-scoped now, so a place outside the caller's
+            // tenant — including a legacy row still at the parent_id = 0 column
+            // default — resolves to null here, and $place->name below raised a
+            // warning that Laravel turns into an ErrorException (a 500).
+            //
+            // This guard only stops the fatal. It still reports a 0 fee, which
+            // would be a silently short quote, so the one caller
+            // (PlaceController::getPlaceRateCalculation) rejects an unresolvable
+            // place id up front rather than pricing it. Keep that check there if
+            // another caller is ever added.
+            if (!$place) {
+                return ['place' => null, 'final_price' => 0];
+            }
+
             $placeData['place'] = $place->name;
             // $placeData['final_price'] = priceFormat($place->price);
             $placeData['final_price'] = $place->price;
@@ -860,12 +876,31 @@ if (!function_exists('tenantExistsRule')) {
      *
      * @see docs/product-roadmap.md — Tranche S.1
      */
-    function tenantExistsRule(string $table, string $column = 'id')
+    function tenantExistsRule(string $table, string $column = 'id', bool $includeTenantOwner = false)
     {
         $rule = \Illuminate\Validation\Rule::exists($table, $column);
 
         if (\Auth::check() && \Auth::user()->type !== 'super admin') {
-            $rule->where('parent_id', parentId());
+            $tenantId = parentId();
+
+            if ($includeTenantOwner) {
+                // A user belongs to tenant T when parent_id = T *or* it is the
+                // owner row itself (id = T, parent_id = 0). Matching only on
+                // parent_id rejected the owner, so an owner could not be the
+                // subject of their own signature.
+                //
+                // Opt-in, not automatic for the users table: most FKs that point
+                // at users mean "a driver of this tenant" (booking.driver,
+                // credit.driver_id), and every picker that feeds them lists
+                // type = 'driver' rows only. Widening those to accept the owner
+                // row would loosen a security rule for fields that never needed
+                // it. Pass true only where the owner is a legitimate subject.
+                $rule->where(function ($q) use ($tenantId) {
+                    $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);
+                });
+            } else {
+                $rule->where('parent_id', $tenantId);
+            }
         }
 
         return $rule;

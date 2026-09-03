@@ -42,7 +42,7 @@ class UserControllerTest extends TestCase
 
         // store() (non-super-admin path) accesses this record unconditionally before
         // the null-guard, so it must exist for any store test to reach the DB write.
-        // Use create() directly — NotificationFactory includes 'enabled_sms' which is not in the table.
+        // Built explicitly so the module is pinned to the one store() looks up.
         Notification::create([
             'module'        => 'user_create',
             'name'          => 'New User',
