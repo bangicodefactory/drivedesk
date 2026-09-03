@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
@@ -91,5 +92,17 @@ class PublicStorefrontTest extends TestCase
         $this->asClient('drivedesk');
 
         $this->get('/login')->assertOk();
+    }
+
+    public function test_root_serves_the_storefront_home_for_clients_that_keep_it(): void
+    {
+        // acme has no demo_gateway and keeps the storefront on by default —
+        // exactly the profile a real non-demo rental agency (e.g. MarrueCar)
+        // runs. / must not be a dead end (redirect to login) for them.
+        $this->asClient('acme');
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Public/Landing'));
     }
 }

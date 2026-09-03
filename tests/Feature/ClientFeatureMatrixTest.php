@@ -47,6 +47,24 @@ class ClientFeatureMatrixTest extends TestCase
         $this->assertFalse(feature('public_storefront'));
     }
 
+    public function test_marruecar_runs_a_storefront_without_the_demo_surface(): void
+    {
+        // MarrueCar is a real single-agency B2C tenant, not a platform demo —
+        // the inverse profile of drivedesk: storefront on, demo/B2B extras off.
+        $this->asClient('marruecar');
+
+        $this->assertTrue(feature('public_storefront'));
+        $this->assertFalse(feature('demo_gateway'));
+
+        $this->assertFalse(feature('paypal'));
+        $this->assertFalse(feature('stripe'));
+        $this->assertFalse(feature('subscriptions'));
+        $this->assertFalse(feature('booking_payment'));
+        $this->assertFalse(feature('cash_split'));
+        $this->assertFalse(feature('invoice_on_full_payment'));
+        $this->assertFalse(feature('traffic_violations'));
+    }
+
     /**
      * End to end under the client's *own* resolved config — no config() forcing.
      *

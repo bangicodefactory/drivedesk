@@ -54,6 +54,13 @@ class DemoGatewayTest extends TestCase
     public function test_guest_home_redirects_to_login_when_gateway_off(): void
     {
         $this->asClient('acme');
+        // acme keeps the B2C storefront on by default, and / now serves that
+        // storefront's home when public_storefront is on and demo_gateway is
+        // off (see PublicStorefrontTest::test_root_serves_the_storefront_home_
+        // for_clients_that_keep_it). This test is about the "neither public
+        // face is on" case specifically, so pin that flag off rather than lean
+        // on the fixture's default (CLAUDE.md §10.2 rule 6).
+        config(['client.features.public_storefront' => false]);
 
         $this->get('/')->assertRedirect(route('login'));
     }

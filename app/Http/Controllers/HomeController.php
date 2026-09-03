@@ -78,9 +78,16 @@ class HomeController extends Controller
             }
             // Demo/showcase clients (feature 'demo_gateway') serve a public
             // marketing landing at / with a "Book a demo" form. Every other
-            // tenant stays internal-only and redirects to login (BAN-241).
+            // tenant stays internal-only and redirects to login (BAN-241) —
+            // unless it runs a B2C rental storefront (`public_storefront`),
+            // in which case / is that storefront's home instead of a dead end.
+            // Checked after demo_gateway so a client can't enable both and get
+            // an ambiguous /.
             if (feature('demo_gateway')) {
                 return Inertia::render('Public/DemoGateway');
+            }
+            if (feature('public_storefront')) {
+                return $this->landing();
             }
             return redirect()->route('login');
         }
