@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Booking;
+use App\Models\Concerns\BelongsToTenant;
 
 class Tva extends Model
 {
+    // Tenant isolation (roadmap Tranche S.1): constrains every query to the
+    // caller's tenant, so another tenant's row cannot resolve by id.
+    use BelongsToTenant;
     use HasFactory,SoftDeletes;
 
     protected $fillable = [

@@ -273,7 +273,15 @@ class RentalAgreementController extends Controller
     {
         if (\Auth::user()->can('show rental agreement')) {
             $id = Crypt::decrypt($ids);
+
+            // BAN-298: the tenant scope makes another tenant's agreement resolve
+            // to null here, and the driver ids are read off it on the next line.
+            // The find() sits behind Crypt::decrypt(), which is where the earlier
+            // audit script stopped looking (BAN-297).
             $rentalAgreement = RentalAgreement::find($id);
+            if (!$rentalAgreement) {
+                abort(404);
+            }
 
             // Batch-load both drivers' user records and Driver profiles in 2 queries
             $driverIds    = array_values(array_filter([$rentalAgreement->driver, $rentalAgreement->driver2]));

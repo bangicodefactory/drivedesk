@@ -498,13 +498,24 @@ class TvaController extends Controller
         // generation. (Hard uniqueness still needs the DB unique index — IST-230.)
         return \DB::transaction(function () use ($monthStart, $monthEnd) {
         // 1. Delete existing TVA records in the selected month (facture_date within month)
-        $deleteQuery = Tva::whereYear('facture_date', $monthStart->year)
+        // BAN-298: acrossTenants() keeps today's behaviour exactly. Tva is
+        // tenant-scoped as of this commit, which would otherwise have made this
+        // delete — and the payment scan below — silently tenant-local, changing
+        // what a run produces. Whether generation *should* span businesses is a
+        // product question (the loop is keyed by each booking's own parent_id and
+        // a test depends on it), so it is left as-is rather than changed by a
+        // side effect of the scope. Every other Tva path is now scoped.
+        $deleteQuery = Tva::acrossTenants()
+            ->whereYear('facture_date', $monthStart->year)
             ->whereMonth('facture_date', $monthStart->month);
         $deletedCount = $deleteQuery->count();
         $deleteQuery->delete();
 
         // 2. Pull BookingPayments in that month to build TVAs (per payment)
-        $paymentQuery = BookingPayment::whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+        // BAN-298: as above — the scan must see every business's payments for the
+        // regeneration to reproduce what it deleted.
+        $paymentQuery = BookingPayment::acrossTenants()
+            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
         $payments = $paymentQuery->get();
 
         $setting = settings();
