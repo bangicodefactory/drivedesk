@@ -313,7 +313,7 @@ class TvaControllerTest extends TestCase
     // NOTE: update has no permission check and no tenant scoping — any authenticated
     // user can mutate any TVA record regardless of parent_id. These tests document
     // that gap so a future fix can close it.
-    public function test_update_succeeds_cross_tenant_documents_missing_scope(): void
+    public function test_update_refuses_another_tenants_tva(): void
     {
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $tva = Tva::factory()->withInvoice()->create(['parent_id' => $otherOwner->id]);
@@ -326,10 +326,13 @@ class TvaControllerTest extends TestCase
                 'tva'            => 83.33,
                 'facture_number' => 'CROSS',
             ])
-            ->assertRedirect(route('tva.index'));
+            ->assertStatus(404);
 
-        // Succeeds — no scoping guard exists yet
-        $this->assertDatabaseHas('tvas', ['id' => $tva->id, 'facture_number' => 'CROSS']);
+        // BAN-298: this test previously asserted the opposite — that the update
+        // succeeded — with the comment 'no scoping guard exists yet'. Tva is
+        // tenant-scoped now, so route-model binding refuses to resolve another
+        // tenant's invoice and the row is untouched.
+        $this->assertDatabaseMissing('tvas', ['id' => $tva->id, 'facture_number' => 'CROSS']);
     }
 
     // ── TvaController::destroy ────────────────────────────────────────────────
@@ -353,18 +356,21 @@ class TvaControllerTest extends TestCase
             ->assertNotFound();
     }
 
-    // NOTE: destroy has no permission check and no tenant scoping — documents the gap.
-    public function test_destroy_succeeds_cross_tenant_documents_missing_scope(): void
+    // NOTE: destroy still has no permission check — that gap is separate and
+    // remains open. The tenant gap it also documented is closed (BAN-298).
+    public function test_destroy_refuses_another_tenants_tva(): void
     {
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $tva = Tva::factory()->withInvoice()->create(['parent_id' => $otherOwner->id]);
 
         $this->actingAs($this->owner)
             ->delete(route('tva.destroy', $tva))
-            ->assertRedirect();
+            ->assertStatus(404);
 
-        // Succeeds — no scoping guard exists yet
-        $this->assertSoftDeleted('tvas', ['id' => $tva->id]);
+        // BAN-298: previously asserted the delete succeeded, commenting 'no
+        // scoping guard exists yet'. Tva is tenant-scoped now, so binding refuses
+        // to resolve another tenant's invoice and the row survives.
+        $this->assertNotSoftDeleted('tvas', ['id' => $tva->id]);
     }
 
     // ── TvaController::report ─────────────────────────────────────────────────

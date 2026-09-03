@@ -462,7 +462,11 @@ class TrafficViolationControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->get(route('traffic-violation.show', $violation->id))
-            ->assertRedirect(route('traffic-violation.index'));
+            // BAN-298: TrafficViolation is tenant-scoped now, so route-model
+            // binding refuses to resolve another tenant's violation and Laravel
+            // answers 404 before the controller's own redirect-with-error runs.
+            // Both deny access; 404 is what every scoped model answers.
+            ->assertStatus(404);
     }
 
     // ── Update ───────────────────────────────────────────────────────────────
@@ -582,7 +586,11 @@ class TrafficViolationControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->put(route('traffic-violation.update', $violation->id), $this->validPayload(['reference' => 'MINE']))
-            ->assertRedirect(route('traffic-violation.index'));
+            // BAN-298: TrafficViolation is tenant-scoped now, so route-model
+            // binding refuses to resolve another tenant's violation and Laravel
+            // answers 404 before the controller's own redirect-with-error runs.
+            // Both deny access; 404 is what every scoped model answers.
+            ->assertStatus(404);
 
         $this->assertDatabaseHas('traffic_violations', ['id' => $violation->id, 'reference' => 'THEIRS']);
     }
@@ -607,7 +615,11 @@ class TrafficViolationControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->delete(route('traffic-violation.destroy', $violation->id))
-            ->assertRedirect(route('traffic-violation.index'));
+            // BAN-298: TrafficViolation is tenant-scoped now, so route-model
+            // binding refuses to resolve another tenant's violation and Laravel
+            // answers 404 before the controller's own redirect-with-error runs.
+            // Both deny access; 404 is what every scoped model answers.
+            ->assertStatus(404);
 
         $this->assertDatabaseHas('traffic_violations', ['id' => $violation->id]);
     }

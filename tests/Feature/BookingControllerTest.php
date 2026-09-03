@@ -450,7 +450,7 @@ class BookingControllerTest extends TestCase
     public function test_destroy_deletes_booking_and_associated_tva(): void
     {
         $booking = $this->makeBooking();
-        $tva = Tva::factory()->create(['booking_id' => $booking->id]);
+        $tva = Tva::factory()->create(['booking_id' => $booking->id, 'parent_id' => $this->owner->id]);
 
         $this->actingAs($this->owner)
             ->delete(route('booking.destroy', $booking->id))
@@ -576,11 +576,11 @@ class BookingControllerTest extends TestCase
         // mixing the caller's own booking with another tenant's must delete ONLY
         // the caller's booking + its TVA, never the other tenant's rows.
         $mine   = $this->makeBooking();
-        $myTva  = Tva::factory()->create(['booking_id' => $mine->id]);
+        $myTva  = Tva::factory()->create(['booking_id' => $mine->id, 'parent_id' => $this->owner->id]);
 
         $other     = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $theirs    = $this->makeBooking(['parent_id' => $other->id]);
-        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id]);
+        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id, 'parent_id' => $this->owner->id]);
 
         $this->actingAs($this->owner)
             ->post(route('booking.bulk-destroy'), ['ids' => [$mine->id, $theirs->id]])
