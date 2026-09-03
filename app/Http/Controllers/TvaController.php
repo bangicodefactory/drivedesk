@@ -590,10 +590,17 @@ class TvaController extends Controller
                 // regenerated: the BAN-292 loss, reintroduced. Only reachable with
                 // invoice_on_full_payment on, which drivedesk runs and the acme test
                 // fixture disables — the CLAUDE.md 10.2.6 trap exactly.
-                $paid = (float) BookingPayment::acrossTenants()
-                    ->where('booking_id', $booking->id)
-                    ->sum('amount');
-                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalAmount() - $paid, 2);
+                // BAN-300: the sum has to stay *inside* the memo. Hoisting it ran one
+                // SUM per payment row rather than per booking — 500 queries for 200
+                // bookings, inside the generation transaction — while the comment
+                // above still promised the value was not re-summed per row.
+                $due = $dueByBooking[$booking->id] ??= round(
+                    (float) $booking->getTotalAmount()
+                        - (float) BookingPayment::acrossTenants()
+                            ->where('booking_id', $booking->id)
+                            ->sum('amount'),
+                    2
+                );
                 if ($due > 0) {
                     continue;
                 }

@@ -462,6 +462,22 @@ class RentalAgreementControllerTest extends TestCase
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * BAN-300: pins the guard BAN-298 added to show(). RentalAgreement is
+     * tenant-scoped, so the find() behind Crypt::decrypt() resolves to null for
+     * another tenant and the driver ids were read straight off it — a 500. The
+     * guard shipped without a test, which CLAUDE.md §3 asks for in the same PR.
+     */
+    public function test_show_answers_404_for_another_tenants_agreement(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $foreign    = $this->makeAgreement(['parent_id' => $otherOwner->id]);
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', Crypt::encrypt($foreign->id)))
+            ->assertStatus(404);
+    }
+
     private function makeAgreement(array $overrides = []): RentalAgreement
     {
         return RentalAgreement::factory()->create(array_merge([

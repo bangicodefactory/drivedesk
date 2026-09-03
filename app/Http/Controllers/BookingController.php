@@ -747,7 +747,13 @@ class BookingController extends Controller
     {
         if (\Auth::user()->can('delete booking')) {
             // Delete associated TVA record first
-            Tva::where('booking_id', $booking->id)->delete();
+            //
+            // BAN-300: acrossTenants() because tvas.parent_id is nullable with no
+            // backfill — a booking's pre-2025-07-11 factures would otherwise
+            // survive the booking and be orphaned. BAN-298 added parent_id to the
+            // fixtures covering this instead of fixing the query, which kept the
+            // tests green while leaving production's untagged rows behind.
+            Tva::acrossTenants()->where('booking_id', $booking->id)->delete();
 
             // Then delete the booking
             $booking->delete();
@@ -781,7 +787,9 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('No bookings selected.'));
         }
 
-        Tva::whereIn('booking_id', $ownedIds)->delete();
+        // BAN-300: as destroy() — the ids are already tenant-verified above, so
+        // dropping the scope here widens nothing but reaches untagged factures.
+        Tva::acrossTenants()->whereIn('booking_id', $ownedIds)->delete();
         Booking::whereIn('id', $ownedIds)->delete();
 
         return redirect()->route('booking.index')->with('success', __('Selected bookings successfully deleted.'));
@@ -943,7 +951,13 @@ class BookingController extends Controller
 
         // Global last facture number (matches paymentStore; per-year unification
         // is tracked in IST-230).
-        $lastFacture = Tva::orderByDesc('id')->first();
+        //
+        // BAN-300: acrossTenants() — this is the same failure mode BAN-299 fixed
+        // in lastFactureNumberForYear() and this sibling was left scoped. With no
+        // matching row the seed falls to 0 and the next facture is numbered 1,
+        // duplicating an already-issued legal invoice number. 'Global' in the
+        // comment above is only true if the query stays unscoped.
+        $lastFacture = Tva::acrossTenants()->orderByDesc('id')->first();
         $lastNumber = ($lastFacture && preg_match('/\d+$/', (string) $lastFacture->facture_number, $matches)) ? (int) $matches[0] : 0;
         $factureNumber = $lastNumber + 1;
 
@@ -1662,8 +1676,10 @@ class BookingController extends Controller
 
             $payment = BookingPayment::where('booking_id', $bookinmg->id)->find($id);
             if ($payment) {
-                // Delete linked TVA records created for this payment via idpaiment
-                Tva::where('idpaiment', $payment->id)->delete();
+                // Delete linked TVA records created for this payment via idpaiment.
+                // BAN-300: acrossTenants() — the payment is already tenant-checked
+                // above, and its factures may predate the parent_id column.
+                Tva::acrossTenants()->where('idpaiment', $payment->id)->delete();
                 $payment->delete();
             }
 
