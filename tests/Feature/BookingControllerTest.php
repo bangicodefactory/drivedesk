@@ -450,7 +450,7 @@ class BookingControllerTest extends TestCase
     public function test_destroy_deletes_booking_and_associated_tva(): void
     {
         $booking = $this->makeBooking();
-        $tva = Tva::factory()->create(['booking_id' => $booking->id]);
+        $tva = Tva::factory()->create(['booking_id' => $booking->id, 'parent_id' => $this->owner->id]);
 
         $this->actingAs($this->owner)
             ->delete(route('booking.destroy', $booking->id))
@@ -576,11 +576,15 @@ class BookingControllerTest extends TestCase
         // mixing the caller's own booking with another tenant's must delete ONLY
         // the caller's booking + its TVA, never the other tenant's rows.
         $mine   = $this->makeBooking();
-        $myTva  = Tva::factory()->create(['booking_id' => $mine->id]);
+        $myTva  = Tva::factory()->create(['booking_id' => $mine->id, 'parent_id' => $this->owner->id]);
 
         $other     = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $theirs    = $this->makeBooking(['parent_id' => $other->id]);
-        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id]);
+        // BAN-299: belongs to the *other* tenant, which is what the assertion
+        // below claims to prove. My BAN-298 pass scoped every Tva fixture to the
+        // acting owner mechanically, which quietly made this one a same-tenant
+        // row and stopped it covering a foreign TVA at all.
+        $theirTva  = Tva::factory()->create(['booking_id' => $theirs->id, 'parent_id' => $other->id]);
 
         $this->actingAs($this->owner)
             ->post(route('booking.bulk-destroy'), ['ids' => [$mine->id, $theirs->id]])
@@ -593,7 +597,7 @@ class BookingControllerTest extends TestCase
 
         // …the other tenant's rows untouched.
         $this->assertDatabaseHas('bookings', ['id' => $theirs->id]);
-        $this->assertDatabaseHas('tvas', ['id' => $theirTva->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['id' => $theirTva->id, 'deleted_at' => null]);  // table-level read, unaffected by the scope
     }
 
     public function test_bulk_destroy_requires_delete_booking_permission(): void
@@ -1254,6 +1258,7 @@ class BookingControllerTest extends TestCase
         $tva = Tva::factory()->create([
             'booking_id' => $booking->id,
             'idpaiment'  => $payment->id,
+            'parent_id'  => $this->owner->id,
         ]);
 
         $this->actingAs($this->owner)

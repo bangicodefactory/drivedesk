@@ -366,6 +366,40 @@ super-admin-still-has-access test in the same commit, mirroring
 Booking/Vehicle/Driver first (the highest-value records), then the rest by
 cluster.
 
+#### S.1 follow-ups left open (BAN-300)
+
+Two of these are decisions, not omissions.
+
+**`tvas.parent_id` is nullable and was never backfilled.** The column was added
+2025-07-11 to a table created 2025-02-04, so every invoice issued in between has
+`parent_id IS NULL` and matches no tenant. Seven query sites had to be pinned
+with `acrossTenants()` to keep working (numbering ×2, three deletes, the
+renumber service and its year list). **A backfill migration deriving
+`tvas.parent_id` from the booking is the real fix** — it would let all seven be
+scoped normally — but it rewrites rows on legally numbered documents, so it
+needs its own PR, its own tests and a decision. Until then `Tva::findOrFail()`
+in `edit`/`update`/`show`/`destroy` will 404 a tenant's *own* pre-July-2025
+invoices if the URL is reached directly (they are already absent from the list,
+which filters on `parent_id`).
+
+**Two cross-tenant writes are preserved rather than endorsed.** Both were
+unscoped before Tranche S.1 and are pinned with `acrossTenants()` so the scope
+did not change them by side effect:
+
+| Path | Question |
+| --- | --- |
+| `generateMonthlyTva` | Should one owner's "Generate" delete and reissue every other business's factures for that month? |
+| `TvaRenumberService` | Should one owner's "Renumber 2025" rewrite every tenant's `facture_number` into a single merged sequence? |
+
+Latent while production is effectively single-tenant, but both are destructive
+cross-tenant writes on legal documents and should be answered deliberately.
+
+**Smaller:** `TvaController::destroy` has no permission check;
+`Inspection`/`Notification` `$fillable` still list columns that do not exist;
+`DriverFactory` types `driver_id` as a `'DR-####'` string into an integer
+column; `TvaFactory` omits `parent_id`, which is why several call sites set it
+by hand.
+
 ### Tranche 0 — foundation
 
 Items 0.1–0.4 are implemented on branch `ux/a11y-rtl-foundation` (PR #4,

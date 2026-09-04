@@ -16,7 +16,13 @@ class TvaRenumberService
      */
     public function preview(int $year): array
     {
-        $rows = Tva::withoutTrashed()
+        // BAN-299: acrossTenants() preserves the pre-BAN-298 behaviour. This
+        // service was never tenant-filtered, and tvas.parent_id is nullable with
+        // no backfill (added 2025-07-11 to a table created 2025-02-04), so
+        // scoping it would silently drop every pre-July-2025 invoice from a
+        // renumber — renumbering the tagged subset from 1 while the untagged
+        // rows keep their old numbers, duplicating numbers within the year.
+        $rows = Tva::acrossTenants()->withoutTrashed()
             ->forYear($year)
             ->orderBy('facture_date', 'asc')
             ->orderBy('id', 'asc')
@@ -51,7 +57,8 @@ class TvaRenumberService
     public function renumber(int $year): array
     {
         return DB::transaction(function () use ($year) {
-            $rows = Tva::withoutTrashed()
+            // BAN-299: as preview() — see the note there.
+            $rows = Tva::acrossTenants()->withoutTrashed()
                 ->forYear($year)
                 ->orderBy('facture_date', 'asc')
                 ->orderBy('id', 'asc')

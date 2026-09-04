@@ -24,7 +24,11 @@ class TvaRenumberController extends Controller
         $preview = $this->service->preview($selectedYear);
 
         // Distinct years derived from facture_date only.
-        $years = Tva::withoutTrashed()
+        // BAN-300: acrossTenants() to match TvaRenumberService, which is pinned
+        // for the legacy-NULL reason. Scoped, a year whose invoices all predate
+        // 2025-07-11 vanished from this dropdown — making the very rows the
+        // service protects unreachable from the UI.
+        $years = Tva::acrossTenants()->withoutTrashed()
             ->whereNotNull('facture_date')
             ->selectRaw('YEAR(facture_date) as y')
             ->groupBy('y')
