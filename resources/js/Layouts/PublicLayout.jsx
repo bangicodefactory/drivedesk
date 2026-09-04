@@ -4,8 +4,11 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 /**
- * Lightweight layout for public/guest pages (landing, login, register, etc.).
- * No sidebar — just a centered content area with logo header.
+ * Lightweight layout for the Auth pages (login, register, forgot/reset
+ * password, verify email). No sidebar — just a centered content area with a
+ * logo header. The public B2C storefront (Home, Fleet, Contact, etc.) uses
+ * StorefrontLayout instead, which adds a full nav/footer that has no business
+ * on an auth screen.
  *
  * Usage:
  *   LoginPage.layout = (page) => <PublicLayout>{page}</PublicLayout>;

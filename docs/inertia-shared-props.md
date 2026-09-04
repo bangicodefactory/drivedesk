@@ -23,6 +23,12 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
 | `branding.layoutMode` | `'lightmode' \| 'darkmode' \| 'systemmode'` | Drives `ThemeProvider` initial theme via `resolveTheme()` in `resources/js/lib/theme.js`; `systemmode` follows `prefers-color-scheme` |
 | `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
+| `contact.phone` | `string \| null` | Business phone, from `Setting.company_phone` |
+| `contact.whatsapp` | `string \| null` | WhatsApp number, digits only (e.g. `'212602793425'`) — build `wa.me/{whatsapp}` links with it |
+| `contact.email` | `string \| null` | Business email, from `Setting.company_email` |
+| `contact.address` | `string \| null` | Business address, from `Setting.company_address` |
+| `contact.hoursWeekday` / `hoursSaturday` / `hoursSunday` | `string \| null` | Opening hours copy |
+| `contact.facebookUrl` / `instagramUrl` | `string \| null` | Social links |
 | `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'drivedesk'`) |
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
 | `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
@@ -193,7 +199,8 @@ Two persistent layouts are available under `resources/js/Layouts/`:
 | Layout | File | Use for |
 |--------|------|---------|
 | `AdminLayout` | `AdminLayout.jsx` | All ported admin/dashboard pages |
-| `PublicLayout` | `PublicLayout.jsx` | Landing, login, register, guest pages |
+| `PublicLayout` | `PublicLayout.jsx` | Auth pages (login, register, forgot/reset password, verify email) |
+| `StorefrontLayout` | `StorefrontLayout.jsx` | The public B2C rental storefront (Home, Fleet, Booking, Contact, Services, About, Travel Guide) — nav, footer, WhatsApp float, language switcher |
 
 ### How to assign a layout (Inertia persistent layout pattern)
 

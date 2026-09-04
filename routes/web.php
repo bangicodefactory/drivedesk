@@ -544,6 +544,17 @@ if (app()->environment('local')) {
     Route::get('/sentry-test', function () {
         throw new \RuntimeException('Sentry smoke-test — intentional exception from /sentry-test');
     })->middleware('auth')->name('sentry.test');
+
+    // Preview the public B2C storefront home page regardless of the active
+    // APP_CLIENT / `public_storefront` flag — lets you eyeball the layout
+    // while developing without editing .env. Renders with whatever vehicles/
+    // places/branding the local DB and active client already have, so SEO
+    // meta and copy reflect the *actual* active client, not necessarily the
+    // client the storefront is being built for. Never registered outside
+    // `local` (no feature flag, no auth — would otherwise leak the storefront
+    // to any client regardless of its `public_storefront` setting).
+    Route::get('/dev/landing', [HomeController::class, 'landing'])
+        ->middleware('XSS')->name('dev.landing');
 }
 
 // genere tva par mois
@@ -578,6 +589,16 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
     Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
     Route::post('/booking_request', [RequestBookingController::class, 'storeBooking'])->name('booking.store_request');
     Route::resource('booking_requests', RequestBookingController::class);
+
+    // Public 3-step booking wizard. Named /reserve (not /booking) because
+    // Route::resource('booking', BookingController::class) already owns
+    // GET/POST /booking for the admin CRUD. Ungated by feature:public_storefront
+    // to match its siblings above (/car/{id}, /booking_request).
+    Route::get('/reserve', [RequestBookingController::class, 'create'])->name('reserve.create');
+    // Signed: booking_requests carries a guest's name/email/phone and isn't
+    // tenant- or auth-scoped, so the id alone must not be enough to view it.
+    Route::get('/reserve/confirmation/{bookingRequest}', [RequestBookingController::class, 'confirmation'])
+        ->middleware('signed')->name('reserve.confirmation');
 
 // BAN-51 smoke-test — remove after Hello.tsx is verified
 Route::get('/hello', fn () => Inertia::render('Hello'))->name('inertia.hello');

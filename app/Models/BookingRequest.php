@@ -28,6 +28,11 @@ class BookingRequest extends Model
         'details',
         'vehicle_details',
         'parent_id',
+        'age',
+        'nationality',
+        'driving_experience',
+        'passengers',
+        'whatsapp',
     ];
 
     public function guest()

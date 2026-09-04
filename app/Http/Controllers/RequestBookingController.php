@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Models\Guest;
+use App\Models\Booking;
 use App\Models\BookingRequest;
 use App\Models\Place;
 use DateTime;
@@ -14,10 +15,55 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class RequestBookingController extends Controller
 {
+    /**
+     * The /reserve booking wizard: dates/locations, then a car (filtered to
+     * ones actually free for those dates), then customer details. Reuses the
+     * same Vehicle/Place/Booking data as the rest of the app — no separate
+     * "Car" model, no separate bookings table.
+     *
+     * Re-invoked via an Inertia partial reload (`only: ['vehicles']`) once the
+     * wizard's date step is filled in, so `vehicles` reflects availability for
+     * whatever range the query string carries.
+     */
+    public function create(Request $request)
+    {
+        $vehiclesQuery = Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture');
+
+        $startDate = $request->query('start_date');
+        $endDate   = $request->query('end_date');
+
+        if ($startDate && $endDate) {
+            $start = $startDate . ' ' . ($request->query('start_time') ?: '00:00') . ':00';
+            $end   = $endDate . ' ' . ($request->query('end_time') ?: '23:59') . ':00';
+
+            // Same overlap rule as VehicleController::getAvailableVehicle() (the
+            // admin planning screen): two ranges overlap unless one ends before
+            // the other starts. Not tenant-scoped — Booking's tenant scope is
+            // inert for a guest request (BelongsToTenant::tenantScopeApplies()),
+            // matching how landingProps()/showSimilarCars() already read Vehicle
+            // for the same unauthenticated storefront.
+            $unavailableVehicleIds = Booking::whereNotIn('status', ['completed', 'cancelled'])
+                ->whereRaw("CONCAT(start_date, ' ', start_time) <= ?", [$end])
+                ->whereRaw("CONCAT(end_date, ' ', end_time) >= ?", [$start])
+                ->pluck('vehicle');
+
+            $vehiclesQuery->whereNotIn('id', $unavailableVehicleIds);
+        }
+
+        $places = Place::select('id', 'name', 'city')->get();
+
+        return Inertia::render('Public/Booking/Index', [
+            'vehicles'           => $vehiclesQuery->get(),
+            'places'             => $places,
+            'preselectedVehicle' => $request->query('vehicle'),
+        ]);
+    }
+
     /**
      * Display the specific car details and similar cars
      */
@@ -94,6 +140,13 @@ class RequestBookingController extends Controller
              'notes'            => 'nullable|string',
              'company_name'     => 'nullable|string',
              'city'             => 'nullable|string',
+             // Collected by the /reserve wizard's customer-details step.
+             // Nullable: CarDetails.jsx's simpler form doesn't send these.
+             'age'                => 'nullable|integer|min:18|max:100',
+             'nationality'        => 'nullable|string|max:80',
+             'driving_experience' => 'nullable|integer|min:0|max:80',
+             'passengers'         => 'nullable|integer|min:1|max:9',
+             'whatsapp'           => 'nullable|string|max:30',
          ]);
 
          if ($validator->fails()) {
@@ -148,6 +201,11 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             $booking->age = $request->age;
+             $booking->nationality = $request->nationality;
+             $booking->driving_experience = $request->driving_experience;
+             $booking->passengers = $request->passengers;
+             $booking->whatsapp = $request->whatsapp;
 
              $booking->vehicle_details = json_encode([
                 'name'          => $vehicle->name,
@@ -164,12 +222,47 @@ class RequestBookingController extends Controller
 
              DB::commit();
 
-             return redirect()->back()->with('success', 'Booking request submitted successfully! We will contact you soon.');
+             // Signed so a guest can't view another booking request's details by
+             // guessing/incrementing the id — booking_requests carries name/email/
+             // phone and isn't otherwise tenant- or auth-scoped for a guest.
+             return redirect()->to(URL::signedRoute('reserve.confirmation', ['bookingRequest' => $booking->id]))
+                 ->with('success', 'Booking request submitted successfully! We will contact you soon.');
          } catch (\Exception $e) {
              DB::rollBack();
              return redirect()->back()->with('error', 'An error occurred. Please try again. Error: ' . $e->getMessage());
          }
      }
+
+    /**
+     * The confirmation page a guest lands on right after submitting /reserve
+     * (or CarDetails.jsx's booking form). Signed URL only — see the note above
+     * storeBooking()'s redirect.
+     */
+    public function confirmation(BookingRequest $bookingRequest)
+    {
+        $bookingRequest->load(['car', 'pickupPlace', 'dropOffPlace']);
+
+        $start = new DateTime($bookingRequest->start_date);
+        $end   = new DateTime($bookingRequest->end_date);
+        $days  = max(1, $end->diff($start)->days);
+
+        return Inertia::render('Public/Booking/Confirmation', [
+            'reference'    => 'BR-' . str_pad($bookingRequest->id, 5, '0', STR_PAD_LEFT),
+            'car'          => [
+                'name'    => $bookingRequest->car?->name,
+                'model'   => $bookingRequest->car?->model,
+                'picture' => $bookingRequest->car?->picture,
+            ],
+            'pickupPlace'  => $bookingRequest->pickupPlace?->name,
+            'dropOffPlace' => $bookingRequest->dropOffPlace?->name,
+            'startDate'    => $bookingRequest->start_date,
+            'startTime'    => $bookingRequest->start_time,
+            'endDate'      => $bookingRequest->end_date,
+            'endTime'      => $bookingRequest->end_time,
+            'days'         => $days,
+            'amount'       => $bookingRequest->amount,
+        ]);
+    }
 
     /**
      * Display a listing of the booking requests.

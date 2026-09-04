@@ -13,7 +13,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Star, Car, Fuel, Settings2, Wrench, Tag, Users, Calendar, MapPin } from 'lucide-react';
-import PublicLayout from '@/Layouts/PublicLayout';
+import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import FieldError from '@/components/FieldError';
 import { fieldA11y } from '@/lib/fieldA11y';
 
@@ -406,5 +406,5 @@ function CarDetails({ car, similarCars = [], places = [] }) {
     );
 }
 
-CarDetails.layout = (page) => <PublicLayout>{page}</PublicLayout>;
+CarDetails.layout = (page) => <StorefrontLayout>{page}</StorefrontLayout>;
 export default CarDetails;

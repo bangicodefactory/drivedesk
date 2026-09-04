@@ -72,9 +72,12 @@ return [
         'company_email'   => 'marruecarsarl@gmail.com',
         'company_phone'   => '+212602-793425',
         'company_address' => 'Numero 16, Lot Mounia, Av Tizi Ouasli, Tétouan 93000, Morocco',
-        // company_whatsapp, social_facebook/instagram and hours_* are added in
-        // the follow-up PR that introduces the Header/Footer layout consuming
-        // them (see docs/inertia-shared-props.md).
+        'company_whatsapp' => '212602793425',
+        'social_facebook'  => 'https://www.facebook.com/MarrueCar/',
+        'social_instagram' => 'https://www.instagram.com/marruecar_rent_car/',
+        'hours_weekday'    => '8:00 AM - 8:00 PM',
+        'hours_saturday'   => '9:00 AM - 6:00 PM',
+        'hours_sunday'     => '10:00 AM - 4:00 PM',
     ],
 
     'terms' => [

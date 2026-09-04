@@ -53,6 +53,23 @@
  */
 
 // ---------------------------------------------------------------------------
+// Contact / business info
+// ---------------------------------------------------------------------------
+
+/**
+ * @typedef {Object} Contact
+ * @property {string|null} phone
+ * @property {string|null} whatsapp        - Digits only, e.g. '212602793425' — build wa.me links with it
+ * @property {string|null} email
+ * @property {string|null} address
+ * @property {string|null} hoursWeekday
+ * @property {string|null} hoursSaturday
+ * @property {string|null} hoursSunday
+ * @property {string|null} facebookUrl
+ * @property {string|null} instagramUrl
+ */
+
+// ---------------------------------------------------------------------------
 // Client / feature flags
 // ---------------------------------------------------------------------------
 
@@ -98,6 +115,7 @@
  * @typedef {Object} SharedProps
  * @property {Auth}                      auth
  * @property {Branding}                  branding
+ * @property {Contact}                   contact
  * @property {Client}                    client
  * @property {Record<string,string>}     translations  - Current locale key→value strings
  * @property {Flash}                     flash

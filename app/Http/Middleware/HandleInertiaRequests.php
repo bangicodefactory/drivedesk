@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth'         => $this->buildAuth($request),
             'branding'     => $this->buildBranding(),
+            'contact'      => $this->buildContact(),
             'client'       => $this->buildClient(),
             'recaptcha'    => $this->buildRecaptcha(),
             'locale'       => app()->getLocale(),
@@ -108,6 +109,27 @@ class HandleInertiaRequests extends Middleware
             'cssVars'         => $cssVars,
             'layoutMode'      => $s['layout_mode']      ?? 'lightmode',
             'layoutDirection' => $s['layout_direction'] ?? 'ltrmode',
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Contact / business info (public storefront: Header, Footer, Contact page)
+    // -------------------------------------------------------------------------
+
+    private function buildContact(): array
+    {
+        $s = $this->loadSettings();
+
+        return [
+            'phone'       => $s['company_phone']     ?? null,
+            'whatsapp'    => $s['company_whatsapp']  ?? null,
+            'email'       => $s['company_email']     ?? null,
+            'address'     => $s['company_address']   ?? null,
+            'hoursWeekday'  => $s['hours_weekday']   ?? null,
+            'hoursSaturday' => $s['hours_saturday']  ?? null,
+            'hoursSunday'   => $s['hours_sunday']    ?? null,
+            'facebookUrl'  => $s['social_facebook']  ?? null,
+            'instagramUrl' => $s['social_instagram'] ?? null,
         ];
     }
 

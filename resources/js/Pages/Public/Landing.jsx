@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,13 +11,10 @@ import {
     Users, Settings2, Fuel, DoorOpen, Star,
     ChevronLeft, ChevronRight, ArrowRight,
     Shield, Clock, MapPin, Award,
+    Calendar, CalendarDays, CalendarRange, Plane, SlidersHorizontal, Headphones,
 } from 'lucide-react';
-import PublicLayout from '@/Layouts/PublicLayout';
-
-function useTranslations() {
-    const { translations } = usePage().props;
-    return (key, fallback = key) => translations?.[key] ?? fallback;
-}
+import StorefrontLayout from '@/Layouts/StorefrontLayout';
+import { useTranslations } from '@/hooks/useTranslations';
 
 function Hero({ heroImages }) {
     const t = useTranslations();
@@ -155,7 +152,7 @@ function FeatureBenefit() {
     );
 }
 
-function About() {
+function About({ vehicles = [] }) {
     const t = useTranslations();
     return (
         <section className="py-16 bg-muted/40">
@@ -168,24 +165,61 @@ function About() {
                         </div>
                         <p className="text-muted-foreground leading-relaxed">{t('about_desc_1', 'We are a leading car rental company with years of experience providing quality vehicles and exceptional service to our customers.')}</p>
                         <p className="text-muted-foreground leading-relaxed">{t('about_desc_2', 'Our fleet includes a wide range of vehicles to suit every need and budget, from economy cars to luxury SUVs.')}</p>
+                        {/* Real, verifiable figures only — the live fleet count, not an
+                            invented "years in business" / "happy clients" number. */}
                         <div className="flex items-center gap-6">
                             <div className="text-center">
-                                <p className="text-4xl font-bold text-primary">7+</p>
-                                <p className="text-sm text-muted-foreground">{t('about_years', 'Years Experience')}</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-4xl font-bold text-primary">50+</p>
+                                <p className="text-4xl font-bold text-primary">{vehicles.length}+</p>
                                 <p className="text-sm text-muted-foreground">{t('about_cars', 'Cars Available')}</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-4xl font-bold text-primary">800+</p>
-                                <p className="text-sm text-muted-foreground">{t('about_clients', 'Happy Clients')}</p>
+                                <p className="text-4xl font-bold text-primary">2</p>
+                                <p className="text-sm text-muted-foreground">{t('about_airports', 'Airports Served')}</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-4xl font-bold text-primary">7/7</p>
+                                <p className="text-sm text-muted-foreground">{t('about_availability', 'Days a Week')}</p>
                             </div>
                         </div>
                     </div>
                     <div className="bg-muted rounded-2xl aspect-video flex items-center justify-center">
                         <MapPin className="h-16 w-16 text-muted-foreground/30" />
                     </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function Services() {
+    const t = useTranslations();
+    const services = [
+        { icon: Calendar, title: t('services_daily_title', 'Daily Rentals'), desc: t('services_daily_desc', 'Flexible daily rental options for short trips.') },
+        { icon: CalendarDays, title: t('services_weekly_title', 'Weekly Rentals'), desc: t('services_weekly_desc', 'Discounted rates for weekly rentals.') },
+        { icon: CalendarRange, title: t('services_monthly_title', 'Monthly Rentals'), desc: t('services_monthly_desc', 'Best value for long-term stays.') },
+        { icon: Plane, title: t('services_airport_title', 'Airport Pickup'), desc: t('services_airport_desc', 'Convenient service at both airports.') },
+        { icon: SlidersHorizontal, title: t('services_flexible_title', 'Flexible Terms'), desc: t('services_flexible_desc', 'Rental options customized to your needs.') },
+        { icon: Headphones, title: t('services_support_title', '24/7 Support'), desc: t('services_support_desc', 'Round-the-clock assistance for peace of mind.') },
+    ];
+    return (
+        <section className="py-16">
+            <div className="container mx-auto px-4">
+                <div className="text-center mb-10 space-y-2">
+                    <p className="text-sm font-medium text-primary uppercase tracking-wider">{t('services_subtitle', 'Our Services')}</p>
+                    <h2 className="text-3xl font-bold">{t('services_title', 'Comprehensive Car Rental Services')}</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {services.map(({ icon: Icon, title, desc }) => (
+                        <Card key={title}>
+                            <CardContent className="flex flex-col items-center text-center p-8 space-y-3">
+                                <div className="mb-1 p-3 bg-primary/10 rounded-full">
+                                    <Icon className="h-8 w-8 text-primary" />
+                                </div>
+                                <h3 className="text-lg font-bold">{title}</h3>
+                                <p className="text-sm text-muted-foreground">{desc}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             </div>
         </section>
@@ -234,8 +268,11 @@ function CarRentals({ vehicles }) {
                                     <span className="flex items-center gap-1"><DoorOpen className="h-3.5 w-3.5" /> 4 {t('car_doors', 'Doors')}</span>
                                     <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" /> {v.fuel_type ?? t('car_petrol', 'Petrol')}</span>
                                 </div>
-                                <Link href={route('client.details', v.id)}>
+                                <Link href={route('reserve.create', { vehicle: v.id })}>
                                     <Button className="w-full mt-1">{t('car_book_now', 'Book Now')} <ArrowRight className="ms-2 h-4 w-4" /></Button>
+                                </Link>
+                                <Link href={route('client.details', v.id)} className="block text-center text-sm text-muted-foreground hover:text-foreground mt-2">
+                                    {t('car_view_details', 'Voir les détails')}
                                 </Link>
                             </CardContent>
                         </Card>
@@ -262,12 +299,12 @@ function CarService() {
     );
 }
 
-function FunFact() {
+function FunFact({ vehicles = [] }) {
     const t = useTranslations();
     const stats = [
-        { value: '50+',  label: t('funfact_cars',    'Cars Available') },
-        { value: '800+', label: t('funfact_clients',  'Happy Clients') },
-        { value: '7+',   label: t('funfact_years',    'Years Experience') },
+        { value: `${vehicles.length}+`, label: t('funfact_cars', 'Cars Available') },
+        { value: '2',   label: t('funfact_airports', 'Airports Served') },
+        { value: '7/7', label: t('funfact_availability', 'Days a Week') },
     ];
     return (
         <section className="py-16 bg-muted/40">
@@ -358,15 +395,16 @@ function Landing({ vehicles = [], vehicleTypes = [], places = [], heroImages = [
             <Hero heroImages={heroImages} />
             <Pickup places={places} vehicleTypes={vehicleTypes} />
             <FeatureBenefit />
-            <About />
+            <About vehicles={vehicles} />
             <CarRentals vehicles={vehicles} />
+            <Services />
             <CarService />
-            <FunFact />
+            <FunFact vehicles={vehicles} />
             <PopularCars />
             <Testimonials />
         </>
     );
 }
 
-Landing.layout = (page) => <PublicLayout>{page}</PublicLayout>;
+Landing.layout = (page) => <StorefrontLayout>{page}</StorefrontLayout>;
 export default Landing;
