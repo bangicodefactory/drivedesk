@@ -36,6 +36,14 @@ class BackfillTvaParentIdTest extends TestCase
             'booking_id'     => $bookingId,
             'facture_number' => '1',
             'facture_date'   => '2025-03-01',
+            // The original 2025-02-04 table declared these NOT NULL with no
+            // default, so a raw insert has to supply them.
+            'month'          => 3,
+            'year'           => 2025,
+            'total_amount'   => 0,
+            'tva_amount'     => 0,
+            'status'         => 'generated',
+            'generated_date' => now(),
             'created_at'     => now(),
             'updated_at'     => now(),
         ]);
