@@ -8,12 +8,20 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Tenant isolation (roadmap Tranche S.1).
  *
- * Multiple owners share one database — `parent_id` is the tenant boundary, and
- * `HomeController` reports `User::where('type','owner')->count()` to the
- * super-admin as "totalOrganization". Read paths applied that boundary by hand;
- * most write paths did not, so a permission alone was enough to reach another
- * tenant's row by id. This trait applies it to every query on the model instead
- * of relying on each action to remember.
+ * **What this does and does not protect (corrected 2026-09-04).** This was
+ * written believing multiple owners share one database — a shape the code
+ * permits (`UserController` lets a super admin create `owner` accounts;
+ * `HomeController` counts them as "totalOrganization") but not how DriveDesk
+ * ships. Each business owner gets their own deployment: own database, own
+ * domain, sharing nothing. **The isolation boundary is the deployment, not
+ * this scope.**
+ *
+ * Inside one deployment `parent_id` still separates the owner from their
+ * staff. Read paths applied that boundary by hand; most write paths did not,
+ * so a permission alone was enough to reach a row the caller should not have
+ * touched. This trait applies it to every query on the model instead of
+ * relying on each action to remember. Treat it as defence in depth — do not
+ * cite it as the reason two customers cannot see each other.
  *
  * Three cases deliberately bypass the scope:
  *

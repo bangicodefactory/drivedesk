@@ -296,10 +296,23 @@ Found by audit while implementing 0.8 (BAN-286), prompted by a review finding
 that flagged `BookingController::update()` specifically; the pattern turned out
 to be systemic rather than local to Booking.
 
-Multiple owners share one database by design — `HomeController` reports
-`User::where('type','owner')->count()` to the super-admin as
-"totalOrganization", and `parent_id` is the tenant boundary used consistently
-by the read paths (dashboards and every `index()`).
+**Correction (2026-09-04).** This tranche was written on the premise that
+"multiple owners share one database by design" — inferred from
+`UserController` letting a super admin create `owner` accounts and
+`HomeController` reporting `User::where('type','owner')->count()` as
+"totalOrganization". That is a shape the code permits, not the way DriveDesk
+ships. **Each business owner gets their own deployment: their own database,
+domain and hosting, sharing nothing with any other customer.** The isolation
+boundary is the deployment; `config/clients/drivedesk.php` says as much —
+DriveDesk is "the product's own reference/demo client".
+
+The work still stands, with a smaller claim. Inside one deployment
+`parent_id` separates the owner from their staff, and the read paths
+(dashboards and every `index()`) already applied it while most write paths
+did not — so a permission alone reached a row the caller should not have
+touched. That is worth closing on its own terms. It is defence in depth
+between an owner and their staff, **not** what keeps two customers apart, and
+it should not be read as a reason to invest in further tenancy work.
 
 `BookingController::show()` shows the intended pattern:
 
@@ -397,23 +410,42 @@ database in front of them. Until someone does, `Tva::findOrFail()` in
 invoices if the URL is reached directly (they are already absent from the list,
 which filters on `parent_id`).
 
-**Two cross-tenant writes are preserved rather than endorsed.** Both were
-unscoped before Tranche S.1 and are pinned with `acrossTenants()` so the scope
-did not change them by side effect:
+**Two `acrossTenants()` writes — resolved 2026-09-04, no change needed.**
+`generateMonthlyTva` and `TvaRenumberService` were listed here as destructive
+cross-tenant writes awaiting a product decision: should one owner's
+"Generate" reissue every other business's factures for that month, or one
+owner's "Renumber 2025" merge every tenant's numbers into one sequence?
 
-| Path | Question |
-| --- | --- |
-| `generateMonthlyTva` | Should one owner's "Generate" delete and reissue every other business's factures for that month? |
-| `TvaRenumberService` | Should one owner's "Renumber 2025" rewrite every tenant's `facture_number` into a single merged sequence? |
+The question only exists under the shared-database premise corrected above.
+One owner per deployment means global and per-owner select the same rows, so
+renumbering a year 1..N *is* per-issuer numbering — there is one issuer. The
+pins are correct as written, and they are load-bearing for a different
+reason: they keep the pre-2025-07-11 invoices (`parent_id IS NULL`) inside
+the sequence instead of stranding them outside it while everything around
+them is renumbered.
 
-Latent while production is effectively single-tenant, but both are destructive
-cross-tenant writes on legal documents and should be answered deliberately.
+Both are still gated on `manage tva` as of BAN-304 — before that, any
+authenticated user could call the renumber routes.
 
-**Smaller:** `TvaController::destroy` has no permission check;
-`Inspection`/`Notification` `$fillable` still list columns that do not exist;
-`DriverFactory` types `driver_id` as a `'DR-####'` string into an integer
-column; `TvaFactory` omits `parent_id`, which is why several call sites set it
-by hand.
+**A super admin's writes land outside the owner's tenant.** `parentId()` returns
+a super admin's *own* id, and `tenantScopeApplies()` returns false for them, so
+`BelongsToTenant`'s `creating` hook never stamps their rows: what they create
+takes the column default — `parent_id = 0`, or NULL on `tvas` — and the business
+owner, who filters on their own id, cannot see it. The super admin bypasses the
+scope on reads, so the row looks fine to them and the divergence is silent.
+
+This predates Tranche S.1 (the read paths filtered by hand the same way); the
+trait generalised it rather than introducing it. It matters more under
+one-deployment-per-customer than it would under a shared database, because a
+vendor super admin logging in to support a customer is then routine rather than
+exceptional. **Needs a decision**: either stamp super-admin writes with the
+deployment's owner id, or keep support logins read-only.
+
+**Smaller:** `Inspection`/`Notification` `$fillable` still list columns that do
+not exist; `DriverFactory` types `driver_id` as a `'DR-####'` string into an
+integer column; `TvaFactory` omits `parent_id`, which is why several call sites
+set it by hand. *(`TvaController::destroy` had no permission check — fixed in
+BAN-304 along with seven sibling actions.)*
 
 ### Tranche 0 — foundation
 
