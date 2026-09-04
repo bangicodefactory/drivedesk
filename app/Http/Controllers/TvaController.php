@@ -103,6 +103,13 @@ class TvaController extends Controller
     }
     public function create()
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $books = Booking::where('parent_id', parentId())->get()->pluck('name', 'id');
         // $books->prepend(__('Select Vehicle'), '');
 
@@ -274,6 +281,13 @@ class TvaController extends Controller
     }
     public function edit($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
 
         return Inertia::render('Tva/Edit', [
@@ -295,6 +309,14 @@ class TvaController extends Controller
 
     public function update(Request $request, $id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        // Checked before validation so a denied user cannot probe the rules.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $validated = $request->validate([
             'facture_date' => 'required|date',
             'montant_ttc' => 'required|numeric',
@@ -321,6 +343,13 @@ class TvaController extends Controller
 
     public function show($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
 
         return Inertia::render('Tva/Show', [
@@ -341,6 +370,13 @@ class TvaController extends Controller
     }
     public function destroy($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
         $tva->delete();
         return redirect()->back()->with('success', 'The TVA has been deleted.');
