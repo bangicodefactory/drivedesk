@@ -17,8 +17,25 @@ class TvaRenumberController extends Controller
         $this->service = $service;
     }
 
+    /**
+     * BAN-304: none of the three actions on this controller had a permission
+     * check. The suite covering them said so out loud -- "any authenticated
+     * user may call all three routes. Tests below document that behavior" --
+     * which made a hole look like a decision. `apply()` rewrites the invoice
+     * numbers on legally numbered documents, and `previewJson()` returns every
+     * number and date for a year, so both are gated on `manage tva`: the same
+     * permission the TVA screens this feature edits already require.
+     *
+     * The routes also carry `feature:tva_renumber` now. The flag existed and
+     * was enforced nowhere; it is `true` in `_default` and in `drivedesk`, so
+     * enforcing it changes nothing for either (CLAUDE.md 10.2.2).
+     */
     public function index(Request $request)
     {
+        if (! \Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $selectedYear = (int) $request->query('year', now()->year);
 
         $preview = $this->service->preview($selectedYear);
@@ -44,6 +61,10 @@ class TvaRenumberController extends Controller
 
     public function apply(Request $request)
     {
+        if (! \Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $maxYear = now()->year + 1;
         $data = $request->validate([
             'year' => 'required|integer|min:2020|max:' . $maxYear,
@@ -68,6 +89,12 @@ class TvaRenumberController extends Controller
 
     public function previewJson(Request $request)
     {
+        // JSON endpoint: a redirect would be read as a 302 to the dashboard by
+        // the fetch() that calls it, so deny in the shape the caller expects.
+        if (! \Auth::user()->can('manage tva')) {
+            return response()->json(['message' => __('Permission Denied.')], 403);
+        }
+
         $maxYear = now()->year + 1;
         $data = $request->validate([
             'year' => 'required|integer|min:2020|max:' . $maxYear,

@@ -492,7 +492,11 @@ Route::group([
         'XSS',
     ],
 ], function () {
-    Route::prefix('tva/renumber')->name('tva.renumber.')->group(function () {
+    // BAN-304: `feature:tva_renumber` was declared in config/features.php and
+    // enforced nowhere. True in both `_default` and `drivedesk`, so this is a
+    // no-op today and a real guard for any client that turns it off.
+    Route::prefix('tva/renumber')->name('tva.renumber.')
+        ->middleware('feature:tva_renumber')->group(function () {
         Route::get('/',        [TvaRenumberController::class, 'index'])->name('index');
         Route::post('/apply',  [TvaRenumberController::class, 'apply'])->name('apply');
         Route::get('/preview', [TvaRenumberController::class, 'previewJson'])->name('preview');

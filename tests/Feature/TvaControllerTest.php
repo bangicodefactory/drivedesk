@@ -16,6 +16,7 @@ class TvaControllerTest extends TestCase
     use WithClient;
 
     protected User $owner;
+    protected User $outsider;
 
     protected function setUp(): void
     {
@@ -31,7 +32,81 @@ class TvaControllerTest extends TestCase
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
 
+        // BAN-304: authenticated, same tenant, no TVA permission. edit/update/
+        // show/destroy/create had no can() check, so this user could read and
+        // delete the tenant's invoices by URL. The global scope stopped them
+        // reaching another tenant's rows, which is what made the gap easy to
+        // miss: the isolation test passed while the authorization one did not
+        // exist.
+        $this->outsider = User::factory()->create(['type' => 'user', 'parent_id' => $this->owner->id]);
+
         $this->seedCompanySettings($this->owner->id);
+    }
+
+    // ── authorization (BAN-304) ───────────────────────────────────────────────
+
+    public function test_create_is_denied_without_manage_tva(): void
+    {
+        $this->actingAs($this->outsider)->get(route('tva.create'))->assertRedirect();
+    }
+
+    public function test_edit_is_denied_without_manage_tva(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)->get(route('tva.edit', $tva))->assertRedirect();
+    }
+
+    public function test_show_is_denied_without_manage_tva(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)->get(route('tva.show', $tva))->assertRedirect();
+    }
+
+    public function test_update_is_denied_without_manage_tva_and_changes_nothing(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create([
+            'parent_id'      => $this->owner->id,
+            'facture_number' => 'ORIGINAL-1',
+        ]);
+
+        $this->actingAs($this->outsider)
+            ->put(route('tva.update', $tva), [
+                'facture_date'   => '2025-05-01',
+                'montant_ttc'    => 999,
+                'unit_price_ht'  => 999,
+                'tva'            => 20,
+                'facture_number' => 'HIJACKED',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('ORIGINAL-1', $tva->fresh()->facture_number);
+    }
+
+    /**
+     * The denial has to land before validation, or an empty body would return
+     * 422 and tell an unauthorized caller what the rules are.
+     */
+    public function test_update_denies_before_it_validates(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)
+            ->put(route('tva.update', $tva), [])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_destroy_is_denied_without_manage_tva_and_deletes_nothing(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)
+            ->delete(route('tva.destroy', $tva))
+            ->assertRedirect();
+
+        $this->assertNotSoftDeleted('tvas', ['id' => $tva->id]);
     }
 
     /**
