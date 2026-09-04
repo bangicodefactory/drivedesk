@@ -296,6 +296,21 @@ must follow.
   *(Repo split, 2026-08-28: the original client, `directonderweg`, now
   lives in its own repo, `bangicodefactory/rentcar`. This repo is the
   DriveDesk product; core fixes must be applied to both by hand.)*
+- **A "client" is a product variant, not a customer.** DriveDesk is sold
+  as a separate deployment per business owner: each gets their own
+  database, domain and hosting, sharing nothing with any other customer.
+  Those customers are **not** clients in the sense used here and must not
+  get a `config/clients/<name>.php`, an `app/Clients/` namespace or a CI
+  matrix entry — that is §10.2.7, and it applies to variants like
+  `drivedesk`, of which there is currently one. A new customer needs a
+  database, a domain, a `.env` and an install seed; **no repo commit.**
+  Their branding lives in the DB (`Setting`, §10.4) and their feature
+  toggles in that deployment's `FEATURE_*` env vars, which
+  `config/features.php` already reads at highest precedence.
+- **`parent_id` is not the customer boundary; the deployment is.** Inside
+  one deployment it separates the owner from their staff. Treat it as
+  defence in depth — never as the reason two customers cannot see each
+  other's data.
 - **Configuration layers, from highest precedence to lowest:**
   1. Runtime DB settings (the existing `Setting` model — branding,
      copy, admin-flippable toggles).
@@ -408,4 +423,4 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/client-configurability.md` — multi-client architecture deep-dive
 - `docs/deploy.md` — deploy runbook for `drivedesk.ma` (Namecheap cPanel; source of truth)
 
-Last updated: 2026-07-21.
+Last updated: 2026-09-04.
