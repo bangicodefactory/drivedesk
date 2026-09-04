@@ -374,11 +374,26 @@ Two of these are decisions, not omissions.
 2025-07-11 to a table created 2025-02-04, so every invoice issued in between has
 `parent_id IS NULL` and matches no tenant. Seven query sites had to be pinned
 with `acrossTenants()` to keep working (numbering ×2, three deletes, the
-renumber service and its year list). **A backfill migration deriving
-`tvas.parent_id` from the booking is the real fix** — it would let all seven be
-scoped normally — but it rewrites rows on legally numbered documents, so it
-needs its own PR, its own tests and a decision. Until then `Tva::findOrFail()`
-in `edit`/`update`/`show`/`destroy` will 404 a tenant's *own* pre-July-2025
+renumber service and its year list).
+
+Deriving `tvas.parent_id` from the booking is the real fix — it would let all
+seven be scoped normally — but **it must not be a migration.** Two review passes
+found ways an unattended version destroys or mis-attributes legal documents:
+
+- `booking_id` has no foreign key, and `TvaSeeder` writes
+  `booking_id => rand(1, 100)` with a NULL `parent_id`, so seeder noise joins to
+  whichever booking happens to hold that id and gets attributed to a real
+  tenant. `idpaiment` cannot separate the two — it was added 2025-08-31, *after*
+  `parent_id`, so the invoices needing repair have it NULL as well.
+- On `drivedesk`, `DemoSeed` hard-deletes every `tvas` row belonging to the first
+  owner, nightly. A NULL-owner invoice does not match that filter and survives
+  today; stamping it with an owner hands it to the next run.
+
+So it ships as `tva:backfill-parent-id` (`app/Console/Commands/`), which reports
+by default, lists what it would touch, warns about facture-number collisions,
+and refuses `--apply` while `demo_gateway` is on. A human runs it against the
+database in front of them. Until someone does, `Tva::findOrFail()` in
+`edit`/`update`/`show`/`destroy` will 404 a tenant's *own* pre-July-2025
 invoices if the URL is reached directly (they are already absent from the list,
 which filters on `parent_id`).
 

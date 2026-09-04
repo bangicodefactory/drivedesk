@@ -26,7 +26,7 @@ class BackfillTvaParentIdCommandTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
-    private function plantInvoice(?int $bookingId, ?int $parentId = null, string $factureNumber = '1'): int
+    private function plantInvoice(?int $bookingId, ?int $parentId = null, string $factureNumber = '1', ?string $deletedAt = null): int
     {
         return DB::table('tvas')->insertGetId([
             'parent_id'      => $parentId,
@@ -41,6 +41,7 @@ class BackfillTvaParentIdCommandTest extends TestCase
             'generated_date' => now(),
             'created_at'     => now(),
             'updated_at'     => now(),
+            'deleted_at'     => $deletedAt,
         ]);
     }
 
@@ -153,6 +154,80 @@ class BackfillTvaParentIdCommandTest extends TestCase
         $this->artisan('tva:backfill-parent-id')
             ->expectsOutputToContain('collide')
             ->assertExitCode(0);
+    }
+
+    /**
+     * The guard that matters most. DemoSeed hard-deletes every tvas row owned by
+     * the first owner, nightly. A NULL-owner invoice is not matched by that
+     * delete and survives today; giving it an owner would hand it to the next
+     * run — irreversible loss of a legal document.
+     */
+    public function test_apply_refuses_while_demo_gateway_is_on(): void
+    {
+        $this->asClient('acme');
+        config(['client.features.demo_gateway' => true]);
+
+        $owner   = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $booking = Booking::factory()->create(['parent_id' => $owner->id]);
+        $id      = $this->plantInvoice($booking->id);
+
+        $this->artisan('tva:backfill-parent-id --apply')
+            ->expectsOutputToContain('Refusing to write')
+            ->assertExitCode(1);
+
+        $this->assertNull($this->ownerOf($id), 'nothing may be written while the nightly wipe is active');
+    }
+
+    public function test_it_ignores_soft_deleted_invoices(): void
+    {
+        $this->asClient('acme');
+
+        $owner   = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $booking = Booking::factory()->create(['parent_id' => $owner->id]);
+        $trashed = $this->plantInvoice($booking->id, null, '1', now()->toDateTimeString());
+
+        $this->artisan('tva:backfill-parent-id --apply')->assertExitCode(0);
+
+        // Repairing a deleted invoice inflates the report and gives the nightly
+        // wipe another target; DB::table() bypasses the SoftDeletes scope, so
+        // the exclusion has to be explicit.
+        $this->assertNull($this->ownerOf($trashed));
+    }
+
+    public function test_the_report_counts_what_it_can_and_cannot_attribute(): void
+    {
+        $this->asClient('acme');
+
+        $owner   = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $booking = Booking::factory()->create(['parent_id' => $owner->id]);
+        $this->plantInvoice($booking->id);                 // repairable
+
+        $orphanBooking = Booking::factory()->create(['parent_id' => 0]);
+        $this->plantInvoice($orphanBooking->id);           // booking has no owner
+        $this->plantInvoice(999999);                       // booking does not exist
+
+        $this->artisan('tva:backfill-parent-id --list=0')
+            ->expectsOutputToContain('has an owner): 1')
+            ->expectsOutputToContain('no owner derivable): 2')
+            ->assertExitCode(0);
+    }
+
+    /** --apply writes colliding rows rather than skipping them; pin that. */
+    public function test_apply_writes_colliding_rows_and_says_so(): void
+    {
+        $this->asClient('acme');
+
+        $owner   = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $booking = Booking::factory()->create(['parent_id' => $owner->id]);
+
+        $this->plantInvoice($booking->id, $owner->id, '7');
+        $colliding = $this->plantInvoice($booking->id, null, '7');
+
+        $this->artisan('tva:backfill-parent-id --apply')
+            ->expectsOutputToContain('does not skip them')
+            ->assertExitCode(0);
+
+        $this->assertSame($owner->id, $this->ownerOf($colliding));
     }
 
     /**
