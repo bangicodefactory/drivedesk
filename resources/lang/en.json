@@ -1016,5 +1016,6 @@
   "payment_choose_gateway": "Choose your online payment method",
   "payment_online_note": "We will contact you to finalize the online payment after your request.",
   "confirmation_body_online": "We will contact you shortly to finalize your online payment and confirm your reservation.",
-  "summary_payment": "Payment"
+  "summary_payment": "Payment",
+  "nav_login": "Login"
 }

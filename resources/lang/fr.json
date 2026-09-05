@@ -1516,5 +1516,6 @@
   "payment_choose_gateway": "Choisissez votre moyen de paiement en ligne",
   "payment_online_note": "Nous vous contacterons pour finaliser le paiement en ligne après votre demande.",
   "confirmation_body_online": "Nous vous contacterons rapidement pour finaliser votre paiement en ligne et confirmer votre réservation.",
-  "summary_payment": "Paiement"
+  "summary_payment": "Paiement",
+  "nav_login": "Connexion"
 }

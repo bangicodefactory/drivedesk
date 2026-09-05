@@ -1505,5 +1505,6 @@
   "payment_choose_gateway": "اختاروا وسيلة الدفع عبر الإنترنت",
   "payment_online_note": "سنتواصل معكم لإتمام الدفع عبر الإنترنت بعد طلبكم.",
   "confirmation_body_online": "سنتواصل معكم قريبًا لإتمام الدفع عبر الإنترنت وتأكيد حجزكم.",
-  "summary_payment": "الدفع"
+  "summary_payment": "الدفع",
+  "nav_login": "تسجيل الدخول"
 }

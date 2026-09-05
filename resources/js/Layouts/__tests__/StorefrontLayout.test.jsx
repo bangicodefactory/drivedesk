@@ -71,4 +71,11 @@ describe('StorefrontLayout', () => {
         const contactLinks = screen.getAllByRole('link', { name: 'Contact' });
         expect(contactLinks[0]).toHaveAttribute('href', '/contact');
     });
+
+    it('links staff back to the login page', () => {
+        render(<StorefrontLayout><p>Page content</p></StorefrontLayout>);
+        const loginLinks = screen.getAllByRole('link', { name: /Connexion/i });
+        expect(loginLinks.length).toBeGreaterThan(0);
+        loginLinks.forEach((link) => expect(link).toHaveAttribute('href', '/login'));
+    });
 });

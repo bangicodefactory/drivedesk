@@ -59,6 +59,14 @@ class ClientInstall extends Command
             count($skipped),
         ));
 
+        // settings() caches its result for 5 minutes (app/Helper/helper.php).
+        // Without this, branding freshly seeded here stays invisible to guests
+        // for up to 5 minutes if anything already warmed the cache this run —
+        // surprising on a local re-run, and exactly what happened seeding
+        // MarrueCar's WhatsApp number after an earlier request had cached the
+        // pre-seed (empty) settings.
+        flushSettingsCache();
+
         return self::SUCCESS;
     }
 }

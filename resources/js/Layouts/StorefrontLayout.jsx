@@ -10,7 +10,7 @@ import {
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import {
-    Menu, Phone, Mail, MapPin, Clock, ExternalLink, MessageCircle, ChevronDown,
+    Menu, Phone, Mail, MapPin, Clock, ExternalLink, MessageCircle, ChevronDown, LogIn,
 } from 'lucide-react';
 import { useTranslations } from '@/hooks/useTranslations';
 
@@ -86,6 +86,9 @@ function Header({ contact }) {
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    <Link href={route('login')} className="flex items-center gap-1 px-3 py-2 rounded-full border text-sm hover:bg-muted" aria-label={t('nav_login', 'Connexion')}>
+                        <LogIn className="h-4 w-4" />
+                    </Link>
                     {contact?.whatsapp && (
                         <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer">
                             <Button size="sm" className="rounded-full bg-green-600 hover:bg-green-700">
@@ -136,6 +139,9 @@ function Header({ contact }) {
                                     </Button>
                                 </a>
                             )}
+                            <Link href={route('login')} onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
+                                <LogIn className="h-4 w-4" /> {t('nav_login', 'Connexion')}
+                            </Link>
                         </div>
                     </SheetContent>
                 </Sheet>
@@ -234,8 +240,11 @@ function Footer({ contact }) {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-                © {year} {branding?.appName}. {t('footer_rights', 'All rights reserved.')}
+            <div className="container mx-auto px-4 mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-sm text-muted-foreground">
+                <span>© {year} {branding?.appName}. {t('footer_rights', 'All rights reserved.')}</span>
+                <Link href={route('login')} className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+                    <LogIn className="h-3.5 w-3.5" /> {t('nav_login', 'Connexion')}
+                </Link>
             </div>
         </footer>
     );
