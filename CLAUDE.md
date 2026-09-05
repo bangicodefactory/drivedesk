@@ -296,6 +296,34 @@ must follow.
   *(Repo split, 2026-08-28: the original client, `directonderweg`, now
   lives in its own repo, `bangicodefactory/rentcar`. This repo is the
   DriveDesk product; core fixes must be applied to both by hand.)*
+- **A "client" is a product variant; a customer is a deployment.**
+  DriveDesk ships as a separate deployment per business owner: own
+  database, own domain, own hosting, sharing nothing with another
+  customer. `drivedesk` is currently the only variant, and it is the
+  product's own demo/reference tenant.
+- **Per-customer configuration is only partly built. Do not assume a new
+  customer needs no repo change.** Feature flags have an env path
+  (`FEATURE_*`, read by `config/features.php`) and branding lives in the
+  DB (`Setting`, §10.4). But `config/clients/*.php` also holds values with
+  **no env and no DB path at all** — `terms.rental_agreement` (the
+  contract text printed on the agreement and its PDF, read at
+  `RentalAgreementController.php:95` and `:299`), `supported_locales`,
+  `public_default_locale`, `demo_request_to`, `seo`, `cash_payment_max`.
+  Neither client config file contains a single `env()` call. **A customer
+  whose legal terms or locale set differ has no sanctioned configuration
+  path today.** Settle that before onboarding a second customer: either
+  give those keys an env/DB path, or accept one committed
+  `config/clients/<customer>.php` per customer and the §10.2.7 cost that
+  follows (a PR, a CI matrix entry and a GitHub Environment each).
+  §10.3's "GitHub Environments per client" has the same gap — as written,
+  N customers on one variant share one `production-drivedesk` environment
+  and therefore one set of `DB_*`/`STRIPE_SECRET` values.
+- **`parent_id` is not the customer boundary; the deployment is.** Inside
+  one deployment it separates the owner from their staff. Treat it as
+  defence in depth — never as the reason two customers cannot see each
+  other's data. And nothing *enforces* one owner per deployment:
+  `UserController@store` lets a super admin create further `type='owner'`
+  users, so that is a convention, not a constraint.
 - **Configuration layers, from highest precedence to lowest:**
   1. Runtime DB settings (the existing `Setting` model — branding,
      copy, admin-flippable toggles).
@@ -304,6 +332,11 @@ must follow.
   3. Per-client config file at `config/clients/<client>.php`
      (feature flag defaults, locale defaults, business-rule pickers).
   4. Core defaults at `config/features.php` and `config/clients/_default.php`.
+
+  **Feature flags do not follow this order.** `feature()` reads the
+  `FEATURE_*` env override first and the client config second, and never
+  consults the `Setting` model — so a flag has no admin-flippable runtime
+  layer, and layer 1 above does not apply to it.
 - **Code-level variants** live under `app/Clients/<ClientName>/`,
   registered by a small `ClientServiceProvider` that runs only when
   `APP_CLIENT` matches. Core code talks to **interfaces**; client
@@ -408,4 +441,4 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/client-configurability.md` — multi-client architecture deep-dive
 - `docs/deploy.md` — deploy runbook for `drivedesk.ma` (Namecheap cPanel; source of truth)
 
-Last updated: 2026-07-21.
+Last updated: 2026-09-04.

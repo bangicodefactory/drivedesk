@@ -6,6 +6,18 @@ Owner: Ahmed
 This document is the implementation deep-dive for the rules summarized
 in `CLAUDE.md` section 10. Read that section first if you haven't.
 
+> **Correction (2026-09-05).** This document equates one client with one
+> deployment. That is not how DriveDesk ships: a **client is a product
+> variant** (`drivedesk` is the only one) and a **customer is a deployment** —
+> each business owner gets their own database, domain and hosting. So it is one
+> client and N deployments, not N clients. The layer table below still lists
+> `config/clients/<client>.php` as the per-deployment config edited "via PR",
+> which is the reading `CLAUDE.md` §10.1 now warns against; and its
+> runtime > env > config precedence does not hold for feature flags, which
+> `feature()` resolves from env then client config, never from the DB. Treat
+> the mechanics here as accurate and the client/deployment framing as stale
+> until this file is rewritten.
+
 **Constraints:**
 
 - One codebase serves multiple clients.

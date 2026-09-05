@@ -561,6 +561,16 @@ separate, approved `perf:` PR per §4.
 
 ### Headline
 
+> **Correction (2026-09-05).** The rationale below is premised on several
+> agencies sharing a database. They do not: each business owner is a separate
+> deployment. So the scan does not "grow with total rows across all tenants" —
+> there is one owner, which is why the evidence table already notes that one
+> tenant owns all 10,711 TVA rows. The finding survives (a full scan is a full
+> scan), but the **index design needs a second look before it ships**: leading a
+> composite index with `parent_id`, a column of ~1 distinct value per database,
+> spends the leading position on nothing. The value is in the trailing columns
+> (`year`, `month`, `deleted_at`, `created_at`).
+
 The app is **multi-tenant** — every list/report query is scoped by `parent_id`
 (the owning agency) — yet **`parent_id` is unindexed on every major table**.
 Existing indexes are essentially just primary keys plus a few auto-generated FK

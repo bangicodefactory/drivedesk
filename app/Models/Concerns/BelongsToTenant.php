@@ -8,12 +8,20 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Tenant isolation (roadmap Tranche S.1).
  *
- * Multiple owners share one database — `parent_id` is the tenant boundary, and
- * `HomeController` reports `User::where('type','owner')->count()` to the
- * super-admin as "totalOrganization". Read paths applied that boundary by hand;
- * most write paths did not, so a permission alone was enough to reach another
- * tenant's row by id. This trait applies it to every query on the model instead
- * of relying on each action to remember.
+ * **What this does and does not protect (corrected 2026-09-04).** This was
+ * written believing multiple owners share one database — a shape the code
+ * permits (`UserController` lets a super admin create `owner` accounts;
+ * `HomeController` counts them as "totalOrganization") but not how DriveDesk
+ * ships. Each business owner gets their own deployment: own database, own
+ * domain, sharing nothing. **The isolation boundary is the deployment, not
+ * this scope.**
+ *
+ * Inside one deployment `parent_id` still separates the owner from their
+ * staff. Read paths applied that boundary by hand; most write paths did not,
+ * so a permission alone was enough to reach a row the caller should not have
+ * touched. This trait applies it to every query on the model instead of
+ * relying on each action to remember. Treat it as defence in depth — do not
+ * cite it as the reason two customers cannot see each other.
  *
  * Three cases deliberately bypass the scope:
  *
@@ -24,11 +32,17 @@ use Illuminate\Support\Facades\Auth;
  * 2. **Super admins.** `parentId()` returns the *caller's own id* for a super
  *    admin, which is never any tenant's `parent_id` — scoping on it would hide
  *    every row in the system from them.
- * 3. **An explicit opt-out**, `Model::acrossTenants()`, for legitimate
- *    cross-tenant reads. Named so it is greppable and obvious in review. No
- *    production code needs it yet — `ViolationMatcher` and the seeders already
- *    pass an explicit `parent_id` or run unauthenticated — so today it is used
- *    only by tests that assert a foreign row still exists.
+ * 3. **An explicit opt-out**, `Model::acrossTenants()`, for queries that must
+ *    not be constrained. Named so it is greppable and obvious in review.
+ *    Roughly two dozen production call sites use it — `BookingController`
+ *    (756, 792, 960, 1009, 1682), `TvaController` (547, 556, 612, 635, 664,
+ *    761), `TvaRenumberController:48`, `TvaRenumberService` (25, 61) — mostly
+ *    because `tvas.parent_id` is nullable and was never backfilled, so an
+ *    owner-scoped query silently drops every invoice predating 2025-07-11.
+ *    Two of them (`generateMonthlyTva`, `TvaRenumberService`) are destructive
+ *    writes; see the roadmap's S.1 follow-ups before dropping a pin.
+ *    (This paragraph previously read "No production code needs it yet ... used
+ *    only by tests"; that stopped being true as those pins were added.)
  *
  * **Do not apply this trait to the auth provider model** (`App\Models\User`,
  * per `config/auth.php`). The scope calls `Auth::check()`, which resolves the
