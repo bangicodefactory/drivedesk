@@ -32,7 +32,8 @@ class RequestBookingController extends Controller
      */
     public function create(Request $request)
     {
-        $vehiclesQuery = Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture');
+        $vehiclesQuery = Vehicle::where('available_for_rent', true)
+            ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture');
 
         $startDate = $request->query('start_date');
         $endDate   = $request->query('end_date');
@@ -78,6 +79,7 @@ class RequestBookingController extends Controller
         // the global tenant scope is inert here and parent_id is applied by hand.
         $similarCars = Vehicle::with('types')->where('id', '!=', $id)
             ->where('parent_id', $car->parent_id)
+            ->where('available_for_rent', true)
             ->where(function ($query) use ($car) {
                 $query->where('type', $car->type)
                     ->orWhere('fuel_type', $car->fuel_type)
@@ -147,6 +149,11 @@ class RequestBookingController extends Controller
              'driving_experience' => 'nullable|integer|min:0|max:80',
              'passengers'         => 'nullable|integer|min:1|max:9',
              'whatsapp'           => 'nullable|string|max:30',
+             // Collected by the /reserve wizard's payment step. No real PayPal/
+             // CMI charge happens yet — neither gateway is integrated anywhere
+             // in this codebase — this only records what the customer asked
+             // for so staff can follow up to collect it.
+             'payment_preference' => 'nullable|in:cash,paypal,cmi',
          ]);
 
          if ($validator->fails()) {
@@ -206,6 +213,7 @@ class RequestBookingController extends Controller
              $booking->driving_experience = $request->driving_experience;
              $booking->passengers = $request->passengers;
              $booking->whatsapp = $request->whatsapp;
+             $booking->payment_preference = $request->payment_preference;
 
              $booking->vehicle_details = json_encode([
                 'name'          => $vehicle->name,
@@ -261,6 +269,7 @@ class RequestBookingController extends Controller
             'endTime'      => $bookingRequest->end_time,
             'days'         => $days,
             'amount'       => $bookingRequest->amount,
+            'paymentPreference' => $bookingRequest->payment_preference,
         ]);
     }
 

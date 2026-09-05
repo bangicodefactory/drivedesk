@@ -125,6 +125,24 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    public function test_store_defaults_available_for_rent_to_true_when_omitted(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Default Availability']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['name' => 'Default Availability', 'available_for_rent' => 1]);
+    }
+
+    public function test_store_persists_available_for_rent_false(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Unavailable Car', 'available_for_rent' => '0']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['name' => 'Unavailable Car', 'available_for_rent' => 0]);
+    }
+
     // ── VehicleController::update ─────────────────────────────────────────────
 
     public function test_update_persists_changes(): void
@@ -137,6 +155,17 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('vehicles', ['id' => $vehicle->id, 'name' => 'New Car']);
+    }
+
+    public function test_update_persists_available_for_rent_false(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'available_for_rent' => true]);
+
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload(['available_for_rent' => '0']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['id' => $vehicle->id, 'available_for_rent' => 0]);
     }
 
     public function test_update_flashes_error_on_missing_name(): void

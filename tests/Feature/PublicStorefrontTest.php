@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -104,5 +105,17 @@ class PublicStorefrontTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Public/Landing'));
+    }
+
+    public function test_landing_hides_vehicles_marked_unavailable_for_rent(): void
+    {
+        $this->asClient('acme');
+        $available = Vehicle::factory()->create(['available_for_rent' => true]);
+        $hidden    = Vehicle::factory()->create(['available_for_rent' => false]);
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($available->id)
+                && collect($vehicles)->pluck('id')->doesntContain($hidden->id))
+        );
     }
 }

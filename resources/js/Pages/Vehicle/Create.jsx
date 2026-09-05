@@ -43,6 +43,7 @@ const schema = z.object({
     notes: z.string().optional(),
     picture: z.any().optional(),
     document: z.any().optional(),
+    available_for_rent: z.boolean().optional(),
 });
 
 function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} }) {
@@ -66,6 +67,7 @@ function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} })
             notes: '',
             picture: null,
             document: null,
+            available_for_rent: true,
         },
     });
     const { register, control, setValue, formState: { errors, isSubmitting } } = form;
@@ -244,6 +246,19 @@ function VehicleCreate({ types = {}, gearbox = {}, fuelType = {}, option = {} })
                             <div className="space-y-1.5">
                                 <Label htmlFor="notes">{t('Notes')}</Label>
                                 <Textarea id="notes" placeholder={t('Enter notes')} rows={1} {...register('notes')} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Controller
+                                    name="available_for_rent"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                            <span className="text-sm">{t('Available for Rent')}</span>
+                                        </label>
+                                    )}
+                                />
                             </div>
                         </div>
 

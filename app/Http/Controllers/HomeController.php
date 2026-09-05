@@ -300,7 +300,8 @@ class HomeController extends Controller
         }
 
         return [
-            'vehicles'     => Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
+            'vehicles'     => Vehicle::where('available_for_rent', true)
+                ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
             'vehicleTypes' => VehicleType::select('id', 'type')->get(),
             'places'       => Place::select('id', 'name')->get(),
             'heroImages'   => $heroImages,

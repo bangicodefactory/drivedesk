@@ -1503,5 +1503,18 @@
   "checking_availability": "Vérification…",
   "no_vehicles_available": "Aucune voiture n'est disponible pour ces dates. Merci de choisir une autre période.",
   "no_vehicles_in_fleet": "Aucune voiture disponible pour le moment.",
-  "vehicle_unavailable_for_dates": "Cette voiture n'est plus disponible pour ces dates. Choisissez d'autres dates ou revenez en arrière pour une autre voiture."
+  "vehicle_unavailable_for_dates": "Cette voiture n'est plus disponible pour ces dates. Choisissez d'autres dates ou revenez en arrière pour une autre voiture.",
+  "Available for Rent": "Disponible à la location",
+  "Available": "Disponible",
+  "Unavailable": "Indisponible",
+  "step_4": "Paiement",
+  "payment_method_label": "Comment souhaitez-vous payer ?",
+  "payment_cash": "Paiement à la Livraison",
+  "payment_cash_desc": "Payez en espèces au bureau",
+  "payment_online": "Paiement en Ligne",
+  "payment_online_desc": "PayPal ou CMI",
+  "payment_choose_gateway": "Choisissez votre moyen de paiement en ligne",
+  "payment_online_note": "Nous vous contacterons pour finaliser le paiement en ligne après votre demande.",
+  "confirmation_body_online": "Nous vous contacterons rapidement pour finaliser votre paiement en ligne et confirmer votre réservation.",
+  "summary_payment": "Paiement"
 }

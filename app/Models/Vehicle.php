@@ -32,6 +32,11 @@ class Vehicle extends Model
         'option',
         'notes',
         'parent_id',
+        'available_for_rent',
+    ];
+
+    protected $casts = [
+        'available_for_rent' => 'boolean',
     ];
 
     public function types()

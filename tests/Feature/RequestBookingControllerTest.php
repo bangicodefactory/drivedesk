@@ -157,6 +157,21 @@ class RequestBookingControllerTest extends TestCase
             );
     }
 
+    public function test_car_details_excludes_similar_cars_marked_unavailable_for_rent(): void
+    {
+        $hidden = Vehicle::factory()->create([
+            'parent_id'  => $this->owner->id,
+            'type'       => $this->vehicle->type,
+            'available_for_rent' => false,
+        ]);
+
+        $this->get(route('client.details', $this->vehicle->id))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/CarDetails')
+                ->where('similarCars', fn ($cars) => collect($cars)->pluck('id')->doesntContain($hidden->id))
+            );
+    }
+
     public function test_store_booking_rejects_end_before_start(): void
     {
         $this->post(route('booking.store_request'), [
@@ -210,6 +225,44 @@ class RequestBookingControllerTest extends TestCase
         ]);
     }
 
+    public function test_store_booking_persists_the_chosen_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000020',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'cmi',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    public function test_store_booking_rejects_an_unknown_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000021',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'bitcoin',
+        ])->assertSessionHasErrors(['payment_preference']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
     public function test_store_booking_redirects_to_a_signed_confirmation_url(): void
     {
         $response = $this->post(route('booking.store_request'), [
@@ -254,6 +307,16 @@ class RequestBookingControllerTest extends TestCase
         $this->get(route('reserve.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($this->vehicle->id))
+            );
+    }
+
+    public function test_reserve_page_excludes_a_vehicle_marked_unavailable_for_rent(): void
+    {
+        $hidden = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'available_for_rent' => false]);
+
+        $this->get(route('reserve.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->doesntContain($hidden->id))
             );
     }
 
@@ -316,6 +379,16 @@ class RequestBookingControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Public/Booking/Confirmation')
                 ->where('reference', 'BR-' . str_pad($req->id, 5, '0', STR_PAD_LEFT))
+            );
+    }
+
+    public function test_confirmation_page_exposes_the_chosen_payment_preference(): void
+    {
+        $req = $this->makeRequest(['payment_preference' => 'paypal']);
+
+        $this->get(URL::signedRoute('reserve.confirmation', ['bookingRequest' => $req->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('paymentPreference', 'paypal')
             );
     }
 

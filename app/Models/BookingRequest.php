@@ -33,6 +33,7 @@ class BookingRequest extends Model
         'driving_experience',
         'passengers',
         'whatsapp',
+        'payment_preference',
     ];
 
     public function guest()

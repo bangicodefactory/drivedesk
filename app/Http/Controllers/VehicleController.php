@@ -130,6 +130,9 @@ class VehicleController extends Controller
             $vehicle->option = !empty($request->option) ? implode(',', $request->option) : null;
             $vehicle->notes = !empty($request->notes) ? $request->notes : null;
             $vehicle->parent_id = parentId();
+            // Defaults to available (matches the column default) when the
+            // request omits it entirely, e.g. an older API caller.
+            $vehicle->available_for_rent = $request->boolean('available_for_rent', true);
             if (!empty($request->document)) {
                 $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
@@ -227,6 +230,7 @@ class VehicleController extends Controller
             $vehicle->kilometers = $request->kilometers;
             $vehicle->option = !empty($request->option) ? implode(',', $request->option) : null;
             $vehicle->notes = $request->notes;
+            $vehicle->available_for_rent = $request->boolean('available_for_rent', true);
             if (!empty($request->document)) {
                 $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);

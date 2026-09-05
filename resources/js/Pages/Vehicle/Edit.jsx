@@ -41,6 +41,7 @@ const schema = z.object({
     notes: z.string().optional(),
     picture: z.any().optional(),
     document: z.any().optional(),
+    available_for_rent: z.boolean().optional(),
     _method: z.string().optional(),
 });
 
@@ -69,6 +70,7 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
             notes: vehicle.notes ?? '',
             document: null,
             picture: null,
+            available_for_rent: vehicle.available_for_rent ?? true,
             _method: 'PUT',
         },
     });
@@ -248,6 +250,19 @@ function VehicleEdit({ vehicle = {}, types = {}, gearbox = {}, fuelType = {}, op
                             <div className="space-y-1.5">
                                 <Label htmlFor="notes">{t('Notes')}</Label>
                                 <Textarea id="notes" placeholder={t('Enter notes')} rows={1} {...register('notes')} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Controller
+                                    name="available_for_rent"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                            <span className="text-sm">{t('Available for Rent')}</span>
+                                        </label>
+                                    )}
+                                />
                             </div>
                         </div>
 

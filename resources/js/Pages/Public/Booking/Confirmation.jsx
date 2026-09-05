@@ -9,7 +9,7 @@ function vehiclePictureUrl(car) {
     return car?.picture ? `/storage/upload/picture/${car.picture}` : '/assets/images/client/default-car.jpg';
 }
 
-function Confirmation({ reference, car, pickupPlace, dropOffPlace, startDate, startTime, endDate, endTime, days, amount }) {
+function Confirmation({ reference, car, pickupPlace, dropOffPlace, startDate, startTime, endDate, endTime, days, amount, paymentPreference }) {
     const t = useTranslations();
     const { contact } = usePage().props;
 
@@ -17,6 +17,13 @@ function Confirmation({ reference, car, pickupPlace, dropOffPlace, startDate, st
         `Bonjour, je confirme ma réservation ${reference} : ${car?.name ?? ''} du ${startDate} au ${endDate}.`,
     );
     const whatsappHref = contact?.whatsapp ? `https://wa.me/${contact.whatsapp}?text=${whatsappText}` : null;
+
+    // No PayPal/CMI charge actually happens yet — staff follow up by phone/
+    // WhatsApp to collect it, so the copy must not imply payment is done.
+    const isOnlinePayment = paymentPreference === 'paypal' || paymentPreference === 'cmi';
+    const confirmationBody = isOnlinePayment
+        ? t('confirmation_body_online', 'Nous vous contacterons rapidement pour finaliser votre paiement en ligne et confirmer votre réservation.')
+        : t('confirmation_body', 'Nous vous contacterons rapidement pour confirmer votre réservation.');
 
     return (
         <>
@@ -30,7 +37,7 @@ function Confirmation({ reference, car, pickupPlace, dropOffPlace, startDate, st
                         <h2 className="text-2xl font-bold mb-2">{t('confirmation_heading', 'Votre demande de réservation a été reçue !')}</h2>
                         <p className="text-muted-foreground mb-6">
                             {t('confirmation_reference_prefix', 'Référence :')} <strong>{reference}</strong>.{' '}
-                            {t('confirmation_body', 'Nous vous contacterons rapidement pour confirmer votre réservation.')}
+                            {confirmationBody}
                         </p>
 
                         <div className="bg-muted rounded-lg p-4 text-start grid grid-cols-2 gap-y-2 text-sm mb-8">
@@ -48,6 +55,17 @@ function Confirmation({ reference, car, pickupPlace, dropOffPlace, startDate, st
 
                             <span className="text-muted-foreground">{t('summary_total', 'Total estimé')}</span>
                             <span className="font-bold text-end text-primary">{Number(amount).toFixed(0)} MAD</span>
+
+                            {paymentPreference && (
+                                <>
+                                    <span className="text-muted-foreground">{t('summary_payment', 'Paiement')}</span>
+                                    <span className="font-medium text-end">
+                                        {paymentPreference === 'cash' && t('payment_cash', 'Paiement à la Livraison')}
+                                        {paymentPreference === 'paypal' && 'PayPal'}
+                                        {paymentPreference === 'cmi' && 'CMI'}
+                                    </span>
+                                </>
+                            )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">

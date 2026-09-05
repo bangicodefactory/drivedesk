@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { router } from '@inertiajs/react';
 import Booking from '@/Pages/Public/Booking/Index';
 
@@ -38,6 +38,33 @@ function fillDatesStep() {
     fireEvent.change(screen.getByLabelText('Date de Retour'), { target: { value: '2026-07-04' } });
     pickPlace('Lieu de Prise en Charge', 'Bureau Principal');
     pickPlace('Lieu de Retour', 'Aéroport de Tanger');
+}
+
+function fillCustomerStep() {
+    fireEvent.change(screen.getByLabelText('Nom Complet'), { target: { value: 'Alice Dupont' } });
+    fireEvent.change(screen.getByLabelText('Nationalité'), { target: { value: 'Française' } });
+    fireEvent.change(screen.getByLabelText('Numéro de Téléphone'), { target: { value: '+212600000000' } });
+    fireEvent.change(screen.getByLabelText('Adresse Email'), { target: { value: 'alice@example.com' } });
+    fireEvent.click(screen.getByRole('checkbox'));
+}
+
+/**
+ * Drives the wizard from a preselected car straight to the payment step.
+ * The step 3 -> 4 transition runs RHF's async `trigger()` validation, so
+ * `fireEvent.click` alone returns before the step actually changes — waiting
+ * for a step-4-only element is what actually lets that microtask settle.
+ */
+async function reachPaymentStep() {
+    vi.mocked(router.get).mockImplementation((_url, _data, options) =>
+        options.onSuccess({ props: { vehicles } }),
+    );
+    render(<Booking vehicles={vehicles} places={places} preselectedVehicle="1" />);
+    fillDatesStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    await screen.findByLabelText('Nom Complet');
+    fillCustomerStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    await screen.findByText('Comment souhaitez-vous payer ?');
 }
 
 describe('Public/Booking/Index', () => {
@@ -111,5 +138,57 @@ describe('Public/Booking/Index', () => {
             expect.objectContaining({ only: ['vehicles'] }),
         );
         expect(screen.getByText('Renault Clio')).toBeInTheDocument();
+    });
+
+    describe('payment step', () => {
+        it('reaches the payment step after filling in customer info, with submit disabled until a method is chosen', async () => {
+            await reachPaymentStep();
+
+            expect(screen.getByText('Comment souhaitez-vous payer ?')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeDisabled();
+        });
+
+        it('enables submit immediately when "Paiement à la Livraison" is chosen', async () => {
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement à la Livraison'));
+
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+            expect(screen.queryByText('Choisissez votre moyen de paiement en ligne')).not.toBeInTheDocument();
+        });
+
+        it('reveals PayPal/CMI and keeps submit disabled until one is picked', async () => {
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+            expect(screen.getByText('Choisissez votre moyen de paiement en ligne')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeDisabled();
+
+            fireEvent.click(screen.getByText('PayPal'));
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+        });
+
+        it('submits the chosen payment_preference to booking.store_request', async () => {
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+            fireEvent.click(screen.getByText('CMI'));
+            fireEvent.click(screen.getByRole('button', { name: 'Compléter la Réservation' }));
+
+            // handleSubmit's own zod validation is async too.
+            await waitFor(() => expect(router.post).toHaveBeenCalledWith(
+                '/booking/store_request',
+                expect.objectContaining({ payment_preference: 'cmi' }),
+                expect.anything(),
+            ));
+        });
+
+        it('goes back to the customer step from the payment step', async () => {
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
+
+            expect(screen.getByLabelText('Nom Complet')).toBeInTheDocument();
+        });
     });
 });
