@@ -410,29 +410,47 @@ database in front of them. Until someone does, `Tva::findOrFail()` in
 invoices if the URL is reached directly (they are already absent from the list,
 which filters on `parent_id`).
 
-**Two `acrossTenants()` writes — resolved 2026-09-04, no change needed.**
-`generateMonthlyTva` and `TvaRenumberService` were listed here as destructive
-cross-tenant writes awaiting a product decision: should one owner's
-"Generate" reissue every other business's factures for that month, or one
-owner's "Renumber 2025" merge every tenant's numbers into one sequence?
+**Two `acrossTenants()` writes — still open, but lower priority.**
+`generateMonthlyTva` (`Tva::acrossTenants()->whereYear()->whereMonth()->delete()`)
+and `TvaRenumberService` rewrite factures without an owner filter. The
+question was: should one owner's "Generate" reissue another business's
+factures for that month, or one owner's "Renumber 2025" merge every owner's
+numbers into one sequence?
 
-The question only exists under the shared-database premise corrected above.
-One owner per deployment means global and per-owner select the same rows, so
-renumbering a year 1..N *is* per-issuer numbering — there is one issuer. The
-pins are correct as written, and they are load-bearing for a different
-reason: they keep the pre-2025-07-11 invoices (`parent_id IS NULL`) inside
-the sequence instead of stranding them outside it while everything around
-them is renumbered.
+Under one deployment per business owner these are latent, not live. **They are
+not resolved.** An earlier revision of this section closed them outright on
+the reasoning that "global and per-owner select the same rows" — which is
+false twice over, and this same page says so below: rows with
+`parent_id IS NULL` (every invoice predating 2025-07-11) and rows written by
+a super admin are *precisely* the rows an owner-scoped query drops and
+`acrossTenants()` keeps. And nothing enforces one owner per deployment —
+`UserController@store` lets a super admin create further `type='owner'`
+users, and `HomeController` counts them — so a second owner in any database,
+including DriveDesk's own demo deployment, makes both writes live again.
 
-Both are still gated on `manage tva` as of BAN-304 — before that, any
-authenticated user could call the renumber routes.
+Keep the pins: they are load-bearing for the legacy-NULL reason regardless.
+What is unresolved is whether one-owner-per-deployment should be **enforced**
+(reject owner creation when one already exists) or the two writes should be
+owner-scoped with a legacy-NULL fallback. Do not drop the pins after
+`tva:backfill-parent-id` runs without answering that.
+
+Both are gated on `manage tva` as of BAN-304 — before that, any authenticated
+user could call the renumber routes.
 
 **A super admin's writes land outside the owner's tenant.** `parentId()` returns
-a super admin's *own* id, and `tenantScopeApplies()` returns false for them, so
-`BelongsToTenant`'s `creating` hook never stamps their rows: what they create
-takes the column default — `parent_id = 0`, or NULL on `tvas` — and the business
-owner, who filters on their own id, cannot see it. The super admin bypasses the
-scope on reads, so the row looks fine to them and the divergence is silent.
+a super admin's *own user id*, which is never any row's `parent_id`. Twenty-nine
+controller paths set the column explicitly (`$model->parent_id = parentId();` —
+`BookingController.php:390`, `AddonController.php:55`, and so on), so those rows
+carry **the super admin's user id**. Only models whose controller leaves it
+unset reach `BelongsToTenant`'s `creating` hook, which skips super admins and
+lets the column default apply — and on `inspections` and `settings`,
+`parent_id` is `integer NOT NULL` with *no* default, so under
+`'strict' => true` that insert errors (1364) rather than defaulting quietly.
+
+Either way the business owner, filtering on their own id, cannot see the row,
+while the super admin bypasses the scope on reads and never notices. **An audit
+query looking for `parent_id IN (0, NULL)` would miss almost all of it**, and a
+fix applied only to the trait hook would not cover the 29 explicit call sites.
 
 This predates Tranche S.1 (the read paths filtered by hand the same way); the
 trait generalised it rather than introducing it. It matters more under

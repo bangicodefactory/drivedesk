@@ -32,11 +32,17 @@ use Illuminate\Support\Facades\Auth;
  * 2. **Super admins.** `parentId()` returns the *caller's own id* for a super
  *    admin, which is never any tenant's `parent_id` — scoping on it would hide
  *    every row in the system from them.
- * 3. **An explicit opt-out**, `Model::acrossTenants()`, for legitimate
- *    cross-tenant reads. Named so it is greppable and obvious in review. No
- *    production code needs it yet — `ViolationMatcher` and the seeders already
- *    pass an explicit `parent_id` or run unauthenticated — so today it is used
- *    only by tests that assert a foreign row still exists.
+ * 3. **An explicit opt-out**, `Model::acrossTenants()`, for queries that must
+ *    not be constrained. Named so it is greppable and obvious in review.
+ *    Roughly two dozen production call sites use it — `BookingController`
+ *    (756, 792, 960, 1009, 1682), `TvaController` (547, 556, 612, 635, 664,
+ *    761), `TvaRenumberController:48`, `TvaRenumberService` (25, 61) — mostly
+ *    because `tvas.parent_id` is nullable and was never backfilled, so an
+ *    owner-scoped query silently drops every invoice predating 2025-07-11.
+ *    Two of them (`generateMonthlyTva`, `TvaRenumberService`) are destructive
+ *    writes; see the roadmap's S.1 follow-ups before dropping a pin.
+ *    (This paragraph previously read "No production code needs it yet ... used
+ *    only by tests"; that stopped being true as those pins were added.)
  *
  * **Do not apply this trait to the auth provider model** (`App\Models\User`,
  * per `config/auth.php`). The scope calls `Auth::check()`, which resolves the
