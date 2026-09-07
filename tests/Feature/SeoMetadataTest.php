@@ -34,6 +34,110 @@ class SeoMetadataTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Write a settings row for the deployment's owner and drop the cache.
+     *
+     * The owner, not parent_id = 1: every settings write goes through
+     * parentId(), so an owner's rows carry their own id and nothing has ever
+     * written a row under 1.
+     */
+    private function putOwnerSetting(string $name, string $value): \App\Models\User
+    {
+        $owner = \App\Models\User::where('type', 'owner')->first()
+            ?: \App\Models\User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        \Illuminate\Support\Facades\DB::table('settings')->updateOrInsert(
+            ['name' => $name, 'parent_id' => $owner->id],
+            ['value' => $value]
+        );
+        \Illuminate\Support\Facades\Cache::flush();
+
+        return $owner;
+    }
+
+    // ── BAN-314: the Site SEO settings actually reach a page ──────────────
+    //
+    // settingsKeys() has carried meta_seo_title / _description / _image since
+    // forever and SettingController writes all three, but nothing read them:
+    // Seo::forRequest(), Seo's structured data and SeoController all took
+    // config('client.seo') alone. The Site SEO screen was write-only.
+    //
+    // Guests also read settings under parent_id = 1, which has no rows at all,
+    // so wiring the two together only works once that resolves to the owner.
+
+    public function test_the_seo_title_setting_beats_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putOwnerSetting('meta_seo_title', 'Agence Atlas — Location de voitures');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<title inertia>Agence Atlas — Location de voitures</title>', $html);
+    }
+
+    public function test_the_seo_description_setting_beats_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putOwnerSetting('meta_seo_description', 'Louez une voiture a Marrakech.');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('content="Louez une voiture a Marrakech."', $html);
+    }
+
+    /** A blank row is not a choice: every deployment has one for every key. */
+    public function test_a_blank_seo_setting_falls_back_to_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putOwnerSetting('meta_seo_title', '   ');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<title inertia>DriveDesk — Car Rental Management Software</title>', $html);
+    }
+
+    /**
+     * SettingController stores the upload in storage/app/public/upload/seo and
+     * keeps only the filename, so the setting is not a URL the way the config
+     * value is.
+     */
+    public function test_the_seo_image_setting_resolves_under_the_public_disk(): void
+    {
+        $this->asClient('drivedesk');
+        $owner = $this->putOwnerSetting('meta_seo_image', 'atlas-og.png');
+
+        \Illuminate\Support\Facades\Storage::disk('public')->put('upload/seo/atlas-og.png', 'x');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('/storage/upload/seo/atlas-og.png', $html);
+    }
+
+    /**
+     * The half that makes the rest work. Nothing has ever written a settings
+     * row under parent_id = 1, so a guest read resolved to settingsKeys()
+     * defaults and every public page showed unbranded placeholders.
+     */
+    public function test_a_guest_reads_the_deployment_owners_settings(): void
+    {
+        $this->asClient('drivedesk');
+        $owner = $this->putOwnerSetting('company_name', 'Agence Atlas');
+
+        $this->assertGuest();
+        $this->assertSame('Agence Atlas', settings()['company_name']);
+    }
+
+    /** Two owners means no deployment key, so the old behaviour stands. */
+    public function test_a_guest_falls_back_when_the_owner_is_ambiguous(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putOwnerSetting('company_name', 'Agence Atlas');
+        \App\Models\User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $this->assertNotSame('Agence Atlas', settings()['company_name']);
+    }
+
     // ── The demo gateway is the indexable page ────────────────────────────────
 
     public function test_home_ships_a_title_and_description_in_the_raw_html(): void
