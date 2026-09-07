@@ -891,6 +891,29 @@ if (!function_exists('rentalAgreementTerms')) {
     }
 }
 
+if (!function_exists('isReservedRoleName')) {
+    /**
+     * Whether a role name is one the app treats as a privilege level (BAN-310).
+     *
+     * Case-insensitive: `type == 'owner'` is an exact comparison everywhere, so
+     * 'Owner' would not escalate today, but relying on that is relying on an
+     * accident. Trimmed too -- 'owner ' is the same name to a human reading the
+     * roles list, and the list is what an admin audits.
+     */
+    function isReservedRoleName($name): bool
+    {
+        // Not typed `?string`: `title` arrives straight off the request, where
+        // `required` permits an array. A TypeError here would turn malformed
+        // input into a 500; let it fall through to the same handling it had
+        // before this guard existed.
+        if (! is_string($name)) {
+            return false;
+        }
+
+        return in_array(mb_strtolower(trim($name)), \App\Models\User::RESERVED_TYPES, true);
+    }
+}
+
 if (!function_exists('tenantExistsRule')) {
     /**
      * An `exists` rule constrained to the caller's tenant.

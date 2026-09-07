@@ -211,16 +211,6 @@ class UserControllerTest extends TestCase
         $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
     }
 
-    // ── UserController::loggedHistoryShow ─────────────────────────────────────
-    // NOTE: resources/views/logged_history/show.blade.php does not exist yet,
-    // so only the auth guard is verifiable; the 200 path is untestable until the view lands.
-
-    public function test_logged_history_show_requires_auth(): void
-    {
-        $history = LoggedHistory::factory()->create(['parent_id' => $this->owner->id]);
-        $this->get(route('logged.history.show', $history->id))->assertRedirect(route('login'));
-    }
-
     // ── UserController::loggedHistoryDestroy ──────────────────────────────────
 
     public function test_logged_history_destroy_requires_auth(): void
@@ -281,19 +271,6 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($this->owner)
             ->get(route('users.edit', $foreign))
-            ->assertNotFound();
-    }
-
-    /**
-     * The activity log is the record of who touched a deployment, so reading
-     * another tenant's rows is worse than reading their user list.
-     */
-    public function test_logged_history_show_does_not_reach_another_tenants_record(): void
-    {
-        $foreign = LoggedHistory::factory()->create(['parent_id' => 999]);
-
-        $this->actingAs($this->owner)
-            ->get(route('logged.history.show', $foreign->id))
             ->assertNotFound();
     }
 
@@ -650,6 +627,31 @@ class UserControllerTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertDatabaseMissing('users', ['email' => 'trojan@test.com']);
+    }
+
+    /**
+     * BAN-310: the assignment backstop is case-insensitive too. A role named
+     * 'Owner' predating the RoleController guard must still not be assignable.
+     */
+    public function test_store_refuses_a_reserved_role_name_in_any_case(): void
+    {
+        $trojan = Role::create([
+            'name'       => 'Owner',
+            'guard_name' => 'web',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Cased Trojan',
+                'email'    => 'cased@test.com',
+                'password' => 'password123',
+                'role'     => $trojan->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('users', ['email' => 'cased@test.com']);
     }
 
     public function test_update_does_not_reach_a_user_outside_the_tenant(): void

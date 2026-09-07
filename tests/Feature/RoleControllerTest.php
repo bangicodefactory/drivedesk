@@ -320,6 +320,109 @@ class RoleControllerTest extends TestCase
         $this->assertDatabaseMissing('roles', ['name' => 'Scalar']);
     }
 
+    // ── BAN-310: reserved role names ────────────────
+    //
+    // UserController sets a user's `type` verbatim from the chosen role's name,
+    // so a role name is a privilege string. Refusing to assign such a role
+    // (BAN-307) is the backstop; refusing to create one is the fix.
+
+    public function test_store_rejects_a_role_named_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => 'owner',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('roles', ['name' => 'owner', 'parent_id' => $this->owner->id]);
+    }
+
+    /**
+     * `type == 'owner'` is an exact comparison everywhere, so 'Owner' would not
+     * escalate today -- but that is an accident of the comparisons, not a
+     * decision, and the roles list an admin audits reads the same either way.
+     */
+    public function test_store_rejects_a_reserved_name_in_any_case_or_padding(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => '  Super Admin ',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('roles', ['parent_id' => $this->owner->id, 'name' => '  Super Admin ']);
+    }
+
+    /**
+     * The seeded `owner` role carries parent_id = the super admin's id
+     * (DefaultDataUsersTableSeeder), which is exactly what parentId() returns
+     * for a super admin -- so index() lists it and edit() resolves it, and
+     * Roles/Edit.jsx always resubmits `title`. Rejecting the whole request on a
+     * reserved name locked the super admin out of editing the one role every
+     * tenant owner is assigned. The guard is about renaming *to* a reserved
+     * name, not about touching a role that already has one.
+     */
+    public function test_update_allows_saving_a_role_that_already_has_a_reserved_name(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['edit role', $this->permA->name, $this->permB->name]);
+
+        $ownerRole = Role::create([
+            'name'       => 'owner',
+            'guard_name' => 'web',
+            'parent_id'  => $superAdmin->id,
+        ]);
+        $ownerRole->givePermissionTo($this->permA);
+
+        $this->actingAs($superAdmin)
+            ->put(route('role.update', $ownerRole), [
+                'title'           => 'owner',      // unchanged, as the form posts it
+                'user_permission' => [$this->permB->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($ownerRole->fresh()->hasPermissionTo($this->permB));
+    }
+
+    public function test_store_still_accepts_an_ordinary_role_name(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => 'Ownership Clerk',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('roles', ['name' => 'Ownership Clerk', 'parent_id' => $this->owner->id]);
+    }
+
+    /**
+     * update() cannot rename a role today -- fill() drops `title` because it is
+     * not a column on `roles`. The guard is here so that fixing that does not
+     * silently open a rename path to a reserved name.
+     */
+    public function test_update_rejects_renaming_to_a_reserved_name(): void
+    {
+        $role = $this->ownRole();
+        $role->givePermissionTo($this->permA);
+
+        $this->actingAs($this->owner)
+            ->put(route('role.update', $role), [
+                'title'           => 'super admin',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame('testrole', $role->fresh()->name);
+    }
+
     // ── tenant scoping (BAN-306) ──────────────────────────────────────────────
     //
     // edit/update/destroy resolved the role with a bare Role::find($id), so an
