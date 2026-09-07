@@ -129,7 +129,13 @@ class CreditControllerTest extends TestCase
             ->post(route('credit.store'), $this->validCreditPayload())
             ->assertRedirect();
 
-        $this->assertDatabaseHas('logged_histories', ['type' => 'credit_create']);
+        // BAN-312: the row's tenant key, not just its type. Without this the
+        // writer at CreditController:280 is unpinned -- reverting it to
+        // parentId() left the whole suite green.
+        $this->assertDatabaseHas('logged_histories', [
+            'type'      => 'credit_create',
+            'parent_id' => $this->owner->id,
+        ]);
     }
 
     public function test_store_rejects_missing_driver_id(): void
