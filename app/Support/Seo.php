@@ -48,13 +48,98 @@ class Seo
         'client.home',
     ];
 
+    /**
+     * The client's SEO copy with this deployment's own settings layered over it
+     * (BAN-314).
+     *
+     * settingsKeys() has carried meta_seo_title, meta_seo_description and
+     * meta_seo_image since the beginning and SettingController writes all three
+     * from the Site SEO screen, but every reader took config('client.seo')
+     * alone -- so the screen was write-only and every deployment emitted
+     * DriveDesk's marketing copy as its own metadata.
+     *
+     * Blank falls back rather than blanking the tag: the rows exist and are
+     * empty on every deployment, so "not configured" and "configured to
+     * nothing" have to mean the same thing.
+     *
+     * Guests read these under parent_id = 1, which is where ClientInstall seeds
+     * each client's branding -- including meta_seo_title -- on every deploy.
+     * That is the row set the public pages are meant to render.
+     *
+     * @return array<string,mixed>
+     */
+    public static function copy(): array
+    {
+        $seo = (array) config('client.seo', []);
+
+        // The root Blade view calls this while rendering, outside the try/catch
+        // HandleInertiaRequests wraps settings() in. Pre-install, or with the DB
+        // unreachable, degrading to the client config beats a 500 from inside
+        // the view.
+        try {
+            $settings = settings();
+        } catch (\Throwable) {
+            return $seo;
+        }
+
+        $overrides = [
+            'title'       => 'meta_seo_title',
+            'description' => 'meta_seo_description',
+            'site_name'   => 'app_name',
+        ];
+
+        foreach ($overrides as $key => $name) {
+            $value = trim((string) ($settings[$name] ?? ''));
+            if ($value !== '') {
+                $seo[$key] = $value;
+            }
+        }
+
+        $image = self::settingImage(trim((string) ($settings['meta_seo_image'] ?? '')));
+        if ($image !== null) {
+            $seo['og_image'] = $image;
+        }
+
+        return $seo;
+    }
+
+    /**
+     * A usable URL for the uploaded SEO image, or null to leave the config value
+     * alone.
+     *
+     * SettingController stores a bare filename on the public disk under
+     * upload/seo, so the setting is not a URL the way the config value is. An
+     * absolute URL or an already-qualified path is passed through untouched
+     * rather than having the prefix pasted on front of it.
+     *
+     * Null when the file is not actually there. Overriding unconditionally
+     * would *destroy* the fallback rather than layer over it: image() drops any
+     * path that does not exist, so a missing upload -- an un-symlinked
+     * public/storage on cPanel, or a file removed later -- would emit no
+     * og:image at all where the config one still works.
+     */
+    private static function settingImage(string $image): ?string
+    {
+        if ($image === '') {
+            return null;
+        }
+
+        if (str_starts_with($image, 'http') || str_contains($image, '/')) {
+            return $image;
+        }
+
+        $path = 'storage/upload/seo/'.$image;
+
+        return file_exists(public_path($path)) ? '/'.$path : null;
+    }
+
     /** @return array<string,mixed> */
     public static function forRequest(Request $request): array
     {
         $routeName  = optional($request->route())->getName();
         $isGateway  = self::isGateway($request, $routeName);
         $indexable  = self::isIndexable($routeName, $isGateway);
-        $seo        = config('client.seo', []);
+        $seo        = self::copy();
 
         return [
             'title'       => $seo['title'] ?? config('app.name', 'RentCar'),
@@ -225,7 +310,7 @@ class Seo
             return null;
         }
 
-        $seo  = config('client.seo', []);
+        $seo  = self::copy();
         $name = $seo['site_name'] ?? config('app.name', 'RentCar');
         $url  = self::baseUrl($request);
 

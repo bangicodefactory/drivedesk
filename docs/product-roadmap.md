@@ -383,6 +383,57 @@ cluster.
 
 Two of these are decisions, not omissions.
 
+**A support login's writes are orphaned, and the fix is a read-side change too
+(BAN-315).** `parentId()` returns a super admin their *own* id, which is no
+tenant's key, so every row a vendor support session creates is invisible to the
+customer who owns the deployment — a vehicle their fleet list never shows, a
+booking that never blocks their planning board, a TVA invoice in a numbering
+bucket of its own. Undetectably, because `BelongsToTenant` bypasses the tenant
+scope on reads for super admins, so it all looks correct from support's side.
+
+PR #27 attempted this as a write-side change and was **closed unmerged**,
+because that shape is worse than the bug. The generated numbers, the uniqueness
+guards and the paired read filters all resolve through `parentId()` too, so
+redirecting only the write stamps the row into the customer's tenant while its
+number comes from the super admin's empty bucket:
+
+| Site | Scoped to `parentId()` | Consequence of a write-only fix |
+| --- | --- | --- |
+| `VehicleController::vehicleNumber()` | yes | duplicate `vehicle_id` in the customer's fleet |
+| `BookingController::bookingNumber()` | yes | customer's booking numbering restarts at 1 |
+| `RentalAgreementController::agreementNumber()` | yes | **duplicate contract number on a signed document** |
+| `DriverController::driverNumber()` | yes | duplicate `driver_id` |
+| `VehicleController::licensePlateExists()` | yes | duplicate-plate guard silently passes |
+| `BookingController` blacklist lookup (BAN-252) | yes | blacklist warning silently passes |
+| `CreditController` show/edit/update/destroy | yes | support creates a credit it cannot then open |
+
+Two further traps found in the same review:
+
+- **The `BelongsToTenant` creating hook cannot help.** It is gated on
+  `tenantScopeApplies()`, which returns `false` for a super admin, so the hook
+  returns early during exactly the sessions that need it. Changing what the hook
+  stamps is a no-op that reads as coverage.
+- **`TrafficViolationController::store()` and the Excel import path**
+  (`BookingController` `$pid = parentId()`) set `parent_id` explicitly, so they
+  are orphaned too and no hook change reaches them.
+
+The real shape is one tenant key that both sides resolve through — the value a
+support *request* operates on — applied to the writes, the number generators,
+the uniqueness guards and the read filters together. Note this changes what
+support **sees**, not only what it writes, and it touches invoice and agreement
+numbering, so CLAUDE.md §4 and §9 apply: tests first, and a sandbox smoke test
+at the phase boundary.
+
+Not a candidate for a blanket change to `parentId()` itself: identity rows need
+the super admin's own id. `UserController::index`'s super-admin branch,
+`UserController::store`'s owner creation, `RoleController::index`/`store` and
+`findUserInTenant()` all depend on it, and an owner's `parent_id` *is* the super
+admin who created them.
+
+The branch `fix/support-writes-reach-the-customer` is kept as a starting point.
+The activity-log half of this divergence is already fixed (BAN-312).
+
+
 **`tvas.parent_id` is nullable and was never backfilled.** The column was added
 2025-07-11 to a table created 2025-02-04, so every invoice issued in between has
 `parent_id IS NULL` and matches no tenant. Seven query sites had to be pinned

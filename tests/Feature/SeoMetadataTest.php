@@ -34,6 +34,123 @@ class SeoMetadataTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Write a settings row for the deployment's owner and drop the cache.
+     *
+     * The owner, not parent_id = 1: every settings write goes through
+     * parentId(), so an owner's rows carry their own id and nothing has ever
+     * written a row under 1.
+     */
+    /**
+     * Write a global settings row and drop its cache entry.
+     *
+     * parent_id = 1, because that is where a guest reads and where
+     * ClientInstall seeds each client's branding -- its own comment calls it
+     * the home of "all global/admin settings". An owner's rows live under the
+     * owner's id and are not what the public pages render.
+     */
+    private function putGlobalSetting(string $name, string $value): void
+    {
+        \Illuminate\Support\Facades\DB::table('settings')->updateOrInsert(
+            ['name' => $name, 'parent_id' => 1],
+            ['value' => $value]
+        );
+
+        \Illuminate\Support\Facades\Cache::forget('settings_1');
+    }
+
+    // ── BAN-314: the Site SEO settings actually reach a page ──────────────
+    //
+    // settingsKeys() has carried meta_seo_title / _description / _image since
+    // forever, SettingController writes all three, and ClientInstall seeds
+    // meta_seo_title per client -- but nothing read them. Seo::forRequest(),
+    // Seo's organization schema and SeoController all took
+    // config('client.seo') alone, so the Site SEO screen was write-only and
+    // every deployment emitted DriveDesk's own marketing copy.
+
+    public function test_the_seo_title_setting_beats_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('meta_seo_title', 'Agence Atlas — Location de voitures');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<title inertia>Agence Atlas — Location de voitures</title>', $html);
+    }
+
+    public function test_the_seo_description_setting_beats_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('meta_seo_description', 'Louez une voiture a Marrakech.');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('content="Louez une voiture a Marrakech."', $html);
+    }
+
+    /** A blank row is not a choice: every deployment has one for every key. */
+    public function test_a_blank_seo_setting_falls_back_to_the_client_config(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('meta_seo_title', '   ');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<title inertia>DriveDesk — Car Rental Management Software</title>', $html);
+    }
+
+    /** app_name is the deployment's own brand, so it drives og:site_name too. */
+    public function test_the_app_name_setting_drives_the_site_name(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('app_name', 'Agence Atlas');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Agence Atlas', $html);
+    }
+
+    /**
+     * SettingController stores the upload as a bare filename on the public
+     * disk, so the setting is not a URL the way the config value is.
+     */
+    public function test_the_seo_image_setting_resolves_under_the_public_disk(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('meta_seo_image', 'atlas-og.png');
+
+        // Seo::image() gates on file_exists(public_path(...)), so the asset has
+        // to sit where the storage symlink puts it in production.
+        $dir = public_path('storage/upload/seo');
+        @mkdir($dir, 0777, true);
+        file_put_contents($dir.'/atlas-og.png', 'x');
+
+        try {
+            $html = $this->get('/')->assertOk()->getContent();
+            $this->assertStringContainsString('/storage/upload/seo/atlas-og.png', $html);
+        } finally {
+            @unlink($dir.'/atlas-og.png');
+        }
+    }
+
+    /**
+     * A setting naming a file that is not there must leave the config image
+     * alone, not destroy it. public/storage is a symlink the cPanel target does
+     * not always have, and an upload can be removed later -- overriding
+     * unconditionally would emit no og:image at all where the config one works.
+     */
+    public function test_a_missing_seo_image_setting_keeps_the_config_image(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.seo.og_image' => '/images/hero-login.jpg']);
+        $this->putGlobalSetting('meta_seo_image', 'not-uploaded.png');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('not-uploaded.png', $html);
+        $this->assertStringContainsString('og:image', $html);
+    }
+
     // ── The demo gateway is the indexable page ────────────────────────────────
 
     public function test_home_ships_a_title_and_description_in_the_raw_html(): void

@@ -96,6 +96,10 @@ if (!function_exists('settingsKeys')) {
 if (!function_exists('settings')) {
     function settings()
     {
+        // parent_id = 1 for a guest is deliberate, not a gap: ClientInstall
+        // seeds every client's branding there ("all global/admin settings live
+        // under id 1") and runs on each deploy, so that row set is what the
+        // public pages are supposed to render.
         $userId = \Auth::check() ? parentId() : 1;
         $cacheKey = "settings_{$userId}";
 
