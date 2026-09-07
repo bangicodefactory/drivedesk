@@ -28,7 +28,8 @@ class InertiaSettingsAndUsersTest extends TestCase
 
         // BAN-306: 'create role' and 'edit role' were seeded but never checked,
         // so these render tests reached role.create/role.edit without them.
-        $permissions = ['manage user', 'manage role', 'create role', 'edit role', 'manage setting'];
+        // BAN-308: same for 'edit user' and users.edit.
+        $permissions = ['manage user', 'edit user', 'manage role', 'create role', 'edit role', 'manage setting'];
         foreach ($permissions as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }

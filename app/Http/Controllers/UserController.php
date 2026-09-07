@@ -195,7 +195,15 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        // BAN-308: this action had no can() check. The resource route carries
+        // only `auth` + `XSS`, so any authenticated user of the tenant -- a
+        // driver account included -- could read another user's name, email,
+        // type and company_name off this page.
+        if (! \Auth::user()->can('edit user')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $user = $this->findUserInTenant($id);
         $userRoles = Role::where('parent_id', '=', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
         return Inertia::render('Users/Edit', [
@@ -217,6 +225,12 @@ class UserController extends Controller
     {
         if (\Auth::user()->can('edit user')) {
             if (\Auth::user()->type == 'super admin') {
+                // Deliberately unscoped, and the only lookup here that is.
+                // Whether a support login should reach across tenants is the
+                // open question; test_update_persists_changes_as_super_admin and
+                // test_update_ignores_a_password_in_the_request_as_super_admin
+                // encode today's answer. Settling it is its own change -- until
+                // then this stays as it was rather than being decided in passing.
                 $user = User::findOrFail($id);
 
                 $validator = \Validator::make(
@@ -273,7 +287,7 @@ class UserController extends Controller
                     return redirect()->back()->with('error', __('Permission Denied.'));
                 }
 
-                $user = User::where('parent_id', parentId())->findOrFail($id);
+                $user = $this->findUserInTenant($id);
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -292,7 +306,7 @@ class UserController extends Controller
     {
 
         if (\Auth::user()->can('delete user') ) {
-            $user = User::find($id);
+            $user = $this->findUserInTenant($id);
             $user->delete();
 
             return redirect()->route('users.index')->with('success', __('User successfully deleted.'));
@@ -314,7 +328,7 @@ class UserController extends Controller
     public function loggedHistoryShow($id)
     {
         if (\Auth::user()->can('manage logged history')) {
-            $histories = LoggedHistory::find($id);
+            $histories = $this->findHistoryInTenant($id);
             return view('logged_history.show', compact('histories'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -324,7 +338,7 @@ class UserController extends Controller
     public function loggedHistoryDestroy($id)
     {
         if (\Auth::user()->can('delete logged history')) {
-            $histories = LoggedHistory::find($id);
+            $histories = $this->findHistoryInTenant($id);
             $histories->delete();
             return redirect()->back()->with('success', 'Logged history succefully deleted.');
         } else {
@@ -332,5 +346,61 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Resolve a user id within the caller's tenant (BAN-308).
+     *
+     * index() has always scoped its list to `parent_id = parentId()`, but every
+     * lookup taking an id off the URL resolved against the whole table -- so
+     * `delete user` deleted any user in the database, the deployment's owner
+     * included, and edit() rendered another tenant's name, email and type.
+     *
+     * User carries no global scope (see BelongsToTenant: applying one to the
+     * auth provider model recurses without bound), so the boundary has to be
+     * drawn at each call site. 404 rather than a redirect: it is the same answer
+     * for an id that does not exist and one that belongs to someone else, so it
+     * says nothing about which.
+     *
+     * No super-admin exemption. An earlier pass gave the helper one, mirroring
+     * BelongsToTenant, and justified it with two update() tests -- but the
+     * helper also serves destroy(), so it left this PR's headline bug open for
+     * exactly the role that can do the most damage. Scoping them settles
+     * nothing new: index() offers a super admin only the owners they created
+     * (parent_id = parentId()), which this still resolves, so support keeps
+     * what it reaches through the UI and loses only what it could reach by
+     * crafting a URL. The one lookup that stays unscoped is update()'s
+     * super-admin branch, marked there.
+     *
+     * Note that an owner's own row is not in their own tenant: it carries the
+     * super admin's id as parent_id while parentId() returns the owner's own
+     * id. So an owner cannot edit or delete themselves here. index() never
+     * listed that row and nothing links to it -- account changes go through
+     * SettingController -- but it is a change from find()/findOrFail().
+     */
+    private function findUserInTenant($id): User
+    {
+        $user = User::where('parent_id', parentId())->find($id);
 
+        abort_if($user === null, 404);
+
+        return $user;
+    }
+
+    /**
+     * The same boundary for an activity-log row, matching loggedHistory()'s
+     * list. The log records who touched a deployment, so a cross-tenant read is
+     * worse than a cross-tenant user listing -- and the delete removed someone
+     * else's evidence.
+     *
+     * No super-admin exemption here, unlike findUserInTenant(): loggedHistory()
+     * does not exempt them either, so a row reachable by id but absent from the
+     * list would be the inconsistency, not the scope.
+     */
+    private function findHistoryInTenant($id): LoggedHistory
+    {
+        $history = LoggedHistory::where('parent_id', parentId())->find($id);
+
+        abort_if($history === null, 404);
+
+        return $history;
+    }
 }
