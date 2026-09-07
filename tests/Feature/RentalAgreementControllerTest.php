@@ -161,7 +161,7 @@ class RentalAgreementControllerTest extends TestCase
         $this->putSetting('rental_agreement_terms', '<img src=x onerror=alert(1)>');
 
         $this->actingAs($this->owner)
-            ->get(route('rental-agreement.show', $agreement))
+            ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
             ->assertOk()
             ->assertInertia(function (Assert $page) {
                 $terms = $page->toArray()['props']['terms'];
@@ -183,7 +183,7 @@ class RentalAgreementControllerTest extends TestCase
         $this->putSetting('rental_agreement_terms', 'Terms edited afterwards.');
 
         $this->actingAs($this->owner)
-            ->get(route('rental-agreement.show', $agreement))
+            ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
             ->assertOk()
             ->assertInertia(function (Assert $page) {
                 $terms = $page->toArray()['props']['terms'];
@@ -198,7 +198,7 @@ class RentalAgreementControllerTest extends TestCase
         $this->putSetting('rental_agreement_terms', 'Current terms.');
 
         $this->actingAs($this->owner)
-            ->get(route('rental-agreement.show', $agreement))
+            ->get(route('rental-agreement.show', Crypt::encrypt($agreement->id)))
             ->assertOk()
             ->assertInertia(function (Assert $page) {
                 $this->assertStringContainsString('Current terms.', $page->toArray()['props']['terms']);
