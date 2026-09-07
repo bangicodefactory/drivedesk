@@ -371,6 +371,64 @@ class UserControllerTest extends TestCase
             ->assertOk();
     }
 
+    // ── BAN-312: a support login is visible to the customer ────────────
+    //
+    // parentId() returns a super admin their *own* id, which is no tenant's
+    // key, so their activity-log row could never appear on the customer's own
+    // screen. In a product where the vendor holds a login to every customer's
+    // deployment, that is the one audit trail that has to be airtight.
+
+    public function test_activity_log_key_is_the_owner_for_a_super_admin(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+
+        $this->actingAs($superAdmin);
+
+        $this->assertSame($this->owner->id, activityLogParentId());
+        $this->assertNotSame((int) $superAdmin->id, activityLogParentId());
+    }
+
+    public function test_activity_log_key_is_the_owner_for_staff_and_for_the_owner(): void
+    {
+        $staff = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($staff);
+        $this->assertSame($this->owner->id, activityLogParentId());
+
+        $this->actingAs($this->owner);
+        $this->assertSame($this->owner->id, activityLogParentId());
+    }
+
+    /** Before install there is no owner; the key must not blow up. */
+    public function test_activity_log_key_falls_back_when_no_owner_exists(): void
+    {
+        $this->owner->forceDelete();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $this->actingAs($superAdmin);
+
+        $this->assertSame((int) $superAdmin->id, activityLogParentId());
+    }
+
+    public function test_the_owner_sees_a_row_written_during_a_support_login(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+
+        // What userLoggedHistory() now writes while support is acting.
+        $this->actingAs($superAdmin);
+        $supportRow = LoggedHistory::factory()->create([
+            'user_id'   => $superAdmin->id,
+            'parent_id' => activityLogParentId(),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('logged.history'))
+            ->assertOk()
+            ->assertSee($superAdmin->name);
+
+        $this->assertSame($this->owner->id, (int) $supportRow->fresh()->parent_id);
+    }
+
     // ── UserController::create ────────────────────────────────────────────────
 
     public function test_create_requires_auth(): void
