@@ -320,6 +320,77 @@ class RoleControllerTest extends TestCase
         $this->assertDatabaseMissing('roles', ['name' => 'Scalar']);
     }
 
+    // ── BAN-310: reserved role names ────────────────
+    //
+    // UserController sets a user's `type` verbatim from the chosen role's name,
+    // so a role name is a privilege string. Refusing to assign such a role
+    // (BAN-307) is the backstop; refusing to create one is the fix.
+
+    public function test_store_rejects_a_role_named_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => 'owner',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('roles', ['name' => 'owner', 'parent_id' => $this->owner->id]);
+    }
+
+    /**
+     * `type == 'owner'` is an exact comparison everywhere, so 'Owner' would not
+     * escalate today -- but that is an accident of the comparisons, not a
+     * decision, and the roles list an admin audits reads the same either way.
+     */
+    public function test_store_rejects_a_reserved_name_in_any_case_or_padding(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => '  Super Admin ',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('roles', ['parent_id' => $this->owner->id, 'name' => '  Super Admin ']);
+    }
+
+    public function test_store_still_accepts_an_ordinary_role_name(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => 'Ownership Clerk',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('roles', ['name' => 'Ownership Clerk', 'parent_id' => $this->owner->id]);
+    }
+
+    /**
+     * update() cannot rename a role today -- fill() drops `title` because it is
+     * not a column on `roles`. The guard is here so that fixing that does not
+     * silently open a rename path to a reserved name.
+     */
+    public function test_update_rejects_renaming_to_a_reserved_name(): void
+    {
+        $role = $this->ownRole();
+        $role->givePermissionTo($this->permA);
+
+        $this->actingAs($this->owner)
+            ->put(route('role.update', $role), [
+                'title'           => 'super admin',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame('testrole', $role->fresh()->name);
+    }
+
     // ── tenant scoping (BAN-306) ──────────────────────────────────────────────
     //
     // edit/update/destroy resolved the role with a bare Role::find($id), so an
