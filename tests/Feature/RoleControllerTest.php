@@ -223,6 +223,103 @@ class RoleControllerTest extends TestCase
         $this->assertDatabaseMissing('roles', ['name' => 'Bogus']);
     }
 
+    // ── permissions the caller cannot see (BAN-306, review finding 1) ─────────
+    //
+    // edit() sends `assignedPermissions` = every id on the role, and
+    // Roles/Edit.jsx:25 seeds the form from it, but only the *offered* ids get
+    // a checkbox. So a role carrying a permission the caller does not hold
+    // submits that id back invisibly. Rejecting the whole submission over it
+    // would make such a role permanently unsavable; silently dropping it would
+    // strip a permission the caller was never shown. Neither is acceptable:
+    // ids already on the role pass through untouched.
+
+    public function test_update_keeps_a_permission_the_caller_cannot_see(): void
+    {
+        $role = $this->ownRole();
+        $role->givePermissionTo([$this->permA, $this->permC]);   // permC: not held by the owner
+
+        // Exactly what the form posts back: both ids, one of them unofferable.
+        $this->actingAs($this->owner)
+            ->put(route('role.update', $role), [
+                'title'           => 'testrole',
+                'user_permission' => [$this->permA->id, $this->permC->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($role->fresh()->hasPermissionTo($this->permA));
+        $this->assertTrue($role->fresh()->hasPermissionTo($this->permC));
+    }
+
+    public function test_update_cannot_strip_a_permission_the_caller_cannot_see(): void
+    {
+        $role = $this->ownRole();
+        $role->givePermissionTo([$this->permA, $this->permC]);
+
+        // permC omitted entirely — it was never on the caller's screen, so its
+        // absence is not a decision they made.
+        $this->actingAs($this->owner)
+            ->put(route('role.update', $role), [
+                'title'           => 'testrole',
+                'user_permission' => [$this->permB->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($role->fresh()->hasPermissionTo($this->permB));
+        $this->assertFalse($role->fresh()->hasPermissionTo($this->permA));
+        $this->assertTrue($role->fresh()->hasPermissionTo($this->permC));
+    }
+
+    // ── a role mutator may list roles (BAN-306, review finding 2) ─────────────
+    //
+    // store() and destroy() redirect to role.index. Gating index() on
+    // `manage role` alone meant a caller holding only `create role` was bounced
+    // there, and the success flash was consumed and replaced by the denial —
+    // a denial message for an operation that had in fact succeeded.
+
+    public function test_index_is_allowed_for_a_creator_without_manage_role(): void
+    {
+        $creator = User::factory()->create(['type' => 'user', 'parent_id' => $this->owner->id]);
+        $creator->givePermissionTo('create role');
+
+        $this->actingAs($creator)->get(route('role.index'))->assertOk();
+    }
+
+    public function test_store_success_survives_for_a_creator_without_manage_role(): void
+    {
+        $creator = User::factory()->create(['type' => 'user', 'parent_id' => $this->owner->id]);
+        $creator->givePermissionTo(['create role', $this->permA->name]);
+
+        $this->actingAs($creator)
+            ->post(route('role.store'), [
+                'title'           => 'Manager',
+                'user_permission' => [$this->permA->id],
+            ])
+            ->assertRedirect(route('role.index'))
+            ->assertSessionHas('success');
+
+        // The redirect target must not turn that success into a denial.
+        $this->actingAs($creator)->get(route('role.index'))->assertOk();
+    }
+
+    // ── malformed input is not an escalation attempt (BAN-306, finding 4) ─────
+
+    public function test_store_rejects_a_non_array_user_permission(): void
+    {
+        $response = $this->actingAs($this->owner)
+            ->post(route('role.store'), [
+                'title'           => 'Scalar',
+                'user_permission' => $this->permA->id,   // not an array
+            ])
+            ->assertRedirect();
+
+        // A validation failure, not "Permission Denied." — the message a caller
+        // and an audit trail see must say which of the two actually happened.
+        $this->assertNotSame('Permission Denied.', session('error'));
+        $this->assertDatabaseMissing('roles', ['name' => 'Scalar']);
+    }
+
     // ── tenant scoping (BAN-306) ──────────────────────────────────────────────
     //
     // edit/update/destroy resolved the role with a bare Role::find($id), so an
