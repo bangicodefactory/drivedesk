@@ -157,11 +157,17 @@ class RoleController extends Controller
             return redirect()->route('role.index')->with('error', $messages->first());
         }
 
-        // BAN-310. Note that update() cannot actually rename a role today:
-        // fill() drops `title` because it is not a column on `roles` (the
-        // pre-existing oddity BAN-306 deferred). This guard is here so that
-        // fixing that does not silently open a rename path to a reserved name.
-        if (isReservedRoleName($request->title)) {
+        // BAN-310, and only on an actual rename. Roles/Edit.jsx always
+        // resubmits the role's current name, so guarding the field outright
+        // blocked *saving* a role that already holds a reserved name rather
+        // than blocking a rename to one -- which locked the super admin out of
+        // the seeded `owner` role, the one every tenant owner is assigned.
+        //
+        // Note that update() cannot rename a role today anyway: fill() drops
+        // `title` because it is not a column on `roles` (the pre-existing
+        // oddity BAN-306 deferred). The guard is here so that fixing that does
+        // not silently open a rename path to a reserved name.
+        if ($request->title !== $userRole->name && isReservedRoleName($request->title)) {
             return redirect()->back()->with('error', __('That role name is reserved.'));
         }
 
