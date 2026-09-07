@@ -359,15 +359,45 @@ class UserControllerTest extends TestCase
 
     // ── UserController::store — super admin creates owner ────────────────────
 
-    public function test_store_creates_owner_as_super_admin_and_redirects(): void
+    /**
+     * BAN-307. This previously asserted the opposite: setUp already creates an
+     * owner, so the test was proving a super admin could add a second one. That
+     * is the behaviour being removed -- DriveDesk ships one deployment per
+     * business owner, and a second owner is a second tenant living inside one
+     * customer's database.
+     */
+    public function test_store_refuses_a_second_owner_as_super_admin(): void
     {
         $superAdmin = User::factory()->create([
             'type'      => 'super admin',
             'parent_id' => 0,
         ]);
         $superAdmin->givePermissionTo('create user');
+        Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
 
-        // Ensure the 'owner' role exists
+        $this->actingAs($superAdmin)
+            ->post(route('users.store'), [
+                'name'     => 'New Owner',
+                'email'    => 'newowner@test.com',
+                'password' => 'password123',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('users', ['email' => 'newowner@test.com']);
+    }
+
+    /** The first owner is still creatable -- this is an invariant, not a ban. */
+    public function test_store_creates_the_first_owner_as_super_admin(): void
+    {
+        // setUp's owner is the only one; a deployment before install has none.
+        $this->owner->forceDelete();
+
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+        $superAdmin->givePermissionTo('create user');
         Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
 
         $this->actingAs($superAdmin)
@@ -383,6 +413,63 @@ class UserControllerTest extends TestCase
             'email' => 'newowner@test.com',
             'type'  => 'owner',
         ]);
+    }
+
+    /**
+     * The staff branch took `Role::findById($request->role)` unscoped while
+     * create() only offers this tenant's roles, so a crafted id set the new
+     * user's type to anything at all -- 'owner' included.
+     */
+    public function test_store_refuses_a_role_id_from_outside_the_tenant(): void
+    {
+        // The seeded 'owner' role belongs to the super admin, not to this owner.
+        $foreignOwnerRole = Role::create([
+            'name'       => 'owner',
+            'guard_name' => 'web',
+            'parent_id'  => 999,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Sneaky Owner',
+                'email'    => 'sneaky@test.com',
+                'password' => 'password123',
+                'role'     => $foreignOwnerRole->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('users', ['email' => 'sneaky@test.com']);
+    }
+
+    /**
+     * `type` and `parent_id` are fillable and the super-admin branch filled from
+     * $request->all(), so an existing user could be promoted to owner or moved
+     * to another tenant. Neither field is on the edit form.
+     */
+    public function test_update_cannot_promote_a_user_to_owner(): void
+    {
+        $employee = User::factory()->create([
+            'type'      => 'employee',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $this->actingAs($superAdmin)
+            ->put(route('users.update', $employee), [
+                'name'      => 'Promoted',
+                'email'     => $employee->email,
+                'type'      => 'owner',
+                'parent_id' => 0,
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $employee->refresh();
+        $this->assertSame('Promoted', $employee->name);
+        $this->assertSame('employee', $employee->type);
+        $this->assertSame($this->owner->id, (int) $employee->parent_id);
     }
 
     public function test_store_flashes_error_on_missing_name_as_super_admin(): void
