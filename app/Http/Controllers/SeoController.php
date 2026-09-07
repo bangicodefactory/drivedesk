@@ -66,7 +66,7 @@ class SeoController extends Controller
             abort(404);
         }
 
-        $seo  = config('client.seo', []);
+        $seo  = Seo::copy();
         $name = $seo['site_name'] ?? config('app.name');
         $base = Seo::baseUrl($request);
 
