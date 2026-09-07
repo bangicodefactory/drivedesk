@@ -84,7 +84,7 @@ class InspectionController extends Controller
             $inspection->status = $request->status;
             $inspection->amount = $request->amount;
             $inspection->repair_status = $request->repair_status;
-            $inspection->parent_id = parentId();
+            $inspection->parent_id = writeParentId();
             if (!empty($request->receipt)) {
                 $expenseFilenameWithExt = $request->file('receipt')->getClientOriginalName();
                 $expenseFilename = pathinfo($expenseFilenameWithExt, PATHINFO_FILENAME);

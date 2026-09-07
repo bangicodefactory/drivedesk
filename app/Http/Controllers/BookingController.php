@@ -387,7 +387,7 @@ class BookingController extends Controller
             'name' => $vehicle_detail->name,
             'license_plate' => $vehicle_detail->license_plate,
         ];
-        $booking->parent_id = parentId();
+        $booking->parent_id = writeParentId();
         $booking->daily_price_final = $request->daily_price ?? 0;
         $booking->save();
 
@@ -897,7 +897,7 @@ class BookingController extends Controller
             // Persist the invoice day-count so deferred invoicing reproduces the
             // exact days (manual override or cash-split share) at flush time.
             $payment->invoice_days = ($quantity && $quantity > 0) ? $quantity : null;
-            $payment->parent_id = parentId();
+            $payment->parent_id = writeParentId();
             $payment->save();
 
             // Status from the freshly-summed payments (includes the row just saved).
@@ -978,7 +978,7 @@ class BookingController extends Controller
         $tva->ice_number = $setting['ice'] ?? null;
         $tva->rc_number = $setting['rc'] ?? null;
         $tva->nif_number = $setting['if'] ?? null;
-        $tva->parent_id = parentId();
+        $tva->parent_id = writeParentId();
         $tva->booking_id = $booking->id;
         $tva->generated_date = now()->toDateString();
         $tva->total_amount = number_format($booking->amount, 2, '.', '');

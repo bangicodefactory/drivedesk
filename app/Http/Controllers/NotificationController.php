@@ -91,7 +91,7 @@ class NotificationController extends Controller
                 $notification->subject = $request->subject;
                 $notification->message = $request->message;
                 $notification->enabled_email = isset($request->enabled_email) ? 1 : 0;
-                $notification->parent_id = parentId();
+                $notification->parent_id = writeParentId();
                 $notification->save();
 
                 return redirect()->route('notification.index')->with('success', __('Notification successfully created.'));

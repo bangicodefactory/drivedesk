@@ -152,7 +152,7 @@ class CreditController extends Controller
         $credit->amount = $request->amount;
         $credit->status = $request->get('status', Credit::STATUS_NON_PAYE);
         $credit->credit_date = $request->filled('credit_date') ? $request->credit_date : now()->toDateString();
-        $credit->parent_id = parentId() ?? 0;
+        $credit->parent_id = writeParentId() ?? 0;
         $credit->save();
 
         $this->logCreditAction('credit_create', $credit->id, __('Credit #:id created', ['id' => $credit->id]));

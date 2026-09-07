@@ -41,7 +41,7 @@ class OptionController extends Controller
             }
             $option = new Option();
             $option->name = $request->name;
-            $option->parent_id = parentId();
+            $option->parent_id = writeParentId();
             $option->save();
             return redirect()->route('option.index')->with('success', __('Option successfully created.'));
         } else {

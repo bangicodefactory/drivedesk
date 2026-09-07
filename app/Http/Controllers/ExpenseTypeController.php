@@ -41,7 +41,7 @@ class ExpenseTypeController extends Controller
             }
             $expenseType = new ExpenseType();
             $expenseType->title = $request->title;
-            $expenseType->parent_id = parentId();
+            $expenseType->parent_id = writeParentId();
             $expenseType->save();
             return redirect()->route('expense-type.index')->with('success', __('Expense type successfully created.'));
         } else {

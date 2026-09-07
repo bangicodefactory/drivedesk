@@ -43,7 +43,7 @@ class VehicleTypeController extends Controller
             $vehicleType = new VehicleType();
             $vehicleType->type = $request->type;
             $vehicleType->notes = $request->notes;
-            $vehicleType->parent_id = parentId();
+            $vehicleType->parent_id = writeParentId();
             $vehicleType->save();
             return redirect()->route('vehicle-type.index')->with('success', __('Vehicle type successfully created.'));
         } else {

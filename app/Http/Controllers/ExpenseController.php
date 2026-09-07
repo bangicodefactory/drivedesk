@@ -74,7 +74,7 @@ class ExpenseController extends Controller
             $expense->date = $request->date;
             $expense->amount = $request->amount;
             $expense->notes = $request->notes;
-            $expense->parent_id = parentId();
+            $expense->parent_id = writeParentId();
 
             if (!empty($request->receipt)) {
 

@@ -101,6 +101,10 @@ class RoleController extends Controller
 
         $userRole = new Role();
         $userRole->name = $request->title;
+        // parentId(), not writeParentId(): a role's parent_id records who
+        // administers it, not whose data it is. index() lists roles by
+        // parentId(), so a super admin's roles have to stay in their own scope
+        // or they would create roles they cannot then see (BAN-315).
         $userRole->parent_id = parentId();
         $userRole->save();
         foreach ($permissions as $permission) {

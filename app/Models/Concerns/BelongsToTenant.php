@@ -32,6 +32,12 @@ use Illuminate\Support\Facades\Auth;
  * 2. **Super admins.** `parentId()` returns the *caller's own id* for a super
  *    admin, which is never any tenant's `parent_id` — scoping on it would hide
  *    every row in the system from them.
+ *
+ *    Reads only. Their *writes* go to the customer's tenant via
+ *    `writeParentId()` (BAN-315): stamping a support login's own id orphaned
+ *    every row it created — a vehicle the customer's fleet list never shows, a
+ *    booking that never blocks their calendar — and undetectably, since this
+ *    bypass makes it all look right from support's side.
  * 3. **An explicit opt-out**, `Model::acrossTenants()`, for queries that must
  *    not be constrained. Named so it is greppable and obvious in review.
  *    Roughly two dozen production call sites use it — `BookingController`
@@ -74,7 +80,10 @@ trait BelongsToTenant
             // an intentionally out-of-tenant fixture to the caller's tenant and mask
             // a real isolation failure.
             if (is_null($model->parent_id) && static::tenantScopeApplies()) {
-                $model->parent_id = parentId();
+                // writeParentId(), not parentId(): a super admin's own id is no
+                // tenant's key, so a row created during a support session was
+                // orphaned from the customer who owns the deployment (BAN-315).
+                $model->parent_id = writeParentId();
             }
         });
     }

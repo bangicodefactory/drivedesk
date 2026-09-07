@@ -52,7 +52,7 @@ class AddonController extends Controller
             $addon->name = $request->name;
             $addon->price = $request->price;
             $addon->billing_type = $request->billing_type;
-            $addon->parent_id = parentId();
+            $addon->parent_id = writeParentId();
             $addon->save();
             return redirect()->route('addon.index')->with('success', __('Addon successfully created.'));
         } else {

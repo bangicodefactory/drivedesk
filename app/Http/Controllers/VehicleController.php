@@ -129,7 +129,7 @@ class VehicleController extends Controller
             $vehicle->kilometers = $request->kilometers;
             $vehicle->option = !empty($request->option) ? implode(',', $request->option) : null;
             $vehicle->notes = !empty($request->notes) ? $request->notes : null;
-            $vehicle->parent_id = parentId();
+            $vehicle->parent_id = writeParentId();
             if (!empty($request->document)) {
                 $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);

@@ -894,6 +894,40 @@ if (!function_exists('deploymentOwnerId')) {
     }
 }
 
+if (!function_exists('writeParentId')) {
+    /**
+     * Which tenant a newly created row belongs to (BAN-315).
+     *
+     * Not parentId(). parentId() returns a super admin their *own* id, which is
+     * no tenant's key, so every row a vendor support login created was orphaned:
+     * a vehicle the customer's fleet list never shows, a booking that never
+     * blocks their calendar, an invoice in a numbering bucket of its own. And
+     * undetectably so -- support bypasses the tenant scope on reads, so it all
+     * looks right from their side.
+     *
+     * The deployment is the tenant, so a support write belongs to the customer
+     * whose deployment it is. deploymentOwnerId() answers only when there is
+     * exactly one owner; with none or several the key is not knowable and this
+     * falls back to parentId(), which is exactly the behaviour that shipped
+     * before BAN-315.
+     *
+     * Identity rows are deliberately not routed through this. A user's or
+     * role's parent_id records who administers it, not which tenant's data it
+     * is -- an owner's parent_id is the super admin who created them, which is
+     * what makes them resolvable from users.index -- so UserController and
+     * RoleController still use parentId(). Every model carrying BelongsToTenant
+     * uses this.
+     */
+    function writeParentId(): int
+    {
+        if (\Auth::check() && \Auth::user()->type === 'super admin') {
+            return deploymentOwnerId() ?? (int) parentId();
+        }
+
+        return (int) parentId();
+    }
+}
+
 if (!function_exists('activityLogParentId')) {
     /**
      * Which tenant an activity-log row belongs to (BAN-312).

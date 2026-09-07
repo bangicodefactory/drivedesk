@@ -181,7 +181,7 @@ class DriverController extends Controller
             $user->type = $userRole->name;
             $user->profile = 'avatar.png';
             $user->lang = 'english';
-            $user->parent_id = parentId();
+            $user->parent_id = writeParentId();
             $user->save();
             $user->assignRole($userRole);
 
@@ -199,7 +199,7 @@ class DriverController extends Controller
                 $driver->reference = !empty($request->reference) ? $request->reference : null;
                 $driver->notes = !empty($request->notes) ? $request->notes : null;
                 $driver->ICE_company = !empty($request->ICE_company) ? $request->ICE_company : null;
-                $driver->parent_id = parentId();
+                $driver->parent_id = writeParentId();
 // Save id document 
                 if (!empty($request->document)) {
                     $documentFilenameWithExt = $request->file('document')->getClientOriginalName();

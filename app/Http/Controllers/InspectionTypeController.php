@@ -41,7 +41,7 @@ class InspectionTypeController extends Controller
             }
             $inspectionType = new InspectionType();
             $inspectionType->type = $request->type;
-            $inspectionType->parent_id = parentId();
+            $inspectionType->parent_id = writeParentId();
             $inspectionType->save();
             return redirect()->route('inspection-type.index')->with('success', __('Inspection type successfully created.'));
         } else {

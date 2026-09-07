@@ -48,7 +48,7 @@ class ReminderTypeController extends Controller
             }
             $remindertype = new ReminderType();
             $remindertype->type = $request->type;
-            $remindertype->parent_id = parentId();
+            $remindertype->parent_id = writeParentId();
             $remindertype->save();
             return redirect()->route('reminder-type.index')->with('success', __('Reminder type successfully created.'));
         } else {

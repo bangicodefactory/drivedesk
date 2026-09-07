@@ -280,7 +280,7 @@ class RequestBookingController extends Controller
             $booking = new \App\Models\Booking();
             $booking->vehicle = $car->id;
             $booking->booking_id = $this->bookingNumber();
-            $booking->parent_id = parentId();
+            $booking->parent_id = writeParentId();
             $booking->driver = $user->id;
             $booking->start_date = $bookingRequest->start_date;
             $booking->start_time = $bookingRequest->start_time;

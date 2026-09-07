@@ -163,7 +163,7 @@ class RentalAgreementController extends Controller
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
-            $rentalAgreement->parent_id = parentId();
+            $rentalAgreement->parent_id = writeParentId();
             $rentalAgreement->save();
 
             // Record an override per blacklisted driver if the owner proceeded.
@@ -253,7 +253,7 @@ class RentalAgreementController extends Controller
                     'name' => $vehicle->name,
                     'license_plate' => $vehicle->license_plate,
                 ];
-                $booking->parent_id = parentId();
+                $booking->parent_id = writeParentId();
                 $booking->daily_price_final = $dailyPrice;
                 $booking->save();
             }

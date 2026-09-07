@@ -56,7 +56,7 @@ class PlaceController extends Controller
             $place->price = $request->price;
             $place->depo_name = $request->depo_name;
             $place->depo_address = $request->depo_address;
-            $place->parent_id = parentId();
+            $place->parent_id = writeParentId();
             $place->save();
             return redirect()->route('place.index')->with('success', __('Place successfully created.'));
         } else {

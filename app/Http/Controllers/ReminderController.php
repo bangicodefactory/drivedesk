@@ -158,7 +158,7 @@ class ReminderController extends Controller
             $reminder->reminder_date = $request->reminder_date;
             $reminder->note = $request->note;
             $reminder->status = $this->calculateReminderStatus($request->reminder_date);
-            $reminder->parent_id = parentId();
+            $reminder->parent_id = writeParentId();
             $reminder->save();
 
             return redirect()->route('reminder.index')->with('success', __('Rappel créé avec succès.'));
