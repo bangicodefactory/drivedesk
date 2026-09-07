@@ -380,9 +380,9 @@ class UserController extends Controller
      * list. The log records who touched a deployment, and the delete removed
      * someone else's evidence.
      *
-     * No super-admin exemption, unlike findUserInTenant(): loggedHistory() does
-     * not exempt them either, so a row reachable by id but absent from the list
-     * would be the inconsistency, not the scope.
+     * No super-admin exemption, matching findUserInTenant(): loggedHistory()
+     * does not exempt them either, so a row reachable by id but absent from the
+     * list would be the inconsistency, not the scope.
      */
     private function findHistoryInTenant($id): LoggedHistory
     {
