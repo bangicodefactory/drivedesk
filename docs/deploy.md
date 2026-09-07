@@ -223,6 +223,55 @@ Same pattern, no workflow change: commit `config/clients/<client>.php` (+
 `app/Clients/<Client>/` + CI matrix entry), add the addon domain + DB + dir +
 cron, create `production-<client>`, and tag `<client>/vX.Y.Z`.
 
+### Onboarding checklist for a customer with existing data
+
+A brand-new deployment starts with an empty database and needs none of this.
+These steps apply when a customer arrives with data already in it — a migrated
+install, or a restore.
+
+1. **Set their contract terms.** Settings → Company → *Rental Agreement Terms*.
+   Left blank, the deployment prints the terms shipped in
+   `config/clients/<client>.php`, which are DriveDesk's, not theirs (BAN-311).
+2. **Set their env overrides**, if any differ from the variant defaults:
+   `CLIENT_SUPPORTED_LOCALES`, `CLIENT_PUBLIC_DEFAULT_LOCALE`,
+   `CLIENT_DEMO_REQUEST_TO`, `CLIENT_CASH_PAYMENT_MAX`.
+3. **Report on legacy invoices**, then repair them:
+
+   ```bash
+   # Report only, writes nothing. --list defaults to 20 rows; ask for all of
+   # them, because --apply rewrites every candidate, not just the ones printed.
+   php artisan tva:backfill-parent-id --list=100000 > /tmp/tva-backfill.txt
+   less /tmp/tva-backfill.txt
+
+   php artisan tva:backfill-parent-id --apply     # only after reading it
+   ```
+
+   `tvas.parent_id` was added nullable in July 2025 to a table created in
+   February 2025 and nothing backfilled it, so invoices issued in between match
+   no tenant and fall out of every scoped query.
+
+   **Read the whole candidate list, not a page of it.** Nothing in the schema
+   distinguishes a genuine legacy invoice from `TvaSeeder` noise — the command
+   says so itself — which is why a human decides. `--apply` is not undone by
+   re-running: repaired rows leave the `IS NULL` filter the report uses.
+
+   Read the collision warning if it appears. Invoice numbers are sequenced per
+   `(parent_id, year)`, so merging NULL-owner rows into a tenant's bucket can
+   duplicate a number that tenant already issued, and `--apply` does not skip
+   those. The remedy is the **TVA → Renumber** screen (`/tva/renumber`), which
+   is a UI tool with no artisan equivalent: it needs the `tva_renumber` feature
+   flag on for that client and the `manage tva` permission. Check both before
+   you run `--apply`, or you will hit collisions with no way to resolve them.
+
+**`--apply` is refused while `demo_gateway` is on, and that is correct.** On
+`drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
+hard-deletes every `tvas` row belonging to the first owner. A NULL-owner
+invoice does not match that delete and survives; giving it an owner would hand
+it to the next run. The NULL rows on a demo deployment are `TvaSeeder` noise,
+so there is nothing there to repair. **The current `drivedesk.ma` deployment
+therefore needs no backfill — this step exists for the first non-demo
+customer.**
+
 
 ---
 
