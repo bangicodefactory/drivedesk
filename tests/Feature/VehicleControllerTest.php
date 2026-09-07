@@ -37,6 +37,82 @@ class VehicleControllerTest extends TestCase
         $this->vehicleType = VehicleType::factory()->create(['parent_id' => $this->owner->id]);
     }
 
+    private function supportLogin(): User
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage vehicle', 'create vehicle']);
+
+        return $superAdmin;
+    }
+
+    // ── BAN-315: a support login writes into the customer's tenant ────────────
+    //
+    // parentId() returns a super admin their own id, which is no tenant's key,
+    // so anything created during a support session was invisible to the
+    // customer who owns the deployment -- and invisible in a way they could not
+    // detect, because support bypasses the tenant scope on reads and sees it
+    // fine. A vehicle nobody can book; a booking that never blocks the calendar.
+
+    public function test_a_vehicle_created_during_support_belongs_to_the_customer(): void
+    {
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Support Car',
+            'parent_id' => $this->owner->id,
+        ]);
+        $this->assertDatabaseMissing('vehicles', [
+            'name'      => 'Support Car',
+            'parent_id' => $superAdmin->id,
+        ]);
+    }
+
+    /** The point of the fix: the customer can actually see it. */
+    public function test_the_customer_sees_a_vehicle_created_during_support(): void
+    {
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.index'))
+            ->assertOk()
+            ->assertSee('Support Car');
+    }
+
+    public function test_an_owners_own_write_is_unchanged(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Owner Car']));
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Owner Car',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    /**
+     * Two owners means the deployment key is not knowable, so support writes
+     * land where they always did rather than in an arbitrary tenant.
+     */
+    public function test_support_writes_fall_back_when_the_owner_is_ambiguous(): void
+    {
+        User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Ambiguous Car']));
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Ambiguous Car',
+            'parent_id' => $superAdmin->id,
+        ]);
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void
