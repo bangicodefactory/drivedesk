@@ -1393,5 +1393,6 @@
     "Next": "Suivant",
     ":from–:to of :total": ":from–:to sur :total",
     "Page :current of :last": "Page :current sur :last",
-    "This deployment already has an owner.": "Ce déploiement a déjà un propriétaire."
+    "This deployment already has an owner.": "Ce déploiement a déjà un propriétaire.",
+    "The deployment's owner cannot be deleted.": "Le propriétaire du déploiement ne peut pas être supprimé."
 }

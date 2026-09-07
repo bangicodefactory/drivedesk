@@ -867,15 +867,26 @@ if (!function_exists('deploymentOwnerId')) {
      * The id of this deployment's business owner, or null before install
      * (BAN-312).
      *
-     * Well-defined only because BAN-307 made it so: one deployment, one owner,
-     * enforced at every request path that can create one. Before that this
-     * would have been "the first owner, whichever that is".
+     * Null unless there is exactly one, which is the only case where the answer
+     * is knowable. BAN-307 stops a *new* second owner appearing, but it repaired
+     * nothing: a deployment predating it may already hold two, and
+     * DefaultDataUsersTableSeeder creates owner@gmail.com at install regardless.
+     *
+     * Returning an arbitrary one there would be worse than not answering. The
+     * activity log would key to the wrong tenant, so the real owner's existing
+     * rows disappear from their own screen and their staff read and delete rows
+     * belonging to someone else -- the cross-tenant audit access BAN-308 closed
+     * one PR earlier. With no answer every caller falls back to parentId() and
+     * behaves exactly as it did before BAN-312: imperfect, but never wrong.
      */
     function deploymentOwnerId(): ?int
     {
-        $id = \App\Models\User::where('type', 'owner')->value('id');
+        $ids = \App\Models\User::where('type', 'owner')
+            ->orderBy('id')
+            ->limit(2)
+            ->pluck('id');
 
-        return $id === null ? null : (int) $id;
+        return $ids->count() === 1 ? (int) $ids->first() : null;
     }
 }
 
