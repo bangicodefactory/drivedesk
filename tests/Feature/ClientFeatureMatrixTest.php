@@ -62,10 +62,23 @@ class ClientFeatureMatrixTest extends TestCase
     {
         $this->asClient('drivedesk');
 
-        $this->assertSame(['en', 'fr', 'nl', 'ar', 'ary'], config('client.supported_locales'));
-        $this->assertSame('ary', config('client.public_default_locale'));
-        $this->assertSame('admin@bangicode.ma', config('client.demo_request_to'));
-        $this->assertSame(5000, config('client.cash_payment_max'));
+        // The shipped defaults, asserted against the file rather than the
+        // resolved config: a deployment that actually sets one of these vars --
+        // the entire point of the feature -- would otherwise fail the suite.
+        $source = file_get_contents(base_path('config/clients/drivedesk.php'));
+        $this->assertStringContainsString("'CLIENT_SUPPORTED_LOCALES', 'en,fr,nl,ar,ary'", $source);
+        $this->assertStringContainsString("'CLIENT_PUBLIC_DEFAULT_LOCALE', 'ary'", $source);
+        $this->assertStringContainsString("'CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'", $source);
+        $this->assertStringContainsString("'CLIENT_CASH_PAYMENT_MAX', 5000", file_get_contents(base_path('config/clients/_default.php')));
+
+        // And whatever the environment resolved them to has to be usable. A
+        // blank env var parses to an empty locale list, which makes
+        // Locales::routeConstraint() emit '(?!)' and 404 every locale-prefixed
+        // public URL; a non-numeric cash ceiling casts to 0, which either
+        // rejects all cash or explodes one payment into 500k receipts.
+        $this->assertNotEmpty(config('client.supported_locales'));
+        $this->assertNotEmpty(config('client.public_default_locale'));
+        $this->assertGreaterThan(0, config('client.cash_payment_max'));
     }
 
     /**

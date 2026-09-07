@@ -123,6 +123,88 @@ class RentalAgreementControllerTest extends TestCase
             );
     }
 
+    // ── BAN-311 review: the terms have to survive being stored ────────────
+
+    /**
+     * settings.value shipped as VARCHAR(255) and the drivedesk contract text is
+     * 1746 characters, so the feature could not hold real terms at all: strict
+     * mode turns the save into SQLSTATE[22001], and SettingController's write
+     * loop is not transactional, so the keys before this one commit and the
+     * rest do not. Non-strict deployments truncate and print a cut-off
+     * contract.
+     */
+    public function test_the_setting_holds_a_full_length_contract(): void
+    {
+        $long = str_repeat('Article 1. The renter agrees to the following terms. ', 40);
+        $this->assertGreaterThan(1746, strlen($long));
+
+        $this->putSetting('rental_agreement_terms', $long);
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('defaultTerms', $long)
+            );
+    }
+
+    /**
+     * RentalAgreement/Show.jsx renders the terms with dangerouslySetInnerHTML.
+     * That was defensible while the source was a committed config file. It is
+     * not now that any authenticated user of the tenant can type into the field
+     * -- settings/company carries no permission middleware, and the XSS
+     * middleware sanitises nothing.
+     */
+    public function test_terms_from_the_setting_are_escaped_before_render(): void
+    {
+        $agreement = $this->makeAgreement();
+        $this->putSetting('rental_agreement_terms', '<img src=x onerror=alert(1)>');
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', $agreement))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) {
+                $terms = $page->toArray()['props']['terms'];
+                $this->assertStringNotContainsString('<img', $terms);
+                $this->assertStringContainsString('&lt;img', $terms);
+            });
+    }
+
+    /**
+     * show() rendered the *global* terms and ignored the agreement's own
+     * terms_condition, which store() snapshots at signing. Harmless while the
+     * global source only moved on deploy; now that an owner can edit it, it
+     * would silently rewrite the terms printed on contracts already signed
+     * under different text.
+     */
+    public function test_show_prefers_the_terms_the_agreement_was_signed_under(): void
+    {
+        $agreement = $this->makeAgreement(['terms_condition' => 'The terms as signed.']);
+        $this->putSetting('rental_agreement_terms', 'Terms edited afterwards.');
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', $agreement))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) {
+                $terms = $page->toArray()['props']['terms'];
+                $this->assertStringContainsString('The terms as signed.', $terms);
+                $this->assertStringNotContainsString('Terms edited afterwards.', $terms);
+            });
+    }
+
+    public function test_show_falls_back_to_the_current_terms_when_none_were_snapshotted(): void
+    {
+        $agreement = $this->makeAgreement(['terms_condition' => null]);
+        $this->putSetting('rental_agreement_terms', 'Current terms.');
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.show', $agreement))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) {
+                $this->assertStringContainsString('Current terms.', $page->toArray()['props']['terms']);
+            });
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void
