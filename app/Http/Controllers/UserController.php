@@ -325,16 +325,6 @@ class UserController extends Controller
         }
     }
 
-    public function loggedHistoryShow($id)
-    {
-        if (\Auth::user()->can('manage logged history')) {
-            $histories = $this->findHistoryInTenant($id);
-            return view('logged_history.show', compact('histories'));
-        } else {
-            return redirect()->back()->with('error', __('Permission Denied.'));
-        }
-    }
-
     public function loggedHistoryDestroy($id)
     {
         if (\Auth::user()->can('delete logged history')) {
@@ -387,13 +377,12 @@ class UserController extends Controller
 
     /**
      * The same boundary for an activity-log row, matching loggedHistory()'s
-     * list. The log records who touched a deployment, so a cross-tenant read is
-     * worse than a cross-tenant user listing -- and the delete removed someone
-     * else's evidence.
+     * list. The log records who touched a deployment, and the delete removed
+     * someone else's evidence.
      *
-     * No super-admin exemption here, unlike findUserInTenant(): loggedHistory()
-     * does not exempt them either, so a row reachable by id but absent from the
-     * list would be the inconsistency, not the scope.
+     * No super-admin exemption, unlike findUserInTenant(): loggedHistory() does
+     * not exempt them either, so a row reachable by id but absent from the list
+     * would be the inconsistency, not the scope.
      */
     private function findHistoryInTenant($id): LoggedHistory
     {

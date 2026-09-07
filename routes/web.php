@@ -219,7 +219,9 @@ Route::group(
     function () {
 
         Route::get('logged/history', [UserController::class, 'loggedHistory'])->name('logged.history');
-        Route::get('logged/{id}/history/show', [UserController::class, 'loggedHistoryShow'])->name('logged.history.show');
+        // BAN-309: `logged.history.show` removed. Its view was never written, so
+        // the success path threw View [logged_history.show] not found -- a 500 on
+        // every authorised request. Nothing linked to it.
         Route::delete('logged/{id}/history', [UserController::class, 'loggedHistoryDestroy'])->name('logged.history.destroy');
 
 
