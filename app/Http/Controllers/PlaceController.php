@@ -14,7 +14,7 @@ class PlaceController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage place')) {
-            $places = Place::where('parent_id', parentId())->get();
+            $places = Place::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -56,7 +56,7 @@ class PlaceController extends Controller
             $place->price = $request->price;
             $place->depo_name = $request->depo_name;
             $place->depo_address = $request->depo_address;
-            $place->parent_id = writeParentId();
+            $place->parent_id = tenantKey();
             $place->save();
             return redirect()->route('place.index')->with('success', __('Place successfully created.'));
         } else {

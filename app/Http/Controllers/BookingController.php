@@ -56,7 +56,7 @@ class BookingController extends Controller
     {
         [$search, $month] = $this->bookingFilters($request);
 
-        return Booking::where('parent_id', '=', parentId())
+        return Booking::where('parent_id', '=', tenantKey())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
                     $w->where('booking_id', 'like', "%{$search}%")
@@ -117,19 +117,19 @@ class BookingController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create booking')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->limit(500)->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->limit(500)->get();
 
             // Load every driver for the tenant (newest first). The driver
             // SearchableSelect filters client-side, so a capped slice made older
             // drivers unfindable once a tenant had >500 of them (BAN-266).
             // Server-side search is the follow-up for larger scale.
-            $drivers = User::where('parent_id', parentId())
+            $drivers = User::where('parent_id', tenantKey())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
                 ->orderBy('id', 'desc') // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
-            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
             $driversProp = $drivers->map(fn($d) => [
                 'id'               => $d->id,
                 'name'             => $d->name,
@@ -141,8 +141,8 @@ class BookingController extends Controller
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
 
-            $places = Place::where('parent_id', parentId())->limit(500)->get();
-            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
+            $places = Place::where('parent_id', tenantKey())->limit(500)->get();
+            $addon = Addon::where('parent_id', tenantKey())->limit(500)->get()->pluck('name', 'id');
 
             return Inertia::render('Booking/Create', [
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
@@ -343,7 +343,7 @@ class BookingController extends Controller
         // 🔹 Blacklist check (BAN-252): warn-and-override. If the driver is
         // blacklisted and the owner hasn't acknowledged, block; the React picker
         // surfaces the warning so this only fires as the server-side safety net.
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $request->driver)
             ->whereNull('lifted_at')
             ->first();
@@ -387,7 +387,7 @@ class BookingController extends Controller
             'name' => $vehicle_detail->name,
             'license_plate' => $vehicle_detail->license_plate,
         ];
-        $booking->parent_id = writeParentId();
+        $booking->parent_id = tenantKey();
         $booking->daily_price_final = $request->daily_price ?? 0;
         $booking->save();
 
@@ -402,7 +402,7 @@ class BookingController extends Controller
 
         // 🔹 Notification by email (optional)
         $module = 'new_booking';
-        $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+        $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
         $setting = settings();
         $errorMessage = '';
         if (!empty($notification) && $notification->enabled_email == 1) {
@@ -436,7 +436,7 @@ class BookingController extends Controller
 
             // Enforce tenant scope and fail with 404 if not found
             $booking = Booking::where('id', $decryptedId)
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->first();
 
             if (!$booking) {
@@ -532,10 +532,10 @@ class BookingController extends Controller
 
             // All drivers for the tenant (newest first); see create() — a capped
             // slice made older drivers unfindable in the picker (BAN-266).
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
+            $drivers = User::where('parent_id', tenantKey())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252),
             // matching create(). update() enforces the same gate server-side.
-            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
             $driversProp = $drivers->map(fn($d) => [
                 'id'               => $d->id,
                 'name'             => $d->name,
@@ -545,9 +545,9 @@ class BookingController extends Controller
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
-            $places = Place::where('parent_id', parentId())->limit(500)->get();
+            $places = Place::where('parent_id', tenantKey())->limit(500)->get();
 
-            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
+            $addon = Addon::where('parent_id', tenantKey())->limit(500)->get()->pluck('name', 'id');
 
             $startDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->start_date_time)));
             $endDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->end_date_time)));
@@ -566,7 +566,7 @@ class BookingController extends Controller
                     });
                 })->distinct()->pluck('vehicle')->toArray();
 
-            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->limit(500)->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->whereNotIn('id', $booked)->limit(500)->get();
 
             return Inertia::render('Booking/Edit', [
                 'booking'  => [
@@ -633,7 +633,7 @@ class BookingController extends Controller
             // BAN-285 review: same warn-and-override gate store() applies (BAN-252).
             // Without it a booking could be created with a clean driver and then
             // edited onto a blacklisted one, bypassing the check entirely.
-            $blacklist = DriverBlacklist::where('parent_id', parentId())
+            $blacklist = DriverBlacklist::where('parent_id', tenantKey())
                 ->where('driver_user_id', $request->driver)
                 ->whereNull('lifted_at')
                 ->first();
@@ -717,7 +717,7 @@ class BookingController extends Controller
             if ($bookingStatus) {
                 $user = User::find($request->driver);
                 $module = 'booking_status';
-                $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+                $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
                 $setting = settings();
                 $errorMessage = '';
                 if (!empty($notification) && $notification->enabled_email == 1) {
@@ -780,7 +780,7 @@ class BookingController extends Controller
         // this, a crafted id list could delete another tenant's bookings —
         // bulkMarkPaid already scopes the same way.
         $ownedIds = Booking::whereIn('id', $ids)
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->pluck('id');
 
         if ($ownedIds->isEmpty()) {
@@ -825,7 +825,7 @@ class BookingController extends Controller
         DB::transaction(function () use ($validated, $date, $method, $isCash, $cashMax, $splitCash, &$paid, &$skippedAlreadyPaid, &$skippedCash) {
             // Tenant-scoped: only the caller's own bookings can be touched.
             $bookings = Booking::whereIn('id', $validated['ids'])
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->get();
 
             foreach ($bookings as $booking) {
@@ -897,7 +897,7 @@ class BookingController extends Controller
             // Persist the invoice day-count so deferred invoicing reproduces the
             // exact days (manual override or cash-split share) at flush time.
             $payment->invoice_days = ($quantity && $quantity > 0) ? $quantity : null;
-            $payment->parent_id = writeParentId();
+            $payment->parent_id = tenantKey();
             $payment->save();
 
             // Status from the freshly-summed payments (includes the row just saved).
@@ -978,7 +978,7 @@ class BookingController extends Controller
         $tva->ice_number = $setting['ice'] ?? null;
         $tva->rc_number = $setting['rc'] ?? null;
         $tva->nif_number = $setting['if'] ?? null;
-        $tva->parent_id = writeParentId();
+        $tva->parent_id = tenantKey();
         $tva->booking_id = $booking->id;
         $tva->generated_date = now()->toDateString();
         $tva->total_amount = number_format($booking->amount, 2, '.', '');
@@ -1225,7 +1225,7 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('The file has no data rows.'));
         }
 
-        $pid         = parentId();
+        $pid         = tenantKey();
         $driverRole  = Role::where('name', 'driver')->where('parent_id', $pid)->first();
 
         // Cache already-loaded drivers and vehicles to avoid duplicate DB hits per row
@@ -1482,7 +1482,7 @@ class BookingController extends Controller
 
     public function bookingNumber()
     {
-        $latest = Booking::where('parent_id', parentId())->latest()->first();
+        $latest = Booking::where('parent_id', tenantKey())->latest()->first();
         if (!$latest) {
             return 1;
         }
@@ -1624,7 +1624,7 @@ class BookingController extends Controller
             return response()->json(['message' => __('Permission Denied.')], 403);
         }
 
-        $booking = Booking::where('parent_id', parentId())->find($id);
+        $booking = Booking::where('parent_id', tenantKey())->find($id);
         if (!$booking) {
             return response()->json(['message' => __('Not found')], 404);
         }
@@ -1748,7 +1748,7 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $parentId = parentId();
+        $parentId = tenantKey();
         $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
         $vehicles = Vehicle::where('parent_id', $parentId)->get();
 

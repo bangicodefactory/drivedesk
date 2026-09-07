@@ -12,7 +12,7 @@ class ExpenseTypeController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage expense type')) {
-            $types = ExpenseType::where('parent_id', parentId())->get();
+            $types = ExpenseType::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -41,7 +41,7 @@ class ExpenseTypeController extends Controller
             }
             $expenseType = new ExpenseType();
             $expenseType->title = $request->title;
-            $expenseType->parent_id = writeParentId();
+            $expenseType->parent_id = tenantKey();
             $expenseType->save();
             return redirect()->route('expense-type.index')->with('success', __('Expense type successfully created.'));
         } else {

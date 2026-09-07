@@ -12,7 +12,7 @@ class OptionController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage options')) {
-            $options = Option::where('parent_id', parentId())->get();
+            $options = Option::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -41,7 +41,7 @@ class OptionController extends Controller
             }
             $option = new Option();
             $option->name = $request->name;
-            $option->parent_id = writeParentId();
+            $option->parent_id = tenantKey();
             $option->save();
             return redirect()->route('option.index')->with('success', __('Option successfully created.'));
         } else {

@@ -12,7 +12,7 @@ class VehicleTypeController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage vehicle type')) {
-            $types = VehicleType::where('parent_id', '=', parentId())->get();
+            $types = VehicleType::where('parent_id', '=', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -43,7 +43,7 @@ class VehicleTypeController extends Controller
             $vehicleType = new VehicleType();
             $vehicleType->type = $request->type;
             $vehicleType->notes = $request->notes;
-            $vehicleType->parent_id = writeParentId();
+            $vehicleType->parent_id = tenantKey();
             $vehicleType->save();
             return redirect()->route('vehicle-type.index')->with('success', __('Vehicle type successfully created.'));
         } else {

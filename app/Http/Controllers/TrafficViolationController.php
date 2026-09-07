@@ -64,7 +64,7 @@ class TrafficViolationController extends Controller
         $confidence = trim((string) $request->get('confidence', ''));
 
         $violations = TrafficViolation::with(['vehicle', 'booking', 'driver'])
-            ->where('parent_id', '=', parentId())
+            ->where('parent_id', '=', tenantKey())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
                     $w->where('reference', 'like', "%{$search}%")
@@ -92,7 +92,7 @@ class TrafficViolationController extends Controller
                 'confidence' => $confidence,
             ],
             'statuses'      => TrafficViolation::$statuses,
-            'unmatchedCount' => TrafficViolation::where('parent_id', parentId())
+            'unmatchedCount' => TrafficViolation::where('parent_id', tenantKey())
                 ->whereNull('booking_id')
                 ->count(),
         ]);
@@ -120,7 +120,7 @@ class TrafficViolationController extends Controller
 
         $violation = new TrafficViolation();
         $this->fill($violation, $request);
-        $violation->parent_id  = parentId();
+        $violation->parent_id  = tenantKey();
         $violation->created_by = \Auth::id();
         $violation->status     = 'new';
 
@@ -144,7 +144,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -203,7 +203,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -225,7 +225,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -249,7 +249,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('success', __('Rental unlinked.'));
         }
 
-        $booking = Booking::where('parent_id', parentId())->find($bookingId);
+        $booking = Booking::where('parent_id', tenantKey())->find($bookingId);
 
         if ($booking === null) {
             return redirect()->back()->with('error', __('That booking could not be found.'));
@@ -274,7 +274,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -301,7 +301,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -316,7 +316,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -365,7 +365,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('Permission denied.'));
         }
 
-        if ((int) $trafficViolation->parent_id !== (int) parentId()) {
+        if ((int) $trafficViolation->parent_id !== (int) tenantKey()) {
             return redirect()->route('traffic-violation.index')->with('error', __('Permission Denied.'));
         }
 
@@ -447,7 +447,7 @@ class TrafficViolationController extends Controller
             return redirect()->back()->with('error', __('The file has no data rows.'));
         }
 
-        $pid = parentId();
+        $pid = tenantKey();
 
         // Resolve plates against one preloaded fleet rather than per row.
         $vehicles = Vehicle::where('parent_id', $pid)->whereNotNull('license_plate')->get();
@@ -671,7 +671,7 @@ class TrafficViolationController extends Controller
         $result = $this->matcher->match(
             $violation->license_plate,
             Carbon::parse($violation->occurred_at),
-            (int) ($violation->parent_id ?: parentId())
+            (int) ($violation->parent_id ?: tenantKey())
         );
 
         $violation->vehicle_id       = $result['vehicle']?->id;

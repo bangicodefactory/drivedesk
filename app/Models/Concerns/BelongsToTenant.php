@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\Auth;
  *    every row in the system from them.
  *
  *    Reads only. Their *writes* go to the customer's tenant via
- *    `writeParentId()` (BAN-315): stamping a support login's own id orphaned
+ *    `tenantKey()` (BAN-316): stamping a support login's own id orphaned
  *    every row it created — a vehicle the customer's fleet list never shows, a
  *    booking that never blocks their calendar — and undetectably, since this
  *    bypass makes it all look right from support's side.
@@ -79,11 +79,13 @@ trait BelongsToTenant
             // BookingFactory sets 0 deliberately, so empty() would silently rewrite
             // an intentionally out-of-tenant fixture to the caller's tenant and mask
             // a real isolation failure.
-            if (is_null($model->parent_id) && static::tenantScopeApplies()) {
-                // writeParentId(), not parentId(): a super admin's own id is no
-                // tenant's key, so a row created during a support session was
-                // orphaned from the customer who owns the deployment (BAN-315).
-                $model->parent_id = writeParentId();
+            // Auth::check(), not tenantScopeApplies(): the latter is false for a
+            // super admin, so gating on it meant the hook returned early during
+            // exactly the sessions that needed stamping and the row inserted on
+            // the column default. tenantKey() resolves a support session to the
+            // customer's tenant (BAN-316).
+            if (is_null($model->parent_id) && Auth::check()) {
+                $model->parent_id = tenantKey();
             }
         });
     }

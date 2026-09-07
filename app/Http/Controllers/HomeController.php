@@ -38,11 +38,11 @@ class HomeController extends Controller
                     'organizationByMonth' => $result['organizationByMonth'],
                 ]);
             } else {
-                $result['totalUser'] = User::where('parent_id', parentId())->count();
-                $result['totalDriver'] = User::where('type', 'driver')->where('parent_id', parentId())->count();
-                $result['totalBooking'] = Booking::where('parent_id', parentId())->count();
-                $result['totalIncome'] = Booking::where('parent_id', parentId())->sum('amount');
-                $totalExpense = Expense::where('parent_id', parentId())->sum('amount');
+                $result['totalUser'] = User::where('parent_id', tenantKey())->count();
+                $result['totalDriver'] = User::where('type', 'driver')->where('parent_id', tenantKey())->count();
+                $result['totalBooking'] = Booking::where('parent_id', tenantKey())->count();
+                $result['totalIncome'] = Booking::where('parent_id', tenantKey())->sum('amount');
+                $totalExpense = Expense::where('parent_id', tenantKey())->sum('amount');
                 $result['totalExpense'] = $totalExpense;
                 $result['incomeExpenseByMonth'] = $this->incomeExpenseByMonth();
                 $result['settings'] = settings();
@@ -93,7 +93,7 @@ class HomeController extends Controller
      */
     private function ownerDashboardExtras(): array
     {
-        $parentId = parentId();
+        $parentId = tenantKey();
         $today     = Carbon::today();
         $closed    = ['cancelled', 'completed']; // not "out" / not pending return
 
@@ -251,7 +251,7 @@ class HomeController extends Controller
     public function incomeExpenseByMonth(): array
     {
         $year = (int) date('Y');
-        $pid  = parentId();
+        $pid  = tenantKey();
 
         $income = DB::table('bookings')
             ->selectRaw('MONTH(start_date) as mo, SUM(amount) as total')

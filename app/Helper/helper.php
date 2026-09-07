@@ -650,7 +650,7 @@ if (!function_exists('defaultDriverCreate')) {
         {
             $datas['settings'] = settings();
             try {
-                emailSettings(parentId());
+                emailSettings(tenantKey());
                 Mail::to($to)->send(new TestMail($datas));
                 return [
                     'status' => 'success',
@@ -676,7 +676,7 @@ if (!function_exists('defaultDriverCreate')) {
                 if ($datas['module'] == 'owner_create') {
                     emailSettings(1);
                 } else {
-                    emailSettings(parentId());
+                    emailSettings(tenantKey());
                 }
                 Mail::to($to)->send(new Common($datas));
                 return [
@@ -780,25 +780,25 @@ if (!function_exists('defaultDriverCreate')) {
                     $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'], $user->name];
                 }
                 if ($notification->module == 'new_booking') {
-                    $booking=Booking::where('id',$id)->where('parent_id',parentId())->first();
+                    $booking=Booking::where('id',$id)->where('parent_id',tenantKey())->first();
                     $vehicle= Vehicle::find($booking->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{booking_date}', '{start_date}', '{end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{pickup_address}', '{drop_address}', '{status}'];
                     $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
                 }
                 if ($notification->module == 'booking_status') {
-                    $booking=Booking::where('id',$id)->where('parent_id',parentId())->first();
+                    $booking=Booking::where('id',$id)->where('parent_id',tenantKey())->first();
                     $vehicle= Vehicle::find($booking->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{booking_date}', '{start_date}', '{end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{pickup_address}', '{drop_address}', '{status}'];
                     $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$booking->drivers->name ,$booking->created_at,$booking->start_date,$booking->end_date,$vehicle->name,($vehicle->types?->type ?? '-'),$vehicle->model,$vehicle->license_plate,$booking->pickupAddress->depo_address,$booking->dropOffAddress->depo_address,$booking->status];
                 }
                 if ($notification->module == 'new_agreement') {
-                    $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
+                    $agreement=RentalAgreement::where('id',$id)->where('parent_id',tenantKey())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
                     $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle?->name,($vehicle?->types?->type ?? '-'),$vehicle?->model,$vehicle?->license_plate,$agreement->terms_condition,$agreement->status];
                 }
                 if ($notification->module == 'agreement_status') {
-                    $agreement=RentalAgreement::where('id',$id)->where('parent_id',parentId())->first();
+                    $agreement=RentalAgreement::where('id',$id)->where('parent_id',tenantKey())->first();
                     $vehicle= Vehicle::find($agreement->vehicle);
                     $search = ['{company_name}', '{company_email}', '{company_phone_number}', '{company_address}', '{company_currency}', '{driver_name}', '{agreement_start_date}', '{agreement_end_date}', '{vehicle_name}', '{vehicle_type}', '{vehicle_model}', '{vehicle_plate_number}', '{terms_condition}', '{status}'];
                     $replace = [$settings['company_name'], $settings['company_email'], $settings['company_phone'], $settings['company_address'], $settings['CURRENCY_SYMBOL'],$agreement->drivers->name ,$agreement->rental_start_date,$agreement->rental_end_date,$vehicle?->name,($vehicle?->types?->type ?? '-'),$vehicle?->model,$vehicle?->license_plate,$agreement->terms_condition,$agreement->status];
@@ -898,31 +898,42 @@ if (!function_exists('deploymentOwnerId')) {
     }
 }
 
-if (!function_exists('writeParentId')) {
+if (!function_exists('tenantKey')) {
     /**
-     * Which tenant a newly created row belongs to (BAN-315).
+     * The tenant a request operates on (BAN-316).
      *
-     * Not parentId(). parentId() returns a super admin their *own* id, which is
-     * no tenant's key, so every row a vendor support login created was orphaned:
-     * a vehicle the customer's fleet list never shows, a booking that never
-     * blocks their calendar, an invoice in a numbering bucket of its own. And
-     * undetectably so -- support bypasses the tenant scope on reads, so it all
-     * looks right from their side.
+     * `parentId()` answers "whose account is this", which is the same thing for
+     * an owner or their staff and a different thing for a super admin: it hands
+     * them their *own* id, which is no tenant's key.
      *
-     * The deployment is the tenant, so a support write belongs to the customer
-     * whose deployment it is. deploymentOwnerId() answers only when there is
-     * exactly one owner; with none or several the key is not knowable and this
-     * falls back to parentId(), which is exactly the behaviour that shipped
-     * before BAN-315.
+     * That made a support session incoherent. Every row it created was orphaned
+     * from the customer who owns the deployment -- a vehicle their fleet list
+     * never shows, a booking that never blocks their calendar. BAN-315 tried to
+     * fix that by redirecting the write stamps alone and was closed unmerged,
+     * because the *rest* of each request still resolved through parentId():
+     * `vehicleNumber()`, `bookingNumber()`, `agreementNumber()` and
+     * `driverNumber()` all read from the super admin's empty bucket and restart
+     * at 1, so the row landed in the customer's tenant carrying a number they
+     * had already issued -- including on signed rental agreements.
+     * `licensePlateExists()` and the BAN-252 blacklist lookup matched nothing
+     * and silently passed. `CreditController`'s guards denied support the row it
+     * had just written.
      *
-     * Identity rows are deliberately not routed through this. A user's or
-     * role's parent_id records who administers it, not which tenant's data it
-     * is -- an owner's parent_id is the super admin who created them, which is
-     * what makes them resolvable from users.index -- so UserController and
-     * RoleController still use parentId(). Every model carrying BelongsToTenant
-     * uses this.
+     * So this is used on *both* sides -- the stamp, the number generators, the
+     * uniqueness guards, the read filters -- across every controller whose
+     * models carry BelongsToTenant. One key, or the halves disagree.
+     *
+     * Deliberately not a change to `parentId()` itself. Identity and global
+     * settings need the caller's own id: `UserController::index`'s super-admin
+     * branch, its owner creation (an owner's parent_id *is* the super admin who
+     * created them), `RoleController`, and `settings()`, where parent_id = 1 is
+     * where ClientInstall seeds every client's branding.
+     *
+     * deploymentOwnerId() answers only when there is exactly one owner; with
+     * none or several the key is not knowable and this falls back to parentId(),
+     * which is the behaviour that shipped before.
      */
-    function writeParentId(): int
+    function tenantKey(): int
     {
         if (\Auth::check() && \Auth::user()->type === 'super admin') {
             return deploymentOwnerId() ?? (int) parentId();
@@ -1018,10 +1029,13 @@ if (!function_exists('tenantExistsRule')) {
      * resolves to null inside the action — validation and model access
      * disagreeing about what exists.
      *
-     * Mirrors BelongsToTenant::tenantScopeApplies(): super admins and
-     * unauthenticated callers (the public booking-request flow) are not
-     * constrained, because parentId() returns a super admin's own id — never
-     * any row's parent_id — which would reject every value.
+     * Unauthenticated callers (the public booking-request flow) are never
+     * constrained. Super admins are, whenever the deployment key is knowable:
+     * they used to be exempt because parentId() returns their own id — never
+     * any row's parent_id — which would have rejected every value, but
+     * tenantKey() resolves them to the customer's tenant, so the rule can hold
+     * a support session to the same rows as the customer (BAN-316). With no
+     * single owner the key is unknowable and the old exemption stands.
      *
      * @see docs/product-roadmap.md — Tranche S.1
      */
@@ -1029,8 +1043,10 @@ if (!function_exists('tenantExistsRule')) {
     {
         $rule = \Illuminate\Validation\Rule::exists($table, $column);
 
-        if (\Auth::check() && \Auth::user()->type !== 'super admin') {
-            $tenantId = parentId();
+        $isSuperAdmin = \Auth::check() && \Auth::user()->type === 'super admin';
+
+        if (\Auth::check() && (! $isSuperAdmin || deploymentOwnerId() !== null)) {
+            $tenantId = tenantKey();
 
             if ($includeTenantOwner) {
                 // A user belongs to tenant T when parent_id = T *or* it is the

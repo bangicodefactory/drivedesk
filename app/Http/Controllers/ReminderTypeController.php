@@ -14,7 +14,7 @@ class ReminderTypeController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage reminder')) {
-            $types = ReminderType::where('parent_id', parentId())->get();
+            $types = ReminderType::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -48,7 +48,7 @@ class ReminderTypeController extends Controller
             }
             $remindertype = new ReminderType();
             $remindertype->type = $request->type;
-            $remindertype->parent_id = writeParentId();
+            $remindertype->parent_id = tenantKey();
             $remindertype->save();
             return redirect()->route('reminder-type.index')->with('success', __('Reminder type successfully created.'));
         } else {

@@ -12,7 +12,7 @@ class InspectionTypeController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage inspection type')) {
-            $types = InspectionType::where('parent_id', '=', parentId())->get();
+            $types = InspectionType::where('parent_id', '=', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -41,7 +41,7 @@ class InspectionTypeController extends Controller
             }
             $inspectionType = new InspectionType();
             $inspectionType->type = $request->type;
-            $inspectionType->parent_id = writeParentId();
+            $inspectionType->parent_id = tenantKey();
             $inspectionType->save();
             return redirect()->route('inspection-type.index')->with('success', __('Inspection type successfully created.'));
         } else {

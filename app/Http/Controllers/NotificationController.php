@@ -32,7 +32,7 @@ class NotificationController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage notification')) {
-            $notifications = Notification::where('parent_id', parentId())->get();
+            $notifications = Notification::where('parent_id', tenantKey())->get();
             return Inertia::render('Notification/Index', [
                 'notifications' => $notifications->map(fn ($item) => [
                     'id'            => $item->id,
@@ -80,7 +80,7 @@ class NotificationController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
-            $exist = Notification::where('parent_id', parentId())->where('module', $request->module)->first();
+            $exist = Notification::where('parent_id', tenantKey())->where('module', $request->module)->first();
             if (empty($exist)) {
                 $notification = new Notification();
                 $notification->module = $request->module;
@@ -91,7 +91,7 @@ class NotificationController extends Controller
                 $notification->subject = $request->subject;
                 $notification->message = $request->message;
                 $notification->enabled_email = isset($request->enabled_email) ? 1 : 0;
-                $notification->parent_id = writeParentId();
+                $notification->parent_id = tenantKey();
                 $notification->save();
 
                 return redirect()->route('notification.index')->with('success', __('Notification successfully created.'));

@@ -22,7 +22,7 @@ class ReminderController extends Controller
     {
         if (\Auth::user()->can('manage reminder')) {
             $reminders = Reminder::with(['vehicles', 'reminderType'])
-                ->where('parent_id', '=', parentId())
+                ->where('parent_id', '=', tenantKey())
                 ->orderBy('reminder_date', 'desc')
                 ->get()
                 ->map(function ($reminder) {
@@ -47,10 +47,10 @@ class ReminderController extends Controller
      */
     public function create()
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
+        $vehicles = Vehicle::where('parent_id', tenantKey())->orderBy('created_at', 'desc')->get()->pluck('name', 'id');
         $vehicles->prepend(__('Select Vehicle'), '');
 
-        $types = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
+        $types = ReminderType::where('parent_id', tenantKey())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
 
         return Inertia::render('Reminder/Create', compact('vehicles', 'types'));
@@ -158,7 +158,7 @@ class ReminderController extends Controller
             $reminder->reminder_date = $request->reminder_date;
             $reminder->note = $request->note;
             $reminder->status = $this->calculateReminderStatus($request->reminder_date);
-            $reminder->parent_id = writeParentId();
+            $reminder->parent_id = tenantKey();
             $reminder->save();
 
             return redirect()->route('reminder.index')->with('success', __('Rappel créé avec succès.'));
@@ -181,7 +181,7 @@ class ReminderController extends Controller
     public function edit(Reminder $reminder)
     {
         $vehicleName = $reminder->id_vehicle ? (Vehicle::find($reminder->id_vehicle)->name ?? '') : '';
-        $type = ReminderType::where('parent_id', parentId())->get()->pluck('type', 'id');
+        $type = ReminderType::where('parent_id', tenantKey())->get()->pluck('type', 'id');
 
         return Inertia::render('Reminder/Edit', compact('reminder', 'type', 'vehicleName'));
     }
@@ -353,7 +353,7 @@ class ReminderController extends Controller
     public function getUrgentReminders()
     {
         $urgentReminders = Reminder::with(['vehicle', 'reminderType'])
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->whereIn('status', ['urgent', 'overdue'])
             ->orderBy('reminder_date', 'asc')
             ->get();
@@ -366,7 +366,7 @@ class ReminderController extends Controller
      */
     public function getDashboardData()
     {
-        $parentId = parentId();
+        $parentId = tenantKey();
         $today = Carbon::now();
 
         $stats = [
@@ -459,7 +459,7 @@ class ReminderController extends Controller
     public function getVehicleReminders($vehicleId)
     {
         $reminders = Reminder::with('reminderType')
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->where('id_vehicle', $vehicleId)
             ->orderBy('reminder_date', 'asc')
             ->get();
@@ -514,7 +514,7 @@ class ReminderController extends Controller
      */
     public function getReminderStatistics()
     {
-        $parentId = parentId();
+        $parentId = tenantKey();
         $currentMonth = Carbon::now()->startOfMonth();
         $lastMonth = Carbon::now()->subMonth()->startOfMonth();
 
@@ -557,7 +557,7 @@ class ReminderController extends Controller
     {
         try {
             $completedReminders = Reminder::where('status', 'completed')
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->get();
 
             $createdCount = 0;
