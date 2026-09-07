@@ -113,6 +113,68 @@ class VehicleControllerTest extends TestCase
         ]);
     }
 
+    // ── BAN-316: both sides resolve the same tenant key ──────────
+    //
+    // BAN-315 redirected the write stamps alone. That was worse than the bug:
+    // the number generators and uniqueness guards still resolved through
+    // parentId(), an empty bucket for a super admin, so a support-created row
+    // landed in the customer's tenant carrying a number from nobody's.
+
+    public function test_a_support_created_vehicle_does_not_reuse_a_customer_number(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'vehicle_id' => 1]);
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'vehicle_id' => 2]);
+
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $created = Vehicle::withoutGlobalScope('tenant')->where('name', 'Support Car')->first();
+
+        $this->assertNotNull($created);
+        $this->assertSame($this->owner->id, (int) $created->parent_id);
+        $this->assertSame(3, (int) $created->vehicle_id);
+    }
+
+    /**
+     * licensePlateExists() filtered by parentId(), so for a support login it
+     * matched nothing and always returned false -- re-opening the duplicate
+     * plate the guard exists to prevent, on the customer's own fleet.
+     */
+    public function test_support_cannot_add_a_plate_the_customer_already_has(): void
+    {
+        Vehicle::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'license_plate' => '1234-A-56',
+        ]);
+
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload([
+                'name'          => 'Duplicate Plate',
+                'license_plate' => '1234-A-56',
+            ]))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('vehicles', ['name' => 'Duplicate Plate']);
+    }
+
+    /**
+     * index() filters by parentId() explicitly rather than through the global
+     * scope, so redirecting only the write left support unable to see what it
+     * had just created -- trading one invisibility for another.
+     */
+    public function test_support_can_see_the_vehicle_it_just_created(): void
+    {
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $this->actingAs($superAdmin)
+            ->get(route('vehicle.index'))
+            ->assertOk()
+            ->assertSee('Support Car');
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void

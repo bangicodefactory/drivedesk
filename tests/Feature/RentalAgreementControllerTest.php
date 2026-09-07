@@ -207,6 +207,31 @@ class RentalAgreementControllerTest extends TestCase
             });
     }
 
+    /**
+     * BAN-316. agreementNumber() resolved through parentId(), empty for a
+     * support login, so it restarted at 1 -- putting a second signed contract
+     * in the customer's records under a number they had already issued.
+     */
+    public function test_a_support_created_agreement_does_not_reuse_a_contract_number(): void
+    {
+        $this->makeAgreement(['agreement_id' => 1]);
+        $this->makeAgreement(['agreement_id' => 2]);
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage rental agreement', 'create rental agreement']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('rental-agreement.store'), $this->validPayload())
+            ->assertRedirect();
+
+        $created = RentalAgreement::withoutGlobalScope('tenant')
+            ->orderByDesc('id')
+            ->first();
+
+        $this->assertSame($this->owner->id, (int) $created->parent_id);
+        $this->assertSame(3, (int) $created->agreement_id);
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void
