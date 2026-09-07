@@ -71,7 +71,14 @@ return [
      * either rejected (cash_split off) or split into receipts each within this
      * cap (cash_split on). Read via config('client.cash_payment_max', 5000).
      */
-    'cash_payment_max' => (int) env('CLIENT_CASH_PAYMENT_MAX', 5000),
+    // (int) 'abc' and (int) '' are both 0, and every read site passes 5000 as a
+    // config() default that never fires because the key exists. 0 either
+    // rejects every cash payment (cash_split off) or, with cash_split on, makes
+    // CashPaymentSplitter clamp to 1 cent and expand one payment into hundreds
+    // of thousands of receipts inside a single transaction.
+    'cash_payment_max' => ((int) env('CLIENT_CASH_PAYMENT_MAX', 5000)) > 0
+        ? (int) env('CLIENT_CASH_PAYMENT_MAX', 5000)
+        : 5000,
 
     /*
      * Interface → concrete bindings resolved by ClientServiceProvider.

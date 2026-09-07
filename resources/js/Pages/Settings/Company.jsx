@@ -114,7 +114,7 @@ function Company({ settings, timezones }) {
                             {/* BAN-311: the contract text printed on every rental
                                 agreement and its PDF. Blank keeps the terms that
                                 ship with this deployment's client config. */}
-                            <div className="space-y-1.5 md:col-span-2">
+                            <div className="space-y-1.5 sm:col-span-2">
                                 <Label htmlFor="rental_agreement_terms">{t('Rental Agreement Terms')}</Label>
                                 <Textarea
                                     id="rental_agreement_terms"

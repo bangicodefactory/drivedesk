@@ -296,8 +296,24 @@ class RentalAgreementController extends Controller
             $settings = settings();
 
             // display Terms and conditions
-            $terms = rentalAgreementTerms();
-            $terms = nl2br($terms);
+            //
+            // BAN-311 review: prefer the terms this agreement was signed under.
+            // store() snapshots them into terms_condition; rendering the global
+            // text instead was harmless while that text only moved on deploy,
+            // but an owner can now edit it, and rewriting the terms printed on
+            // an already-signed contract is not something a settings screen
+            // should be able to do. Blank falls back for agreements predating
+            // the snapshot.
+            $signedTerms = (string) $rentalAgreement->terms_condition;
+            $terms = trim($signedTerms) !== '' ? $signedTerms : rentalAgreementTerms();
+
+            // e() before nl2br(): Show.jsx renders this with
+            // dangerouslySetInnerHTML, and the source is no longer a committed
+            // config file -- settings/company has no permission middleware and
+            // the XSS middleware sanitises nothing, so any authenticated user
+            // of the tenant could otherwise store script that runs in the
+            // owner's session on every agreement view and print.
+            $terms = nl2br(e($terms));
 
             //display Signature
             $driver1Signature = $this->getUserSignature($rentalAgreement->driver);
