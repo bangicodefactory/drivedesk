@@ -71,7 +71,7 @@ return [
      * either rejected (cash_split off) or split into receipts each within this
      * cap (cash_split on). Read via config('client.cash_payment_max', 5000).
      */
-    'cash_payment_max' => 5000,
+    'cash_payment_max' => (int) env('CLIENT_CASH_PAYMENT_MAX', 5000),
 
     /*
      * Interface → concrete bindings resolved by ClientServiceProvider.
@@ -89,6 +89,9 @@ return [
      * Each client must define terms.rental_agreement. Empty string = no default.
      */
     'terms' => [
+        // BAN-311: a deployment can override this from the Setting model
+        // (`rental_agreement_terms`, editable on Settings -> Company). This
+        // stays the fallback for a variant that ships its own default text.
         'rental_agreement' => '',
     ],
 ];

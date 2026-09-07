@@ -1382,5 +1382,8 @@
     "Next": "التالي",
     ":from–:to of :total": ":from–:to من :total",
     "Page :current of :last": "الصفحة :current من :last",
-    "This deployment already has an owner.": "هذا التثبيت لديه مالك بالفعل."
+    "This deployment already has an owner.": "هذا التثبيت لديه مالك بالفعل.",
+    "Rental Agreement Terms": "شروط عقد الإيجار",
+    "Leave blank to use the terms shipped with this deployment": "اتركه فارغًا لاستخدام الشروط الافتراضية.",
+    "Printed on every rental agreement and its PDF.": "تُطبع على كل عقد إيجار وملفه."
 }

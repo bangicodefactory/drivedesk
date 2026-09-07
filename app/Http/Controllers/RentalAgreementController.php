@@ -92,7 +92,7 @@ class RentalAgreementController extends Controller
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
             $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
 
-            $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
+            $defaultTerms = rentalAgreementTerms();
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
                 'drivers'      => $drivers->map(fn($u) => [
@@ -296,7 +296,7 @@ class RentalAgreementController extends Controller
             $settings = settings();
 
             // display Terms and conditions
-            $terms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
+            $terms = rentalAgreementTerms();
             $terms = nl2br($terms);
 
             //display Signature
