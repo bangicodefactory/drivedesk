@@ -32,7 +32,13 @@ class RoleController extends Controller
 
     public function index()
     {
-        if (! \Auth::user()->can('manage role')) {
+        // Any of the four, not `manage role` alone: store() and destroy()
+        // redirect here, so gating it narrower than they are gated meant a
+        // caller holding only `create role` was bounced on arrival and their
+        // success flash was consumed and replaced by this denial — a denial for
+        // an operation that had in fact succeeded. If you may change a role you
+        // may see the list of them; the nav link stays behind `manage role`.
+        if (! \Auth::user()->canAny(['manage role', 'create role', 'edit role', 'delete role'])) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
@@ -72,7 +78,7 @@ class RoleController extends Controller
         $validator = \Validator::make(
             $request->all(), [
                 'title' => 'required|unique:roles,name,null,id,parent_id,' . parentId(),
-                'user_permission' => 'required',
+                'user_permission' => 'required|array',
             ]
         );
         if ($validator->fails()) {
@@ -135,7 +141,7 @@ class RoleController extends Controller
         $validator = \Validator::make(
             $request->all(), [
                 'title' => 'required|unique:roles,name,' . $userRole->id . ',id,parent_id,' . parentId(),
-                'user_permission' => 'required',
+                'user_permission' => 'required|array',
             ]
         );
         if ($validator->fails()) {
@@ -143,7 +149,7 @@ class RoleController extends Controller
             return redirect()->route('role.index')->with('error', $messages->first());
         }
 
-        $permissions = $this->resolveRequestedPermissions($request->user_permission);
+        $permissions = $this->resolveRequestedPermissions($request->user_permission, $userRole);
         if ($permissions === null) {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -193,10 +199,13 @@ class RoleController extends Controller
     /**
      * The permissions the caller may hand out: their own.
      *
-     * `getAllPermissions()` rather than iterating `roles` as the screens do —
+     * `getAllPermissions()` rather than iterating `roles` as the screens did —
      * it covers permissions granted to the user directly as well as through a
-     * role, so it is a superset of what the form offers and never rejects a
-     * legitimate submission.
+     * role, so it is a superset of what that walk produced.
+     *
+     * It is *not* the whole set a submission may contain: a role can already
+     * hold permissions its editor does not, and those are not the caller's to
+     * grant or to strip. resolveRequestedPermissions() carries them through.
      */
     private function assignablePermissions(): Collection
     {
@@ -215,15 +224,24 @@ class RoleController extends Controller
     }
 
     /**
-     * Map requested permission ids onto the caller's own permissions.
+     * Map requested permission ids onto the set the caller may hand out.
      *
-     * Returns null if any id is one the caller does not hold, or is not a
+     * Returns null if any id is one the caller may not grant, or is not a
      * permission at all — the previous `Permission::find($id)` returned null
      * for an unknown id and passed it straight to givePermissionTo(). Rejecting
      * the whole submission rather than silently dropping the bad ids keeps the
      * saved role identical to what the caller was shown.
+     *
+     * `$role` carries the permissions it already holds. Those the caller cannot
+     * see are neither theirs to grant nor theirs to strip, so they pass through
+     * untouched — accepted when the form posts them back, and re-added when it
+     * does not. Without that, a role holding one permission its editor lacks
+     * could not be saved at all: edit() sends every assigned id and
+     * Roles/Edit.jsx seeds the form from it, but only the offered ids get a
+     * checkbox, so the rest ride along invisibly. Filtering them out of
+     * `assignedPermissions` instead would have silently revoked them on save.
      */
-    private function resolveRequestedPermissions($requested): ?Collection
+    private function resolveRequestedPermissions($requested, ?Role $role = null): ?Collection
     {
         if (! is_array($requested)) {
             return null;
@@ -231,13 +249,24 @@ class RoleController extends Controller
 
         $assignable = $this->assignablePermissions()->keyBy('id');
 
+        $retained = $role
+            ? $role->permissions->reject(fn ($p) => $assignable->has($p->id))->keyBy('id')
+            : new Collection();
+
         $resolved = new Collection();
         foreach ($requested as $id) {
-            $permission = $assignable->get((int) $id);
+            $id = (int) $id;
+            $permission = $assignable->get($id) ?? $retained->get($id);
             if ($permission === null) {
                 return null;
             }
             $resolved->push($permission);
+        }
+
+        foreach ($retained as $permission) {
+            if (! $resolved->contains(fn ($p) => $p->id === $permission->id)) {
+                $resolved->push($permission);
+            }
         }
 
         return $resolved;
