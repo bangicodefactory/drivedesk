@@ -318,7 +318,9 @@ class UserController extends Controller
     public function loggedHistory()
     {
         if (\Auth::user()->can('manage logged history')) {
-            $histories = LoggedHistory::where('parent_id', parentId())->get();
+            // BAN-312: the deployment is the tenant, so everyone in it sees the
+            // same log -- including the vendor support logins written against it.
+            $histories = LoggedHistory::where('parent_id', activityLogParentId())->get();
             return view('logged_history.index', compact('histories'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -391,13 +393,14 @@ class UserController extends Controller
      * worse than a cross-tenant user listing -- and the delete removed someone
      * else's evidence.
      *
-     * No super-admin exemption here, unlike findUserInTenant(): loggedHistory()
-     * does not exempt them either, so a row reachable by id but absent from the
-     * list would be the inconsistency, not the scope.
+     * activityLogParentId() rather than parentId(), for the reason given there:
+     * the deployment is the tenant, so a support login's row belongs to the
+     * customer who should be able to see it (BAN-312). No super-admin exemption
+     * -- with one key for the whole deployment there is nothing to exempt.
      */
     private function findHistoryInTenant($id): LoggedHistory
     {
-        $history = LoggedHistory::where('parent_id', parentId())->find($id);
+        $history = LoggedHistory::where('parent_id', activityLogParentId())->find($id);
 
         abort_if($history === null, 404);
 

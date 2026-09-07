@@ -304,7 +304,9 @@ if (!function_exists('userLoggedHistory')) {
             $details->date = date('Y-m-d H:i:s');
             $details->Details = $result;
             $details->ip = $serverip;
-            $details->parent_id = parentId();
+            // BAN-312: not parentId(). A super admin's own id is no tenant's
+            // key, so their login was invisible on the customer's own screen.
+            $details->parent_id = activityLogParentId();
             $details->save();
         }
     }
@@ -857,6 +859,50 @@ if (!function_exists('feature')) {
         }
 
         return (bool) config("client.features.{$name}", false);
+    }
+}
+
+if (!function_exists('deploymentOwnerId')) {
+    /**
+     * The id of this deployment's business owner, or null before install
+     * (BAN-312).
+     *
+     * Well-defined only because BAN-307 made it so: one deployment, one owner,
+     * enforced at every request path that can create one. Before that this
+     * would have been "the first owner, whichever that is".
+     */
+    function deploymentOwnerId(): ?int
+    {
+        $id = \App\Models\User::where('type', 'owner')->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
+}
+
+if (!function_exists('activityLogParentId')) {
+    /**
+     * Which tenant an activity-log row belongs to (BAN-312).
+     *
+     * Not parentId(). parentId() returns a super admin their *own* id, which is
+     * no tenant's key, so a vendor support login wrote a row the customer's own
+     * activity screen (UserController@loggedHistory, scoped to parentId()) could
+     * never show. The customer could not see that support had logged into their
+     * deployment -- the one audit trail that has to be airtight in a product
+     * where the vendor holds a login to every customer's system.
+     *
+     * The deployment is the tenant, so every row in it belongs to the owner and
+     * everyone in it sees the same log. Falls back to parentId() before an
+     * owner exists (install, seeding), and to 0 outside a request.
+     */
+    function activityLogParentId(): int
+    {
+        $ownerId = deploymentOwnerId();
+
+        if ($ownerId !== null) {
+            return $ownerId;
+        }
+
+        return \Auth::check() ? (int) parentId() : 0;
     }
 }
 

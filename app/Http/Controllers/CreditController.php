@@ -277,7 +277,8 @@ class CreditController extends Controller
             'date' => now(),
             'details' => $details,
             'type' => $type,
-            'parent_id' => function_exists('parentId') ? (parentId() ?? 0) : 0,
+            // BAN-312: same tenant key as every other activity-log row.
+            'parent_id' => activityLogParentId(),
         ]);
     }
 
