@@ -195,7 +195,7 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findUserInTenant($id);
         $userRoles = Role::where('parent_id', '=', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
         return Inertia::render('Users/Edit', [
@@ -217,7 +217,7 @@ class UserController extends Controller
     {
         if (\Auth::user()->can('edit user')) {
             if (\Auth::user()->type == 'super admin') {
-                $user = User::findOrFail($id);
+                $user = $this->findUserInTenant($id);
 
                 $validator = \Validator::make(
                     $request->all(), [
@@ -273,7 +273,7 @@ class UserController extends Controller
                     return redirect()->back()->with('error', __('Permission Denied.'));
                 }
 
-                $user = User::where('parent_id', parentId())->findOrFail($id);
+                $user = $this->findUserInTenant($id);
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -292,7 +292,7 @@ class UserController extends Controller
     {
 
         if (\Auth::user()->can('delete user') ) {
-            $user = User::find($id);
+            $user = $this->findUserInTenant($id);
             $user->delete();
 
             return redirect()->route('users.index')->with('success', __('User successfully deleted.'));
@@ -314,7 +314,7 @@ class UserController extends Controller
     public function loggedHistoryShow($id)
     {
         if (\Auth::user()->can('manage logged history')) {
-            $histories = LoggedHistory::find($id);
+            $histories = $this->findHistoryInTenant($id);
             return view('logged_history.show', compact('histories'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -324,7 +324,7 @@ class UserController extends Controller
     public function loggedHistoryDestroy($id)
     {
         if (\Auth::user()->can('delete logged history')) {
-            $histories = LoggedHistory::find($id);
+            $histories = $this->findHistoryInTenant($id);
             $histories->delete();
             return redirect()->back()->with('success', 'Logged history succefully deleted.');
         } else {
@@ -332,5 +332,57 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Resolve a user id within the caller's tenant (BAN-308).
+     *
+     * index() has always scoped its list to `parent_id = parentId()`, but every
+     * lookup taking an id off the URL resolved against the whole table -- so
+     * `delete user` deleted any user in the database, the deployment's owner
+     * included, and edit() rendered another tenant's name, email and type.
+     *
+     * User carries no global scope (see BelongsToTenant: applying one to the
+     * auth provider model recurses without bound), so the boundary has to be
+     * drawn at each call site. 404 rather than a redirect: it is the same answer
+     * for an id that does not exist and one that belongs to someone else, so it
+     * says nothing about which.
+     *
+     * Super admins are exempt, mirroring BelongsToTenant::tenantScopeApplies().
+     * Not because it is right -- a support login reaching across tenants is half
+     * of the open question about what those logins should be able to do -- but
+     * because settling that is a separate decision, and scoping them here would
+     * change support behaviour inside a fix about staff isolation.
+     */
+    private function findUserInTenant($id): User
+    {
+        $query = User::query();
 
+        if (\Auth::user()->type !== 'super admin') {
+            $query->where('parent_id', parentId());
+        }
+
+        $user = $query->find($id);
+
+        abort_if($user === null, 404);
+
+        return $user;
+    }
+
+    /**
+     * The same boundary for an activity-log row, matching loggedHistory()'s
+     * list. The log records who touched a deployment, so a cross-tenant read is
+     * worse than a cross-tenant user listing -- and the delete removed someone
+     * else's evidence.
+     *
+     * No super-admin exemption here, unlike findUserInTenant(): loggedHistory()
+     * does not exempt them either, so a row reachable by id but absent from the
+     * list would be the inconsistency, not the scope.
+     */
+    private function findHistoryInTenant($id): LoggedHistory
+    {
+        $history = LoggedHistory::where('parent_id', parentId())->find($id);
+
+        abort_if($history === null, 404);
+
+        return $history;
+    }
 }
