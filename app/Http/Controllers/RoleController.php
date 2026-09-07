@@ -86,6 +86,14 @@ class RoleController extends Controller
             return redirect()->route('role.index')->with('error', $messages->first());
         }
 
+        // BAN-310: a role name becomes a user's `type` verbatim, so creating
+        // one called `owner` or `super admin` is how a tenant mints a privilege
+        // level for itself. UserController refuses to assign such a role; this
+        // stops the string existing at all.
+        if (isReservedRoleName($request->title)) {
+            return redirect()->back()->with('error', __('That role name is reserved.'));
+        }
+
         $permissions = $this->resolveRequestedPermissions($request->user_permission);
         if ($permissions === null) {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -147,6 +155,14 @@ class RoleController extends Controller
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
             return redirect()->route('role.index')->with('error', $messages->first());
+        }
+
+        // BAN-310. Note that update() cannot actually rename a role today:
+        // fill() drops `title` because it is not a column on `roles` (the
+        // pre-existing oddity BAN-306 deferred). This guard is here so that
+        // fixing that does not silently open a rename path to a reserved name.
+        if (isReservedRoleName($request->title)) {
+            return redirect()->back()->with('error', __('That role name is reserved.'));
         }
 
         $permissions = $this->resolveRequestedPermissions($request->user_permission, $userRole);

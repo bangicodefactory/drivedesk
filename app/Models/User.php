@@ -113,6 +113,28 @@ class User extends Authenticatable
     }
 
     /**
+     * Role names that must never become a user's `type` (BAN-310).
+     *
+     * UserController sets `type` verbatim from the chosen role's name, so a
+     * role name is a privilege string. 'owner' breaks the one-owner-per-
+     * deployment invariant. 'super admin' is worse:
+     * BelongsToTenant::tenantScopeApplies() returns false for that type, so a
+     * user carrying it drops the tenant scope on every model in the app.
+     *
+     * Enforced in two places, deliberately. UserController refuses to assign
+     * such a role; RoleController refuses to create one in the first place.
+     * The second is the real fix -- it stops the string existing -- and the
+     * first stays as the backstop for roles that predate it, since neither
+     * seeded system role is reachable through the tenant-scoped pickers but
+     * both exist in the table.
+     *
+     * Compared case-insensitively at the call sites: `type == 'owner'` is an
+     * exact match everywhere in the app, so 'Owner' would not escalate today,
+     * but that is an accident of the comparisons rather than a decision.
+     */
+    public const RESERVED_TYPES = ['owner', 'super admin'];
+
+    /**
      * Whether this deployment already has its business owner (BAN-307).
      *
      * DriveDesk ships one deployment per business owner: own database, own

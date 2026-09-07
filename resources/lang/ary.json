@@ -63,5 +63,6 @@
     "Next": "التالي",
     ":from–:to of :total": ":from–:to من :total",
     "Page :current of :last": "الصفحة :current من :last",
-    "This deployment already has an owner.": "هاد التثبيت عندو مالك ديجا."
+    "This deployment already has an owner.": "هاد التثبيت عندو مالك ديجا.",
+    "That role name is reserved.": "هاد سمية الدور محجوزة."
 }
