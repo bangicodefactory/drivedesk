@@ -59,6 +59,25 @@ return [
     'seo' => [],
 
     /*
+     * BAN-311 review: these three gained an env path in drivedesk.php, but a
+     * customer onboarded as their own variant writes their own client file and
+     * would inherit no env path at all -- setting CLIENT_SUPPORTED_LOCALES in
+     * their .env would silently do nothing. Defined here too, so the override
+     * works for any client whose own file leaves the key alone. A client file
+     * that sets the key still wins, as it always has.
+     */
+    'supported_locales' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', trim((string) env('CLIENT_SUPPORTED_LOCALES', '')) !== ''
+            ? (string) env('CLIENT_SUPPORTED_LOCALES')
+            : 'en,fr')
+    ))) ?: ['en', 'fr'],
+
+    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'fr',
+
+    'demo_request_to' => trim((string) env('CLIENT_DEMO_REQUEST_TO', '')) ?: null,
+
+    /*
      * How far outside a rental window a violation may still be attributed to
      * that rental, in hours. Covers late returns and same-day turnovers, which
      * the booking data cannot express (there is no actual-return timestamp).
