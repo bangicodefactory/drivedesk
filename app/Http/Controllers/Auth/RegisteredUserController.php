@@ -60,6 +60,13 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // BAN-307: even with the feature flag on, a deployment gets one owner.
+        // The flag decides whether this route exists at all; this decides that
+        // it cannot produce a second tenant if someone turns it on.
+        if (User::ownerExists()) {
+            return redirect()->back()->with('error', __('This deployment already has an owner.'));
+        }
+
         $owner = User::create([
             'name' => $request->name,
             'email' => $request->email,

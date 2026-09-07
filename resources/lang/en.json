@@ -892,5 +892,6 @@
     "Previous": "Previous",
     "Next": "Next",
     ":from–:to of :total": ":from–:to of :total",
-    "Page :current of :last": "Page :current of :last"
+    "Page :current of :last": "Page :current of :last",
+    "This deployment already has an owner.": "This deployment already has an owner."
 }

@@ -67,6 +67,13 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
+                // BAN-307: one owner per deployment. Nothing enforced this, so
+                // a support login could add a second tenant inside a customer's
+                // database -- invisible to the customer, counted in their totals.
+                if (User::ownerExists()) {
+                    return redirect()->back()->with('error', __('This deployment already has an owner.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->email = $request->email;
@@ -116,7 +123,15 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userRole = Role::findById($request->role);
+                // BAN-307: Role::findById() was unscoped while create() only
+                // offers this tenant's roles, so a crafted role id set the new
+                // user's type to anything -- including 'owner'. Resolve within
+                // the tenant, exactly as the form was populated.
+                $userRole = Role::where('parent_id', parentId())->find($request->role);
+                if ($userRole === null || $userRole->name === 'owner') {
+                    return redirect()->back()->with('error', __('Permission Denied.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -203,7 +218,11 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userData = $request->all();
+                // BAN-307: `type` and `parent_id` are fillable, so $request->all()
+                // let this promote any user to 'owner' (or move them to another
+                // tenant). Neither is on the edit form; both are excluded rather
+                // than validated so the rest of the request is unchanged.
+                $userData = $request->except(['type', 'parent_id']);
                 $user->fill($userData)->save();
 
                 return redirect()->route('users.index')->with('success', 'User successfully updated.');

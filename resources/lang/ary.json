@@ -62,5 +62,6 @@
     "Previous": "السابق",
     "Next": "التالي",
     ":from–:to of :total": ":from–:to من :total",
-    "Page :current of :last": "الصفحة :current من :last"
+    "Page :current of :last": "الصفحة :current من :last",
+    "This deployment already has an owner.": "هاد التثبيت عندو مالك ديجا."
 }
