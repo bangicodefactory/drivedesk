@@ -195,6 +195,14 @@ class UserController extends Controller
 
     public function edit($id)
     {
+        // BAN-308: this action had no can() check. The resource route carries
+        // only `auth` + `XSS`, so any authenticated user of the tenant -- a
+        // driver account included -- could read another user's name, email,
+        // type and company_name off this page.
+        if (! \Auth::user()->can('edit user')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $user = $this->findUserInTenant($id);
         $userRoles = Role::where('parent_id', '=', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
@@ -217,7 +225,13 @@ class UserController extends Controller
     {
         if (\Auth::user()->can('edit user')) {
             if (\Auth::user()->type == 'super admin') {
-                $user = $this->findUserInTenant($id);
+                // Deliberately unscoped, and the only lookup here that is.
+                // Whether a support login should reach across tenants is the
+                // open question; test_update_persists_changes_as_super_admin and
+                // test_update_ignores_a_password_in_the_request_as_super_admin
+                // encode today's answer. Settling it is its own change -- until
+                // then this stays as it was rather than being decided in passing.
+                $user = User::findOrFail($id);
 
                 $validator = \Validator::make(
                     $request->all(), [
@@ -346,21 +360,25 @@ class UserController extends Controller
      * for an id that does not exist and one that belongs to someone else, so it
      * says nothing about which.
      *
-     * Super admins are exempt, mirroring BelongsToTenant::tenantScopeApplies().
-     * Not because it is right -- a support login reaching across tenants is half
-     * of the open question about what those logins should be able to do -- but
-     * because settling that is a separate decision, and scoping them here would
-     * change support behaviour inside a fix about staff isolation.
+     * No super-admin exemption. An earlier pass gave the helper one, mirroring
+     * BelongsToTenant, and justified it with two update() tests -- but the
+     * helper also serves destroy(), so it left this PR's headline bug open for
+     * exactly the role that can do the most damage. Scoping them settles
+     * nothing new: index() offers a super admin only the owners they created
+     * (parent_id = parentId()), which this still resolves, so support keeps
+     * what it reaches through the UI and loses only what it could reach by
+     * crafting a URL. The one lookup that stays unscoped is update()'s
+     * super-admin branch, marked there.
+     *
+     * Note that an owner's own row is not in their own tenant: it carries the
+     * super admin's id as parent_id while parentId() returns the owner's own
+     * id. So an owner cannot edit or delete themselves here. index() never
+     * listed that row and nothing links to it -- account changes go through
+     * SettingController -- but it is a change from find()/findOrFail().
      */
     private function findUserInTenant($id): User
     {
-        $query = User::query();
-
-        if (\Auth::user()->type !== 'super admin') {
-            $query->where('parent_id', parentId());
-        }
-
-        $user = $query->find($id);
+        $user = User::where('parent_id', parentId())->find($id);
 
         abort_if($user === null, 404);
 

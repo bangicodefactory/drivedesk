@@ -308,6 +308,69 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('logged_histories', ['id' => $foreign->id]);
     }
 
+    // ── BAN-308 review: the gaps the first pass left ────────────
+
+    /**
+     * edit() had no can() check at all -- the resource route carries only
+     * `auth` + `XSS`. Tenant-scoping it narrowed who could be read without
+     * addressing who could read.
+     */
+    public function test_edit_is_denied_without_edit_user(): void
+    {
+        $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $target  = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($noPerms)
+            ->get(route('users.edit', $target))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    /**
+     * The super-admin exemption was justified by two update() tests but applied
+     * to the whole helper, so destroy() -- this PR's headline bug -- stayed open
+     * for them. Their own index() lists only owners they created, so nothing is
+     * lost by scoping it.
+     */
+    public function test_destroy_does_not_reach_another_tenants_user_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('delete user');
+
+        $staff = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($superAdmin)
+            ->delete(route('users.destroy', $staff))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('users', ['id' => $staff->id]);
+    }
+
+    public function test_edit_does_not_reach_another_tenants_user_as_super_admin(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $staff = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('users.edit', $staff))
+            ->assertNotFound();
+    }
+
+    /** Support keeps what it actually needs: the owner it created. */
+    public function test_super_admin_can_still_edit_an_owner_it_created(): void
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $ownedOwner = User::factory()->create(['type' => 'owner', 'parent_id' => $superAdmin->id]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('users.edit', $ownedOwner))
+            ->assertOk();
+    }
+
     // ── UserController::create ────────────────────────────────────────────────
 
     public function test_create_requires_auth(): void
