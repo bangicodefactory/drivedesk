@@ -1394,5 +1394,8 @@
     ":from–:to of :total": ":from–:to sur :total",
     "Page :current of :last": "Page :current sur :last",
     "This deployment already has an owner.": "Ce déploiement a déjà un propriétaire.",
+    "Rental Agreement Terms": "Conditions du contrat de location",
+    "Leave blank to use the terms shipped with this deployment": "Laisser vide pour utiliser les conditions fournies avec ce déploiement",
+    "Printed on every rental agreement and its PDF.": "Imprimées sur chaque contrat de location et son PDF.",
     "That role name is reserved.": "Ce nom de rôle est réservé."
 }

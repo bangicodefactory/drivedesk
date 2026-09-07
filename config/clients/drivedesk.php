@@ -4,15 +4,28 @@ return [
 
     'name'               => 'DriveDesk',
     'default_locale'     => 'en',
-    'supported_locales'  => ['en', 'fr', 'nl', 'ar', 'ary'],
+    // BAN-311: env paths. These are per-*customer* values living in a
+    // per-*variant* file, and neither client config contained a single env()
+    // call, so a customer that differed here needed a committed config of its
+    // own. Defaults reproduce today's values exactly.
+    // `env()` returns '' for a key that is present but empty, not the default,
+    // and an empty list makes Locales::routeConstraint() emit '(?!)' -- every
+    // locale-prefixed public URL 404s and hreflang disappears, silently. So the
+    // default applies to a blank or comma-only value too.
+    'supported_locales'  => array_values(array_filter(array_map(
+        'trim',
+        explode(',', trim((string) env('CLIENT_SUPPORTED_LOCALES', '')) !== ''
+            ? (string) env('CLIENT_SUPPORTED_LOCALES')
+            : 'en,fr,nl,ar,ary')
+    ))) ?: ['en', 'fr', 'nl', 'ar', 'ary'],
 
     // Anonymous/guest visitors (e.g. the marketing landing) default to Moroccan
     // Arabic (Darija, 'ary'). Logged-in users keep their own saved language.
     // Read by App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
-    'public_default_locale' => 'ary',
+    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'ary',
 
     // Where the public "Book a demo" form is delivered (DemoRequestController).
-    'demo_request_to' => 'admin@bangicode.ma',
+    'demo_request_to' => env('CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'),
 
     /*
      * DriveDesk is the product's own reference/demo client — the base tenant

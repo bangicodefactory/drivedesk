@@ -894,5 +894,8 @@
     ":from–:to of :total": ":from–:to of :total",
     "Page :current of :last": "Page :current of :last",
     "This deployment already has an owner.": "This deployment already has an owner.",
+    "Rental Agreement Terms": "Rental Agreement Terms",
+    "Leave blank to use the terms shipped with this deployment": "Leave blank to use the terms shipped with this deployment",
+    "Printed on every rental agreement and its PDF.": "Printed on every rental agreement and its PDF.",
     "That role name is reserved.": "That role name is reserved."
 }
