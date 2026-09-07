@@ -238,20 +238,30 @@ install, or a restore.
 3. **Report on legacy invoices**, then repair them:
 
    ```bash
-   php artisan tva:backfill-parent-id            # report only, writes nothing
-   php artisan tva:backfill-parent-id --apply    # after reading the report
+   # Report only, writes nothing. --list defaults to 20 rows; ask for all of
+   # them, because --apply rewrites every candidate, not just the ones printed.
+   php artisan tva:backfill-parent-id --list=100000 > /tmp/tva-backfill.txt
+   less /tmp/tva-backfill.txt
+
+   php artisan tva:backfill-parent-id --apply     # only after reading it
    ```
 
    `tvas.parent_id` was added nullable in July 2025 to a table created in
    February 2025 and nothing backfilled it, so invoices issued in between match
-   no tenant and fall out of every scoped query. The command reports by default
-   and lists what it would touch; a human reads that list against the database
-   in front of them before passing `--apply`.
+   no tenant and fall out of every scoped query.
+
+   **Read the whole candidate list, not a page of it.** Nothing in the schema
+   distinguishes a genuine legacy invoice from `TvaSeeder` noise — the command
+   says so itself — which is why a human decides. `--apply` is not undone by
+   re-running: repaired rows leave the `IS NULL` filter the report uses.
 
    Read the collision warning if it appears. Invoice numbers are sequenced per
    `(parent_id, year)`, so merging NULL-owner rows into a tenant's bucket can
-   duplicate a number that tenant already issued. `--apply` does not skip those
-   — plan a `TvaRenumberService` run alongside.
+   duplicate a number that tenant already issued, and `--apply` does not skip
+   those. The remedy is the **TVA → Renumber** screen (`/tva/renumber`), which
+   is a UI tool with no artisan equivalent: it needs the `tva_renumber` feature
+   flag on for that client and the `manage tva` permission. Check both before
+   you run `--apply`, or you will hit collisions with no way to resolve them.
 
 **`--apply` is refused while `demo_gateway` is on, and that is correct.** On
 `drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
