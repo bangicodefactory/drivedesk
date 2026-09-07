@@ -36,6 +36,12 @@ return [
         // is today's behavior for every existing client (§10.2 rule 2). Turn it
         // off for clients whose public face is not a rental storefront.
         'public_storefront' => true,
+        // Public self-registration at /register. Off: DriveDesk ships one
+        // deployment per business owner, and that owner's account is created at
+        // install -- a stranger signing themselves up as a second owner on a
+        // customer's system is never wanted. On only for a deployment that
+        // really does recruit its own owners. BAN-307.
+        'registration' => false,
     ],
 
     /*

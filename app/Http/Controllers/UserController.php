@@ -13,6 +13,19 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    /**
+     * Role names that must never become a user's `type` (BAN-307).
+     *
+     * store() and update() both set `type` verbatim from the chosen role's
+     * name, and role names are user-supplied -- RoleController validates
+     * uniqueness, not content. 'owner' breaks the one-owner-per-deployment
+     * invariant. 'super admin' is worse: BelongsToTenant::tenantScopeApplies()
+     * returns false for that type, so a user carrying it drops the tenant scope
+     * on every model in the app and flips every `type == 'super admin'` branch
+     * in the controllers.
+     */
+    private const RESERVED_TYPES = ['owner', 'super admin'];
+
 
     public function index()
     {
@@ -67,6 +80,13 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
+                // BAN-307: one owner per deployment. Nothing enforced this, so
+                // a support login could add a second tenant inside a customer's
+                // database -- invisible to the customer, counted in their totals.
+                if (User::ownerExists()) {
+                    return redirect()->back()->with('error', __('This deployment already has an owner.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->email = $request->email;
@@ -116,7 +136,15 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userRole = Role::findById($request->role);
+                // BAN-307: Role::findById() was unscoped while create() only
+                // offers this tenant's roles, so a crafted role id set the new
+                // user's type to anything -- including 'owner'. Resolve within
+                // the tenant, exactly as the form was populated.
+                $userRole = Role::where('parent_id', parentId())->find($request->role);
+                if ($userRole === null || in_array($userRole->name, self::RESERVED_TYPES, true)) {
+                    return redirect()->back()->with('error', __('Permission Denied.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -203,7 +231,16 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userData = $request->all();
+                // BAN-307: an allowlist, not a denylist. $request->all() filled
+                // every fillable column: `type` and `parent_id` (promote a user
+                // to 'owner', or move them to another tenant) and also
+                // `password`, which User has no `hashed` cast for -- a crafted
+                // request wrote it to the column in plaintext and locked the
+                // account out. These are the fields Users/Edit.jsx actually
+                // posts, plus the profile fields the form may carry.
+                $userData = $request->only([
+                    'name', 'email', 'phone_number', 'is_active', 'company_name', 'city',
+                ]);
                 $user->fill($userData)->save();
 
                 return redirect()->route('users.index')->with('success', 'User successfully updated.');
@@ -223,8 +260,20 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userRole = Role::findById($request->role);
-                $user = User::findOrFail($id);
+                // BAN-307: both lookups were unscoped, and `type` is set from
+                // the role's name below. Role::findById() reaches the seeded
+                // `owner` role (parent_id = the super admin's id, so edit()'s
+                // picker never offers it), so any holder of `edit user` could
+                // PUT role=<owner role id> and promote a user -- themselves
+                // included -- to a second owner, with that role's permissions
+                // synced on. User::findOrFail() reached rows outside the
+                // caller's tenant, matching neither index() nor edit()'s picker.
+                $userRole = Role::where('parent_id', parentId())->find($request->role);
+                if ($userRole === null || in_array($userRole->name, self::RESERVED_TYPES, true)) {
+                    return redirect()->back()->with('error', __('Permission Denied.'));
+                }
+
+                $user = User::where('parent_id', parentId())->findOrFail($id);
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;

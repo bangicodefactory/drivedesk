@@ -1392,5 +1392,6 @@
     "Previous": "Précédent",
     "Next": "Suivant",
     ":from–:to of :total": ":from–:to sur :total",
-    "Page :current of :last": "Page :current sur :last"
+    "Page :current of :last": "Page :current sur :last",
+    "This deployment already has an owner.": "Ce déploiement a déjà un propriétaire."
 }

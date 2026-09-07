@@ -25,4 +25,5 @@ return [
     'invoice_on_full_payment' => env('FEATURE_INVOICE_ON_FULL_PAYMENT', null),
     'traffic_violations' => env('FEATURE_TRAFFIC_VIOLATIONS', null),
     'public_storefront' => env('FEATURE_PUBLIC_STOREFRONT', null),
+    'registration'     => env('FEATURE_REGISTRATION', null),
 ];

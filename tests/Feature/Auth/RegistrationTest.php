@@ -17,6 +17,10 @@ class RegistrationTest extends TestCase
     {
         parent::setUp();
         $this->asClient('acme');
+        // BAN-307: registration ships off. Forced on here rather than inherited
+        // from a client's config, per CLAUDE.md 10.2.6 -- these tests are about
+        // what registration does, not about which clients enable it.
+        config(['client.features.registration' => true]);
         Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
@@ -116,6 +120,52 @@ class RegistrationTest extends TestCase
 
         // Either redirect to login (verification email sent) or back with error (mail failed)
         $response->assertStatus(302);
+    }
+
+    // ── BAN-307: the flag, and the one-owner invariant ────────────────────────
+
+    public function test_register_screen_is_404_when_registration_is_off(): void
+    {
+        config(['client.features.registration' => false]);
+
+        $this->get('/register')->assertNotFound();
+    }
+
+    public function test_register_post_is_404_when_registration_is_off(): void
+    {
+        config(['client.features.registration' => false]);
+
+        $this->post('/register', [
+            'name'                  => 'Test User',
+            'email'                 => 'blocked@example.com',
+            'company_name'          => 'Test Company',
+            'city'                  => 'Amsterdam',
+            'password'              => 'password',
+            'password_confirmation' => 'password',
+        ])->assertNotFound();
+
+        $this->assertDatabaseMissing('users', ['email' => 'blocked@example.com']);
+    }
+
+    /**
+     * The flag decides whether the route exists; this decides that turning it
+     * on cannot hand a customer's deployment a second tenant.
+     */
+    public function test_registration_refuses_a_second_owner(): void
+    {
+        \App\Models\User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+
+        $this->post('/register', [
+            'name'                  => 'Second Owner',
+            'email'                 => 'second@example.com',
+            'company_name'          => 'Second Co',
+            'city'                  => 'Casablanca',
+            'password'              => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect();
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'second@example.com']);
     }
 
     public function test_new_users_can_register_assigns_owner_role(): void

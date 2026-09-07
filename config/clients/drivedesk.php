@@ -38,6 +38,10 @@ return [
         // pages targeted the opposite audience (and /landing shipped seeded demo
         // fleet + invented testimonials), so they are off here. BAN-261.
         'public_storefront' => false,
+        // Off even here. Nothing links to /register (the demo funnel runs
+        // through DemoRequestController, which creates a manager under the
+        // existing owner), so the route was reachable by URL alone. BAN-307.
+        'registration' => false,
     ],
 
     /*
