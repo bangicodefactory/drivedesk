@@ -35,6 +35,10 @@ if (!function_exists('settingsKeys')) {
             "company_logo" => "logo.png",
             "company_favicon" => "favicon.png",
             "landing_logo" => "landing_logo.png",
+            // BAN-311: the rental-agreement terms printed on the contract and
+            // its PDF. Blank falls back to config('client.terms.rental_agreement'),
+            // which is today's behaviour for every existing deployment.
+            "rental_agreement_terms" => "",
             "meta_seo_title" => "",
             "meta_seo_keyword" => "",
             "meta_seo_description" => "",
@@ -857,6 +861,33 @@ if (!function_exists('feature')) {
         }
 
         return (bool) config("client.features.{$name}", false);
+    }
+}
+
+if (!function_exists('rentalAgreementTerms')) {
+    /**
+     * The rental-agreement terms for this deployment (BAN-311).
+     *
+     * config/clients/<client>.php holds the contract text and contains no
+     * env() call, so before this the only way to give a customer different
+     * legal terms was to commit a client config file for them. The terms are
+     * copy, and copy lives in the Setting model (CLAUDE.md 10.2 rule 4), so the
+     * DB value wins and the client config is the fallback.
+     *
+     * Blank, not merely unset, falls back: the settings row is created empty
+     * for every deployment, so "not configured" and "configured to nothing"
+     * have to mean the same thing or every existing contract loses its terms.
+     */
+    function rentalAgreementTerms(): string
+    {
+        $fromSettings = settings()['rental_agreement_terms'] ?? '';
+
+        $terms = trim((string) $fromSettings) !== ''
+            ? $fromSettings
+            : config('client.terms.rental_agreement', '');
+
+        // The config files store the text with literal \n escapes.
+        return str_replace('\\n', "\n", (string) $terms);
     }
 }
 

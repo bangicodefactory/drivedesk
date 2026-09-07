@@ -28,6 +28,7 @@ const schema = z.object({
     vehicle_number_prefix:           z.string().optional(),
     booking_number_prefix:           z.string().optional(),
     rental_agreement_number_prefix:  z.string().optional(),
+    rental_agreement_terms:          z.string().optional(),
     CURRENCY_SYMBOL:                 z.string().min(1, 'Required'),
     CURRENCY:                        z.string().min(1, 'Required'),
     company_date_format:             z.string().optional(),
@@ -64,6 +65,7 @@ function Company({ settings, timezones }) {
             vehicle_number_prefix:          settings?.vehicle_number_prefix          ?? '',
             booking_number_prefix:          settings?.booking_number_prefix          ?? '',
             rental_agreement_number_prefix: settings?.rental_agreement_number_prefix ?? '',
+            rental_agreement_terms:         settings?.rental_agreement_terms         ?? '',
             CURRENCY_SYMBOL:                settings?.CURRENCY_SYMBOL                ?? '',
             CURRENCY:                       settings?.CURRENCY                       ?? '',
             company_date_format:            settings?.company_date_format            ?? 'M j, Y',
@@ -108,6 +110,23 @@ function Company({ settings, timezones }) {
                                 <Label htmlFor="company_address">{t('Address')}</Label>
                                 <Textarea id="company_address" rows={2} placeholder={t('Enter company address')} {...register('company_address')} {...fieldA11y(errors, 'company_address')} />
                                 <FieldError name="company_address" errors={errors} />
+                            </div>
+                            {/* BAN-311: the contract text printed on every rental
+                                agreement and its PDF. Blank keeps the terms that
+                                ship with this deployment's client config. */}
+                            <div className="space-y-1.5 sm:col-span-2">
+                                <Label htmlFor="rental_agreement_terms">{t('Rental Agreement Terms')}</Label>
+                                <Textarea
+                                    id="rental_agreement_terms"
+                                    rows={10}
+                                    placeholder={t('Leave blank to use the terms shipped with this deployment')}
+                                    {...register('rental_agreement_terms')}
+                                    {...fieldA11y(errors, 'rental_agreement_terms')}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('Printed on every rental agreement and its PDF.')}
+                                </p>
+                                <FieldError name="rental_agreement_terms" errors={errors} />
                             </div>
                         </div>
 
