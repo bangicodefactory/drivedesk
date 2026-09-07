@@ -104,13 +104,33 @@ class SeoMetadataTest extends TestCase
     public function test_the_seo_image_setting_resolves_under_the_public_disk(): void
     {
         $this->asClient('drivedesk');
-        $owner = $this->putOwnerSetting('meta_seo_image', 'atlas-og.png');
+        $this->putOwnerSetting('meta_seo_image', 'atlas-og.png');
 
-        \Illuminate\Support\Facades\Storage::disk('public')->put('upload/seo/atlas-og.png', 'x');
+        // Seo::image() gates on file_exists(public_path(...)), so the asset has
+        // to sit where the storage symlink would put it in production -- writing
+        // through Storage::disk('public') lands in storage/app/public, which CI
+        // does not symlink.
+        $dir = public_path('storage/upload/seo');
+        @mkdir($dir, 0777, true);
+        file_put_contents($dir.'/atlas-og.png', 'x');
+
+        try {
+            $html = $this->get('/')->assertOk()->getContent();
+            $this->assertStringContainsString('/storage/upload/seo/atlas-og.png', $html);
+        } finally {
+            @unlink($dir.'/atlas-og.png');
+        }
+    }
+
+    /** A setting pointing at a file that is not there emits no tag at all. */
+    public function test_a_missing_seo_image_asset_emits_no_image_tag(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putOwnerSetting('meta_seo_image', 'not-uploaded.png');
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringContainsString('/storage/upload/seo/atlas-og.png', $html);
+        $this->assertStringNotContainsString('not-uploaded.png', $html);
     }
 
     /**
