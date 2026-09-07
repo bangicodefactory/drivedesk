@@ -48,6 +48,81 @@ class RentalAgreementControllerTest extends TestCase
         $this->vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id]);
     }
 
+    /** Write a settings row for this tenant and drop the per-tenant cache. */
+    private function putSetting(string $name, string $value): void
+    {
+        DB::table('settings')->updateOrInsert(
+            ['name' => $name, 'parent_id' => $this->owner->id],
+            ['value' => $value]
+        );
+
+        $this->actingAs($this->owner);
+        flushSettingsCache();
+    }
+
+    // ── BAN-311: the contract terms have a per-deployment home ──────────────
+    //
+    // config/clients/<client>.php holds the contract text and contains no env()
+    // call, so the only way to give a customer different legal terms was to
+    // commit a client config file for them. The Setting model now wins.
+
+    public function test_create_uses_the_client_config_terms_by_default(): void
+    {
+        config(['client.terms.rental_agreement' => 'Config terms.']);
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('RentalAgreement/Create')
+                ->where('defaultTerms', 'Config terms.')
+            );
+    }
+
+    public function test_create_prefers_the_setting_over_the_client_config(): void
+    {
+        config(['client.terms.rental_agreement' => 'Config terms.']);
+        $this->putSetting('rental_agreement_terms', 'This customer signs different terms.');
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('defaultTerms', 'This customer signs different terms.')
+            );
+    }
+
+    /**
+     * The settings row exists and is empty on every deployment, so "not
+     * configured" and "configured to nothing" have to mean the same thing --
+     * otherwise every existing contract silently loses its terms.
+     */
+    public function test_a_blank_setting_falls_back_to_the_client_config(): void
+    {
+        config(['client.terms.rental_agreement' => 'Config terms.']);
+        $this->putSetting('rental_agreement_terms', '   ');
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('defaultTerms', 'Config terms.')
+            );
+    }
+
+    /** The config files store the text with literal \n escapes. */
+    public function test_escaped_newlines_are_expanded_from_either_source(): void
+    {
+        config(['client.terms.rental_agreement' => 'Line one.\nLine two.']);
+
+        $this->actingAs($this->owner)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('defaultTerms', "Line one.\nLine two.")
+            );
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void

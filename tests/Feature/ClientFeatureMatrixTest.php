@@ -53,6 +53,22 @@ class ClientFeatureMatrixTest extends TestCase
     }
 
     /**
+     * BAN-311 gave these keys an env path. Neither client config contained a
+     * single env() call before, so a customer differing on any of them needed a
+     * committed config file of its own. The env defaults must reproduce today's
+     * values exactly -- this is what fails if a default is edited by accident.
+     */
+    public function test_the_env_backed_client_values_keep_their_shipped_defaults(): void
+    {
+        $this->asClient('drivedesk');
+
+        $this->assertSame(['en', 'fr', 'nl', 'ar', 'ary'], config('client.supported_locales'));
+        $this->assertSame('ary', config('client.public_default_locale'));
+        $this->assertSame('admin@bangicode.ma', config('client.demo_request_to'));
+        $this->assertSame(5000, config('client.cash_payment_max'));
+    }
+
+    /**
      * End to end under the client's *own* resolved config — no config() forcing.
      *
      * This is the assertion that would have failed before the flag flip, and the
