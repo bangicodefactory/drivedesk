@@ -41,34 +41,37 @@ class SeoMetadataTest extends TestCase
      * parentId(), so an owner's rows carry their own id and nothing has ever
      * written a row under 1.
      */
-    private function putOwnerSetting(string $name, string $value): \App\Models\User
+    /**
+     * Write a global settings row and drop its cache entry.
+     *
+     * parent_id = 1, because that is where a guest reads and where
+     * ClientInstall seeds each client's branding -- its own comment calls it
+     * the home of "all global/admin settings". An owner's rows live under the
+     * owner's id and are not what the public pages render.
+     */
+    private function putGlobalSetting(string $name, string $value): void
     {
-        $owner = \App\Models\User::where('type', 'owner')->first()
-            ?: \App\Models\User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-
         \Illuminate\Support\Facades\DB::table('settings')->updateOrInsert(
-            ['name' => $name, 'parent_id' => $owner->id],
+            ['name' => $name, 'parent_id' => 1],
             ['value' => $value]
         );
-        \Illuminate\Support\Facades\Cache::flush();
 
-        return $owner;
+        \Illuminate\Support\Facades\Cache::forget('settings_1');
     }
 
     // ── BAN-314: the Site SEO settings actually reach a page ──────────────
     //
     // settingsKeys() has carried meta_seo_title / _description / _image since
-    // forever and SettingController writes all three, but nothing read them:
-    // Seo::forRequest(), Seo's structured data and SeoController all took
-    // config('client.seo') alone. The Site SEO screen was write-only.
-    //
-    // Guests also read settings under parent_id = 1, which has no rows at all,
-    // so wiring the two together only works once that resolves to the owner.
+    // forever, SettingController writes all three, and ClientInstall seeds
+    // meta_seo_title per client -- but nothing read them. Seo::forRequest(),
+    // Seo's organization schema and SeoController all took
+    // config('client.seo') alone, so the Site SEO screen was write-only and
+    // every deployment emitted DriveDesk's own marketing copy.
 
     public function test_the_seo_title_setting_beats_the_client_config(): void
     {
         $this->asClient('drivedesk');
-        $this->putOwnerSetting('meta_seo_title', 'Agence Atlas — Location de voitures');
+        $this->putGlobalSetting('meta_seo_title', 'Agence Atlas — Location de voitures');
 
         $html = $this->get('/')->assertOk()->getContent();
 
@@ -78,7 +81,7 @@ class SeoMetadataTest extends TestCase
     public function test_the_seo_description_setting_beats_the_client_config(): void
     {
         $this->asClient('drivedesk');
-        $this->putOwnerSetting('meta_seo_description', 'Louez une voiture a Marrakech.');
+        $this->putGlobalSetting('meta_seo_description', 'Louez une voiture a Marrakech.');
 
         $html = $this->get('/')->assertOk()->getContent();
 
@@ -89,27 +92,35 @@ class SeoMetadataTest extends TestCase
     public function test_a_blank_seo_setting_falls_back_to_the_client_config(): void
     {
         $this->asClient('drivedesk');
-        $this->putOwnerSetting('meta_seo_title', '   ');
+        $this->putGlobalSetting('meta_seo_title', '   ');
 
         $html = $this->get('/')->assertOk()->getContent();
 
         $this->assertStringContainsString('<title inertia>DriveDesk — Car Rental Management Software</title>', $html);
     }
 
+    /** app_name is the deployment's own brand, so it drives og:site_name too. */
+    public function test_the_app_name_setting_drives_the_site_name(): void
+    {
+        $this->asClient('drivedesk');
+        $this->putGlobalSetting('app_name', 'Agence Atlas');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Agence Atlas', $html);
+    }
+
     /**
-     * SettingController stores the upload in storage/app/public/upload/seo and
-     * keeps only the filename, so the setting is not a URL the way the config
-     * value is.
+     * SettingController stores the upload as a bare filename on the public
+     * disk, so the setting is not a URL the way the config value is.
      */
     public function test_the_seo_image_setting_resolves_under_the_public_disk(): void
     {
         $this->asClient('drivedesk');
-        $this->putOwnerSetting('meta_seo_image', 'atlas-og.png');
+        $this->putGlobalSetting('meta_seo_image', 'atlas-og.png');
 
         // Seo::image() gates on file_exists(public_path(...)), so the asset has
-        // to sit where the storage symlink would put it in production -- writing
-        // through Storage::disk('public') lands in storage/app/public, which CI
-        // does not symlink.
+        // to sit where the storage symlink puts it in production.
         $dir = public_path('storage/upload/seo');
         @mkdir($dir, 0777, true);
         file_put_contents($dir.'/atlas-og.png', 'x');
@@ -122,40 +133,22 @@ class SeoMetadataTest extends TestCase
         }
     }
 
-    /** A setting pointing at a file that is not there emits no tag at all. */
-    public function test_a_missing_seo_image_asset_emits_no_image_tag(): void
+    /**
+     * A setting naming a file that is not there must leave the config image
+     * alone, not destroy it. public/storage is a symlink the cPanel target does
+     * not always have, and an upload can be removed later -- overriding
+     * unconditionally would emit no og:image at all where the config one works.
+     */
+    public function test_a_missing_seo_image_setting_keeps_the_config_image(): void
     {
         $this->asClient('drivedesk');
-        $this->putOwnerSetting('meta_seo_image', 'not-uploaded.png');
+        config(['client.seo.og_image' => '/images/hero-login.jpg']);
+        $this->putGlobalSetting('meta_seo_image', 'not-uploaded.png');
 
         $html = $this->get('/')->assertOk()->getContent();
 
         $this->assertStringNotContainsString('not-uploaded.png', $html);
-    }
-
-    /**
-     * The half that makes the rest work. Nothing has ever written a settings
-     * row under parent_id = 1, so a guest read resolved to settingsKeys()
-     * defaults and every public page showed unbranded placeholders.
-     */
-    public function test_a_guest_reads_the_deployment_owners_settings(): void
-    {
-        $this->asClient('drivedesk');
-        $owner = $this->putOwnerSetting('company_name', 'Agence Atlas');
-
-        $this->assertGuest();
-        $this->assertSame('Agence Atlas', settings()['company_name']);
-    }
-
-    /** Two owners means no deployment key, so the old behaviour stands. */
-    public function test_a_guest_falls_back_when_the_owner_is_ambiguous(): void
-    {
-        $this->asClient('drivedesk');
-        $this->putOwnerSetting('company_name', 'Agence Atlas');
-        \App\Models\User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-        \Illuminate\Support\Facades\Cache::flush();
-
-        $this->assertNotSame('Agence Atlas', settings()['company_name']);
+        $this->assertStringContainsString('og:image', $html);
     }
 
     // ── The demo gateway is the indexable page ────────────────────────────────

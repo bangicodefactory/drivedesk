@@ -62,30 +62,75 @@ class Seo
      * empty on every deployment, so "not configured" and "configured to
      * nothing" have to mean the same thing.
      *
-     * meta_seo_image is a filename, not a URL -- SettingController stores the
-     * upload on the public disk under upload/seo -- so it is expanded here
-     * before image() sees it. The config value stays a path or absolute URL.
+     * Guests read these under parent_id = 1, which is where ClientInstall seeds
+     * each client's branding -- including meta_seo_title -- on every deploy.
+     * That is the row set the public pages are meant to render.
      *
      * @return array<string,mixed>
      */
     public static function copy(): array
     {
-        $seo      = (array) config('client.seo', []);
-        $settings = settings();
+        $seo = (array) config('client.seo', []);
 
-        foreach (['title' => 'meta_seo_title', 'description' => 'meta_seo_description'] as $key => $name) {
+        // The root Blade view calls this while rendering, outside the try/catch
+        // HandleInertiaRequests wraps settings() in. Pre-install, or with the DB
+        // unreachable, degrading to the client config beats a 500 from inside
+        // the view.
+        try {
+            $settings = settings();
+        } catch (\Throwable) {
+            return $seo;
+        }
+
+        $overrides = [
+            'title'       => 'meta_seo_title',
+            'description' => 'meta_seo_description',
+            'site_name'   => 'app_name',
+        ];
+
+        foreach ($overrides as $key => $name) {
             $value = trim((string) ($settings[$name] ?? ''));
             if ($value !== '') {
                 $seo[$key] = $value;
             }
         }
 
-        $image = trim((string) ($settings['meta_seo_image'] ?? ''));
-        if ($image !== '') {
-            $seo['og_image'] = '/storage/upload/seo/'.ltrim($image, '/');
+        $image = self::settingImage(trim((string) ($settings['meta_seo_image'] ?? '')));
+        if ($image !== null) {
+            $seo['og_image'] = $image;
         }
 
         return $seo;
+    }
+
+    /**
+     * A usable URL for the uploaded SEO image, or null to leave the config value
+     * alone.
+     *
+     * SettingController stores a bare filename on the public disk under
+     * upload/seo, so the setting is not a URL the way the config value is. An
+     * absolute URL or an already-qualified path is passed through untouched
+     * rather than having the prefix pasted on front of it.
+     *
+     * Null when the file is not actually there. Overriding unconditionally
+     * would *destroy* the fallback rather than layer over it: image() drops any
+     * path that does not exist, so a missing upload -- an un-symlinked
+     * public/storage on cPanel, or a file removed later -- would emit no
+     * og:image at all where the config one still works.
+     */
+    private static function settingImage(string $image): ?string
+    {
+        if ($image === '') {
+            return null;
+        }
+
+        if (str_starts_with($image, 'http') || str_contains($image, '/')) {
+            return $image;
+        }
+
+        $path = 'storage/upload/seo/'.$image;
+
+        return file_exists(public_path($path)) ? '/'.$path : null;
     }
 
     /** @return array<string,mixed> */

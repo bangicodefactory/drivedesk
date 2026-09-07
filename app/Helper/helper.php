@@ -93,34 +93,14 @@ if (!function_exists('settingsKeys')) {
     }
 }
 
-if (!function_exists('settingsTenantId')) {
-    /**
-     * Whose settings a request reads (BAN-314).
-     *
-     * Guests used to read parent_id = 1 and nothing has ever written a row
-     * there: every settings write goes through parentId(), so an owner's rows
-     * carry the owner's own id. A guest read therefore fell through to
-     * settingsKeys() defaults, which is why the public pages showed unbranded
-     * placeholders and DriveDesk's own SEO copy.
-     *
-     * deploymentOwnerId() answers only when there is exactly one owner, so an
-     * ambiguous or not-yet-installed deployment keeps the old behaviour rather
-     * than guessing a tenant.
-     */
-    function settingsTenantId(): int
-    {
-        if (\Auth::check()) {
-            return (int) parentId();
-        }
-
-        return deploymentOwnerId() ?? 1;
-    }
-}
-
 if (!function_exists('settings')) {
     function settings()
     {
-        $userId = settingsTenantId();
+        // parent_id = 1 for a guest is deliberate, not a gap: ClientInstall
+        // seeds every client's branding there ("all global/admin settings live
+        // under id 1") and runs on each deploy, so that row set is what the
+        // public pages are supposed to render.
+        $userId = \Auth::check() ? parentId() : 1;
         $cacheKey = "settings_{$userId}";
 
         $details = Cache::remember($cacheKey, 300, function () use ($userId) {
@@ -146,7 +126,7 @@ if (!function_exists('settings')) {
 if (!function_exists('flushSettingsCache')) {
     function flushSettingsCache(): void
     {
-        $userId = settingsTenantId();
+        $userId = \Auth::check() ? parentId() : 1;
         Cache::forget("settings_{$userId}");
     }
 }
