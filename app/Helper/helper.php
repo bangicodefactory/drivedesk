@@ -35,6 +35,10 @@ if (!function_exists('settingsKeys')) {
             "company_logo" => "logo.png",
             "company_favicon" => "favicon.png",
             "landing_logo" => "landing_logo.png",
+            // BAN-311: the rental-agreement terms printed on the contract and
+            // its PDF. Blank falls back to config('client.terms.rental_agreement'),
+            // which is today's behaviour for every existing deployment.
+            "rental_agreement_terms" => "",
             "meta_seo_title" => "",
             "meta_seo_keyword" => "",
             "meta_seo_description" => "",
@@ -914,6 +918,56 @@ if (!function_exists('activityLogParentId')) {
         }
 
         return \Auth::check() ? (int) parentId() : 0;
+    }
+}
+
+if (!function_exists('rentalAgreementTerms')) {
+    /**
+     * The rental-agreement terms for this deployment (BAN-311).
+     *
+     * config/clients/<client>.php holds the contract text and contains no
+     * env() call, so before this the only way to give a customer different
+     * legal terms was to commit a client config file for them. The terms are
+     * copy, and copy lives in the Setting model (CLAUDE.md 10.2 rule 4), so the
+     * DB value wins and the client config is the fallback.
+     *
+     * Blank, not merely unset, falls back: the settings row is created empty
+     * for every deployment, so "not configured" and "configured to nothing"
+     * have to mean the same thing or every existing contract loses its terms.
+     */
+    function rentalAgreementTerms(): string
+    {
+        $fromSettings = settings()['rental_agreement_terms'] ?? '';
+
+        $terms = trim((string) $fromSettings) !== ''
+            ? $fromSettings
+            : config('client.terms.rental_agreement', '');
+
+        // The config files store the text with literal \n escapes.
+        return str_replace('\\n', "\n", (string) $terms);
+    }
+}
+
+if (!function_exists('isReservedRoleName')) {
+    /**
+     * Whether a role name is one the app treats as a privilege level (BAN-310).
+     *
+     * Case-insensitive: `type == 'owner'` is an exact comparison everywhere, so
+     * 'Owner' would not escalate today, but relying on that is relying on an
+     * accident. Trimmed too -- 'owner ' is the same name to a human reading the
+     * roles list, and the list is what an admin audits.
+     */
+    function isReservedRoleName($name): bool
+    {
+        // Not typed `?string`: `title` arrives straight off the request, where
+        // `required` permits an array. A TypeError here would turn malformed
+        // input into a 500; let it fall through to the same handling it had
+        // before this guard existed.
+        if (! is_string($name)) {
+            return false;
+        }
+
+        return in_array(mb_strtolower(trim($name)), \App\Models\User::RESERVED_TYPES, true);
     }
 }
 

@@ -92,7 +92,7 @@ class RentalAgreementController extends Controller
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
             $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
 
-            $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
+            $defaultTerms = rentalAgreementTerms();
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
                 'drivers'      => $drivers->map(fn($u) => [
@@ -296,8 +296,24 @@ class RentalAgreementController extends Controller
             $settings = settings();
 
             // display Terms and conditions
-            $terms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
-            $terms = nl2br($terms);
+            //
+            // BAN-311 review: prefer the terms this agreement was signed under.
+            // store() snapshots them into terms_condition; rendering the global
+            // text instead was harmless while that text only moved on deploy,
+            // but an owner can now edit it, and rewriting the terms printed on
+            // an already-signed contract is not something a settings screen
+            // should be able to do. Blank falls back for agreements predating
+            // the snapshot.
+            $signedTerms = (string) $rentalAgreement->terms_condition;
+            $terms = trim($signedTerms) !== '' ? $signedTerms : rentalAgreementTerms();
+
+            // e() before nl2br(): Show.jsx renders this with
+            // dangerouslySetInnerHTML, and the source is no longer a committed
+            // config file -- settings/company has no permission middleware and
+            // the XSS middleware sanitises nothing, so any authenticated user
+            // of the tenant could otherwise store script that runs in the
+            // owner's session on every agreement view and print.
+            $terms = nl2br(e($terms));
 
             //display Signature
             $driver1Signature = $this->getUserSignature($rentalAgreement->driver);

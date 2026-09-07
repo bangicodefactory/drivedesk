@@ -13,19 +13,6 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    /**
-     * Role names that must never become a user's `type` (BAN-307).
-     *
-     * store() and update() both set `type` verbatim from the chosen role's
-     * name, and role names are user-supplied -- RoleController validates
-     * uniqueness, not content. 'owner' breaks the one-owner-per-deployment
-     * invariant. 'super admin' is worse: BelongsToTenant::tenantScopeApplies()
-     * returns false for that type, so a user carrying it drops the tenant scope
-     * on every model in the app and flips every `type == 'super admin'` branch
-     * in the controllers.
-     */
-    private const RESERVED_TYPES = ['owner', 'super admin'];
-
 
     public function index()
     {
@@ -141,7 +128,7 @@ class UserController extends Controller
                 // user's type to anything -- including 'owner'. Resolve within
                 // the tenant, exactly as the form was populated.
                 $userRole = Role::where('parent_id', parentId())->find($request->role);
-                if ($userRole === null || in_array($userRole->name, self::RESERVED_TYPES, true)) {
+                if ($userRole === null || isReservedRoleName($userRole->name)) {
                     return redirect()->back()->with('error', __('Permission Denied.'));
                 }
 
@@ -283,7 +270,7 @@ class UserController extends Controller
                 // synced on. User::findOrFail() reached rows outside the
                 // caller's tenant, matching neither index() nor edit()'s picker.
                 $userRole = Role::where('parent_id', parentId())->find($request->role);
-                if ($userRole === null || in_array($userRole->name, self::RESERVED_TYPES, true)) {
+                if ($userRole === null || isReservedRoleName($userRole->name)) {
                     return redirect()->back()->with('error', __('Permission Denied.'));
                 }
 
@@ -343,16 +330,6 @@ class UserController extends Controller
         }
     }
 
-    public function loggedHistoryShow($id)
-    {
-        if (\Auth::user()->can('manage logged history')) {
-            $histories = $this->findHistoryInTenant($id);
-            return view('logged_history.show', compact('histories'));
-        } else {
-            return redirect()->back()->with('error', __('Permission Denied.'));
-        }
-    }
-
     public function loggedHistoryDestroy($id)
     {
         if (\Auth::user()->can('delete logged history')) {
@@ -405,9 +382,8 @@ class UserController extends Controller
 
     /**
      * The same boundary for an activity-log row, matching loggedHistory()'s
-     * list. The log records who touched a deployment, so a cross-tenant read is
-     * worse than a cross-tenant user listing -- and the delete removed someone
-     * else's evidence.
+     * list. The log records who touched a deployment, and the delete removed
+     * someone else's evidence.
      *
      * activityLogParentId() rather than parentId(), for the reason given there:
      * the deployment is the tenant, so a support login's row belongs to the
