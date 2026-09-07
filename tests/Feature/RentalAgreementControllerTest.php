@@ -157,7 +157,9 @@ class RentalAgreementControllerTest extends TestCase
      */
     public function test_terms_from_the_setting_are_escaped_before_render(): void
     {
-        $agreement = $this->makeAgreement();
+        // No snapshot, so show() renders the setting -- RentalAgreementFactory
+        // fills terms_condition, which would otherwise win (and correctly so).
+        $agreement = $this->makeAgreement(['terms_condition' => null]);
         $this->putSetting('rental_agreement_terms', '<img src=x onerror=alert(1)>');
 
         $this->actingAs($this->owner)
