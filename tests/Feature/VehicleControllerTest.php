@@ -152,7 +152,8 @@ class VehicleControllerTest extends TestCase
                 'name'          => 'Duplicate Plate',
                 'license_plate' => '1234-A-56',
             ]))
-            ->assertSessionHas('error');
+            // The guard reports through the validator, not an `error` flash.
+            ->assertSessionHasErrors();
 
         $this->assertDatabaseMissing('vehicles', ['name' => 'Duplicate Plate']);
     }
