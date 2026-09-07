@@ -251,6 +251,63 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseMissing('logged_histories', ['id' => $history->id]);
     }
 
+    // ── BAN-308: the by-id lookups are tenant-scoped ──────────────────
+    //
+    // index() and loggedHistory() have always scoped their lists, but every
+    // lookup that takes an id off the URL resolved against the whole table.
+
+    public function test_destroy_does_not_reach_a_user_outside_the_tenant(): void
+    {
+        $foreign = User::factory()->create(['type' => 'employee', 'parent_id' => 999]);
+
+        $this->actingAs($this->owner)
+            ->delete(route('users.destroy', $foreign))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('users', ['id' => $foreign->id]);
+    }
+
+    /** Previously a null dereference, not a 404. */
+    public function test_destroy_of_an_unknown_user_is_not_found(): void
+    {
+        $this->actingAs($this->owner)
+            ->delete(route('users.destroy', 999999))
+            ->assertNotFound();
+    }
+
+    public function test_edit_does_not_reach_a_user_outside_the_tenant(): void
+    {
+        $foreign = User::factory()->create(['type' => 'employee', 'parent_id' => 999]);
+
+        $this->actingAs($this->owner)
+            ->get(route('users.edit', $foreign))
+            ->assertNotFound();
+    }
+
+    /**
+     * The activity log is the record of who touched a deployment, so reading
+     * another tenant's rows is worse than reading their user list.
+     */
+    public function test_logged_history_show_does_not_reach_another_tenants_record(): void
+    {
+        $foreign = LoggedHistory::factory()->create(['parent_id' => 999]);
+
+        $this->actingAs($this->owner)
+            ->get(route('logged.history.show', $foreign->id))
+            ->assertNotFound();
+    }
+
+    public function test_logged_history_destroy_does_not_reach_another_tenants_record(): void
+    {
+        $foreign = LoggedHistory::factory()->create(['parent_id' => 999]);
+
+        $this->actingAs($this->owner)
+            ->delete(route('logged.history.destroy', $foreign->id))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('logged_histories', ['id' => $foreign->id]);
+    }
+
     // ── UserController::create ────────────────────────────────────────────────
 
     public function test_create_requires_auth(): void
