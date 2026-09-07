@@ -65,11 +65,22 @@ class ClientFeatureMatrixTest extends TestCase
         // The shipped defaults, asserted against the file rather than the
         // resolved config: a deployment that actually sets one of these vars --
         // the entire point of the feature -- would otherwise fail the suite.
+        // Asserted as (env var, shipped default) pairs rather than a literal
+        // expression, so reshaping how the fallback is written does not break
+        // the guard -- editing a default still does.
         $source = file_get_contents(base_path('config/clients/drivedesk.php'));
-        $this->assertStringContainsString("'CLIENT_SUPPORTED_LOCALES', 'en,fr,nl,ar,ary'", $source);
-        $this->assertStringContainsString("'CLIENT_PUBLIC_DEFAULT_LOCALE', 'ary'", $source);
-        $this->assertStringContainsString("'CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'", $source);
-        $this->assertStringContainsString("'CLIENT_CASH_PAYMENT_MAX', 5000", file_get_contents(base_path('config/clients/_default.php')));
+        foreach ([
+            'CLIENT_SUPPORTED_LOCALES'     => "'en,fr,nl,ar,ary'",
+            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "'ary'",
+            'CLIENT_DEMO_REQUEST_TO'       => "'admin@bangicode.ma'",
+        ] as $var => $default) {
+            $this->assertStringContainsString($var, $source);
+            $this->assertStringContainsString($default, $source);
+        }
+
+        $defaults = file_get_contents(base_path('config/clients/_default.php'));
+        $this->assertStringContainsString('CLIENT_CASH_PAYMENT_MAX', $defaults);
+        $this->assertStringContainsString('5000', $defaults);
 
         // And whatever the environment resolved them to has to be usable. A
         // blank env var parses to an empty locale list, which makes
