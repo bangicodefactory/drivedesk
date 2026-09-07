@@ -447,6 +447,136 @@ class UserControllerTest extends TestCase
      * $request->all(), so an existing user could be promoted to owner or moved
      * to another tenant. Neither field is on the edit form.
      */
+    // ── BAN-307 review: update() is the fifth owner-creating path ────────────────────
+    //
+    // store() was fixed; update()'s staff branch was not. Both of its lookups
+    // were unscoped, and `type` is set verbatim from the chosen role's name.
+
+    public function test_update_refuses_a_role_id_from_outside_the_tenant(): void
+    {
+        $target = User::factory()->create([
+            'type'      => 'employee',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        // The seeded 'owner' role belongs to the super admin, so edit()'s picker
+        // never offers it -- but Role::findById() found it anyway.
+        $foreignOwnerRole = Role::create([
+            'name'       => 'owner',
+            'guard_name' => 'web',
+            'parent_id'  => 999,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->put(route('users.update', $target), [
+                'name'  => 'Promoted',
+                'email' => $target->email,
+                'role'  => $foreignOwnerRole->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame('employee', $target->fresh()->type);
+    }
+
+    /**
+     * `super admin` is the stronger escape: BelongsToTenant::tenantScopeApplies()
+     * returns false for that type, so a user carrying it drops the tenant scope
+     * on every model in the app. Role names are user-supplied -- RoleController
+     * validates uniqueness, not content -- so a tenant-scoped role named
+     * `super admin` passes every scoping check.
+     */
+    public function test_update_refuses_a_role_named_super_admin(): void
+    {
+        $target = User::factory()->create([
+            'type'      => 'employee',
+            'parent_id' => $this->owner->id,
+        ]);
+
+        $trojan = Role::create([
+            'name'       => 'super admin',
+            'guard_name' => 'web',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->put(route('users.update', $target), [
+                'name'  => 'Escalated',
+                'email' => $target->email,
+                'role'  => $trojan->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame('employee', $target->fresh()->type);
+    }
+
+    public function test_store_refuses_a_role_named_super_admin(): void
+    {
+        $trojan = Role::create([
+            'name'       => 'super admin',
+            'guard_name' => 'web',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Trojan',
+                'email'    => 'trojan@test.com',
+                'password' => 'password123',
+                'role'     => $trojan->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('users', ['email' => 'trojan@test.com']);
+    }
+
+    public function test_update_does_not_reach_a_user_outside_the_tenant(): void
+    {
+        $foreign = User::factory()->create([
+            'name'      => 'Foreign User',
+            'type'      => 'employee',
+            'parent_id' => 999,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->put(route('users.update', $foreign), [
+                'name'  => 'Hijacked',
+                'email' => $foreign->email,
+                'role'  => $this->employeeRole->id,
+            ])
+            ->assertNotFound();
+
+        $this->assertSame('Foreign User', $foreign->fresh()->name);
+    }
+
+    /**
+     * `password` is fillable and User has no `hashed` cast, so a crafted
+     * super-admin update wrote it to the column in plaintext and locked the
+     * account out. The edit form never posts it.
+     */
+    public function test_update_ignores_a_password_in_the_request_as_super_admin(): void
+    {
+        $target = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
+        $originalHash = $target->password;
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('edit user');
+
+        $this->actingAs($superAdmin)
+            ->put(route('users.update', $target), [
+                'name'     => 'Renamed',
+                'email'    => $target->email,
+                'password' => 'plaintext-secret',
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $target->refresh();
+        $this->assertSame('Renamed', $target->name);
+        $this->assertSame($originalHash, $target->password);
+    }
+
     public function test_update_cannot_promote_a_user_to_owner(): void
     {
         $employee = User::factory()->create([

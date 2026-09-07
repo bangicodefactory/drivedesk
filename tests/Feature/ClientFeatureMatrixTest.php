@@ -45,6 +45,11 @@ class ClientFeatureMatrixTest extends TestCase
         $this->assertTrue(feature('traffic_violations'));
         // The B2C storefront stays off — DriveDesk sells the platform (BAN-261).
         $this->assertFalse(feature('public_storefront'));
+        // BAN-307: public self-registration creates a `type = 'owner'` account.
+        // RegistrationTest forces this flag on to test the route's behaviour, so
+        // this is the only assertion holding the live value down. If it goes
+        // true, unauthenticated owner-creation returns to a real deployment.
+        $this->assertFalse(feature('registration'));
     }
 
     /**
