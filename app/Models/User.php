@@ -130,6 +130,12 @@ class User extends Authenticatable
      * Unscoped on purpose: there is no tenant above an owner to scope to, and
      * User carries no global scope (see BelongsToTenant -- applying one to the
      * auth provider model recurses without bound).
+     *
+     * Check-then-write, with no unique index behind it: two concurrent requests
+     * can both read false and both create an owner. Narrow in practice -- owner
+     * creation is a super admin action and /register ships off -- but nothing
+     * catches a race after the fact, so a partial unique index is the real fix
+     * if this ever runs anywhere it can be hit concurrently.
      */
     public static function ownerExists(): bool
     {
