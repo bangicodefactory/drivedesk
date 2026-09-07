@@ -15,6 +15,7 @@ function RolesIndex({ roles }) {
     const t = useTranslation();
     const confirmDialog = useConfirm();
     const { auth } = usePage().props;
+    const canCreate = auth.permissions.includes('create role');
     const canEdit   = auth.permissions.includes('edit role');
     const canDelete = auth.permissions.includes('delete role');
 
@@ -48,11 +49,16 @@ function RolesIndex({ roles }) {
                             className="ps-8"
                         />
                     </div>
-                <Button asChild>
-                    <Link href={route('role.create')}>
-                        <Plus className="me-2 h-4 w-4" /> {t('New role')}
-                    </Link>
-                </Button>
+                {/* BAN-306: role.create now requires `create role`. Without
+                    this gate the button showed for anyone and answered with
+                    "Permission Denied." on click. */}
+                {canCreate && (
+                    <Button asChild>
+                        <Link href={route('role.create')}>
+                            <Plus className="me-2 h-4 w-4" /> {t('New role')}
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
