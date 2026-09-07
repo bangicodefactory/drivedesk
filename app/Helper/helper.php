@@ -308,7 +308,9 @@ if (!function_exists('userLoggedHistory')) {
             $details->date = date('Y-m-d H:i:s');
             $details->Details = $result;
             $details->ip = $serverip;
-            $details->parent_id = parentId();
+            // BAN-312: not parentId(). A super admin's own id is no tenant's
+            // key, so their login was invisible on the customer's own screen.
+            $details->parent_id = activityLogParentId();
             $details->save();
         }
     }
@@ -861,6 +863,61 @@ if (!function_exists('feature')) {
         }
 
         return (bool) config("client.features.{$name}", false);
+    }
+}
+
+if (!function_exists('deploymentOwnerId')) {
+    /**
+     * The id of this deployment's business owner, or null before install
+     * (BAN-312).
+     *
+     * Null unless there is exactly one, which is the only case where the answer
+     * is knowable. BAN-307 stops a *new* second owner appearing, but it repaired
+     * nothing: a deployment predating it may already hold two, and
+     * DefaultDataUsersTableSeeder creates owner@gmail.com at install regardless.
+     *
+     * Returning an arbitrary one there would be worse than not answering. The
+     * activity log would key to the wrong tenant, so the real owner's existing
+     * rows disappear from their own screen and their staff read and delete rows
+     * belonging to someone else -- the cross-tenant audit access BAN-308 closed
+     * one PR earlier. With no answer every caller falls back to parentId() and
+     * behaves exactly as it did before BAN-312: imperfect, but never wrong.
+     */
+    function deploymentOwnerId(): ?int
+    {
+        $ids = \App\Models\User::where('type', 'owner')
+            ->orderBy('id')
+            ->limit(2)
+            ->pluck('id');
+
+        return $ids->count() === 1 ? (int) $ids->first() : null;
+    }
+}
+
+if (!function_exists('activityLogParentId')) {
+    /**
+     * Which tenant an activity-log row belongs to (BAN-312).
+     *
+     * Not parentId(). parentId() returns a super admin their *own* id, which is
+     * no tenant's key, so a vendor support login wrote a row the customer's own
+     * activity screen (UserController@loggedHistory, scoped to parentId()) could
+     * never show. The customer could not see that support had logged into their
+     * deployment -- the one audit trail that has to be airtight in a product
+     * where the vendor holds a login to every customer's system.
+     *
+     * The deployment is the tenant, so every row in it belongs to the owner and
+     * everyone in it sees the same log. Falls back to parentId() before an
+     * owner exists (install, seeding), and to 0 outside a request.
+     */
+    function activityLogParentId(): int
+    {
+        $ownerId = deploymentOwnerId();
+
+        if ($ownerId !== null) {
+            return $ownerId;
+        }
+
+        return \Auth::check() ? (int) parentId() : 0;
     }
 }
 
