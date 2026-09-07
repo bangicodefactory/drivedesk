@@ -629,6 +629,31 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'trojan@test.com']);
     }
 
+    /**
+     * BAN-310: the assignment backstop is case-insensitive too. A role named
+     * 'Owner' predating the RoleController guard must still not be assignable.
+     */
+    public function test_store_refuses_a_reserved_role_name_in_any_case(): void
+    {
+        $trojan = Role::create([
+            'name'       => 'Owner',
+            'guard_name' => 'web',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('users.store'), [
+                'name'     => 'Cased Trojan',
+                'email'    => 'cased@test.com',
+                'password' => 'password123',
+                'role'     => $trojan->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('users', ['email' => 'cased@test.com']);
+    }
+
     public function test_update_does_not_reach_a_user_outside_the_tenant(): void
     {
         $foreign = User::factory()->create([
