@@ -103,7 +103,6 @@
 | ✗ | PUT/PATCH | `/users/{user}` | `users.update` | `UserController@update` | `edit user` | name, email, phone_number, role | syncs user roles |
 | ✗ | DELETE | `/users/{user}` | `users.destroy` | `UserController@destroy` | `delete user` | — | deletes User |
 | ✗ | GET | `/logged/history` | `logged.history` | `UserController@loggedHistory` | `manage logged history` | — | — |
-| ✗ | GET | `/logged/{id}/history/show` | `logged.history.show` | `UserController@loggedHistoryShow` | `manage logged history` | — | — |
 | ✗ | DELETE | `/logged/{id}/history` | `logged.history.destroy` | `UserController@loggedHistoryDestroy` | `delete logged history` | — | deletes LoggedHistory |
 
 ---

@@ -64,7 +64,9 @@
     ":from–:to of :total": ":from–:to من :total",
     "Page :current of :last": "الصفحة :current من :last",
     "This deployment already has an owner.": "هاد التثبيت عندو مالك ديجا.",
+    "The deployment's owner cannot be deleted.": "مايمكنش تمسح مالك التثبيت.",
     "Rental Agreement Terms": "شروط عقد الكراء",
     "Leave blank to use the terms shipped with this deployment": "خليه خاوي باش تتستعمل الشروط الافتراضية.",
-    "Printed on every rental agreement and its PDF.": "كتتطبع ف كل عقد كراء وف الـ PDF ديالو."
+    "Printed on every rental agreement and its PDF.": "كتتطبع ف كل عقد كراء وف الـ PDF ديالو.",
+    "That role name is reserved.": "هاد سمية الدور محجوزة."
 }
