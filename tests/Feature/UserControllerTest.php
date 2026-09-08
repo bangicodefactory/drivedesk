@@ -211,6 +211,53 @@ class UserControllerTest extends TestCase
         $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
     }
 
+    /**
+     * BAN-317: this route renders resources/views/logged_history/index.blade.php,
+     * which extends layouts.app, which @includes admin.menu -- and line 5 of that
+     * menu calls \App\Models\Subscription::find(). BAN-199 deleted that model.
+     * The call is behind `feature('subscriptions')`, which is TRUE for drivedesk,
+     * so the page is a hard 500 in production.
+     *
+     * The suite could not see it: test_logged_history_returns_200_for_authorized_user
+     * above asserts 200 and passes, because asClient('acme') sets
+     * subscriptions => false and short-circuits before the missing class. That is
+     * exactly the trap CLAUDE.md 10.2.6 describes -- a suite inheriting a client
+     * config that hides the defect -- so this forces the flag instead of
+     * inheriting it.
+     */
+    public function test_logged_history_renders_with_subscriptions_enabled(): void
+    {
+        config(['client.features.subscriptions' => true]);
+
+        $this->actingAs($this->owner)
+            ->get(route('logged.history'))
+            ->assertOk();
+    }
+
+    /**
+     * The same menu links four routes that do not exist -- subscriptions.index,
+     * subscription.transaction, coupons.index, coupons.history -- behind a
+     * `manage pricing packages` gate that IS seeded and IS granted to the
+     * super-admin role, so a super admin rendering the page hits
+     * RouteNotFoundException rather than the missing model.
+     */
+    public function test_logged_history_renders_for_a_super_admin_with_pricing_permissions(): void
+    {
+        config(['client.features.subscriptions' => true]);
+
+        foreach (['manage logged history', 'manage pricing packages', 'manage pricing transation'] as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage logged history', 'manage pricing packages', 'manage pricing transation']);
+
+        $this->actingAs($superAdmin)
+            ->get(route('logged.history'))
+            ->assertOk();
+    }
+
     // ── UserController::loggedHistoryDestroy ──────────────────────────────────
 
     public function test_logged_history_destroy_requires_auth(): void
