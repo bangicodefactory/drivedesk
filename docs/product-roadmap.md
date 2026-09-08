@@ -60,13 +60,15 @@ engineering view of the same question, reconciled with the code.
 
 ### Hygiene debt found on the way
 
-- 7 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
+- 7 of 12 feature flags have **no enforcement point**: `paypal`, `stripe`,
   `booking_payment`, `excel_import`, `multi_branch`, `tva_renumber`,
-  `signatures`. Flipping them changes nothing. (`subscriptions` *is* read —
-  seven `feature('subscriptions')` branches in the still-shipped Blade
-  `admin/menu.blade.php` and `dashboard/super_admin.blade.php`, one of which
-  also hides the Logged History menu entry — so it must not be deleted before
-  that Blade is retired.)
+  `signatures`. Flipping them changes nothing.
+  *(Updated BAN-318: `subscriptions` used to be the exception — seven
+  `feature('subscriptions')` branches in still-shipped Blade, one of which hid
+  the Logged History menu entry. One of those branches called a model BAN-199
+  had deleted, so the flag being **true** for drivedesk 500'd that page in
+  production (BAN-317). Both Blades are now clear of it and the flag is gone,
+  so the count is 12 rather than 13.)*
 - `app/Http/Controllers/HomeController.php` imports five classes that do not
   exist (`Contact`, `Fuel`, `NoticeBoard`, `Service`, `Support`).
 - `routes/web.php`: `ui-test/*` (15 unauthenticated Blade previews) and
@@ -677,9 +679,10 @@ unservable `nl` entry from `supported_locales`; for each of the seven no-op
 flags either add its enforcement point (2.6, 3.6) or delete the key with a
 matching edit to every `config/clients/*.php`.
 
-*Phase 6 exit gate:* finish the Blade tail (~30 files, list in §1) — which also
-retires the Blade `feature('subscriptions')` branches, after which that flag
-can go too.
+*Phase 6 exit gate:* finish the Blade tail (~30 files, list in §1).
+*(The `feature('subscriptions')` branches that used to gate this are gone —
+BAN-317 removed the reachable one in `admin/menu.blade.php`, BAN-318 the rest
+and the flag itself, so retiring the Blade tail no longer waits on it.)*
 
 *After Phase 8 only, each in its own ticket:* drop the `coupons`,
 `coupon_histories`, `subscriptions`, `package_transactions` tables; remove the

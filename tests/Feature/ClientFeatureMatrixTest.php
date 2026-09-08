@@ -28,7 +28,36 @@ class ClientFeatureMatrixTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
-    public function test_no_client_ships_a_subscription_capability(): void
+    /**
+     * Globbed, not a list of client names. The invariant is that the key does
+     * not return *anywhere* in the resolution chain, and a named list cannot
+     * enforce that: the next client config is usually copied from an existing
+     * one (CLAUDE.md 10.2.7), and config/clients/marruecar.php on the unmerged
+     * scaffold branch still carries the line today. A hardcoded
+     * ['drivedesk','acme'] would stay green while it came back.
+     */
+    public function test_no_client_config_declares_a_subscription_flag(): void
+    {
+        $files = array_merge(
+            glob(config_path('clients/*.php')),
+            glob(base_path('tests/Fixtures/clients/*.php'))
+        );
+
+        $this->assertNotEmpty($files, 'no client configs found to check');
+
+        foreach ($files as $file) {
+            $config = require $file;
+            $this->assertArrayNotHasKey(
+                'subscriptions',
+                $config['features'] ?? [],
+                basename($file)
+            );
+        }
+
+        $this->assertArrayNotHasKey('subscriptions', require config_path('features.php'));
+    }
+
+    public function test_no_client_resolves_a_subscription_capability(): void
     {
         foreach (['drivedesk', 'acme'] as $client) {
             $this->asClient($client);

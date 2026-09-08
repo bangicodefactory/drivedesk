@@ -206,28 +206,25 @@ class UserControllerTest extends TestCase
 
     // ── UserController::loggedHistory ─────────────────────────────────────────
 
-    public function test_logged_history_returns_200_for_authorized_user(): void
-    {
-        $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
-    }
-
     /**
-     * BAN-317: this route renders resources/views/logged_history/index.blade.php,
-     * which extends layouts.app, which @includes admin.menu -- and line 5 of that
-     * menu called \App\Models\Subscription::find() on a model BAN-199 deleted,
-     * behind `feature('subscriptions')`, which was TRUE for drivedesk. A hard 500.
+     * BAN-317/318. This route renders logged_history/index.blade.php, which
+     * extends layouts.app, which @includes admin.menu -- and that menu called
+     * \App\Models\Subscription::find() on a model BAN-199 had deleted, behind
+     * `feature('subscriptions')`, true for drivedesk. A hard 500 in production
+     * that this test could not see, because asClient('acme') set the flag false
+     * and short-circuited before the missing class: the trap CLAUDE.md 10.2.6
+     * describes. The flag is now retired outright, so there is no switch left to
+     * force.
      *
-     * The suite could not see it, because asClient('acme') set
-     * subscriptions => false and short-circuited before the missing class -- the
-     * trap CLAUDE.md 10.2.6 describes. BAN-317 forced the flag to expose it;
-     * BAN-318 then retired the flag outright, so there is no longer a switch to
-     * force. What remains worth guarding is that the page renders at all.
+     * assertSee, not a bare assertOk: the fatal was in the menu, and a 200 alone
+     * does not prove the menu rendered.
      */
-    public function test_logged_history_renders(): void
+    public function test_logged_history_returns_200_for_authorized_user(): void
     {
         $this->actingAs($this->owner)
             ->get(route('logged.history'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Logged History');
     }
 
     /**
