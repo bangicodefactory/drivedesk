@@ -211,6 +211,63 @@ class UserControllerTest extends TestCase
         $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
     }
 
+    /**
+     * BAN-317: this route renders resources/views/logged_history/index.blade.php,
+     * which extends layouts.app, which @includes admin.menu -- and line 5 of that
+     * menu calls \App\Models\Subscription::find(). BAN-199 deleted that model.
+     * The call is behind `feature('subscriptions')`, which is TRUE for drivedesk,
+     * so the page is a hard 500 in production.
+     *
+     * The suite could not see it: test_logged_history_returns_200_for_authorized_user
+     * above asserts 200 and passes, because asClient('acme') sets
+     * subscriptions => false and short-circuits before the missing class. That is
+     * exactly the trap CLAUDE.md 10.2.6 describes -- a suite inheriting a client
+     * config that hides the defect -- so this forces the flag instead of
+     * inheriting it.
+     */
+    public function test_logged_history_renders_with_subscriptions_enabled(): void
+    {
+        config(['client.features.subscriptions' => true]);
+
+        $this->actingAs($this->owner)
+            ->get(route('logged.history'))
+            ->assertOk();
+    }
+
+    /**
+     * The pricing permissions were the *other* half of the dead menu: they gated
+     * links to subscriptions.index, subscription.transaction, coupons.index and
+     * coupons.history, four routes that do not exist.
+     *
+     * They never actually threw, and an earlier version of this docblock said
+     * they did. The Subscription::find() call sat in the @php block at the top of
+     * admin/menu.blade.php, so it killed the request before any menu markup was
+     * evaluated -- the route() calls further down were unreachable.
+     *
+     * What this user now pins is the leftover: `manage pricing packages` and
+     * `manage pricing transation` still gated the "System Settings" heading whose
+     * only pricing entries were removed, so a role holding just those rendered a
+     * section header with nothing under it.
+     */
+    public function test_a_pricing_only_role_does_not_get_an_empty_settings_heading(): void
+    {
+        config(['client.features.subscriptions' => true]);
+
+        foreach (['manage logged history', 'manage pricing packages', 'manage pricing transation'] as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage logged history', 'manage pricing packages', 'manage pricing transation']);
+
+        $this->actingAs($superAdmin)
+            ->get(route('logged.history'))
+            ->assertOk()
+            // Nothing in the section is reachable for this role any more.
+            ->assertDontSee('System Settings');
+    }
+
     // ── UserController::loggedHistoryDestroy ──────────────────────────────────
 
     public function test_logged_history_destroy_requires_auth(): void
