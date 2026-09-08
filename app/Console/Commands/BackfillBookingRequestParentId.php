@@ -28,8 +28,13 @@ use Illuminate\Support\Facades\Schema;
  *  - a request whose vehicle sits at `parent_id = 0` itself (created by a
  *    seeder or a console script) attributes nothing and is left alone; and
  *  - on a deployment that somehow holds more than one tenant's vehicles, this
- *    splits the requests between them, which is a visible change to who sees
- *    what.
+ *    splits the requests between them.
+ *
+ * Nothing reads the column yet -- `BookingRequest` has no tenant scope and
+ * every read path is unscoped -- so applying this changes no screen today. It
+ * is the precondition for scoping `index()`/`show()`, which cannot ship until
+ * the rows carry a tenant, because scoping first would empty the customer's
+ * list instead of narrowing it.
  */
 class BackfillBookingRequestParentId extends Command
 {
@@ -142,8 +147,11 @@ class BackfillBookingRequestParentId extends Command
      * land on one tenant. More than one means either a second owner was created
      * (CLAUDE.md §10.1 — `UserController@store` allows it, so it is a
      * convention, not a constraint) or vehicles were imported across tenants.
-     * Either way the operator is about to change who can see which requests,
-     * and should know that before writing rather than after.
+     *
+     * No screen changes today: nothing reads this column yet. It matters when
+     * the read paths are scoped, at which point these rows stop being one list
+     * and become two -- so the operator should establish now whether that split
+     * is the truth about their deployment, while the rows are still all visible.
      */
     private function reportTenantSpread(): void
     {
@@ -158,7 +166,9 @@ class BackfillBookingRequestParentId extends Command
             foreach ($tenants as $parentId => $total) {
                 $this->warn("    parent_id {$parentId}: {$total} request(s)");
             }
-            $this->warn('  Confirm that is right for this deployment before applying.');
+            $this->warn('  No screen changes today -- nothing reads this column yet. It matters');
+            $this->warn('  once the listing is tenant-scoped, when these stop being one list.');
+            $this->warn('  Confirm the split is the truth about this deployment before applying.');
         }
     }
 }

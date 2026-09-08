@@ -374,7 +374,18 @@ class RequestBookingController extends Controller
      */
     public function bookingNumber()
     {
-        $latest = Booking::where('parent_id', tenantKey())->latest()->first();
+        // Ordered by booking_id, not by latest(). created_at is second-precision
+        // with no unique index on booking_id, and the Excel import creates many
+        // bookings inside one second -- among those the tie-break is arbitrary,
+        // so latest() can return a row that is not the highest-numbered and the
+        // next approval reuses a number. BookingController::bookingNumber() has
+        // the same shape and the same flaw; it is left for its own ticket
+        // rather than bundled into a change about booking requests.
+        //
+        // This does not make the read safe under concurrency: two staff
+        // approving at the same moment still read the same maximum. Closing
+        // that needs a lock at both call sites.
+        $latest = Booking::where('parent_id', tenantKey())->orderByDesc('booking_id')->first();
         if (!$latest) {
             return 1;
         }

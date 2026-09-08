@@ -263,6 +263,15 @@ install, or a restore.
    flag on for that client and the `manage tva` permission. Check both before
    you run `--apply`, or you will hit collisions with no way to resolve them.
 
+   **`--apply` is refused while `demo_gateway` is on, and that is correct.** On
+   `drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
+   hard-deletes every `tvas` row belonging to the first owner. A NULL-owner
+   invoice does not match that delete and survives; giving it an owner would hand
+   it to the next run. The NULL rows on a demo deployment are `TvaSeeder` noise,
+   so there is nothing there to repair. **The current `drivedesk.ma` deployment
+   therefore needs no backfill — this step exists for the first non-demo
+   customer.**
+
 4. **Report on untenanted booking requests**, then repair them:
 
    ```bash
@@ -289,17 +298,6 @@ install, or a restore.
    Unlike the invoice backfill, this one is safe on `drivedesk`:
    `booking_requests` is not in `DemoSeed::REFRESHED_TABLES`, so nothing wipes
    the repaired rows overnight.
-
-**`--apply` is refused while `demo_gateway` is on, and that is correct.** On
-`drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
-hard-deletes every `tvas` row belonging to the first owner. A NULL-owner
-invoice does not match that delete and survives; giving it an owner would hand
-it to the next run. The NULL rows on a demo deployment are `TvaSeeder` noise,
-so there is nothing there to repair. **The current `drivedesk.ma` deployment
-therefore needs no backfill — this step exists for the first non-demo
-customer.**
-
-
 ---
 
 ## Appendix A — No-Redis option (host without Redis)
