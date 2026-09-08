@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BookingRequest;
 use App\Models\Guest;
+use App\Models\Place;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +29,7 @@ class BackfillBookingRequestParentIdCommandTest extends TestCase
     use WithClient;
 
     private User $owner;
+    private Place $place;
 
     protected function setUp(): void
     {
@@ -35,18 +37,23 @@ class BackfillBookingRequestParentIdCommandTest extends TestCase
         $this->asClient('acme');
 
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        // pickup_address and drop_off_address lost their column defaults when
+        // they became real foreign keys to `places`, so a planted row needs one.
+        $this->place = Place::factory()->create(['parent_id' => $this->owner->id]);
     }
 
     /** Planted with the query builder so the fixture can hold parent_id = 0. */
     private function plantRequest(int $vehicleId, int $parentId = 0): int
     {
         return DB::table('booking_requests')->insertGetId([
-            'vehicle'    => $vehicleId,
-            'driver'     => Guest::factory()->create()->id,
-            'status'     => 'pending',
-            'parent_id'  => $parentId,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'vehicle'          => $vehicleId,
+            'driver'           => Guest::factory()->create()->id,
+            'pickup_address'   => $this->place->id,
+            'drop_off_address' => $this->place->id,
+            'status'           => 'pending',
+            'parent_id'        => $parentId,
+            'created_at'       => now(),
+            'updated_at'       => now(),
         ]);
     }
 
