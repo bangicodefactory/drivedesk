@@ -29,7 +29,9 @@ class RequestBookingControllerTest extends TestCase
         parent::setUp();
         $this->asClient('acme');
 
-        $perms = ['create booking', 'delete booking'];
+        // `manage booking` is what gates the Booking Requests sidebar link and,
+        // since BAN-322, the index/show routes themselves.
+        $perms = ['manage booking', 'create booking', 'delete booking'];
         foreach ($perms as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
@@ -46,10 +48,57 @@ class RequestBookingControllerTest extends TestCase
     }
 
     // ── unauthenticated ───────────────────────────────────────────────────────
-    //
-    // NOTE: booking_requests.index and .show are registered via Route::resource()
-    // outside any auth group and are therefore publicly accessible — no redirect test.
-    // The approve and refuse routes ARE inside the auth middleware group.
+
+    /**
+     * BAN-322. booking_requests.index was registered via Route::resource()
+     * outside every auth group, and index() itself checked nothing: a plain
+     * GET /booking_requests from anyone on the internet rendered every booking
+     * request in the database, each with the guest's name. This file used to
+     * carry a comment saying so and no test.
+     */
+    public function test_index_requires_auth(): void
+    {
+        $this->makeRequest();
+
+        $this->get(route('booking_requests.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_show_requires_auth(): void
+    {
+        $req = $this->makeRequest();
+
+        $this->get(route('booking_requests.show', Crypt::encrypt($req->id)))
+            ->assertRedirect(route('login'));
+    }
+
+    /**
+     * Authenticated is not enough. The sidebar has always gated the link on
+     * `manage booking`, so a driver or customer account -- which has no reason
+     * to see anyone's contact details -- must not reach it by typing the URL.
+     */
+    public function test_index_requires_the_manage_booking_permission(): void
+    {
+        $this->makeRequest();
+
+        $outsider = User::factory()->create(['type' => 'driver', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($outsider)
+            ->get(route('booking_requests.index'))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_show_requires_the_manage_booking_permission(): void
+    {
+        $req = $this->makeRequest();
+
+        $outsider = User::factory()->create(['type' => 'driver', 'parent_id' => $this->owner->id]);
+
+        $this->actingAs($outsider)
+            ->get(route('booking_requests.show', Crypt::encrypt($req->id)))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
 
     public function test_confirm_booking_requires_auth(): void
     {
