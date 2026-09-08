@@ -129,10 +129,11 @@ class TvaController extends Controller
             'invoice_ids' => 'required|array',
         ]);
 
-        $query = Tva::whereIn('id', $request->invoice_ids);
-        if (\Auth::user()->type !== 'super admin') {
-            $query->where('parent_id', tenantKey());
-        }
+        // No super-admin exemption any more: index() scopes them to the
+        // customer's invoices via tenantKey(), so exempting the download let the
+        // two halves of one screen disagree about which rows exist (BAN-316).
+        $query = Tva::whereIn('id', $request->invoice_ids)
+            ->where('parent_id', tenantKey());
         $invoices = $query->get();
         $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");

@@ -1612,4 +1612,36 @@ class BookingControllerTest extends TestCase
 
         $this->assertDatabaseMissing('vehicles', ['license_plate' => 'US-011-AP']);
     }
+
+    /**
+     * BAN-316 review. The facture is stamped into the customer's tenant and
+     * shows in their invoice list and PDF export, so its company identity has
+     * to be the customer's. settings() resolves to the acting account -- for a
+     * support session, the global parent_id = 1 bucket -- which would print the
+     * wrong company name and ICE/RC/NIF on the customer's own invoice.
+     */
+    public function test_a_support_created_facture_carries_the_customers_identity(): void
+    {
+        foreach (['company_name' => 'Agence Atlas', 'ice' => '001122334455667'] as $name => $value) {
+            \Illuminate\Support\Facades\DB::table('settings')->updateOrInsert(
+                ['name' => $name, 'parent_id' => $this->owner->id],
+                ['value' => $value]
+            );
+        }
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $this->actingAs($this->owner);
+        $this->assertSame('Agence Atlas', tenantSettings()['company_name']);
+
+        $superAdmin = \App\Models\User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $this->actingAs($superAdmin);
+
+        $tenant = tenantSettings();
+        $this->assertSame('Agence Atlas', $tenant['company_name']);
+        $this->assertSame('001122334455667', $tenant['ice']);
+
+        // And the acting account's own view is untouched, so branding and the
+        // admin UI still read the global bucket.
+        $this->assertNotSame('Agence Atlas', settings()['company_name']);
+    }
 }

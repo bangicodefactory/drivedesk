@@ -936,7 +936,12 @@ class BookingController extends Controller
         $date          = $payment->date;
         $paymentMethod = $payment->payment_method;
 
-        $setting = settings();
+        // tenantSettings(), not settings(): this facture is stamped into the
+        // customer's tenant and appears in their invoice list and PDF export, so
+        // company_name / ICE / RC / NIF have to be theirs. During a support
+        // session settings() resolves to the acting super admin's rows and would
+        // print the wrong legal identity on the customer's invoice (BAN-316).
+        $setting = tenantSettings();
         $user    = User::find($booking->driver);
         $driver1 = Driver::where('user_id', $booking->driver)->first();
 
