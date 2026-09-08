@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,11 +13,7 @@ import {
     Shield, Clock, MapPin, Award,
 } from 'lucide-react';
 import PublicLayout from '@/Layouts/PublicLayout';
-
-function useTranslations() {
-    const { translations } = usePage().props;
-    return (key, fallback = key) => translations?.[key] ?? fallback;
-}
+import { useTranslations } from '@/hooks/useTranslations';
 
 function Hero({ heroImages }) {
     const t = useTranslations();
