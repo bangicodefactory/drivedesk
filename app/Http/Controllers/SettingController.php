@@ -152,55 +152,25 @@ class SettingController extends Controller
     public function generalData(Request $request)
     {
         if (\Auth::user()->type == 'super admin') {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'application_name' => 'required',
-                ]
-            );
-
-            if ($request->logo) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'logo' => 'required|mimes:png',
-                    ]
-                );
+            // One merged validator, not a rule per conditional block — the
+            // previous per-field \Validator::make() calls each overwrote
+            // $validator, so only the LAST field checked ever actually failed
+            // the request; earlier invalid uploads silently passed through.
+            // Home banners accept a wider set of formats than logo/favicon/
+            // landing_logo, which stay PNG-only.
+            $rules = ['application_name' => 'required'];
+            $imageFields = [
+                'logo' => 'png', 'landing_logo' => 'png', 'favicon' => 'png',
+                'image_home_1' => 'png,jpg,jpeg,webp', 'image_home_2' => 'png,jpg,jpeg,webp',
+                'image_home_1_desktop' => 'png,jpg,jpeg,webp', 'image_home_1_mobile' => 'png,jpg,jpeg,webp',
+                'image_home_2_desktop' => 'png,jpg,jpeg,webp', 'image_home_2_mobile' => 'png,jpg,jpeg,webp',
+            ];
+            foreach ($imageFields as $field => $mimes) {
+                if ($request->hasFile($field)) {
+                    $rules[$field] = "required|mimes:{$mimes}";
+                }
             }
-
-            if ($request->landing_logo) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'landing_logo' => 'required|mimes:png',
-                    ]
-                );
-            }
-
-            if ($request->favicon) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'favicon' => 'required|mimes:png',
-                    ]
-                );
-            }
-            if ($request->image_home_1) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'image_home_1' => 'required|mimes:png',
-                    ]
-                );
-            }
-            if ($request->image_home_2) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'image_home_2' => 'required|mimes:png',
-                    ]
-                );
-            }
+            $validator = \Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
@@ -237,39 +207,30 @@ class SettingController extends Controller
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
 
-            if ($request->image_home_1) {
-                $request->file('image_home_1')->storeAs('upload/home/', 'image_home_1.png', 'public');
-            }
-
-            if ($request->image_home_2) {
-                $request->file('image_home_2')->storeAs('upload/home/', 'image_home_2.png', 'public');
+            // Extension follows the actual uploaded file (MIME-derived, not the
+            // client-supplied filename) — home banners now accept jpg/jpeg/webp
+            // too, so a fixed ".png" suffix would silently mislabel them.
+            foreach (['image_home_1', 'image_home_2', 'image_home_1_desktop', 'image_home_1_mobile', 'image_home_2_desktop', 'image_home_2_mobile'] as $field) {
+                if ($request->hasFile($field)) {
+                    $request->file($field)->storeAs('upload/home/', "{$field}." . $request->file($field)->extension(), 'public');
+                }
             }
 
         } elseif (\Auth::user()->type == 'owner') {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'application_name' => 'required',
-                ]
-            );
-
-            if ($request->logo) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'logo' => 'required|mimes:png',
-                    ]
-                );
+            // Same consolidation as the super-admin branch above.
+            $rules = ['application_name' => 'required'];
+            $imageFields = [
+                'logo' => 'png', 'favicon' => 'png',
+                'image_home_1' => 'png,jpg,jpeg,webp', 'image_home_2' => 'png,jpg,jpeg,webp',
+                'image_home_1_desktop' => 'png,jpg,jpeg,webp', 'image_home_1_mobile' => 'png,jpg,jpeg,webp',
+                'image_home_2_desktop' => 'png,jpg,jpeg,webp', 'image_home_2_mobile' => 'png,jpg,jpeg,webp',
+            ];
+            foreach ($imageFields as $field => $mimes) {
+                if ($request->hasFile($field)) {
+                    $rules[$field] = "required|mimes:{$mimes}";
+                }
             }
-
-            if ($request->favicon) {
-                $validator = \Validator::make(
-                    $request->all(),
-                    [
-                        'favicon' => 'required|mimes:png',
-                    ]
-                );
-            }
+            $validator = \Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
@@ -315,22 +276,19 @@ class SettingController extends Controller
                 );
             }
 
-            if ($request->image_home_1) {
-                $fileName = parentId() . '_image_home_1.png';
-                $request->file('image_home_1')->storeAs('upload/home/', $fileName, 'public');
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
-                    [$fileName, 'image_home_1', parentId()]
-                );
-            }
-
-            if ($request->image_home_2) {
-                $fileName = parentId() . '_image_home_2.png';
-                $request->file('image_home_2')->storeAs('upload/home/', $fileName, 'public');
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
-                    [$fileName, 'image_home_2', parentId()]
-                );
+            // Extension follows the actual uploaded file (MIME-derived) rather
+            // than a fixed ".png" — see the matching comment in the super-admin
+            // branch above. The field name doubles as the settings row name for
+            // all 6 of these, so one loop covers every combination.
+            foreach (['image_home_1', 'image_home_2', 'image_home_1_desktop', 'image_home_1_mobile', 'image_home_2_desktop', 'image_home_2_mobile'] as $field) {
+                if ($request->hasFile($field)) {
+                    $fileName = parentId() . "_{$field}." . $request->file($field)->extension();
+                    $request->file($field)->storeAs('upload/home/', $fileName, 'public');
+                    \DB::insert(
+                        'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+                        [$fileName, $field, parentId()]
+                    );
+                }
             }
 
         } else {
