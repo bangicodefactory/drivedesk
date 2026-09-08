@@ -1,0 +1,51 @@
+/* Public storefront typography (Landing, Fleet, Booking, Confirmation).
+ * Imported once from StorefrontLayout.jsx so Vite keeps it in the
+ * storefront's own chunk — the admin app never downloads it, same
+ * reasoning as the DemoGateway page fonts (BAN-262).
+ *
+ * Reuses fonts already installed for DemoGateway rather than adding a new
+ * pairing: Hanken Grotesk (body/UI), Saira Condensed (display headlines),
+ * Cairo (Arabic — Saira Condensed has no Arabic glyphs). Swapping to Cairo
+ * for RTL is done in plain CSS via `html[dir="rtl"]`, since the server
+ * already sets that attribute per locale (resources/views/app.blade.php) —
+ * no JS/locale detection needed.
+ */
+@import '@fontsource/hanken-grotesk/400.css';
+@import '@fontsource/hanken-grotesk/500.css';
+@import '@fontsource/hanken-grotesk/600.css';
+@import '@fontsource/hanken-grotesk/700.css';
+@import '@fontsource/hanken-grotesk/800.css';
+@import '@fontsource/saira-condensed/700.css';
+@import '@fontsource/saira-condensed/800.css';
+@import '@fontsource/cairo/500.css';
+@import '@fontsource/cairo/700.css';
+@import '@fontsource/cairo/800.css';
+
+.storefront {
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+}
+
+.storefront .font-display {
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+}
+
+/* Uppercase "kicker" labels above section headings. Centralized so the
+ * RTL override below only has to be written once. */
+.storefront .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+html[dir='rtl'] .storefront .font-display {
+    font-family: 'Cairo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+html[dir='rtl'] .storefront .eyebrow {
+    text-transform: none;
+    letter-spacing: normal;
+}

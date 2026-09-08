@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
 use App\Models\BookingRequest;
 use App\Models\Guest;
 use App\Models\Place;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
@@ -510,6 +512,186 @@ class RequestBookingControllerTest extends TestCase
                 ->component('Public/CarDetails')
                 ->where('similarCars', fn ($cars) => collect($cars)->pluck('id')->doesntContain($hidden->id))
             );
+    }
+
+    // ── the /reserve wizard ────────────────────────────────────────
+
+    public function test_store_booking_redirects_to_a_signed_confirmation_url(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $response = $this->post(route('booking.store_request'), [
+            'vehicle_id'       => $this->vehicle->id,
+            'name'             => 'Greg',
+            'email'            => 'greg@example.com',
+            'phone_number'     => '+212600000012',
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-07-01',
+            'end_date'         => '2026-07-04',
+            'start_time'       => '09:00',
+            'end_time'         => '18:00',
+        ]);
+
+        $response->assertRedirect();
+        $bookingRequest = BookingRequest::latest('id')->first();
+        $this->assertStringContainsString(
+            "/reserve/confirmation/{$bookingRequest->id}",
+            $response->headers->get('Location'),
+        );
+        $this->assertStringContainsString('signature=', $response->headers->get('Location'));
+    }
+
+    public function test_reserve_page_renders_vehicles_and_places(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $this->get(route('reserve.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/Booking/Index')
+                ->has('vehicles')
+                ->has('places')
+            );
+    }
+
+    public function test_reserve_page_shows_every_vehicle_when_no_dates_are_given(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        Booking::factory()->create(['vehicle' => $this->vehicle->id]);
+
+        $this->get(route('reserve.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($this->vehicle->id))
+            );
+    }
+
+    public function test_reserve_page_excludes_a_vehicle_marked_unavailable_for_rent(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $hidden = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'available_for_rent' => false]);
+
+        $this->get(route('reserve.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->doesntContain($hidden->id))
+            );
+    }
+
+    public function test_reserve_page_excludes_a_vehicle_with_an_overlapping_booking(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        Booking::factory()->create([
+            'vehicle'    => $this->vehicle->id,
+            'start_date' => '2026-08-10', 'start_time' => '09:00',
+            'end_date'   => '2026-08-15', 'end_time'   => '18:00',
+            'status'     => 'yet_to_start',
+        ]);
+
+        $this->get(route('reserve.create', [
+            'start_date' => '2026-08-12', 'start_time' => '09:00',
+            'end_date'   => '2026-08-14', 'end_time'   => '18:00',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->doesntContain($this->vehicle->id))
+        );
+    }
+
+    public function test_reserve_page_keeps_a_vehicle_whose_booking_does_not_overlap(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        Booking::factory()->create([
+            'vehicle'    => $this->vehicle->id,
+            'start_date' => '2026-08-01', 'start_time' => '09:00',
+            'end_date'   => '2026-08-05', 'end_time'   => '18:00',
+            'status'     => 'yet_to_start',
+        ]);
+
+        $this->get(route('reserve.create', [
+            'start_date' => '2026-08-12', 'start_time' => '09:00',
+            'end_date'   => '2026-08-14', 'end_time'   => '18:00',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($this->vehicle->id))
+        );
+    }
+
+    public function test_reserve_page_ignores_cancelled_bookings_when_checking_availability(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        Booking::factory()->cancelled()->create([
+            'vehicle'    => $this->vehicle->id,
+            'start_date' => '2026-08-10', 'start_time' => '09:00',
+            'end_date'   => '2026-08-15', 'end_time'   => '18:00',
+        ]);
+
+        $this->get(route('reserve.create', [
+            'start_date' => '2026-08-12', 'start_time' => '09:00',
+            'end_date'   => '2026-08-14', 'end_time'   => '18:00',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($this->vehicle->id))
+        );
+    }
+
+    public function test_confirmation_page_renders_for_a_valid_signed_url(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $req = $this->makeRequest();
+
+        $this->get(URL::signedRoute('reserve.confirmation', ['bookingRequest' => $req->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/Booking/Confirmation')
+                ->where('reference', 'BR-' . str_pad($req->id, 5, '0', STR_PAD_LEFT))
+            );
+    }
+
+    public function test_confirmation_page_exposes_the_chosen_payment_preference(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $req = $this->makeRequest(['payment_preference' => 'paypal']);
+
+        $this->get(URL::signedRoute('reserve.confirmation', ['bookingRequest' => $req->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('paymentPreference', 'paypal')
+            );
+    }
+
+    public function test_confirmation_page_rejects_an_unsigned_url(): void
+    {
+        // Forced, not inherited from the client fixture (CLAUDE.md 10.2 rule 6).
+        config(['client.features.public_storefront' => true]);
+
+        $req = $this->makeRequest();
+
+        $this->get(route('reserve.confirmation', ['bookingRequest' => $req->id]))
+            ->assertForbidden();
+    }
+
+    /**
+     * The flag itself. A client whose public face is the B2B demo gateway --
+     * drivedesk -- must 404 the wizard rather than serve a full B2C booking
+     * flow to the audience it sells the platform to (BAN-261, CLAUDE.md 10.2
+     * rule 3).
+     */
+    public function test_the_wizard_404s_when_the_storefront_is_off(): void
+    {
+        config(['client.features.public_storefront' => false]);
+
+        $this->get(route('reserve.create'))->assertNotFound();
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
