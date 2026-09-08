@@ -223,6 +223,13 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             // The tenant, taken from the vehicle rather than from Auth -- the
+             // submitter is a guest. Same source the place validation above
+             // uses (BAN-297), so a request cannot straddle two tenants. Left
+             // unset, this stayed at the column default of 0 and the row
+             // belonged to nobody: invisible to any scoped query, and the
+             // reason booking-request numbering never worked.
+             $booking->parent_id = (int) $vehicleTenantId;
              $booking->age = $request->age;
              $booking->nationality = $request->nationality;
              $booking->driving_experience = $request->driving_experience;
@@ -356,9 +363,18 @@ class RequestBookingController extends Controller
         ]);
     }
 
+    /**
+     * The next booking number for this tenant.
+     *
+     * Reads `bookings`, not `booking_requests`. It used to read the latter --
+     * whose `booking_id` column nothing writes, under a parent_id nothing set
+     * -- so it returned 1 unconditionally and every booking approved from a
+     * request was numbered 1. Mirrors BookingController::bookingNumber(),
+     * which is what numbers a booking created by hand.
+     */
     public function bookingNumber()
     {
-        $latest = BookingRequest::where('parent_id', tenantKey())->latest()->first();
+        $latest = Booking::where('parent_id', tenantKey())->latest()->first();
         if (!$latest) {
             return 1;
         }
