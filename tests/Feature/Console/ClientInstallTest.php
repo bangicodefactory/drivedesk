@@ -49,6 +49,39 @@ class ClientInstallTest extends TestCase
         $this->assertDatabaseHas('settings', ['name' => 'app_name', 'value' => 'Custom Name', 'parent_id' => 1]);
     }
 
+    public function test_seeding_invalidates_the_settings_cache(): void
+    {
+        // settings() memoises its row set for 5 minutes. Warm that cache the
+        // way a guest request would -- before any branding exists -- and the
+        // freshly seeded values stay invisible for the rest of the window.
+        // This is not hypothetical: seeding MarrueCar's WhatsApp number after
+        // /reserve had already been hit once produced exactly this.
+        $this->assertSame('', settings()['app_name']);
+
+        config(['clients.acme.branding_seed' => ['app_name' => 'Acme Rentals']]);
+        $this->artisan('client:install', ['--client' => 'acme'])->assertSuccessful();
+
+        // Without the flush this still reads the pre-seed cached value.
+        $this->assertSame('Acme Rentals', settings()['app_name']);
+    }
+
+    public function test_database_seeder_installs_branding_without_a_manual_step(): void
+    {
+        // A plain `migrate:fresh --seed` -- the normal local reset -- must leave
+        // the deployment with real branding, not just the internal demo data.
+        // Nobody should have to remember a second command for the storefront to
+        // know its own name.
+        config(['clients.' . config('app.client', 'drivedesk') . '.branding_seed' => [
+            'app_name' => 'Seeded Via DatabaseSeeder',
+        ]]);
+
+        $this->seed();
+
+        $this->assertDatabaseHas('settings', [
+            'name' => 'app_name', 'value' => 'Seeded Via DatabaseSeeder', 'parent_id' => 1,
+        ]);
+    }
+
     public function test_no_branding_seed_exits_cleanly(): void
     {
         config(['clients.acme.branding_seed' => []]);
