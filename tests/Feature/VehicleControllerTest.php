@@ -37,6 +37,145 @@ class VehicleControllerTest extends TestCase
         $this->vehicleType = VehicleType::factory()->create(['parent_id' => $this->owner->id]);
     }
 
+    private function supportLogin(): User
+    {
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage vehicle', 'create vehicle']);
+
+        return $superAdmin;
+    }
+
+    // ── BAN-315: a support login writes into the customer's tenant ────────────
+    //
+    // parentId() returns a super admin their own id, which is no tenant's key,
+    // so anything created during a support session was invisible to the
+    // customer who owns the deployment -- and invisible in a way they could not
+    // detect, because support bypasses the tenant scope on reads and sees it
+    // fine. A vehicle nobody can book; a booking that never blocks the calendar.
+
+    public function test_a_vehicle_created_during_support_belongs_to_the_customer(): void
+    {
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']))
+            ->assertRedirect(route('vehicle.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Support Car',
+            'parent_id' => $this->owner->id,
+        ]);
+        $this->assertDatabaseMissing('vehicles', [
+            'name'      => 'Support Car',
+            'parent_id' => $superAdmin->id,
+        ]);
+    }
+
+    /** The point of the fix: the customer can actually see it. */
+    public function test_the_customer_sees_a_vehicle_created_during_support(): void
+    {
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $this->actingAs($this->owner)
+            ->get(route('vehicle.index'))
+            ->assertOk()
+            ->assertSee('Support Car');
+    }
+
+    public function test_an_owners_own_write_is_unchanged(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Owner Car']));
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Owner Car',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    /**
+     * Two owners means the deployment key is not knowable, so support writes
+     * land where they always did rather than in an arbitrary tenant.
+     */
+    public function test_support_writes_fall_back_when_the_owner_is_ambiguous(): void
+    {
+        User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Ambiguous Car']));
+
+        $this->assertDatabaseHas('vehicles', [
+            'name'      => 'Ambiguous Car',
+            'parent_id' => $superAdmin->id,
+        ]);
+    }
+
+    // ── BAN-316: both sides resolve the same tenant key ──────────
+    //
+    // BAN-315 redirected the write stamps alone. That was worse than the bug:
+    // the number generators and uniqueness guards still resolved through
+    // parentId(), an empty bucket for a super admin, so a support-created row
+    // landed in the customer's tenant carrying a number from nobody's.
+
+    public function test_a_support_created_vehicle_does_not_reuse_a_customer_number(): void
+    {
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'vehicle_id' => 1]);
+        Vehicle::factory()->create(['parent_id' => $this->owner->id, 'vehicle_id' => 2]);
+
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $created = Vehicle::withoutGlobalScope('tenant')->where('name', 'Support Car')->first();
+
+        $this->assertNotNull($created);
+        $this->assertSame($this->owner->id, (int) $created->parent_id);
+        $this->assertSame(3, (int) $created->vehicle_id);
+    }
+
+    /**
+     * licensePlateExists() filtered by parentId(), so for a support login it
+     * matched nothing and always returned false -- re-opening the duplicate
+     * plate the guard exists to prevent, on the customer's own fleet.
+     */
+    public function test_support_cannot_add_a_plate_the_customer_already_has(): void
+    {
+        Vehicle::factory()->create([
+            'parent_id'     => $this->owner->id,
+            'license_plate' => '1234-A-56',
+        ]);
+
+        $this->actingAs($this->supportLogin())
+            ->post(route('vehicle.store'), $this->validPayload([
+                'name'          => 'Duplicate Plate',
+                'license_plate' => '1234-A-56',
+            ]))
+            // The guard reports through the validator, not an `error` flash.
+            ->assertSessionHasErrors();
+
+        $this->assertDatabaseMissing('vehicles', ['name' => 'Duplicate Plate']);
+    }
+
+    /**
+     * index() filters by parentId() explicitly rather than through the global
+     * scope, so redirecting only the write left support unable to see what it
+     * had just created -- trading one invisibility for another.
+     */
+    public function test_support_can_see_the_vehicle_it_just_created(): void
+    {
+        $superAdmin = $this->supportLogin();
+
+        $this->actingAs($superAdmin)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Support Car']));
+
+        $this->actingAs($superAdmin)
+            ->get(route('vehicle.index'))
+            ->assertOk()
+            ->assertSee('Support Car');
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void

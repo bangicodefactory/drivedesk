@@ -28,7 +28,7 @@ class DriverController extends Controller
         // for a busy tenant) and move the search server-side so it spans all pages.
         $search = trim((string) $request->get('search', ''));
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->with('drivers')  // Eager load the driver profile (avoids per-row N+1)
             ->when($search !== '', function ($q) use ($search) {
@@ -53,7 +53,7 @@ class DriverController extends Controller
         // Batch-load active blacklists for just this page's drivers (BAN-252).
         $blacklists = DriverBlacklist::activeFor(
             $drivers->getCollection()->pluck('id')->all(),
-            parentId()
+            tenantKey()
         );
 
         $payload = $drivers->through(function ($user) use ($blacklists) {
@@ -172,7 +172,7 @@ class DriverController extends Controller
                     return redirect()->back()->with('error', $errorMessages);
                 }
             }
-            $userRole = Role::where('name', 'driver')->where('parent_id', parentId())->first();
+            $userRole = Role::where('name', 'driver')->where('parent_id', tenantKey())->first();
             $user = new User();
             $user->name = $request->first_name . ' ' . $request->last_name;
             $user->email = !empty($request->email) ? $request->email : null;
@@ -181,7 +181,7 @@ class DriverController extends Controller
             $user->type = $userRole->name;
             $user->profile = 'avatar.png';
             $user->lang = 'english';
-            $user->parent_id = parentId();
+            $user->parent_id = tenantKey();
             $user->save();
             $user->assignRole($userRole);
 
@@ -199,7 +199,7 @@ class DriverController extends Controller
                 $driver->reference = !empty($request->reference) ? $request->reference : null;
                 $driver->notes = !empty($request->notes) ? $request->notes : null;
                 $driver->ICE_company = !empty($request->ICE_company) ? $request->ICE_company : null;
-                $driver->parent_id = parentId();
+                $driver->parent_id = tenantKey();
 // Save id document 
                 if (!empty($request->document)) {
                     $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
@@ -250,7 +250,7 @@ class DriverController extends Controller
 
 
             $module = 'new_driver';
-            $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+            $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
             $setting = settings();
             $errorMessage = '';
             if (!empty($notification) && $notification->enabled_email == 1) {
@@ -269,7 +269,7 @@ class DriverController extends Controller
 
             if (isset($request->direct_create)) {
                 if (!empty($driver)) {
-                    $driverList = User::where('type', 'driver')->where('parent_id', parentId())
+                    $driverList = User::where('type', 'driver')->where('parent_id', tenantKey())
                         ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                         ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                         ->get()
@@ -322,7 +322,7 @@ class DriverController extends Controller
             $driverPayload['expiration_date_display'] = !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
         }
         // Blacklist status for the badge + action (BAN-252).
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $user->id)
             ->whereNull('lifted_at')
             ->first();
@@ -349,7 +349,7 @@ class DriverController extends Controller
 
         // Tenant guard: only this tenant's drivers.
         $driverUser = User::where('id', $user)
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->first();
         if (! $driverUser) {
@@ -357,7 +357,7 @@ class DriverController extends Controller
         }
 
         // Idempotent: don't stack active rows for the same driver.
-        $exists = DriverBlacklist::where('parent_id', parentId())
+        $exists = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $driverUser->id)
             ->whereNull('lifted_at')
             ->exists();
@@ -367,7 +367,7 @@ class DriverController extends Controller
 
         DriverBlacklist::create([
             'driver_user_id' => $driverUser->id,
-            'parent_id'      => parentId(),
+            'parent_id'      => tenantKey(),
             'reason'         => $request->reason,
             'blacklisted_by' => \Auth::id(),
         ]);
@@ -384,7 +384,7 @@ class DriverController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $user)
             ->whereNull('lifted_at')
             ->first();
@@ -544,7 +544,7 @@ class DriverController extends Controller
 
     public function driverNumber()
     {
-        $max = Driver::where('parent_id', parentId())->max('driver_id');
+        $max = Driver::where('parent_id', tenantKey())->max('driver_id');
         return ($max ?? 0) + 1;
     }
 
@@ -569,7 +569,7 @@ class DriverController extends Controller
         $query = User::where('type', 'driver');
 
         if (\Auth::user()->type !== 'super admin') {
-            $query->where('parent_id', parentId());
+            $query->where('parent_id', tenantKey());
         }
 
         return $query->find($id);

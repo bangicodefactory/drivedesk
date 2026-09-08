@@ -16,7 +16,7 @@ class InspectionController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage inspection')) {
-            $inspections = Inspection::where('parent_id', '=', parentId())->get();
+            $inspections = Inspection::where('parent_id', '=', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -33,14 +33,14 @@ class InspectionController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create inspection')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
             $vehicles->prepend(__('Select Vehicle'),'');
 
             $status=Inspection::$status;
             $repairStatus=Inspection::$repairStatus;
             $fuelLevel=Inspection::$fuelLevel;
 
-            $types = InspectionType::where('parent_id', parentId())->get();
+            $types = InspectionType::where('parent_id', tenantKey())->get();
             return Inertia::render('Inspection/Create', compact('vehicles','status','repairStatus','fuelLevel','types'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -84,7 +84,7 @@ class InspectionController extends Controller
             $inspection->status = $request->status;
             $inspection->amount = $request->amount;
             $inspection->repair_status = $request->repair_status;
-            $inspection->parent_id = parentId();
+            $inspection->parent_id = tenantKey();
             if (!empty($request->receipt)) {
                 $expenseFilenameWithExt = $request->file('receipt')->getClientOriginalName();
                 $expenseFilename = pathinfo($expenseFilenameWithExt, PATHINFO_FILENAME);
@@ -145,12 +145,12 @@ class InspectionController extends Controller
                 abort(404);
             }
 
-            $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
             $vehicles->prepend(__('Select Vehicle'),'');
             $status=Inspection::$status;
             $repairStatus=Inspection::$repairStatus;
             $fuelLevel=Inspection::$fuelLevel;
-            $types = InspectionType::where('parent_id', parentId())->get();
+            $types = InspectionType::where('parent_id', tenantKey())->get();
 
             $checklists=!empty($inspection->details)?json_decode($inspection->details):[];
 

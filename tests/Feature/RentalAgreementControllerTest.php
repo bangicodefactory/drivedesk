@@ -207,6 +207,58 @@ class RentalAgreementControllerTest extends TestCase
             });
     }
 
+    /**
+     * BAN-316. agreementNumber() resolved through parentId(), empty for a
+     * support login, so it restarted at 1 -- putting a second signed contract
+     * in the customer's records under a number they had already issued.
+     */
+    public function test_a_support_created_agreement_does_not_reuse_a_contract_number(): void
+    {
+        $this->makeAgreement(['agreement_id' => 1]);
+        $this->makeAgreement(['agreement_id' => 2]);
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage rental agreement', 'create rental agreement']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('rental-agreement.store'), $this->validPayload())
+            ->assertRedirect();
+
+        $created = RentalAgreement::withoutGlobalScope('tenant')
+            ->orderByDesc('id')
+            ->first();
+
+        $this->assertSame($this->owner->id, (int) $created->parent_id);
+        $this->assertSame(3, (int) $created->agreement_id);
+    }
+
+    /**
+     * BAN-316 review. rentalAgreementTerms() read settings() -- the *acting*
+     * account's -- while the agreement it produces is stamped into the
+     * customer's tenant. A support session would therefore store a contract in
+     * the customer's records carrying terms the customer never configured, and
+     * config/clients/*.php terms have no per-customer path, so it does not
+     * self-correct.
+     */
+    public function test_a_support_session_gets_the_customers_contract_terms(): void
+    {
+        DB::table('settings')->updateOrInsert(
+            ['name' => 'rental_agreement_terms', 'parent_id' => $this->owner->id],
+            ['value' => 'The customer own terms.']
+        );
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo(['manage rental agreement', 'create rental agreement']);
+
+        $this->actingAs($superAdmin)
+            ->get(route('rental-agreement.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('defaultTerms', 'The customer own terms.')
+            );
+    }
+
     // ── unauthenticated ───────────────────────────────────────────────────────
 
     public function test_index_requires_auth(): void

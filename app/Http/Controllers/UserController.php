@@ -81,6 +81,10 @@ class UserController extends Controller
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->type = 'owner';
                 $user->lang = 'english';
+                // parentId(), not tenantKey(): an owner's parent_id is the
+                // super admin who created them, which is what makes them
+                // resolvable from users.index. Routing this through the tenant
+                // helper would point the first owner at themselves (BAN-315).
                 $user->parent_id = parentId();
                 $user->save();
                 $userRole = Role::findByName('owner');

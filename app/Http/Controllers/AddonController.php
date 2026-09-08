@@ -13,7 +13,7 @@ class AddonController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage addon')) {
-            $addons = Addon::where('parent_id', parentId())->get();
+            $addons = Addon::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -52,7 +52,7 @@ class AddonController extends Controller
             $addon->name = $request->name;
             $addon->price = $request->price;
             $addon->billing_type = $request->billing_type;
-            $addon->parent_id = parentId();
+            $addon->parent_id = tenantKey();
             $addon->save();
             return redirect()->route('addon.index')->with('success', __('Addon successfully created.'));
         } else {

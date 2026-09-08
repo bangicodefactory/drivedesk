@@ -28,8 +28,8 @@ class TvaController extends Controller
 
         // Base query scoped to current parent (tenant) and not soft deleted
         $query = Tva::whereNull('deleted_at');
-        if (function_exists('parentId') && parentId()) {
-            $query->where('parent_id', parentId());
+        if (function_exists('parentId') && tenantKey()) {
+            $query->where('parent_id', tenantKey());
         }
 
         // Unified filtering on facture_date (business date) instead of created_at
@@ -110,7 +110,7 @@ class TvaController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $books = Booking::where('parent_id', parentId())->get()->pluck('name', 'id');
+        $books = Booking::where('parent_id', tenantKey())->get()->pluck('name', 'id');
         // $books->prepend(__('Select Vehicle'), '');
 
 
@@ -129,10 +129,11 @@ class TvaController extends Controller
             'invoice_ids' => 'required|array',
         ]);
 
-        $query = Tva::whereIn('id', $request->invoice_ids);
-        if (\Auth::user()->type !== 'super admin') {
-            $query->where('parent_id', parentId());
-        }
+        // No super-admin exemption any more: index() scopes them to the
+        // customer's invoices via tenantKey(), so exempting the download let the
+        // two halves of one screen disagree about which rows exist (BAN-316).
+        $query = Tva::whereIn('id', $request->invoice_ids)
+            ->where('parent_id', tenantKey());
         $invoices = $query->get();
         $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");
@@ -784,8 +785,8 @@ class TvaController extends Controller
 
         // Base query scoped to current parent (tenant) and not soft deleted
         $query = Tva::whereNull('deleted_at');
-        if (function_exists('parentId') && parentId()) {
-            $query->where('parent_id', parentId());
+        if (function_exists('parentId') && tenantKey()) {
+            $query->where('parent_id', tenantKey());
         }
 
         // Get current year for default filter
@@ -895,8 +896,8 @@ class TvaController extends Controller
         // Get available years for dropdown
         $availableYears = Tva::selectRaw('YEAR(facture_date) as year')
             ->whereNull('deleted_at')
-            ->when(function_exists('parentId') && parentId(), function ($q) {
-                return $q->where('parent_id', parentId());
+            ->when(function_exists('parentId') && tenantKey(), function ($q) {
+                return $q->where('parent_id', tenantKey());
             })
             ->distinct()
             ->orderByDesc('year')

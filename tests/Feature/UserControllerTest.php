@@ -469,6 +469,35 @@ class UserControllerTest extends TestCase
         $this->assertSame($this->owner->id, (int) $supportRow->fresh()->parent_id);
     }
 
+    /**
+     * BAN-315 excludes user and role rows on purpose. An owner's parent_id is
+     * the super admin who created them -- that is what makes the owner
+     * resolvable from users.index -- so routing this through the new helper
+     * would have pointed the first owner at themselves.
+     */
+    public function test_owner_creation_still_stamps_the_creating_super_admin(): void
+    {
+        $this->owner->forceDelete();
+
+        $superAdmin = User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('create user');
+        Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
+
+        $this->actingAs($superAdmin)
+            ->post(route('users.store'), [
+                'name'     => 'First Owner',
+                'email'    => 'first@test.com',
+                'password' => 'password123',
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertDatabaseHas('users', [
+            'email'     => 'first@test.com',
+            'type'      => 'owner',
+            'parent_id' => $superAdmin->id,
+        ]);
+    }
+
     // ── UserController::create ────────────────────────────────────────────────
 
     public function test_create_requires_auth(): void

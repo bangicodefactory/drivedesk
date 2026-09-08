@@ -46,10 +46,10 @@ class SignatureController extends Controller
     }
     public function create(){    
         
-        $users = User::where('id', parentId())->orderBy('created_at', 'desc')->get();
+        $users = User::where('id', tenantKey())->orderBy('created_at', 'desc')->get();
         
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
                    ->where('type', 'driver')
                    ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                    ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
@@ -179,7 +179,7 @@ class SignatureController extends Controller
             return $query;
         }
 
-        $tenantId = parentId();
+        $tenantId = tenantKey();
 
         return $query->where(function ($q) use ($tenantId) {
             $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);

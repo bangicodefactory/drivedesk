@@ -36,7 +36,7 @@ class RentalAgreementController extends Controller
                 ->filter(fn ($label, $key) => $search !== '' && (stripos($label, $search) !== false || stripos($key, $search) !== false))
                 ->keys()
                 ->all();
-            $agreements = RentalAgreement::where('parent_id', parentId())
+            $agreements = RentalAgreement::where('parent_id', tenantKey())
                 ->select(['id', 'agreement_id', 'date', 'rental_start_date', 'rental_end_date', 'rental_duration', 'status', 'driver', 'vehicle', 'created_at'])
                 ->with(['drivers:id,name', 'vehicles:id,name,license_plate'])
                 ->when($search !== '', function ($q) use ($search, $statusKeys) {
@@ -82,15 +82,15 @@ class RentalAgreementController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())
+            $drivers = User::where('parent_id', tenantKey())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                 ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
-            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
 
             $defaultTerms = rentalAgreementTerms();
             return Inertia::render('RentalAgreement/Create', [
@@ -135,7 +135,7 @@ class RentalAgreementController extends Controller
             // Warn-and-override — block unless acknowledged; the React picker
             // surfaces the warning so this is the server-side safety net.
             $driverIds = array_values(array_filter([$request->driver, $request->driver2]));
-            $blacklists = DriverBlacklist::where('parent_id', parentId())
+            $blacklists = DriverBlacklist::where('parent_id', tenantKey())
                 ->whereIn('driver_user_id', $driverIds)
                 ->whereNull('lifted_at')
                 ->get();
@@ -163,7 +163,7 @@ class RentalAgreementController extends Controller
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
-            $rentalAgreement->parent_id = parentId();
+            $rentalAgreement->parent_id = tenantKey();
             $rentalAgreement->save();
 
             // Record an override per blacklisted driver if the owner proceeded.
@@ -173,7 +173,7 @@ class RentalAgreementController extends Controller
 
             $user = User::find($request->driver);
             $module = 'new_agreement';
-            $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+            $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
             $setting = settings();
             $errorMessage = '';
             if (!empty($notification) && $notification->enabled_email == 1) {
@@ -208,12 +208,12 @@ class RentalAgreementController extends Controller
                 }
 
                 // Use an existing place (e.g. Tetouan) or first place for parent; fallback 0
-                $defaultPlaceId = Place::where('parent_id', parentId())
+                $defaultPlaceId = Place::where('parent_id', tenantKey())
                     ->where(function ($q) {
                         $q->where('name', 'Tetouan')->orWhere('city', 'Tetouan');
                     })
                     ->value('id')
-                    ?? Place::where('parent_id', parentId())->value('id')
+                    ?? Place::where('parent_id', tenantKey())->value('id')
                     ?? 0;
                 $booking->pickup_address = $defaultPlaceId;
                 $booking->drop_off_address = $defaultPlaceId;
@@ -253,7 +253,7 @@ class RentalAgreementController extends Controller
                     'name' => $vehicle->name,
                     'license_plate' => $vehicle->license_plate,
                 ];
-                $booking->parent_id = parentId();
+                $booking->parent_id = tenantKey();
                 $booking->daily_price_final = $dailyPrice;
                 $booking->save();
             }
@@ -363,9 +363,9 @@ class RentalAgreementController extends Controller
     public function edit(RentalAgreement $rentalAgreement)
     {
         if (\Auth::user()->can('edit rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
+            $drivers = User::where('parent_id', tenantKey())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
 
             $status = RentalAgreement::$status;
 
@@ -432,7 +432,7 @@ class RentalAgreementController extends Controller
             if ($agreementStatus) {
                 $user = User::find($request->driver);
                 $module = 'agreement_status';
-                $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+                $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
                 $setting = settings();
                 $errorMessage = '';
                 if (!empty($notification) && $notification->enabled_email == 1) {
@@ -471,7 +471,7 @@ class RentalAgreementController extends Controller
 
     public function agreementNumber()
     {
-        $latest = RentalAgreement::where('parent_id', parentId())->latest()->first();
+        $latest = RentalAgreement::where('parent_id', tenantKey())->latest()->first();
         if (!$latest) {
             return 1;
         }

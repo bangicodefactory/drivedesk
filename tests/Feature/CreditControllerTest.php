@@ -123,6 +123,31 @@ class CreditControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * BAN-316. CreditController guards show/edit/update/destroy on
+     * `parent_id != parentId()` with no super-admin exemption, and index()
+     * filters the same way -- so stamping the row with the customer's id while
+     * the guards resolved through the super admin's own left support able to
+     * create a credit and then denied on opening it.
+     */
+    public function test_support_can_open_the_credit_it_just_created(): void
+    {
+        $superAdmin = \App\Models\User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('manage driver');   // the permission CreditController actually checks
+
+        $this->actingAs($superAdmin)
+            ->post(route('credit.store'), $this->validCreditPayload())
+            ->assertRedirect();
+
+        $credit = \App\Models\Credit::withoutGlobalScope('tenant')->orderByDesc('id')->first();
+
+        $this->assertSame($this->owner->id, (int) $credit->parent_id);
+
+        $this->actingAs($superAdmin)
+            ->get(route('credit.edit', $credit->id))
+            ->assertOk();
+    }
+
     public function test_store_logs_credit_action(): void
     {
         $this->actingAs($this->owner)
