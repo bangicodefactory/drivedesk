@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -85,13 +86,14 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                 <TableHead>{t('License Plate')}</TableHead>
                                 <TableHead>{t('Registration Expiration Date')}</TableHead>
                                 <TableHead>{t('Engine Type')}</TableHead>
+                                <TableHead>{t('Available for Rent')}</TableHead>
                                 {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {vehicles.data.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                                         {search ? t('No vehicles match your search') : t('No vehicles yet')}
                                     </TableCell>
                                 </TableRow>
@@ -105,6 +107,13 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                     <TableCell>{v.license_plate}</TableCell>
                                     <TableCell>{v.registration_expiry_date_display ?? '-'}</TableCell>
                                     <TableCell>{v.engine_type}</TableCell>
+                                    <TableCell>
+                                        {v.available_for_rent ? (
+                                            <Badge variant="success">{t('Available')}</Badge>
+                                        ) : (
+                                            <Badge variant="secondary">{t('Unavailable')}</Badge>
+                                        )}
+                                    </TableCell>
                                     {showActions && (
                                         <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show vehicle') && (
