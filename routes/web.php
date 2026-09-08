@@ -599,6 +599,26 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
         ->only(['index', 'show'])
         ->middleware(['auth', 'XSS']);
 
+    // Public booking wizard. Named /reserve rather than /booking because
+    // Route::resource('booking', BookingController::class) already owns
+    // GET/POST /booking for the admin CRUD.
+    //
+    // Guarded by feature:public_storefront (CLAUDE.md 10.2 rule 3). Its
+    // siblings above -- /car/{id} and /booking_request -- are not, which is a
+    // gap of their own rather than a precedent: a client whose public face is
+    // the B2B demo gateway must 404 here, not serve a full B2C booking flow to
+    // the audience it sells the platform to (BAN-261).
+    Route::middleware('feature:public_storefront')->group(function () {
+        Route::get('/reserve', [RequestBookingController::class, 'create'])
+            ->name('reserve.create');
+
+        // Signed: booking_requests carries a guest's name, email and phone and
+        // is neither tenant- nor auth-scoped, so the id alone must not be
+        // enough to open one.
+        Route::get('/reserve/confirmation/{bookingRequest}', [RequestBookingController::class, 'confirmation'])
+            ->middleware('signed')->name('reserve.confirmation');
+    });
+
 // BAN-51 smoke-test — remove after Hello.tsx is verified
 Route::get('/hello', fn () => Inertia::render('Hello'))->name('inertia.hello');
 
