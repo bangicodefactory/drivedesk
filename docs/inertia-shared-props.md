@@ -41,7 +41,6 @@ overrides live in `config/clients/<client>.php`.
 |------|---------|-------------|
 | `paypal` | `true` | PayPal checkout |
 | `stripe` | `true` | Stripe checkout |
-| `subscriptions` | `true` | Subscription billing |
 | `booking_payment` | `true` | Payment step in booking flow |
 | `excel_import` | `true` | Excel bulk-import |
 | `multi_branch` | `false` | Multi-branch fleet management |
