@@ -59,6 +59,13 @@ class ClientInstall extends Command
             count($skipped),
         ));
 
+        // settings() caches its row set for five minutes. Without this, branding
+        // seeded here stays invisible for the rest of that window to anything
+        // that already warmed the cache this run -- one guest request to the
+        // storefront is enough -- so a fresh install looks unbranded and the
+        // cause is invisible.
+        flushSettingsCache();
+
         return self::SUCCESS;
     }
 }
