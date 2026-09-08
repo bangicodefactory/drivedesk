@@ -228,6 +228,75 @@ class RequestBookingControllerTest extends TestCase
             ->assertSessionHasErrors(['vehicle_id', 'name', 'email', 'phone_number']);
     }
 
+    // ── optional customer details ───────────────────────────────
+
+    public function test_store_booking_persists_customer_details_when_provided(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Fatima Z',
+            'email'              => 'fatima@example.com',
+            'phone_number'       => '+212600000010',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'age'                => 28,
+            'nationality'        => 'Marocaine',
+            'driving_experience' => 5,
+            'passengers'         => 2,
+            'whatsapp'           => '+212600000011',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'age'                => 28,
+            'nationality'        => 'Marocaine',
+            'driving_experience' => 5,
+            'passengers'         => 2,
+            'whatsapp'           => '+212600000011',
+        ]);
+    }
+
+    public function test_store_booking_persists_the_chosen_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000020',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'cmi',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    public function test_store_booking_rejects_an_unknown_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000021',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'bitcoin',
+        ])->assertSessionHasErrors(['payment_preference']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
     // ── RequestBookingController::confirmBooking ──────────────────────────────
 
     public function test_confirm_booking_converts_request_to_booking(): void
