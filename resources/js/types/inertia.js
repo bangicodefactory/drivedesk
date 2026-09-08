@@ -60,7 +60,6 @@
  * @typedef {Object} ClientFeatures
  * @property {boolean} paypal
  * @property {boolean} stripe
- * @property {boolean} subscriptions
  * @property {boolean} booking_payment
  * @property {boolean} excel_import
  * @property {boolean} multi_branch

@@ -206,32 +206,28 @@ class UserControllerTest extends TestCase
 
     // ── UserController::loggedHistory ─────────────────────────────────────────
 
+    /**
+     * BAN-317/318. This route renders logged_history/index.blade.php, which
+     * extends layouts.app, which @includes admin.menu -- and that menu called
+     * \App\Models\Subscription::find() on a model BAN-199 had deleted, behind
+     * `feature('subscriptions')`, true for drivedesk. A hard 500 in production
+     * that this test could not see, because asClient('acme') set the flag false
+     * and short-circuited before the missing class: the trap CLAUDE.md 10.2.6
+     * describes. The flag is now retired outright, so there is no switch left to
+     * force.
+     *
+     * The assertion is on `codex-sidebar`, the wrapper class in admin/menu.blade.php
+     * and nowhere else in resources/views. An earlier version asserted
+     * 'Logged History', which this view emits itself in its title and breadcrumb
+     * -- it would stay green with the @include removed entirely, so it proved
+     * nothing about the menu it claimed to cover.
+     */
     public function test_logged_history_returns_200_for_authorized_user(): void
     {
-        $this->actingAs($this->owner)->get(route('logged.history'))->assertOk();
-    }
-
-    /**
-     * BAN-317: this route renders resources/views/logged_history/index.blade.php,
-     * which extends layouts.app, which @includes admin.menu -- and line 5 of that
-     * menu calls \App\Models\Subscription::find(). BAN-199 deleted that model.
-     * The call is behind `feature('subscriptions')`, which is TRUE for drivedesk,
-     * so the page is a hard 500 in production.
-     *
-     * The suite could not see it: test_logged_history_returns_200_for_authorized_user
-     * above asserts 200 and passes, because asClient('acme') sets
-     * subscriptions => false and short-circuits before the missing class. That is
-     * exactly the trap CLAUDE.md 10.2.6 describes -- a suite inheriting a client
-     * config that hides the defect -- so this forces the flag instead of
-     * inheriting it.
-     */
-    public function test_logged_history_renders_with_subscriptions_enabled(): void
-    {
-        config(['client.features.subscriptions' => true]);
-
         $this->actingAs($this->owner)
             ->get(route('logged.history'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('codex-sidebar');
     }
 
     /**
@@ -251,8 +247,6 @@ class UserControllerTest extends TestCase
      */
     public function test_a_pricing_only_role_does_not_get_an_empty_settings_heading(): void
     {
-        config(['client.features.subscriptions' => true]);
-
         foreach (['manage logged history', 'manage pricing packages', 'manage pricing transation'] as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }

@@ -28,6 +28,49 @@ class ClientFeatureMatrixTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
+    /**
+     * Globbed, not a list of client names. The invariant is that the key does
+     * not return *anywhere* in the resolution chain, and a named list cannot
+     * enforce that: the next client config is usually copied from an existing
+     * one (CLAUDE.md 10.2.7), and config/clients/marruecar.php on the unmerged
+     * scaffold branch still carries the line today. A hardcoded
+     * ['drivedesk','acme'] would stay green while it came back.
+     */
+    public function test_no_client_config_declares_a_subscription_flag(): void
+    {
+        // ?: [] on both -- glob() returns false, not [], when a directory cannot
+        // be read, and array_merge(false, ...) is a TypeError in PHP 8. That
+        // would kill the suite before reaching the guard below, which exists to
+        // explain exactly that situation.
+        $files = array_merge(
+            glob(config_path('clients/*.php')) ?: [],
+            glob(base_path('tests/Fixtures/clients/*.php')) ?: []
+        );
+
+        $this->assertNotEmpty($files, 'no client configs found to check');
+
+        foreach ($files as $file) {
+            $config = require $file;
+            $this->assertArrayNotHasKey(
+                'subscriptions',
+                $config['features'] ?? [],
+                basename($file)
+            );
+        }
+
+        $this->assertArrayNotHasKey('subscriptions', require config_path('features.php'));
+    }
+
+    public function test_no_client_resolves_a_subscription_capability(): void
+    {
+        foreach (['drivedesk', 'acme'] as $client) {
+            $this->asClient($client);
+
+            $this->assertArrayNotHasKey('subscriptions', config('client.features', []), $client);
+            $this->assertFalse(feature('subscriptions'), $client);
+        }
+    }
+
     public function test_drivedesk_keeps_its_full_demo_surface(): void
     {
         // All four are `true` in _default.php; drivedesk is the showcase tenant
@@ -36,8 +79,15 @@ class ClientFeatureMatrixTest extends TestCase
 
         $this->assertTrue(feature('paypal'));
         $this->assertTrue(feature('stripe'));
-        $this->assertTrue(feature('subscriptions'));
         $this->assertTrue(feature('booking_payment'));
+
+        // BAN-318: DriveDesk provides no subscription capability. Asserted as an
+        // absent *key*, not a false value -- a false flag is a switch someone can
+        // flip, and this is a product decision, not a toggle. If the key comes
+        // back anywhere in the resolution chain, this fails.
+        $this->assertArrayNotHasKey('subscriptions', config('client.features', []));
+        $this->assertArrayNotHasKey('subscriptions', config('features', []));
+        $this->assertFalse(feature('subscriptions'));
 
         $this->assertTrue(feature('cash_split'));
         $this->assertTrue(feature('invoice_on_full_payment'));

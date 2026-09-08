@@ -10,7 +10,6 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        'subscriptions'   => true,
         'booking_payment' => true,
         'excel_import'    => true,
         'multi_branch'    => false,

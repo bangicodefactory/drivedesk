@@ -22,7 +22,6 @@ return [
     'features' => [
         'paypal'                  => false,
         'stripe'                  => false,
-        'subscriptions'           => false,
         'booking_payment'         => false,
         'excel_import'            => true,
         'multi_branch'            => false,
