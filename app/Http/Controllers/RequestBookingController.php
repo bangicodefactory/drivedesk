@@ -176,6 +176,10 @@ class RequestBookingController extends Controller
      */
     public function index()
     {
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $bookingRequests = BookingRequest::with(['guest', 'car'])->latest()->get();
 
         return Inertia::render('BookingRequest/Index', [
@@ -193,6 +197,10 @@ class RequestBookingController extends Controller
 
     public function show($id)
     {
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $bookingId = is_string($id) ? Crypt::decrypt($id) : $id;
         $booking = BookingRequest::with(['guest', 'car', 'pickupPlace', 'dropOffPlace'])->findOrFail($bookingId);
 

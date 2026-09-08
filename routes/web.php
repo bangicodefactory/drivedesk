@@ -583,7 +583,14 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
 });
     Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
     Route::post('/booking_request', [RequestBookingController::class, 'storeBooking'])->name('booking.store_request');
-    Route::resource('booking_requests', RequestBookingController::class);
+    // BAN-322: the admin-side listing of booking requests. Registered here
+    // beside the public storefront endpoints it shares a controller with, it
+    // inherited their lack of auth -- so `GET /booking_requests` served every
+    // request in the database, with guest names, to anyone. `auth` closes that;
+    // the `manage booking` check lives in the controller, matching how every
+    // other admin action in this app gates itself.
+    Route::resource('booking_requests', RequestBookingController::class)
+        ->middleware(['auth', 'XSS']);
 
 // BAN-51 smoke-test — remove after Hello.tsx is verified
 Route::get('/hello', fn () => Inertia::render('Hello'))->name('inertia.hello');
