@@ -1401,5 +1401,9 @@
     "That role name is reserved.": "Ce nom de rôle est réservé.",
   "Available for Rent": "Disponible à la location",
   "Available": "Disponible",
-  "Unavailable": "Indisponible"
+  "Unavailable": "Indisponible",
+  "WhatsApp": "WhatsApp",
+  "Nationality": "Nationalité",
+  "Years Driving": "Années de permis",
+  "Payment Preference": "Mode de paiement souhaité"
 }

@@ -1390,5 +1390,10 @@
     "That role name is reserved.": "هذا اسم الدور محجوز.",
     "Available for Rent": "متاحة للإيجار",
     "Available": "متاحة",
-    "Unavailable": "غير متاحة"
+    "Unavailable": "غير متاحة",
+    "WhatsApp": "واتساب",
+    "Nationality": "الجنسية",
+    "Years Driving": "سنوات القيادة",
+    "Passengers": "عدد الركاب",
+    "Payment Preference": "طريقة الدفع المفضلة"
 }
