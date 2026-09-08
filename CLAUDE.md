@@ -301,6 +301,18 @@ must follow.
   database, own domain, own hosting, sharing nothing with another
   customer. `drivedesk` is currently the only variant, and it is the
   product's own demo/reference tenant.
+- **MarrueCar is not a client. It is design inspiration.** MarrueCar is a
+  real rental agency in Tetouan whose storefront and brand we look at
+  when designing the public B2C surface. It is *not* a variant, a
+  customer, or a deployment: there is no `config/clients/marruecar.php`,
+  no `app/Clients/MarrueCar/`, no CI matrix entry and no
+  `production-marruecar` environment, and none should be created.
+  `drivedesk` stays the only variant and the demo client we build and
+  demo against. Work that came out of looking at MarrueCar — the
+  storefront, the booking wizard, the visual language — lands as **core
+  product** behind the existing `public_storefront` flag, not as a second
+  client. Treat "onboard MarrueCar" in any older branch, plan or doc as
+  a mistake to unwind, not an instruction to follow.
 - **Per-customer configuration is only partly built. Do not assume a new
   customer needs no repo change.** Feature flags have an env path
   (`FEATURE_*`, read by `config/features.php`) and branding lives in the
@@ -441,4 +453,4 @@ structure — e.g. Phase 5 surfaces `features` as Inertia shared props.
 - `docs/client-configurability.md` — multi-client architecture deep-dive
 - `docs/deploy.md` — deploy runbook for `drivedesk.ma` (Namecheap cPanel; source of truth)
 
-Last updated: 2026-09-04.
+Last updated: 2026-09-08.
