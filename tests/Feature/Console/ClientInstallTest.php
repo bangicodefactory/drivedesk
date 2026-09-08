@@ -125,7 +125,10 @@ class ClientInstallTest extends TestCase
         config(['clients.acme.branding_seed' => ['app_name' => 'Survives The Stop']]);
 
         try {
-            $this->seed();
+            // Not $this->seed(): db:seed is a ConfirmableCommand, so in a
+            // production environment it asks "do you really wish to run this?"
+            // and the mocked console output has no answer for it.
+            $this->artisan('db:seed', ['--force' => true])->run();
         } catch (\RuntimeException $e) {
             // Expected: DevDataSeeder refuses to fabricate business data here.
             // Anything else propagates and fails the test, which is right.
