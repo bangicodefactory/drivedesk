@@ -263,16 +263,41 @@ install, or a restore.
    flag on for that client and the `manage tva` permission. Check both before
    you run `--apply`, or you will hit collisions with no way to resolve them.
 
-**`--apply` is refused while `demo_gateway` is on, and that is correct.** On
-`drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
-hard-deletes every `tvas` row belonging to the first owner. A NULL-owner
-invoice does not match that delete and survives; giving it an owner would hand
-it to the next run. The NULL rows on a demo deployment are `TvaSeeder` noise,
-so there is nothing there to repair. **The current `drivedesk.ma` deployment
-therefore needs no backfill — this step exists for the first non-demo
-customer.**
+   **`--apply` is refused while `demo_gateway` is on, and that is correct.** On
+   `drivedesk` it is on, because `demo:seed` runs nightly at 03:30 and
+   hard-deletes every `tvas` row belonging to the first owner. A NULL-owner
+   invoice does not match that delete and survives; giving it an owner would hand
+   it to the next run. The NULL rows on a demo deployment are `TvaSeeder` noise,
+   so there is nothing there to repair. **The current `drivedesk.ma` deployment
+   therefore needs no backfill — this step exists for the first non-demo
+   customer.**
 
+4. **Report on untenanted booking requests**, then repair them:
 
+   ```bash
+   php artisan booking-requests:backfill-parent-id --list=100000 > /tmp/br-backfill.txt
+   less /tmp/br-backfill.txt
+
+   php artisan booking-requests:backfill-parent-id --apply   # only after reading it
+   ```
+
+   `storeBooking()` never assigned `booking_requests.parent_id` before BAN-327,
+   so every request taken through the public form sits at the column default of
+   `0` and belongs to no tenant. New requests are stamped from the vehicle as of
+   that change; this repairs the older ones.
+
+   Attribution is unambiguous here — `booking_requests.vehicle` carries a real
+   foreign key and `vehicles.parent_id` is the tenant — so this is a much
+   quieter run than the invoice one above. Two things to look for anyway: rows
+   reported as *unattributable* (their vehicle has no tenant either, so they are
+   left alone and stay repairable), and the warning that the rows would split
+   across more than one tenant. A deployment holds one business owner, so a
+   split means either a second owner exists or vehicles were imported across
+   tenants — confirm which before applying.
+
+   Unlike the invoice backfill, this one is safe on `drivedesk`:
+   `booking_requests` is not in `DemoSeed::REFRESHED_TABLES`, so nothing wipes
+   the repaired rows overnight.
 ---
 
 ## Appendix A — No-Redis option (host without Redis)

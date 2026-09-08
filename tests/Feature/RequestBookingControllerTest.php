@@ -353,6 +353,66 @@ class RequestBookingControllerTest extends TestCase
         $this->assertDatabaseCount('booking_requests', 0);
     }
 
+    // ── tenancy ──────────────────────────────────────────────
+
+    /**
+     * BAN-327. storeBooking() never assigned parent_id, so every request a real
+     * deployment has ever taken sits at the column default of 0 -- belonging to
+     * no tenant at all. The submitter is a guest, so the tenant has to come from
+     * the requested vehicle, exactly as the place validation above already does.
+     */
+    public function test_a_public_request_carries_the_vehicles_tenant(): void
+    {
+        $this->post(route('booking.store_request'), $this->publicPayload([
+            'email' => 'tenant-check@example.com',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'vehicle'   => $this->vehicle->id,
+            'parent_id' => $this->owner->id,
+        ]);
+        $this->assertDatabaseMissing('booking_requests', ['parent_id' => 0]);
+    }
+
+    /**
+     * The knock-on defect. confirmBooking() numbers the Booking it creates with
+     * RequestBookingController::bookingNumber(), which reads the highest
+     * `booking_id` from *booking_requests* -- a column nothing ever writes,
+     * filtered by a parent_id nothing ever set. It therefore returned 1 every
+     * single time, so every booking approved from a request was numbered 1,
+     * colliding with each other and with the agency's real sequence.
+     */
+    public function test_approving_a_request_continues_the_tenants_booking_numbering(): void
+    {
+        Booking::factory()->create([
+            'parent_id'  => $this->owner->id,
+            'vehicle'    => $this->vehicle->id,
+            'booking_id' => 7,
+        ]);
+
+        $guest = Guest::factory()->create();
+        $req   = BookingRequest::factory()->create([
+            'driver'           => $guest->id,
+            'vehicle'          => $this->vehicle->id,
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'status'           => 'pending',
+            'parent_id'        => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('booking_requests.approve', $req->id))
+            ->assertSessionHas('success');
+
+        $created = Booking::where('parent_id', $this->owner->id)
+            ->where('status', 'confirmed')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($created);
+        $this->assertSame(8, (int) $created->booking_id, 'approved request restarted the booking numbering');
+    }
+
     // ── RequestBookingController::confirmBooking ──────────────────────────────
 
     public function test_confirm_booking_converts_request_to_booking(): void

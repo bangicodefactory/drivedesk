@@ -223,6 +223,13 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             // The tenant, taken from the vehicle rather than from Auth -- the
+             // submitter is a guest. Same source the place validation above
+             // uses (BAN-297), so a request cannot straddle two tenants. Left
+             // unset, this stayed at the column default of 0 and the row
+             // belonged to nobody: invisible to any scoped query, and the
+             // reason booking-request numbering never worked.
+             $booking->parent_id = (int) $vehicleTenantId;
              $booking->age = $request->age;
              $booking->nationality = $request->nationality;
              $booking->driving_experience = $request->driving_experience;
@@ -356,9 +363,29 @@ class RequestBookingController extends Controller
         ]);
     }
 
+    /**
+     * The next booking number for this tenant.
+     *
+     * Reads `bookings`, not `booking_requests`. It used to read the latter --
+     * whose `booking_id` column nothing writes, under a parent_id nothing set
+     * -- so it returned 1 unconditionally and every booking approved from a
+     * request was numbered 1. Mirrors BookingController::bookingNumber(),
+     * which is what numbers a booking created by hand.
+     */
     public function bookingNumber()
     {
-        $latest = BookingRequest::where('parent_id', tenantKey())->latest()->first();
+        // Ordered by booking_id, not by latest(). created_at is second-precision
+        // with no unique index on booking_id, and the Excel import creates many
+        // bookings inside one second -- among those the tie-break is arbitrary,
+        // so latest() can return a row that is not the highest-numbered and the
+        // next approval reuses a number. BookingController::bookingNumber() has
+        // the same shape and the same flaw; it is left for its own ticket
+        // rather than bundled into a change about booking requests.
+        //
+        // This does not make the read safe under concurrency: two staff
+        // approving at the same moment still read the same maximum. Closing
+        // that needs a lock at both call sites.
+        $latest = Booking::where('parent_id', tenantKey())->orderByDesc('booking_id')->first();
         if (!$latest) {
             return 1;
         }
