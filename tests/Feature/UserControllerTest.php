@@ -235,13 +235,21 @@ class UserControllerTest extends TestCase
     }
 
     /**
-     * The same menu links four routes that do not exist -- subscriptions.index,
-     * subscription.transaction, coupons.index, coupons.history -- behind a
-     * `manage pricing packages` gate that IS seeded and IS granted to the
-     * super-admin role, so a super admin rendering the page hits
-     * RouteNotFoundException rather than the missing model.
+     * The pricing permissions were the *other* half of the dead menu: they gated
+     * links to subscriptions.index, subscription.transaction, coupons.index and
+     * coupons.history, four routes that do not exist.
+     *
+     * They never actually threw, and an earlier version of this docblock said
+     * they did. The Subscription::find() call sat in the @php block at the top of
+     * admin/menu.blade.php, so it killed the request before any menu markup was
+     * evaluated -- the route() calls further down were unreachable.
+     *
+     * What this user now pins is the leftover: `manage pricing packages` and
+     * `manage pricing transation` still gated the "System Settings" heading whose
+     * only pricing entries were removed, so a role holding just those rendered a
+     * section header with nothing under it.
      */
-    public function test_logged_history_renders_for_a_super_admin_with_pricing_permissions(): void
+    public function test_a_pricing_only_role_does_not_get_an_empty_settings_heading(): void
     {
         config(['client.features.subscriptions' => true]);
 
@@ -255,7 +263,9 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($superAdmin)
             ->get(route('logged.history'))
-            ->assertOk();
+            ->assertOk()
+            // Nothing in the section is reachable for this role any more.
+            ->assertDontSee('System Settings');
     }
 
     // ── UserController::loggedHistoryDestroy ──────────────────────────────────

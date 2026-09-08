@@ -1,7 +1,5 @@
 @php
     $admin_logo = getSettingsValByName('company_logo');
-    $ids = parentId();
-    $authUser = \App\Models\User::find($ids);
     $routeName = \Request::route()->getName();
 @endphp
 <aside class="codex-sidebar sidebar-{{ $settings['sidebar_mode'] }}">
@@ -293,9 +291,7 @@
 
 
             @endif
-            @if (Gate::check('manage pricing packages') ||
-                    Gate::check('manage pricing transation') ||
-                    Gate::check('manage account settings') ||
+            @if (Gate::check('manage account settings') ||
                     Gate::check('manage password settings') ||
                     Gate::check('manage general settings') ||
                     Gate::check('manage company settings'))
