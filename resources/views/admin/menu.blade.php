@@ -2,7 +2,6 @@
     $admin_logo = getSettingsValByName('company_logo');
     $ids = parentId();
     $authUser = \App\Models\User::find($ids);
-    $subscription = feature('subscriptions') ? \App\Models\Subscription::find($authUser->subscription) : null;
     $routeName = \Request::route()->getName();
 @endphp
 <aside class="codex-sidebar sidebar-{{ $settings['sidebar_mode'] }}">
@@ -69,7 +68,7 @@
                                 </li>
                             @endif
 
-                            @if (Gate::check('manage logged history') && (!feature('subscriptions') || ($subscription && $subscription->enabled_logged_history == 1)))
+                            @if (Gate::check('manage logged history'))
                                 <li class="{{ in_array($routeName, ['logged.history']) ? 'active' : '' }}">
                                     <a href="{{ route('logged.history') }}">{{ __('Logged History') }}</a>
                                 </li>
@@ -303,51 +302,6 @@
                 <li class="cdxmenu-title">
                     <h5>{{ __('System Settings') }}</h5>
                 </li>
-                @if (feature('subscriptions') && (Gate::check('manage pricing packages') || Gate::check('manage pricing transation')))
-                    <li
-                        class="menu-item {{ in_array($routeName, ['subscriptions.index', 'subscriptions.show', 'subscription.transaction']) ? 'active' : '' }}">
-                        <a href="javascript:void(0);">
-                            <div class="icon-item"><i data-feather="database"></i></div>
-                            <span>{{ __('Pricing') }}</span><i class="fa fa-angle-down"></i>
-                        </a>
-                        <ul class="submenu-list"
-                            style="display: {{ in_array($routeName, ['subscriptions.index', 'subscriptions.show', 'subscription.transaction']) ? 'block' : 'none' }}">
-                            @if (Gate::check('manage pricing packages'))
-                                <li
-                                    class="{{ in_array($routeName, ['subscriptions.index', 'subscriptions.show']) ? 'active' : '' }}">
-                                    <a href="{{ route('subscriptions.index') }}">{{ __('Packages') }}</a>
-                                </li>
-                            @endif
-                            @if (Gate::check('manage pricing transation'))
-                                <li class="{{ in_array($routeName, ['subscription.transaction']) ? 'active' : '' }} ">
-                                    <a href="{{ route('subscription.transaction') }}">{{ __('Transactions') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                @if (feature('subscriptions') && (Gate::check('manage coupon') || Gate::check('manage coupon history')))
-                    <li
-                        class="menu-item {{ in_array($routeName, ['coupons.index', 'coupons.history']) ? 'active' : '' }}">
-                        <a href="javascript:void(0);">
-                            <div class="icon-item"><i data-feather="gift"></i></div>
-                            <span>{{ __('Coupons') }}</span><i class="fa fa-angle-down"></i>
-                        </a>
-                        <ul class="submenu-list"
-                            style="display: {{ in_array($routeName, ['coupons.index', 'coupons.history']) ? 'block' : 'none' }}">
-                            @if (Gate::check('manage coupon'))
-                                <li class="{{ in_array($routeName, ['coupons.index']) ? 'active' : '' }}">
-                                    <a href="{{ route('coupons.index') }}">{{ __('All Coupon') }}</a>
-                                </li>
-                            @endif
-                            @if (Gate::check('manage coupon history'))
-                                <li class="{{ in_array($routeName, ['coupons.history']) ? 'active' : '' }}">
-                                    <a href="{{ route('coupons.history') }}">{{ __('Coupon History') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
                 @if (Gate::check('manage account settings') ||
                         Gate::check('manage password settings') ||
                         Gate::check('manage general settings') ||
