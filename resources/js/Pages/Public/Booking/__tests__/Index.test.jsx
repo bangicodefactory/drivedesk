@@ -23,10 +23,17 @@ beforeEach(() => {
     vi.mocked(usePage).mockReturnValue({ props: { translations: {} } });
 });
 
-/** Turn the online-payment option on for the tests that are about it. */
+/**
+ * Turn the online-payment option on for the tests that are about it.
+ *
+ * Shaped like the real shared props: HandleInertiaRequests puts the flags
+ * under `client.features`, and there is no top-level `features`. The mock used
+ * to invent one, which is how the page came to read a path that does not
+ * exist -- the test agreed with the bug instead of catching it.
+ */
 function withOnlinePayment() {
     vi.mocked(usePage).mockReturnValue({
-        props: { translations: {}, features: { booking_payment: true } },
+        props: { translations: {}, client: { features: { booking_payment: true } } },
     });
 }
 

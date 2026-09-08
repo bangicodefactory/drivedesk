@@ -155,7 +155,13 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     // charge a card -- so the online option only appears where a deployment
     // has deliberately turned booking_payment on. It is off everywhere today,
     // which makes this step cash-only in practice.
-    const onlinePaymentEnabled = Boolean(usePage().props.features?.booking_payment);
+    //
+    // client.features, not features: HandleInertiaRequests shares the flags
+    // inside buildClient(), and there is no top-level `features` prop. Reading
+    // the wrong path happened to give the right answer -- undefined is falsy,
+    // and the flag is off everywhere -- so the option could never have been
+    // turned on.
+    const onlinePaymentEnabled = Boolean(usePage().props.client?.features?.booking_payment);
 
     const vehicleId = watch('vehicle_id');
     const startDate = watch('start_date');
