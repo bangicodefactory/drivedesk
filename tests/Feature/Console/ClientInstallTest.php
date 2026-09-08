@@ -54,8 +54,8 @@ class ClientInstallTest extends TestCase
         // settings() memoises its row set for 5 minutes. Warm that cache the
         // way a guest request would -- before any branding exists -- and the
         // freshly seeded values stay invisible for the rest of the window.
-        // This is not hypothetical: seeding MarrueCar's WhatsApp number after
-        // /reserve had already been hit once produced exactly this.
+        // This is not hypothetical: seeding a contact number after the public
+        // storefront had already been requested once produced exactly this.
         $this->assertSame('', settings()['app_name']);
 
         config(['clients.acme.branding_seed' => ['app_name' => 'Acme Rentals']]);

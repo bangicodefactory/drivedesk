@@ -31,10 +31,10 @@ class ClientFeatureMatrixTest extends TestCase
     /**
      * Globbed, not a list of client names. The invariant is that the key does
      * not return *anywhere* in the resolution chain, and a named list cannot
-     * enforce that: the next client config is usually copied from an existing
-     * one (CLAUDE.md 10.2.7), and config/clients/marruecar.php on the unmerged
-     * scaffold branch still carries the line today. A hardcoded
-     * ['drivedesk','acme'] would stay green while it came back.
+     * enforce that: a new client config is written by copying an existing one
+     * (CLAUDE.md 10.2.7), and the removed key rides along in the copy. A
+     * hardcoded ['drivedesk','acme'] would stay green while it came back in a
+     * file the list does not name.
      */
     public function test_no_client_config_declares_a_subscription_flag(): void
     {
