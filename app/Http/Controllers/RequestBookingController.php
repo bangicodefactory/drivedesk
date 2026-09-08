@@ -179,6 +179,15 @@ class RequestBookingController extends Controller
      */
     public function index()
     {
+        // dashboard, not back(): url()->previous() prefers the Referer, and for
+        // a request coming *from* this page -- an Inertia partial reload after
+        // the account's permission is revoked mid-session -- that is this page,
+        // so back() 302s to itself until the browser gives up. The two guarded
+        // routes can also ping-pong off each other's stored previous URL.
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->route('dashboard')->with('error', __('Permission Denied.'));
+        }
+
         $bookingRequests = BookingRequest::with(['guest', 'car'])->latest()->get();
 
         return Inertia::render('BookingRequest/Index', [
@@ -196,6 +205,11 @@ class RequestBookingController extends Controller
 
     public function show($id)
     {
+        // See the note in index(): back() on a GET guard can redirect to itself.
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->route('dashboard')->with('error', __('Permission Denied.'));
+        }
+
         $bookingId = is_string($id) ? Crypt::decrypt($id) : $id;
         $booking = BookingRequest::with(['guest', 'car', 'pickupPlace', 'dropOffPlace'])->findOrFail($bookingId);
 
