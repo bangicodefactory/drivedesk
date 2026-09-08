@@ -28,6 +28,16 @@ class ClientFeatureMatrixTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
+    public function test_no_client_ships_a_subscription_capability(): void
+    {
+        foreach (['drivedesk', 'acme'] as $client) {
+            $this->asClient($client);
+
+            $this->assertArrayNotHasKey('subscriptions', config('client.features', []), $client);
+            $this->assertFalse(feature('subscriptions'), $client);
+        }
+    }
+
     public function test_drivedesk_keeps_its_full_demo_surface(): void
     {
         // All four are `true` in _default.php; drivedesk is the showcase tenant
@@ -36,8 +46,15 @@ class ClientFeatureMatrixTest extends TestCase
 
         $this->assertTrue(feature('paypal'));
         $this->assertTrue(feature('stripe'));
-        $this->assertTrue(feature('subscriptions'));
         $this->assertTrue(feature('booking_payment'));
+
+        // BAN-318: DriveDesk provides no subscription capability. Asserted as an
+        // absent *key*, not a false value -- a false flag is a switch someone can
+        // flip, and this is a product decision, not a toggle. If the key comes
+        // back anywhere in the resolution chain, this fails.
+        $this->assertArrayNotHasKey('subscriptions', config('client.features', []));
+        $this->assertArrayNotHasKey('subscriptions', config('features', []));
+        $this->assertFalse(feature('subscriptions'));
 
         $this->assertTrue(feature('cash_split'));
         $this->assertTrue(feature('invoice_on_full_payment'));

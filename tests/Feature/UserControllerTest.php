@@ -214,21 +214,17 @@ class UserControllerTest extends TestCase
     /**
      * BAN-317: this route renders resources/views/logged_history/index.blade.php,
      * which extends layouts.app, which @includes admin.menu -- and line 5 of that
-     * menu calls \App\Models\Subscription::find(). BAN-199 deleted that model.
-     * The call is behind `feature('subscriptions')`, which is TRUE for drivedesk,
-     * so the page is a hard 500 in production.
+     * menu called \App\Models\Subscription::find() on a model BAN-199 deleted,
+     * behind `feature('subscriptions')`, which was TRUE for drivedesk. A hard 500.
      *
-     * The suite could not see it: test_logged_history_returns_200_for_authorized_user
-     * above asserts 200 and passes, because asClient('acme') sets
-     * subscriptions => false and short-circuits before the missing class. That is
-     * exactly the trap CLAUDE.md 10.2.6 describes -- a suite inheriting a client
-     * config that hides the defect -- so this forces the flag instead of
-     * inheriting it.
+     * The suite could not see it, because asClient('acme') set
+     * subscriptions => false and short-circuited before the missing class -- the
+     * trap CLAUDE.md 10.2.6 describes. BAN-317 forced the flag to expose it;
+     * BAN-318 then retired the flag outright, so there is no longer a switch to
+     * force. What remains worth guarding is that the page renders at all.
      */
-    public function test_logged_history_renders_with_subscriptions_enabled(): void
+    public function test_logged_history_renders(): void
     {
-        config(['client.features.subscriptions' => true]);
-
         $this->actingAs($this->owner)
             ->get(route('logged.history'))
             ->assertOk();
@@ -243,8 +239,6 @@ class UserControllerTest extends TestCase
      */
     public function test_logged_history_renders_for_a_super_admin_with_pricing_permissions(): void
     {
-        config(['client.features.subscriptions' => true]);
-
         foreach (['manage logged history', 'manage pricing packages', 'manage pricing transation'] as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
