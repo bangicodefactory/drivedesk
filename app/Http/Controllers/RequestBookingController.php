@@ -94,6 +94,19 @@ class RequestBookingController extends Controller
              'notes'            => 'nullable|string',
              'company_name'     => 'nullable|string',
              'city'             => 'nullable|string',
+             // Optional customer details. The existing storefront form
+             // (CarDetails.jsx) sends none of them, so every rule is nullable
+             // and that path is unaffected -- the columns exist for the fuller
+             // booking flow that collects them.
+             'age'                => 'nullable|integer|min:18|max:100',
+             'nationality'        => 'nullable|string|max:80',
+             'driving_experience' => 'nullable|integer|min:0|max:80',
+             'passengers'         => 'nullable|integer|min:1|max:9',
+             'whatsapp'           => 'nullable|string|max:30',
+             // What the customer said they intend to pay with. Nothing is
+             // charged: no gateway is integrated anywhere in this codebase.
+             // It records the intent so staff know how to follow up.
+             'payment_preference' => 'nullable|in:cash,paypal,cmi',
          ]);
 
          if ($validator->fails()) {
@@ -148,6 +161,12 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             $booking->age = $request->age;
+             $booking->nationality = $request->nationality;
+             $booking->driving_experience = $request->driving_experience;
+             $booking->passengers = $request->passengers;
+             $booking->whatsapp = $request->whatsapp;
+             $booking->payment_preference = $request->payment_preference;
 
              $booking->vehicle_details = json_encode([
                 'name'          => $vehicle->name,
