@@ -64,7 +64,13 @@ class ClientInstall extends Command
         // that already warmed the cache this run -- one guest request to the
         // storefront is enough -- so a fresh install looks unbranded and the
         // cause is invisible.
-        flushSettingsCache();
+        //
+        // Pinned to 1 because that is what this command writes, unconditionally
+        // (see firstOrCreate above). The no-argument form keys off the acting
+        // account, which is only ever 1 here by luck: an invocation with someone
+        // authenticated -- Artisan::call from a request, or a test that
+        // actingAs() first -- would forget their bucket and leave this one stale.
+        flushSettingsCache(1);
 
         return self::SUCCESS;
     }

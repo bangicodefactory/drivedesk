@@ -3,7 +3,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,6 +13,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        // Branding first, deliberately. client:install seeds the active client's
+        // Setting rows -- app name, logo, contact details -- and it must not be
+        // a casualty of an optional step failing: DevDataSeeder below hard-stops
+        // on a non-demo client in production, and firstOrFail()s when no owner
+        // exists (the web installer's path, where DefaultDataUsersTableSeeder
+        // skips its body). Last in the list, branding would be skipped in
+        // exactly the cases where a deployment most needs it.
+        //
+        // Order also matters the other way: DevDataSeeder reads settings() and
+        // stamps company_name/company_address onto every demo facture it
+        // generates, so running after this gives those the client's real
+        // identity instead of settingsKeys() defaults.
+        //
+        // $this->command->call (not Artisan::call) so a "No branding_seed found"
+        // warning reaches the operator instead of a discarded buffer.
+        // Idempotent (firstOrCreate); CI runs it as its own step too.
+        $this->command->call('client:install');
+
         $this->call([
             DefaultDataUsersTableSeeder::class,
             AllReminderPermissionsSeeder::class,
@@ -21,13 +38,5 @@ class DatabaseSeeder extends Seeder
             DriverSeeder::class,
             DevDataSeeder::class,
         ]);
-
-        // client:install seeds the active client's branding (Setting rows) --
-        // app name, logo, contact details. It is a standalone artisan command
-        // rather than a Seeder class (deploys and CI run it as their own step),
-        // but without it here a plain `migrate:fresh --seed` leaves the
-        // deployment nameless until someone runs it by hand. firstOrCreate, so
-        // running it twice is a no-op.
-        Artisan::call('client:install');
     }
 }

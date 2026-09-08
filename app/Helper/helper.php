@@ -156,9 +156,20 @@ if (!function_exists('settings')) {
 }
 
 if (!function_exists('flushSettingsCache')) {
-    function flushSettingsCache(): void
+    /**
+     * Forget one tenant's cached settings.
+     *
+     * Defaults to the acting account's bucket, which is right for a caller that
+     * just saved its own settings. A caller that writes to a *fixed* tenant has
+     * to say so: client:install always writes parent_id = 1, so keying off
+     * whoever happens to be authenticated would forget the wrong bucket and
+     * leave the written one stale -- the exact staleness the flush exists to
+     * prevent. The key recipe stays here rather than being spelled out at the
+     * call site.
+     */
+    function flushSettingsCache(?int $userId = null): void
     {
-        $userId = \Auth::check() ? parentId() : 1;
+        $userId ??= \Auth::check() ? parentId() : 1;
         Cache::forget("settings_{$userId}");
     }
 }
