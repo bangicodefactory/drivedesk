@@ -228,6 +228,129 @@ class RequestBookingControllerTest extends TestCase
             ->assertSessionHasErrors(['vehicle_id', 'name', 'email', 'phone_number']);
     }
 
+    // ── optional customer details ───────────────────────────────
+
+    public function test_store_booking_persists_customer_details_when_provided(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Fatima Z',
+            'email'              => 'fatima@example.com',
+            'phone_number'       => '+212600000010',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'age'                => 28,
+            'nationality'        => 'Marocaine',
+            'driving_experience' => 5,
+            'passengers'         => 2,
+            'whatsapp'           => '+212600000011',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'age'                => 28,
+            'nationality'        => 'Marocaine',
+            'driving_experience' => 5,
+            'passengers'         => 2,
+            'whatsapp'           => '+212600000011',
+        ]);
+    }
+
+    public function test_store_booking_persists_the_chosen_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000020',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'cmi',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    public function test_store_booking_rejects_paypal_as_a_payment_preference(): void
+    {
+        // PayPal is inert in this codebase -- no package, no route, no webhook
+        // -- so recording it as an intent would send staff chasing a method the
+        // business cannot take.
+        $this->post(route('booking.store_request'), $this->publicPayload([
+            'payment_preference' => 'paypal',
+        ]))->assertSessionHasErrors(['payment_preference']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
+    public function test_store_booking_rejects_a_driver_under_eighteen(): void
+    {
+        $this->post(route('booking.store_request'), $this->publicPayload(['age' => 17]))
+            ->assertSessionHasErrors(['age']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
+    /**
+     * The cap is the car's seat count, not a fixed number: a 15-seat minibus
+     * has to take a 12-passenger booking, and a 4-seater must not take 9.
+     */
+    public function test_store_booking_rejects_more_passengers_than_the_car_seats(): void
+    {
+        $small = Vehicle::factory()->create([
+            'parent_id'       => $this->owner->id,
+            'number_of_seats' => 4,
+        ]);
+
+        $this->post(route('booking.store_request'), $this->publicPayload([
+            'vehicle_id' => $small->id,
+            'passengers' => 5,
+        ]))->assertSessionHasErrors(['passengers']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
+    public function test_store_booking_accepts_passengers_up_to_the_seat_count(): void
+    {
+        $minibus = Vehicle::factory()->create([
+            'parent_id'       => $this->owner->id,
+            'number_of_seats' => 15,
+        ]);
+
+        $this->post(route('booking.store_request'), $this->publicPayload([
+            'vehicle_id' => $minibus->id,
+            'passengers' => 12,
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', ['passengers' => 12]);
+    }
+
+    public function test_store_booking_rejects_an_unknown_payment_preference(): void
+    {
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'         => $this->vehicle->id,
+            'name'               => 'Karim B',
+            'email'              => 'karim@example.com',
+            'phone_number'       => '+212600000021',
+            'pickup_address'     => $this->pickup->id,
+            'drop_off_address'   => $this->dropOff->id,
+            'start_date'         => '2026-07-01',
+            'end_date'           => '2026-07-04',
+            'start_time'         => '09:00',
+            'end_time'           => '18:00',
+            'payment_preference' => 'bitcoin',
+        ])->assertSessionHasErrors(['payment_preference']);
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
     // ── RequestBookingController::confirmBooking ──────────────────────────────
 
     public function test_confirm_booking_converts_request_to_booking(): void
@@ -390,6 +513,27 @@ class RequestBookingControllerTest extends TestCase
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * A valid public booking submission. Overrides carry the one field a test
+     * is actually about, so a failure cannot be a missing-required-field
+     * accident somewhere else in the form.
+     */
+    private function publicPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'vehicle_id'       => $this->vehicle->id,
+            'name'             => 'Karim B',
+            'email'            => 'karim@example.com',
+            'phone_number'     => '+212600000030',
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-07-01',
+            'end_date'         => '2026-07-04',
+            'start_time'       => '09:00',
+            'end_time'         => '18:00',
+        ], $overrides);
+    }
 
     private function makeRequest(array $overrides = []): BookingRequest
     {

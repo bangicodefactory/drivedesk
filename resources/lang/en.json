@@ -901,5 +901,10 @@
     "That role name is reserved.": "That role name is reserved.",
     "Available for Rent": "Available for Rent",
     "Available": "Available",
-    "Unavailable": "Unavailable"
+    "Unavailable": "Unavailable",
+    "WhatsApp": "WhatsApp",
+    "Nationality": "Nationality",
+    "Years Driving": "Years Driving",
+    "Passengers": "Passengers",
+    "Payment Preference": "Payment Preference"
 }

@@ -97,6 +97,31 @@ class RequestBookingController extends Controller
              'notes'            => 'nullable|string',
              'company_name'     => 'nullable|string',
              'city'             => 'nullable|string',
+             // Optional customer details. The existing storefront form
+             // (CarDetails.jsx) sends none of them, so every rule is nullable
+             // and that path is unaffected -- the columns exist for the fuller
+             // booking flow that collects them.
+             'age'                => 'nullable|integer|min:18|max:100',
+             'nationality'        => 'nullable|string|max:80',
+             'driving_experience' => 'nullable|integer|min:0|max:80',
+             // Bounded by the actual vehicle: a 15-seat minibus should take a
+             // 12-passenger booking, and a 2-seater should not take 9. Falls
+             // back to a permissive ceiling when the vehicle does not resolve
+             // -- the vehicle_id rule fails that request anyway.
+             'passengers'         => 'nullable|integer|min:1|max:'
+                 . (Vehicle::whereKey($request->input('vehicle_id'))->value('number_of_seats') ?: 60),
+             'whatsapp'           => 'nullable|string|max:30',
+             // What the customer said they intend to pay with. Nothing is
+             // charged: no gateway is integrated anywhere in this codebase.
+             // It records the intent so staff know how to follow up.
+             //
+             // No 'paypal'. PayPal is inert here -- no package, no route, no
+             // webhook -- and it is not a method a Moroccan agency's customers
+             // reach for; offering it as an intent would have staff following
+             // up on a method the business cannot take. CMI is the real card
+             // gateway and stays, as a stated intent only, until its callback
+             // exists behind feature('booking_payment').
+             'payment_preference' => 'nullable|in:cash,cmi',
          ]);
 
          if ($validator->fails()) {
@@ -151,6 +176,12 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             $booking->age = $request->age;
+             $booking->nationality = $request->nationality;
+             $booking->driving_experience = $request->driving_experience;
+             $booking->passengers = $request->passengers;
+             $booking->whatsapp = $request->whatsapp;
+             $booking->payment_preference = $request->payment_preference;
 
              $booking->vehicle_details = json_encode([
                 'name'          => $vehicle->name,
@@ -229,6 +260,15 @@ class RequestBookingController extends Controller
                 'pickup_place' => $booking->pickupPlace?->name,
                 'dropoff_place'=> $booking->dropOffPlace?->name,
                 'notes'        => $booking->notes,
+                // Optional details the storefront may have collected. Null for
+                // every request taken before they existed, and for the simpler
+                // form that does not ask -- the page renders a dash.
+                'age'                => $booking->age,
+                'nationality'        => $booking->nationality,
+                'driving_experience' => $booking->driving_experience,
+                'passengers'         => $booking->passengers,
+                'whatsapp'           => $booking->whatsapp,
+                'payment_preference' => $booking->payment_preference,
             ],
         ]);
     }
