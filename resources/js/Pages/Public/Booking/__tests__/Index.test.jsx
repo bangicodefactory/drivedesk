@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { router } from '@inertiajs/react';
 import Booking from '@/Pages/Public/Booking/Index';
+import { usePage } from '@inertiajs/react';
 
 vi.mock('@inertiajs/react', () => ({
     usePage: vi.fn(() => ({ props: { translations: {} } })),
@@ -17,7 +18,17 @@ beforeEach(() => {
     // from a prior test (e.g. one that always calls options.onSuccess) would
     // otherwise blow up a later test whose call site has no onSuccess at all.
     vi.mocked(router.get).mockReset();
+    // Default: no online payment. booking_payment is off for every client
+    // today, so this is what a real visitor sees.
+    vi.mocked(usePage).mockReturnValue({ props: { translations: {} } });
 });
+
+/** Turn the online-payment option on for the tests that are about it. */
+function withOnlinePayment() {
+    vi.mocked(usePage).mockReturnValue({
+        props: { translations: {}, features: { booking_payment: true } },
+    });
+}
 
 const vehicles = [
     { id: 1, name: 'Renault Clio', model: '2024', daily_rate: 350, number_of_seats: 5, gearbox: 'Manuelle', fuel_type: 'Diesel', picture: null },
@@ -157,18 +168,29 @@ describe('Public/Booking/Index', () => {
             expect(screen.queryByText('Choisissez votre moyen de paiement en ligne')).not.toBeInTheDocument();
         });
 
-        it('reveals PayPal/CMI and keeps submit disabled until one is picked', async () => {
+        it('offers no online payment while booking_payment is off', async () => {
+            await reachPaymentStep();
+
+            // The flag is off for every client today, and no gateway is wired to
+            // anything, so cash at the agency is the only choice on offer.
+            expect(screen.queryByText('Paiement en Ligne')).not.toBeInTheDocument();
+            expect(screen.getByText('Paiement à la Livraison')).toBeInTheDocument();
+        });
+
+        it('reveals CMI and keeps submit disabled until it is picked', async () => {
+            withOnlinePayment();
             await reachPaymentStep();
 
             fireEvent.click(screen.getByText('Paiement en Ligne'));
             expect(screen.getByText('Choisissez votre moyen de paiement en ligne')).toBeInTheDocument();
             expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeDisabled();
 
-            fireEvent.click(screen.getByText('PayPal'));
+            fireEvent.click(screen.getByText('CMI'));
             expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
         });
 
         it('submits the chosen payment_preference to booking.store_request', async () => {
+            withOnlinePayment();
             await reachPaymentStep();
 
             fireEvent.click(screen.getByText('Paiement en Ligne'));

@@ -17,7 +17,7 @@ import Stepper from '@/components/booking/Stepper';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
-    Banknote, CreditCard, Wallet,
+    Banknote, CreditCard,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -37,7 +37,7 @@ const schema = z.object({
     whatsapp: z.string().optional(),
     email: z.string().email('Adresse email invalide.'),
     termsAccepted: z.boolean().refine((v) => v === true, { message: "Vous devez accepter les termes et conditions." }),
-    payment_preference: z.enum(['cash', 'paypal', 'cmi'], { message: 'Veuillez choisir un mode de paiement.' }),
+    payment_preference: z.enum(['cash', 'cmi'], { message: 'Veuillez choisir un mode de paiement.' }),
 });
 
 // Fields that belong to step 3 (customer info) — validated before advancing
@@ -149,8 +149,13 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const { register, control, watch, setValue, trigger, formState: { errors, isSubmitting } } = form;
     // 'cash' | 'online' | null — which top-level choice is highlighted on the
     // payment step. Separate from payment_preference because "online" alone
-    // isn't a complete choice until PayPal or CMI is picked underneath it.
+    // isn't a complete choice until a gateway is picked underneath it.
     const [paymentMode, setPaymentMode] = useState(null);
+    // No gateway is integrated yet -- no route, no callback, nothing that can
+    // charge a card -- so the online option only appears where a deployment
+    // has deliberately turned booking_payment on. It is off everywhere today,
+    // which makes this step cash-only in practice.
+    const onlinePaymentEnabled = Boolean(usePage().props.features?.booking_payment);
 
     const vehicleId = watch('vehicle_id');
     const startDate = watch('start_date');
@@ -218,7 +223,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const choosePaymentMode = (mode) => {
         setPaymentMode(mode);
         // Picking "cash" is itself a complete choice; picking "online" still
-        // needs PayPal or CMI underneath it, so don't set a value yet.
+        // needs a gateway underneath it, so don't set a value yet.
         setValue('payment_preference', mode === 'cash' ? 'cash' : undefined, { shouldValidate: true });
     };
 
@@ -457,6 +462,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                                             <p className="text-sm text-muted-foreground">{t('payment_cash_desc', 'Payez en espèces au bureau')}</p>
                                         </div>
                                     </div>
+                                    {onlinePaymentEnabled && (
                                     <div
                                         onClick={() => choosePaymentMode('online')}
                                         role="button" tabIndex={0}
@@ -468,26 +474,16 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                                         <CreditCard className="h-6 w-6 text-primary shrink-0" strokeWidth={1.5} />
                                         <div>
                                             <p className="font-medium">{t('payment_online', 'Paiement en Ligne')}</p>
-                                            <p className="text-sm text-muted-foreground">{t('payment_online_desc', 'PayPal ou CMI')}</p>
+                                            <p className="text-sm text-muted-foreground">{t('payment_online_desc', 'Carte bancaire (CMI)')}</p>
                                         </div>
                                     </div>
+                                    )}
                                 </div>
 
-                                {paymentMode === 'online' && (
+                                {onlinePaymentEnabled && paymentMode === 'online' && (
                                     <div className="mt-4 p-4 rounded-xl bg-muted/40 border border-border/60 space-y-3">
                                         <p className="text-sm font-medium">{t('payment_choose_gateway', 'Choisissez votre moyen de paiement en ligne')}</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div
-                                                onClick={() => setValue('payment_preference', 'paypal', { shouldValidate: true })}
-                                                role="button" tabIndex={0}
-                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setValue('payment_preference', 'paypal', { shouldValidate: true }); }}
-                                                className={`flex items-center gap-2 p-3 rounded-xl border bg-card cursor-pointer transition-colors ${
-                                                    paymentPreference === 'paypal' ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
-                                                }`}
-                                            >
-                                                <Wallet className="h-5 w-5 text-primary shrink-0" strokeWidth={1.5} />
-                                                <span className="font-medium">PayPal</span>
-                                            </div>
+                                        <div className="grid grid-cols-1 gap-3">
                                             <div
                                                 onClick={() => setValue('payment_preference', 'cmi', { shouldValidate: true })}
                                                 role="button" tabIndex={0}
