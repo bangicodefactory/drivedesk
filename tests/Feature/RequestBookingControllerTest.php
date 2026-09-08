@@ -302,6 +302,26 @@ class RequestBookingControllerTest extends TestCase
             );
     }
 
+    /**
+     * BAN-321: a vehicle withdrawn from the storefront must not reappear as a
+     * "similar car" suggestion on another vehicle's page -- that route is the
+     * one place a guest could still be offered it.
+     */
+    public function test_car_details_excludes_similar_cars_marked_unavailable_for_rent(): void
+    {
+        $hidden = Vehicle::factory()->create([
+            'parent_id'          => $this->owner->id,
+            'type'               => $this->vehicle->type,
+            'available_for_rent' => false,
+        ]);
+
+        $this->get(route('client.details', $this->vehicle->id))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/CarDetails')
+                ->where('similarCars', fn ($cars) => collect($cars)->pluck('id')->doesntContain($hidden->id))
+            );
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function makeRequest(array $overrides = []): BookingRequest

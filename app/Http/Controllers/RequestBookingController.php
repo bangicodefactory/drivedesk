@@ -32,6 +32,9 @@ class RequestBookingController extends Controller
         // the global tenant scope is inert here and parent_id is applied by hand.
         $similarCars = Vehicle::with('types')->where('id', '!=', $id)
             ->where('parent_id', $car->parent_id)
+            // A vehicle withdrawn from the storefront must not come back as a
+            // suggestion -- that is the whole point of the flag.
+            ->where('available_for_rent', true)
             ->where(function ($query) use ($car) {
                 $query->where('type', $car->type)
                     ->orWhere('fuel_type', $car->fuel_type)
