@@ -184,25 +184,25 @@ class SettingController extends Controller
                 Custom::setCommon($array);
             }
 
-            if ($request->logo) {
+            if ($request->hasFile('logo')) {
                 $superadminLogoName = 'logo.png';
                 $request->file('logo')->storeAs('upload/logo/', $superadminLogoName, 'public');
             }
 
-            if ($request->landing_logo) {
+            if ($request->hasFile('landing_logo')) {
                 $superadminLandLogoName = 'landing_logo.png';
                 $request->file('landing_logo')->storeAs('upload/logo/', $superadminLandLogoName, 'public');
             }
 
-            if ($request->favicon) {
+            if ($request->hasFile('favicon')) {
                 $superadminFavicon = 'favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
-            if ($request->favicon) {
+            if ($request->hasFile('favicon')) {
                 $superadminFavicon = 'favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
-            if ($request->favicon) {
+            if ($request->hasFile('favicon')) {
                 $superadminFavicon = 'favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $superadminFavicon, 'public');
             }
@@ -212,7 +212,17 @@ class SettingController extends Controller
             // too, so a fixed ".png" suffix would silently mislabel them.
             foreach (['image_home_1', 'image_home_2', 'image_home_1_desktop', 'image_home_1_mobile', 'image_home_2_desktop', 'image_home_2_mobile'] as $field) {
                 if ($request->hasFile($field)) {
-                    $request->file($field)->storeAs('upload/home/', "{$field}." . $request->file($field)->extension(), 'public');
+                    $fileName = "{$field}." . $request->file($field)->extension();
+                    $request->file($field)->storeAs('upload/home/', $fileName, 'public');
+                    // The row, not just the file. HomeController reads Setting
+                    // rows to find a banner; writing only to disk meant a super
+                    // admin was told the upload succeeded while the storefront
+                    // kept its gradient. parent_id = 1 is the global bucket
+                    // ClientInstall seeds and the guest fallback reads.
+                    \DB::insert(
+                        'insert into settings (`value`, `name`, `parent_id`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+                        [$fileName, $field, 1]
+                    );
                 }
             }
 
@@ -248,7 +258,7 @@ class SettingController extends Controller
                 );
             }
 
-            if ($request->logo) {
+            if ($request->hasFile('logo')) {
                 $ownerLogoName = parentId() . '_logo.png';
                 $request->file('logo')->storeAs('upload/logo/', $ownerLogoName, 'public');
 
@@ -262,7 +272,7 @@ class SettingController extends Controller
                 );
             }
 
-            if ($request->favicon) {
+            if ($request->hasFile('favicon')) {
                 $ownerFaviconName = parentId() . '_favicon.png';
                 $request->file('favicon')->storeAs('upload/logo/', $ownerFaviconName, 'public');
 

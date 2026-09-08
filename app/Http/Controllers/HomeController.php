@@ -19,6 +19,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -79,16 +80,19 @@ class HomeController extends Controller
             }
             // Demo/showcase clients (feature 'demo_gateway') serve a public
             // marketing landing at / with a "Book a demo" form. Every other
-            // tenant stays internal-only and redirects to login (BAN-241) —
-            // unless it runs a B2C rental storefront (`public_storefront`),
-            // in which case / is that storefront's home instead of a dead end.
-            // Checked after demo_gateway so a client can't enable both and get
-            // an ambiguous /.
+            // tenant stays internal-only and redirects to login (BAN-241).
+            //
+            // The storefront deliberately does NOT claim / here. public_storefront
+            // defaults to true in _default.php, so doing that would turn the root
+            // URL of every deployment except drivedesk into a public marketing
+            // page on upgrade, with no opt-in -- against CLAUDE.md 10.2 rule 2.
+            // The storefront home stays at /landing, where it already lives.
+            // Serving it at / is a real want, but it needs its own flag and it
+            // needs the invented content off the page first (BAN-261: /landing
+            // still ships four made-up testimonials and a hardcoded five-star,
+            // "2 Reviews" rating on every vehicle).
             if (feature('demo_gateway')) {
                 return Inertia::render('Public/DemoGateway');
-            }
-            if (feature('public_storefront')) {
-                return $this->landing();
             }
             return redirect()->route('login');
         }
@@ -303,7 +307,16 @@ class HomeController extends Controller
         // exactly one owner; with two it declines rather than picking one at
         // random, and this falls back to the global bucket. Guessing there
         // would show one customer's banner on another's storefront.
-        $ownerId = deploymentOwnerId() ?? 1;
+        $ownerId = deploymentOwnerId();
+        if ($ownerId === null) {
+            // Two owners: no knowable deployment tenant, so this falls back to
+            // the global bucket -- where an owner's own banner row does not
+            // live. The hero silently reverts to its gradient, which is
+            // indistinguishable from "no banner uploaded" unless it is said
+            // out loud somewhere.
+            Log::warning('landingProps: deployment has no single owner; hero banner falls back to parent_id=1.');
+            $ownerId = 1;
+        }
         // Hero is a single banner (not a carousel) — only image_home_1's keys
         // are read. image_home_2* Setting rows/upload fields still exist on
         // SettingController for backward compatibility with anything already

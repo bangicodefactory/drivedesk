@@ -98,16 +98,19 @@ class PublicStorefrontTest extends TestCase
         $this->get('/login')->assertOk();
     }
 
-    public function test_root_serves_the_storefront_home_for_clients_that_keep_it(): void
+    /**
+     * / stays a login redirect for a client with no demo gateway, even one that
+     * runs the storefront. public_storefront defaults to true, so serving the
+     * storefront at / would change the root URL of every deployment except
+     * drivedesk on upgrade, with no opt-in (CLAUDE.md 10.2 rule 2). The
+     * storefront home lives at /landing.
+     */
+    public function test_root_stays_a_login_redirect_for_a_storefront_client(): void
     {
-        // acme has no demo_gateway and keeps the storefront on by default —
-        // exactly the profile a real non-demo rental agency
-        // runs. / must not be a dead end (redirect to login) for them.
         $this->asClient('acme');
+        config(['client.features.public_storefront' => true]);
 
-        $this->get('/')
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Public/Landing'));
+        $this->get('/')->assertRedirect(route('login'));
     }
 
     public function test_landing_hides_vehicles_marked_unavailable_for_rent(): void
