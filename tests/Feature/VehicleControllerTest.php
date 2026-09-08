@@ -264,6 +264,24 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    public function test_store_defaults_available_for_rent_to_true_when_omitted(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Default Availability']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['name' => 'Default Availability', 'available_for_rent' => 1]);
+    }
+
+    public function test_store_persists_available_for_rent_false(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('vehicle.store'), $this->validPayload(['name' => 'Unavailable Car', 'available_for_rent' => '0']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['name' => 'Unavailable Car', 'available_for_rent' => 0]);
+    }
+
     // ── VehicleController::update ─────────────────────────────────────────────
 
     public function test_update_persists_changes(): void
@@ -276,6 +294,37 @@ class VehicleControllerTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('vehicles', ['id' => $vehicle->id, 'name' => 'New Car']);
+    }
+
+    public function test_update_persists_available_for_rent_false(): void
+    {
+        $vehicle = Vehicle::factory()->create(['parent_id' => $this->owner->id, 'available_for_rent' => true]);
+
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload(['available_for_rent' => '0']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['id' => $vehicle->id, 'available_for_rent' => 0]);
+    }
+
+    public function test_update_leaves_availability_alone_when_the_field_is_absent(): void
+    {
+        // A vehicle is taken off the storefront deliberately -- sold, in the
+        // workshop, reserved for the owner. An update that says nothing about
+        // availability must not put it back on sale. The edit form always sends
+        // the field, so this governs every other caller.
+        $vehicle = Vehicle::factory()->create([
+            'parent_id' => $this->owner->id,
+            'available_for_rent' => false,
+        ]);
+
+        // validPayload() carries no availability field at all -- that absence
+        // is the case under test.
+        $this->actingAs($this->owner)
+            ->put(route('vehicle.update', $vehicle), $this->validPayload())
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('vehicles', ['id' => $vehicle->id, 'available_for_rent' => 0]);
     }
 
     public function test_update_flashes_error_on_missing_name(): void

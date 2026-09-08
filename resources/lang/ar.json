@@ -1387,5 +1387,8 @@
     "Rental Agreement Terms": "شروط عقد الإيجار",
     "Leave blank to use the terms shipped with this deployment": "اتركه فارغًا لاستخدام الشروط الافتراضية.",
     "Printed on every rental agreement and its PDF.": "تُطبع على كل عقد إيجار وملفه.",
-    "That role name is reserved.": "هذا اسم الدور محجوز."
+    "That role name is reserved.": "هذا اسم الدور محجوز.",
+    "Available for Rent": "متاحة للإيجار",
+    "Available": "متاحة",
+    "Unavailable": "غير متاحة"
 }
