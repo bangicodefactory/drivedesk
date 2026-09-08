@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
+use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\AsInstalledApp;
 use Tests\Concerns\WithClient;
@@ -91,5 +96,68 @@ class PublicStorefrontTest extends TestCase
         $this->asClient('drivedesk');
 
         $this->get('/login')->assertOk();
+    }
+
+    /**
+     * / stays a login redirect for a client with no demo gateway, even one that
+     * runs the storefront. public_storefront defaults to true, so serving the
+     * storefront at / would change the root URL of every deployment except
+     * drivedesk on upgrade, with no opt-in (CLAUDE.md 10.2 rule 2). The
+     * storefront home lives at /landing.
+     */
+    public function test_root_stays_a_login_redirect_for_a_storefront_client(): void
+    {
+        $this->asClient('acme');
+        config(['client.features.public_storefront' => true]);
+
+        $this->get('/')->assertRedirect(route('login'));
+    }
+
+    public function test_landing_hides_vehicles_marked_unavailable_for_rent(): void
+    {
+        $this->asClient('acme');
+        $available = Vehicle::factory()->create(['available_for_rent' => true]);
+        $hidden    = Vehicle::factory()->create(['available_for_rent' => false]);
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($available->id)
+                && collect($vehicles)->pluck('id')->doesntContain($hidden->id))
+        );
+    }
+
+    // ── heroImage: single banner, desktop/mobile variants ─────────────────────
+
+    public function test_hero_image_falls_back_to_the_single_upload_for_both_devices(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('upload/home/1_image_home_1.png', 'fake');
+        Setting::create(['name' => 'image_home_1', 'value' => '1_image_home_1.png', 'parent_id' => 1]);
+        flushSettingsCache();
+
+        $this->asClient('acme');
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('heroImage.desktop', fn ($url) => str_ends_with($url, '1_image_home_1.png'))
+            ->where('heroImage.mobile', fn ($url) => str_ends_with($url, '1_image_home_1.png'))
+        );
+    }
+
+    public function test_hero_image_prefers_the_device_specific_variant_when_set(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('upload/home/1_image_home_1.png', 'fake');
+        Storage::disk('public')->put('upload/home/1_image_home_1_desktop.png', 'fake');
+        Storage::disk('public')->put('upload/home/1_image_home_1_mobile.png', 'fake');
+        Setting::create(['name' => 'image_home_1', 'value' => '1_image_home_1.png', 'parent_id' => 1]);
+        Setting::create(['name' => 'image_home_1_desktop', 'value' => '1_image_home_1_desktop.png', 'parent_id' => 1]);
+        Setting::create(['name' => 'image_home_1_mobile', 'value' => '1_image_home_1_mobile.png', 'parent_id' => 1]);
+        flushSettingsCache();
+
+        $this->asClient('acme');
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('heroImage.desktop', fn ($url) => str_ends_with($url, '1_image_home_1_desktop.png'))
+            ->where('heroImage.mobile', fn ($url) => str_ends_with($url, '1_image_home_1_mobile.png'))
+        );
     }
 }

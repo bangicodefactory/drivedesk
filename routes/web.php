@@ -550,6 +550,17 @@ if (app()->environment('local')) {
     Route::get('/sentry-test', function () {
         throw new \RuntimeException('Sentry smoke-test — intentional exception from /sentry-test');
     })->middleware('auth')->name('sentry.test');
+
+    // Preview the public B2C storefront home page regardless of the active
+    // APP_CLIENT / `public_storefront` flag — lets you eyeball the layout
+    // while developing without editing .env. Renders with whatever vehicles/
+    // places/branding the local DB and active client already have, so SEO
+    // meta and copy reflect the *actual* active client, not necessarily the
+    // client the storefront is being built for. Never registered outside
+    // `local` (no feature flag, no auth — would otherwise leak the storefront
+    // to any client regardless of its `public_storefront` setting).
+    Route::get('/dev/landing', [HomeController::class, 'landing'])
+        ->middleware('XSS')->name('dev.landing');
 }
 
 // genere tva par mois

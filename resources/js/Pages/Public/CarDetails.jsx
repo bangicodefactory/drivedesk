@@ -13,7 +13,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Star, Car, Fuel, Settings2, Wrench, Tag, Users, Calendar, MapPin } from 'lucide-react';
-import PublicLayout from '@/Layouts/PublicLayout';
+import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import FieldError from '@/components/FieldError';
 import { fieldA11y } from '@/lib/fieldA11y';
 
@@ -62,11 +62,11 @@ function CarDetails({ car, similarCars = [], places = [] }) {
     const { register, control, formState: { errors, isSubmitting } } = form;
 
     return (
-        <div className="space-y-12 py-8">
+        <div className="space-y-16 py-8">
 
-            <div className="border-b pb-4">
+            <div className="border-b border-border/60 pb-4">
                 <nav className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Link href={route('home')} className="hover:text-foreground">Home</Link>
+                    <Link href={route('home')} className="hover:text-foreground transition-colors">Home</Link>
                     <span>/</span>
                     <span>Cars</span>
                     <span>/</span>
@@ -76,11 +76,11 @@ function CarDetails({ car, similarCars = [], places = [] }) {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
 
-                <div className="space-y-10">
+                <div className="space-y-12">
 
                     <div className="space-y-4">
                         {car.picture && (
-                            <div className="overflow-hidden rounded-xl border">
+                            <div className="overflow-hidden rounded-xl border border-border/60">
                                 <img
                                     src={`/storage/${car.picture}`}
                                     alt={car.name}
@@ -90,17 +90,17 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         )}
                         <Stars />
                         <div>
-                            <h1 className="text-3xl font-bold">{car.name}</h1>
-                            <p className="text-2xl font-semibold text-primary mt-1">
+                            <h1 className="font-display text-4xl">{car.name}</h1>
+                            <p className="text-2xl font-display text-primary mt-1">
                                 MAD{Number(car.daily_rate ?? 0).toFixed(2)}
-                                <span className="text-base font-normal text-muted-foreground"> / Day</span>
+                                <span className="text-base font-sans font-normal text-muted-foreground"> / Day</span>
                             </p>
                         </div>
                         {car.notes && <p className="text-muted-foreground">{car.notes}</p>}
                     </div>
 
-                    <Card>
-                        <CardHeader><CardTitle>Key Features</CardTitle></CardHeader>
+                    <Card className="border-border/60 shadow-none">
+                        <CardHeader><CardTitle className="font-display text-2xl">Key Features</CardTitle></CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                                 {[
@@ -113,8 +113,8 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                     { icon: Wrench,   label: 'Engine',       value: car.engine_type ?? 'N/A' },
                                     { icon: Tag,      label: 'Model',        value: car.model ?? 'N/A' },
                                 ].map(({ icon: Icon, label, value }) => (
-                                    <div key={label} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                                        <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div key={label} className="flex items-start gap-3 p-3 rounded-lg border border-border/60">
+                                        <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" strokeWidth={1.5} />
                                         <div>
                                             <p className="text-xs text-muted-foreground">{label}</p>
                                             <p className="text-sm font-medium">{value}</p>
@@ -125,10 +125,10 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="border-border/60 shadow-none">
                         <CardHeader>
-                            <CardTitle>
-                                Price Table <span className="text-sm font-normal text-muted-foreground">(by day of the week)</span>
+                            <CardTitle className="font-display text-2xl">
+                                Price Table <span className="text-sm font-sans font-normal text-muted-foreground">(by day of the week)</span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -144,9 +144,9 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                         </CardContent>
                     </Card>
 
-                    <Card id="booking-form">
+                    <Card id="booking-form" className="border-border/60 shadow-none">
                         <CardHeader>
-                            <CardTitle>Request for Booking</CardTitle>
+                            <CardTitle className="font-display text-2xl">Request for Booking</CardTitle>
                             <p className="text-sm text-muted-foreground">
                                 Send your requirement to us. We will check email and contact you soon.
                             </p>
@@ -278,7 +278,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                     <Textarea id="notes" placeholder="Any special requirements..." rows={3} {...register('notes')} />
                                 </div>
 
-                                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
+                                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto rounded-full">
                                     {isSubmitting ? 'Sending…' : 'Send Request'}
                                 </Button>
                             </form>
@@ -286,12 +286,12 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                     </Card>
 
                     <div className="space-y-6">
-                        <h3 className="text-xl font-semibold">2 Reviews</h3>
+                        <h3 className="font-display text-2xl">2 Reviews</h3>
                         {[
                             { name: 'Khalid bensdik', text: 'It has survived not only five centuries, but also the into electronic typesetting simply fee text aunchanged. It was popularised in the sheets containing lorem ipsum is simply free text.' },
                             { name: 'Sarah Albert',   text: 'It has survived not only five centuries, but also the into electronic typesetting simply fee text aunchanged. It was popularised in the sheets containing lorem ipsum is simply free text.' },
                         ].map((review, i) => (
-                            <div key={i} className="flex gap-4 pb-6 border-b last:border-0">
+                            <div key={i} className="flex gap-4 pb-6 border-b border-border/60 last:border-0">
                                 <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center shrink-0 text-lg font-semibold">
                                     {review.name[0]}
                                 </div>
@@ -308,14 +308,14 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="sticky top-20">
+                    <Card className="sticky top-24 border-border/60 shadow-none">
                         <CardHeader>
                             <CardTitle className="text-lg">Book This Car</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="text-2xl font-bold text-primary">
+                            <div className="text-2xl font-display text-primary">
                                 MAD{Number(car.daily_rate ?? 0).toFixed(2)}
-                                <span className="text-sm font-normal text-muted-foreground"> / day</span>
+                                <span className="text-sm font-sans font-normal text-muted-foreground"> / day</span>
                             </div>
 
                             <Separator />
@@ -340,7 +340,7 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                             </div>
 
                             <a href="#booking-form">
-                                <Button className="w-full mt-2">Book Now</Button>
+                                <Button className="w-full mt-2 rounded-full">Book Now</Button>
                             </a>
 
                             <Separator />
@@ -355,14 +355,14 @@ function CarDetails({ car, similarCars = [], places = [] }) {
             </div>
 
             {similarCars.length > 0 && (
-                <div className="space-y-6">
-                    <div className="text-center space-y-1">
-                        <p className="text-sm text-primary font-medium uppercase tracking-wider">Checkout our new cars</p>
-                        <h2 className="text-2xl font-bold">Similar Cars Available</h2>
+                <div className="space-y-8">
+                    <div className="text-center space-y-2">
+                        <p className="eyebrow text-sm text-primary font-semibold">Checkout our new cars</p>
+                        <h2 className="font-display text-3xl">Similar Cars Available</h2>
                     </div>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {similarCars.map((c) => (
-                            <Card key={c.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                            <Card key={c.id} className="overflow-hidden border-border/60 shadow-none hover:shadow-lg hover:shadow-black/5 transition-shadow">
                                 {c.picture && (
                                     <img
                                         src={`/storage/${c.picture}`}
@@ -381,9 +381,9 @@ function CarDetails({ car, similarCars = [], places = [] }) {
                                             {c.name}
                                         </Link>
                                     </h4>
-                                    <p className="font-semibold text-primary">
+                                    <p className="font-display text-primary">
                                         MAD{Number(c.daily_rate ?? 0).toFixed(2)}
-                                        <span className="text-sm font-normal text-muted-foreground"> / day</span>
+                                        <span className="text-sm font-sans font-normal text-muted-foreground"> / day</span>
                                     </p>
                                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                         <span className="flex items-center gap-1">
@@ -406,5 +406,5 @@ function CarDetails({ car, similarCars = [], places = [] }) {
     );
 }
 
-CarDetails.layout = (page) => <PublicLayout>{page}</PublicLayout>;
+CarDetails.layout = (page) => <StorefrontLayout>{page}</StorefrontLayout>;
 export default CarDetails;

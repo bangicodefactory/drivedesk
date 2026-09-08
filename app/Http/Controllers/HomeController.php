@@ -14,10 +14,12 @@ use App\Models\Support;
 use App\Models\User;
 use App\Models\Place;
 use App\Models\Reminder;
+use App\Models\Setting;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -79,6 +81,16 @@ class HomeController extends Controller
             // Demo/showcase clients (feature 'demo_gateway') serve a public
             // marketing landing at / with a "Book a demo" form. Every other
             // tenant stays internal-only and redirects to login (BAN-241).
+            //
+            // The storefront deliberately does NOT claim / here. public_storefront
+            // defaults to true in _default.php, so doing that would turn the root
+            // URL of every deployment except drivedesk into a public marketing
+            // page on upgrade, with no opt-in -- against CLAUDE.md 10.2 rule 2.
+            // The storefront home stays at /landing, where it already lives.
+            // Serving it at / is a real want, but it needs its own flag and it
+            // needs the invented content off the page first (BAN-261: /landing
+            // still ships four made-up testimonials and a hardcoded five-star,
+            // "2 Reviews" rating on every vehicle).
             if (feature('demo_gateway')) {
                 return Inertia::render('Public/DemoGateway');
             }
@@ -284,19 +296,68 @@ class HomeController extends Controller
 
     private function landingProps(): array
     {
-        $s = settings();
-
-        $heroImages = [];
-        foreach (['image_home_1', 'image_home_2'] as $key) {
-            $path = 'upload/home/' . ($s[$key] ?? '');
-            $heroImages[] = Storage::exists($path) ? Storage::url($path) : null;
+        // Banners are the one branding value an *owner* uploads for themselves:
+        // SettingController's owner branch writes the row under parentId(), the
+        // owner's own id. settings()'s guest fallback reads parent_id = 1, which
+        // is right for everything ClientInstall seeds and wrong for this -- the
+        // seeder creates the super admin before the owner, so a real install's
+        // owner id is never 1 and their upload would never reach a visitor.
+        //
+        // deploymentOwnerId() (BAN-317) answers only when the deployment has
+        // exactly one owner; with two it declines rather than picking one at
+        // random, and this falls back to the global bucket. Guessing there
+        // would show one customer's banner on another's storefront.
+        $ownerId = deploymentOwnerId();
+        if ($ownerId === null) {
+            // Two owners: no knowable deployment tenant, so this falls back to
+            // the global bucket -- where an owner's own banner row does not
+            // live. The hero silently reverts to its gradient, which is
+            // indistinguishable from "no banner uploaded" unless it is said
+            // out loud somewhere.
+            Log::warning('landingProps: deployment has no single owner; hero banner falls back to parent_id=1.');
+            $ownerId = 1;
         }
+        // Hero is a single banner (not a carousel) — only image_home_1's keys
+        // are read. image_home_2* Setting rows/upload fields still exist on
+        // SettingController for backward compatibility with anything already
+        // stored, they're just no longer surfaced here.
+        $bannerKeys = ['image_home_1', 'image_home_1_desktop', 'image_home_1_mobile'];
+        $s = Setting::whereIn('name', $bannerKeys)->where('parent_id', $ownerId)->pluck('value', 'name')->all();
+
+        // Desktop/mobile variants take precedence; a deployment that never
+        // uploaded them falls back to the original single image for both, so
+        // existing uploads keep rendering exactly as before (CLAUDE.md §4 —
+        // no behavior change for existing rows).
+        $fallback = $this->heroImageUrl($s, 'image_home_1');
+        $heroImage = [
+            'desktop' => $this->heroImageUrl($s, 'image_home_1_desktop') ?? $fallback,
+            'mobile'  => $this->heroImageUrl($s, 'image_home_1_mobile') ?? $fallback,
+        ];
 
         return [
-            'vehicles'     => Vehicle::select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
+            'vehicles'     => Vehicle::where('available_for_rent', true)
+                ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
             'vehicleTypes' => VehicleType::select('id', 'type')->get(),
             'places'       => Place::select('id', 'name')->get(),
-            'heroImages'   => $heroImages,
+            'heroImage'    => $heroImage,
         ];
+    }
+
+    /** Public URL for a settings-stored home-banner file, or null if unset/missing. */
+    private function heroImageUrl(array $settings, string $key): ?string
+    {
+        if (empty($settings[$key])) {
+            return null;
+        }
+
+        // Must be the 'public' disk explicitly: SettingController::generalData()
+        // stores these via storeAs(..., 'public') (root storage/app/public), but
+        // the default disk here is 'local' (config/filesystems.php customizes its
+        // root to the bare storage/ path for this app's legacy upload layout) —
+        // an unqualified Storage::exists()/url() checks a different physical
+        // location and would always report "missing", silently keeping every
+        // hero banner on its gradient fallback regardless of what's uploaded.
+        $path = 'upload/home/' . $settings[$key];
+        return Storage::disk('public')->exists($path) ? Storage::disk('public')->url($path) : null;
     }
 }
