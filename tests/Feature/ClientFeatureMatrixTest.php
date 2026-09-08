@@ -38,9 +38,13 @@ class ClientFeatureMatrixTest extends TestCase
      */
     public function test_no_client_config_declares_a_subscription_flag(): void
     {
+        // ?: [] on both -- glob() returns false, not [], when a directory cannot
+        // be read, and array_merge(false, ...) is a TypeError in PHP 8. That
+        // would kill the suite before reaching the guard below, which exists to
+        // explain exactly that situation.
         $files = array_merge(
-            glob(config_path('clients/*.php')),
-            glob(base_path('tests/Fixtures/clients/*.php'))
+            glob(config_path('clients/*.php')) ?: [],
+            glob(base_path('tests/Fixtures/clients/*.php')) ?: []
         );
 
         $this->assertNotEmpty($files, 'no client configs found to check');

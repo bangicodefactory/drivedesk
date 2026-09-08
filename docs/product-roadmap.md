@@ -60,7 +60,7 @@ engineering view of the same question, reconciled with the code.
 
 ### Hygiene debt found on the way
 
-- 7 of 12 feature flags have **no enforcement point**: `paypal`, `stripe`,
+- 7 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
   `booking_payment`, `excel_import`, `multi_branch`, `tva_renumber`,
   `signatures`. Flipping them changes nothing.
   *(Updated BAN-318: `subscriptions` used to be the exception — seven
@@ -68,7 +68,8 @@ engineering view of the same question, reconciled with the code.
   the Logged History menu entry. One of those branches called a model BAN-199
   had deleted, so the flag being **true** for drivedesk 500'd that page in
   production (BAN-317). Both Blades are now clear of it and the flag is gone,
-  so the count is 12 rather than 13.)*
+  so the count is 13 rather than 14 — the original "13" was itself already
+  stale, written before `registration` was added.)*
 - `app/Http/Controllers/HomeController.php` imports five classes that do not
   exist (`Contact`, `Fuel`, `NoticeBoard`, `Service`, `Support`).
 - `routes/web.php`: `ui-test/*` (15 unauthenticated Blade previews) and

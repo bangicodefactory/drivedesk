@@ -216,15 +216,18 @@ class UserControllerTest extends TestCase
      * describes. The flag is now retired outright, so there is no switch left to
      * force.
      *
-     * assertSee, not a bare assertOk: the fatal was in the menu, and a 200 alone
-     * does not prove the menu rendered.
+     * The assertion is on `codex-sidebar`, the wrapper class in admin/menu.blade.php
+     * and nowhere else in resources/views. An earlier version asserted
+     * 'Logged History', which this view emits itself in its title and breadcrumb
+     * -- it would stay green with the @include removed entirely, so it proved
+     * nothing about the menu it claimed to cover.
      */
     public function test_logged_history_returns_200_for_authorized_user(): void
     {
         $this->actingAs($this->owner)
             ->get(route('logged.history'))
             ->assertOk()
-            ->assertSee('Logged History');
+            ->assertSee('codex-sidebar');
     }
 
     /**
