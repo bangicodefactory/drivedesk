@@ -24,6 +24,14 @@ class SettingControllerTest extends TestCase
         parent::setUp();
         $this->asClient('acme');
 
+        // A decoy user before the owner, matching DefaultDataUsersTableSeeder's
+        // real order (super admin created first) — otherwise $this->owner would
+        // land on id 1 in a fresh test DB and coincidentally match settings()'s
+        // guest-fallback parent_id, masking bugs like the one
+        // test_a_home_banner_uploaded_via_settings_reaches_the_public_landing_page_for_a_guest
+        // exists to catch.
+        User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+
         $this->owner = User::factory()->create([
             'type'      => 'owner',
             'parent_id' => 0,
@@ -232,6 +240,133 @@ class SettingControllerTest extends TestCase
 
         Storage::disk('public')->assertExists('upload/home/' . $this->owner->id . '_image_home_1.png');
         Storage::disk('public')->assertExists('upload/home/' . $this->owner->id . '_image_home_2.png');
+    }
+
+    public function test_general_data_uploads_home_banner_desktop_and_mobile_variants_for_owner(): void
+    {
+        Storage::fake('public');
+
+        $fields = [
+            'image_home_1_desktop', 'image_home_1_mobile',
+            'image_home_2_desktop', 'image_home_2_mobile',
+        ];
+        $payload = ['application_name' => 'My Rentals'];
+        foreach ($fields as $field) {
+            $payload[$field] = UploadedFile::fake()->image("{$field}.png")->mimeType('image/png');
+        }
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), $payload)
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        foreach ($fields as $field) {
+            $expectedFilename = $this->owner->id . "_{$field}.png";
+            Storage::disk('public')->assertExists('upload/home/' . $expectedFilename);
+            $this->assertDatabaseHas('settings', [
+                'name' => $field, 'value' => $expectedFilename, 'parent_id' => $this->owner->id,
+            ]);
+        }
+    }
+
+    /**
+     * End-to-end: an owner's upload via the authenticated Settings page must
+     * actually reach the anonymous guest-facing home page. This is the real
+     * "does it work" check — SettingController and HomeController are tested
+     * in isolation elsewhere, but never proven to agree on *whose* settings
+     * a guest sees. setUp() seeds a decoy super-admin before $this->owner
+     * specifically so $this->owner's id is never 1 here, matching the real
+     * seeder's order and ruling out a coincidental id-1 match masking this.
+     */
+    public function test_a_home_banner_uploaded_via_settings_reaches_the_public_landing_page_for_a_guest(): void
+    {
+        Storage::fake('public');
+        $this->assertNotSame(1, $this->owner->id, 'test setup invalid: owner must not be id 1');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name'     => 'My Rentals',
+                'image_home_1_desktop' => UploadedFile::fake()->image('desktop.png')->mimeType('image/png'),
+            ])
+            ->assertSessionHas('success');
+
+        // actingAs() persists across requests within a test until logged out —
+        // without this, the next request below would still be authenticated as
+        // $this->owner (using their own id, not the guest fallback), masking
+        // exactly the bug this test exists to catch.
+        auth()->logout();
+        $this->app['session']->flush();
+
+        $this->get('/landing')->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->where('heroImage.desktop', fn ($url) => str_ends_with(
+                $url ?? '',
+                $this->owner->id . '_image_home_1_desktop.png',
+            ))
+        );
+    }
+
+    public function test_general_data_accepts_jpg_and_webp_home_banner_uploads_with_the_matching_extension(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name'     => 'My Rentals',
+                'image_home_1_desktop' => UploadedFile::fake()->image('desktop.jpg')->mimeType('image/jpeg'),
+                'image_home_1_mobile'  => UploadedFile::fake()->image('mobile.webp')->mimeType('image/webp'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // Extension follows the actual file, not a hardcoded ".png" — a webp
+        // upload saved as "*.png" would be mislabeled on disk.
+        $jpgFilename  = $this->owner->id . '_image_home_1_desktop.jpg';
+        $webpFilename = $this->owner->id . '_image_home_1_mobile.webp';
+        Storage::disk('public')->assertExists('upload/home/' . $jpgFilename);
+        Storage::disk('public')->assertExists('upload/home/' . $webpFilename);
+        $this->assertDatabaseHas('settings', ['name' => 'image_home_1_desktop', 'value' => $jpgFilename, 'parent_id' => $this->owner->id]);
+        $this->assertDatabaseHas('settings', ['name' => 'image_home_1_mobile', 'value' => $webpFilename, 'parent_id' => $this->owner->id]);
+    }
+
+    public function test_general_data_rejects_a_non_image_home_banner_variant(): void
+    {
+        $badFile = UploadedFile::fake()->create('desktop.pdf', 10, 'application/pdf');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name'     => 'My Rentals',
+                'image_home_1_desktop' => $badFile,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        Storage::disk('public')->assertMissing('upload/home/' . $this->owner->id . '_image_home_1_desktop.pdf');
+    }
+
+    /**
+     * Regression test for the pre-existing bug this change fixed: generalData()
+     * used to build a *separate* \Validator::make() per conditional field block
+     * and only check the last one assigned, so an earlier invalid upload could
+     * silently pass as long as a later field in the same request was valid.
+     */
+    public function test_general_data_rejects_an_earlier_invalid_field_even_when_a_later_field_is_valid(): void
+    {
+        Storage::fake('public');
+
+        $badLogo = UploadedFile::fake()->image('logo.jpg')->mimeType('image/jpeg');
+        $goodDesktopBanner = UploadedFile::fake()->image('desktop.png')->mimeType('image/png');
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.general'), [
+                'application_name'     => 'My Rentals',
+                'logo'                 => $badLogo, // invalid, validated first
+                'image_home_1_desktop' => $goodDesktopBanner, // valid, validated last
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        Storage::disk('public')->assertMissing('upload/logo/' . $this->owner->id . '_logo.png');
+        Storage::disk('public')->assertMissing('upload/home/' . $this->owner->id . '_image_home_1_desktop.png');
     }
 
     // ── SettingController::storeSignature ─────────────────────────────────────
@@ -968,6 +1103,28 @@ class SettingControllerTest extends TestCase
 
         Storage::disk('public')->assertExists('upload/home/image_home_1.png');
         Storage::disk('public')->assertExists('upload/home/image_home_2.png');
+    }
+
+    public function test_general_data_uploads_home_banner_variants_for_super_admin(): void
+    {
+        Storage::fake('public');
+
+        $superAdmin = User::factory()->create([
+            'type'      => 'super admin',
+            'parent_id' => 0,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->post(route('setting.general'), [
+                'application_name'     => 'Super App',
+                'image_home_1_desktop' => UploadedFile::fake()->image('d1.png')->mimeType('image/png'),
+                'image_home_1_mobile'  => UploadedFile::fake()->image('m1.png')->mimeType('image/png'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::disk('public')->assertExists('upload/home/image_home_1_desktop.png');
+        Storage::disk('public')->assertExists('upload/home/image_home_1_mobile.png');
     }
 
     public function test_general_data_rejects_missing_application_name_for_super_admin(): void
