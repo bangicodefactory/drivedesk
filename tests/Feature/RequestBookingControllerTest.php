@@ -84,7 +84,7 @@ class RequestBookingControllerTest extends TestCase
 
         $this->actingAs($outsider)
             ->get(route('booking_requests.index'))
-            ->assertRedirect()
+            ->assertRedirect(route('dashboard'))
             ->assertSessionHas('error');
     }
 
@@ -96,7 +96,7 @@ class RequestBookingControllerTest extends TestCase
 
         $this->actingAs($outsider)
             ->get(route('booking_requests.show', Crypt::encrypt($req->id)))
-            ->assertRedirect()
+            ->assertRedirect(route('dashboard'))
             ->assertSessionHas('error');
     }
 
@@ -349,6 +349,24 @@ class RequestBookingControllerTest extends TestCase
                 ->where('booking.id', $req->id)
                 ->missing('settings')
             );
+    }
+
+    /**
+     * The five actions Route::resource() used to register with no method behind
+     * them. They could only ever raise BadMethodCallException; nothing should
+     * bring them back.
+     */
+    public function test_only_index_and_show_are_registered_for_the_resource(): void
+    {
+        foreach (['create', 'store', 'edit', 'update', 'destroy'] as $action) {
+            $this->assertFalse(
+                \Illuminate\Support\Facades\Route::has("booking_requests.{$action}"),
+                "booking_requests.{$action} is registered but the controller has no method for it"
+            );
+        }
+
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.index'));
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.show'));
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

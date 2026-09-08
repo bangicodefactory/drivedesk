@@ -590,6 +590,13 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
     // the `manage booking` check lives in the controller, matching how every
     // other admin action in this app gates itself.
     Route::resource('booking_requests', RequestBookingController::class)
+        // index and show are the only two the controller implements. The other
+        // five were registered all along and could only ever raise
+        // BadMethodCallException -- a 500 where a 404 belongs, and before this
+        // commit an unauthenticated one. Registering what exists is the whole
+        // surface this screen needs: it is a read-only listing, and approve /
+        // refuse have their own named routes below.
+        ->only(['index', 'show'])
         ->middleware(['auth', 'XSS']);
 
 // BAN-51 smoke-test — remove after Hello.tsx is verified
