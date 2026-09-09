@@ -153,14 +153,17 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const [paymentMode, setPaymentMode] = useState(null);
     // No gateway is integrated yet -- no route, no callback, nothing that can
     // charge a card -- so the online option only appears where a deployment
-    // has deliberately turned booking_payment on. It is off everywhere today,
-    // which makes this step cash-only in practice.
+    // has deliberately turned booking_payment on.
     //
     // client.features, not features: HandleInertiaRequests shares the flags
     // inside buildClient(), and there is no top-level `features` prop. Reading
-    // the wrong path happened to give the right answer -- undefined is falsy,
-    // and the flag is off everywhere -- so the option could never have been
-    // turned on.
+    // the wrong path was falsy for every prop shape, so the option could never
+    // have appeared at all.
+    //
+    // Which matters more than it looks: drivedesk ships booking_payment => true.
+    // Correcting the path is therefore what makes the CMI tile show up on that
+    // client -- an option for a gateway that cannot charge anything. The flag
+    // wants flipping false there before this reaches a public storefront.
     const onlinePaymentEnabled = Boolean(usePage().props.client?.features?.booking_payment);
 
     const vehicleId = watch('vehicle_id');
