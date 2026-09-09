@@ -468,7 +468,7 @@ class SeoMetadataTest extends TestCase
 
     // ── sitemap.xml ──────────────────────────────────────────────────────────
 
-    public function test_sitemap_lists_the_gateway_and_omits_the_removed_storefront(): void
+    public function test_sitemap_lists_both_public_faces_for_drivedesk(): void
     {
         $this->asClient('drivedesk');
 
@@ -476,10 +476,17 @@ class SeoMetadataTest extends TestCase
         $xml      = $response->getContent();
 
         $this->assertStringContainsString('application/xml', $response->headers->get('Content-Type'));
+        // The B2B demo gateway at the root.
         $this->assertMatchesRegularExpression('#<loc>https?://[^/]+/</loc>#', $xml);
-        // BAN-261 removed the storefront for this client; listing it would point
-        // crawlers at a 404.
-        $this->assertStringNotContainsString('/landing', $xml);
+        // And, since BAN-329, the storefront beside it. This assertion used to
+        // be its inverse: BAN-261 had the storefront gated off here, and listing
+        // a 404 would have sent crawlers at nothing.
+        //
+        // Worth stating plainly, because the sitemap is the difference between
+        // "reachable by URL" and "offered to search engines": /landing still
+        // renders four invented testimonials and a hardcoded five-star rating
+        // per vehicle. Turning the flag on submits that page for indexing.
+        $this->assertStringContainsString('/landing', $xml);
     }
 
     public function test_the_sitemap_omits_pages_that_do_not_use_this_shell(): void

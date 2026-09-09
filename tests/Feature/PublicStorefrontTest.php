@@ -17,12 +17,17 @@ use Tests\TestCase;
  * The public B2C rental storefront (BAN-261).
  *
  * `/landing` and the pages its layout partials link to serve renters: a fleet
- * list, a booking widget, contact and search. DriveDesk sells the platform *to*
- * rental agencies, so on that client the storefront targeted the opposite
- * audience — and shipped seeded demo vehicles plus invented testimonials on a
- * live commercial domain. It is gated off there and 404s.
+ * list, a booking widget, contact and search.
  *
- * Every other client keeps it, which is today's behavior (CLAUDE.md §10.2 rule 2).
+ * BAN-261 gated the family off for drivedesk, because those pages targeted the
+ * opposite audience from the one DriveDesk sells to. BAN-329 turned it back on
+ * for that client: the storefront now runs *beside* the B2B demo gateway rather
+ * than instead of it -- `/` still renders DemoGateway, which the tests below
+ * pin, so the two publics do not collide.
+ *
+ * The gate itself is what these tests are about, and it is still a gate: the
+ * flag alone decides, never APP_CLIENT (§10.2 rule 1), and a client that turns
+ * it off gets 404s across the whole family.
  */
 class PublicStorefrontTest extends TestCase
 {
@@ -42,23 +47,117 @@ class PublicStorefrontTest extends TestCase
         parent::tearDown();
     }
 
-    /** Every route in the storefront family, as [method, uri]. */
+    /**
+     * Every route behind `feature:public_storefront`, as [method, uri].
+     *
+     * /reserve belongs here and was missing: it is gated on the same flag and
+     * is the largest thing the flag opens -- the unauthenticated booking
+     * wizard. Without it the flag-off case below could go green while /reserve
+     * had quietly been moved out of the group it is supposed to prove closes.
+     * Its confirmation route is deliberately absent: it needs a signature and a
+     * real row, so it is covered in RequestBookingControllerTest instead.
+     */
     public static function storefrontRoutes(): array
     {
         return [
-            'landing'  => ['get', '/landing'],
-            'contact'  => ['get', '/contact'],
-            'search'   => ['get', '/search'],
-            'newsletter' => ['post', '/newsletter/subscribe'],
+            'landing'    => ['get', '/landing', []],
+            'contact'    => ['get', '/contact', []],
+            'search'     => ['get', '/search', []],
+            'reserve'    => ['get', '/reserve', []],
+            // A payload, because the endpoint validates: without it the route
+            // answers, redirects back with "email is required", and a test that
+            // only looked at the status would call that working.
+            'newsletter' => ['post', '/newsletter/subscribe', ['email' => 'crawler@example.com']],
         ];
     }
 
+    /**
+     * The family disappears together. Forced off rather than read off a client
+     * (§10.2 rule 6) -- no client ships it off today, and this is about the
+     * gate, not about who happens to be using it.
+     */
     #[DataProvider('storefrontRoutes')]
-    public function test_storefront_is_404_for_drivedesk(string $method, string $uri): void
+    public function test_the_whole_storefront_family_404s_when_the_flag_is_off(string $method, string $uri, array $payload): void
     {
         $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => false]);
 
-        $this->{$method}($uri)->assertNotFound();
+        $this->{$method}($uri, $payload)->assertNotFound();
+    }
+
+    /**
+     * With the flag on, every one of them answers without erroring.
+     *
+     * assertNotSame(404) was the first version of this and it was worthless:
+     * /contact and /search render the legacy Blade shell, whose partials read
+     * settings keys that drivedesk's branding_seed does not set, so both were
+     * returning 500 and this test was green. Confirmed against a running
+     * instance, not just here.
+     *
+     * What it still does not prove is that the pages are *fit to publish*.
+     * /contact and /search are literal scaffolding ("This is a placeholder
+     * contact page"), and the newsletter endpoint reports success while
+     * discarding the address. A status check cannot see either. Those are
+     * content problems, tracked separately -- do not read a green run here as
+     * the storefront being ready for a commercial domain.
+     *
+     * The flag is forced rather than read off drivedesk (CLAUDE.md 10.2 rule
+     * 6): what a given client actually resolves belongs in
+     * ClientFeatureMatrixTest, and coupling these four to drivedesk's shipped
+     * value would turn them red the day that value changes, for a reason
+     * unrelated to the gate they exist to test.
+     */
+    #[DataProvider('storefrontRoutes')]
+    public function test_the_whole_storefront_family_works_when_the_flag_is_on(string $method, string $uri, array $payload): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
+
+        $response = $this->{$method}($uri, $payload);
+
+        // Below 400 rather than assertSuccessful(), because the family mixes
+        // pages (200) with a form that redirects on success (302). Paired with
+        // assertSessionHasNoErrors() so a redirect carrying a validation
+        // failure cannot pass as working.
+        $response->assertSessionHasNoErrors();
+        $this->assertLessThan(
+            400,
+            $response->getStatusCode(),
+            "{$method} {$uri} returned {$response->getStatusCode()}"
+        );
+    }
+
+    /**
+     * The 500 that the status check above would have caught only by accident:
+     * /search read `q` straight off the request and handed it to a view, so a
+     * query array made Blade's e() call htmlspecialchars() on an array. Anyone
+     * could construct it, and the page is crawlable now.
+     */
+    public function test_search_survives_a_query_array(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
+
+        $this->get('/search?q[]=x')->assertSuccessful();
+    }
+
+    /**
+     * The newsletter form is rate-limited like its sibling public form
+     * (POST /demo-request). It writes nothing today, so this guards the moment
+     * somebody makes it write.
+     */
+    public function test_the_newsletter_form_is_rate_limited(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/newsletter/subscribe', ['email' => "sub{$i}@example.com"])
+                ->assertRedirect();
+        }
+
+        $this->post('/newsletter/subscribe', ['email' => 'six@example.com'])
+            ->assertStatus(429);
     }
 
     public function test_landing_still_serves_clients_that_keep_the_storefront(): void
@@ -83,15 +182,21 @@ class PublicStorefrontTest extends TestCase
         $this->get('/landing')->assertNotFound();
     }
 
-    public function test_removing_the_storefront_leaves_the_demo_gateway_intact(): void
+    /**
+     * The one that matters most after BAN-329. DriveDesk's public face is the
+     * B2B gateway at /, and turning the storefront on must not take it: the
+     * root belongs to demo_gateway, checked first in HomeController::index().
+     */
+    public function test_the_storefront_does_not_take_the_root_from_the_demo_gateway(): void
     {
-        // DriveDesk's public face is the B2B gateway at /, which must survive.
         $this->asClient('drivedesk');
 
-        $this->get('/')->assertOk();
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Public/DemoGateway'));
     }
 
-    public function test_removing_the_storefront_leaves_login_reachable(): void
+    public function test_the_storefront_leaves_login_reachable(): void
     {
         $this->asClient('drivedesk');
 
