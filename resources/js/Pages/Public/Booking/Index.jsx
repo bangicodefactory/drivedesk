@@ -115,7 +115,7 @@ function IconInput({ icon: Icon, className = '', ...props }) {
     );
 }
 
-function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
+function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefill = {} }) {
     const t = useTranslations();
     const { branding } = usePage().props;
     const today = new Date().toISOString().slice(0, 10);
@@ -138,9 +138,18 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             vehicle_id: preselected ? String(preselected.id) : '',
-            pickup_address: '', drop_off_address: '',
-            start_date: '', start_time: '09:00',
-            end_date: '', end_time: '18:00',
+            // Carried over from the landing search panel, which asks for the
+            // same three things this step does. The server has already checked
+            // the shape and that `place` names a real one (BAN-333), so an
+            // absent value here means "not supplied", never "supplied badly".
+            // Pick-up doubles as drop-off: one location is the common case,
+            // and the visitor can still change either.
+            pickup_address: prefill.place ?? '',
+            drop_off_address: prefill.place ?? '',
+            start_date: prefill.start_date ?? '',
+            start_time: prefill.start_time ?? '09:00',
+            end_date: prefill.end_date ?? '',
+            end_time: prefill.end_time ?? '18:00',
             name: '', age: 25, nationality: '', driving_experience: 1, passengers: 1,
             phone_number: '', whatsapp: '', email: '', termsAccepted: false,
             payment_preference: undefined,

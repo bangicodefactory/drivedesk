@@ -230,6 +230,23 @@ class PublicStorefrontTest extends TestCase
         );
     }
 
+    /**
+     * BAN-333. The landing groups its fleet cards by vehicle type client-side,
+     * against the `vehicleTypes` list it is given. The vehicles select did not
+     * include `type`, so every card carried an undefined one and the filter
+     * matched nothing -- a control that silently emptied the grid.
+     */
+    public function test_landing_exposes_the_vehicle_type_its_fleet_filter_groups_by(): void
+    {
+        $this->asClient('acme');
+        $vehicle = Vehicle::factory()->create(['available_for_rent' => true]);
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)
+                ->firstWhere('id', $vehicle->id)['type'] === $vehicle->type)
+        );
+    }
+
     // ── heroImage: single banner, desktop/mobile variants ─────────────────────
 
     public function test_hero_image_falls_back_to_the_single_upload_for_both_devices(): void
