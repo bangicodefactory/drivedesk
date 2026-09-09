@@ -8,28 +8,38 @@ use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
 /**
- * BAN-262: drivedesk defaults anonymous/guest visitors to Moroccan Arabic
- * (Darija, 'ary') via its public_default_locale, loading lang/ary.json. Other
- * clients (the acme fixture) are unset and keep their existing 'fr' default, so
- * their observable behaviour is unchanged. Locale resolution is exercised via
- * the guest login page (shared 'locale'/'translations' props) — the same
- * SetLocale + translation pipeline the marketing landing uses.
+ * Which language an anonymous visitor gets.
+ *
+ * drivedesk defaulted guests to Moroccan Darija ('ary') until BAN-330 and now
+ * defaults them to French; its languages are French, Arabic and English. Other
+ * clients (the acme fixture) set no public_default_locale and fall back to 'fr'
+ * on their own, so nothing about them changes either way.
+ *
+ * 'ary' itself is not withdrawn: SetLocale::SUPPORTED still serves it, so an
+ * account that chose it keeps it and /language/ary still works. Only the guest
+ * default moved, which is what the last test here pins.
+ *
+ * Resolution is exercised through the guest login page (shared
+ * 'locale'/'translations' props) -- the same SetLocale + translation pipeline
+ * the public pages use.
  */
 class LocaleResolutionTest extends TestCase
 {
     use RefreshDatabase;
     use WithClient;
 
-    public function test_drivedesk_guest_defaults_to_moroccan_arabic(): void
+    public function test_drivedesk_guest_defaults_to_french(): void
     {
         $this->asClient('drivedesk');
 
         $this->get(route('login'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('locale', 'ary')
-                // Proves lang/ary.json is the resolved bundle, not the English fallback.
-                ->where('translations.dg_book', 'احجز عرضاً توضيحياً')
+                ->where('locale', 'fr')
+                // Proves lang/fr.json is the resolved bundle, not the English
+                // fallback -- the assertion the ary version of this test made,
+                // pointed at the language that is now the default.
+                ->where('translations.dg_book', 'Réserver une démo')
             );
     }
 
@@ -49,10 +59,16 @@ class LocaleResolutionTest extends TestCase
         $this->withSession(['locale' => 'zz-not-a-locale'])
             ->get(route('login'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->where('locale', 'ary'));
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'fr'));
     }
 
-    public function test_explicit_ary_language_switch_is_accepted(): void
+    /**
+     * ary is no longer the default; it is still servable. Somebody who chose it
+     * -- or whose account still stores it -- must not silently lose it because
+     * the guest default moved. This is the test that says dropping ary from
+     * supported_locales was a change of default, not a withdrawal.
+     */
+    public function test_explicit_ary_language_switch_is_still_accepted(): void
     {
         $this->asClient('drivedesk');
 

@@ -120,8 +120,8 @@ class ClientFeatureMatrixTest extends TestCase
         // the guard -- editing a default still does.
         $source = file_get_contents(base_path('config/clients/drivedesk.php'));
         foreach ([
-            'CLIENT_SUPPORTED_LOCALES'     => "'en,fr,nl,ar,ary'",
-            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "'ary'",
+            'CLIENT_SUPPORTED_LOCALES'     => "'fr,ar,en'",
+            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "'fr'",
             'CLIENT_DEMO_REQUEST_TO'       => "'admin@bangicode.ma'",
         ] as $var => $default) {
             $this->assertStringContainsString($var, $source);

@@ -51,8 +51,8 @@ class LocaleUrlTest extends TestCase
     {
         $this->asClient('drivedesk');
 
-        // drivedesk's public_default_locale is `ary`, which declares as `ar`.
-        $this->get('/')->assertOk()->assertSee('lang="ar"', false);
+        // drivedesk's public_default_locale is `fr` since BAN-330.
+        $this->get('/')->assertOk()->assertSee('lang="fr"', false);
     }
 
     public function test_a_signed_in_visitor_keeps_their_own_language(): void
@@ -81,10 +81,12 @@ class LocaleUrlTest extends TestCase
     {
         $this->asClient('drivedesk');
 
-        // `nl` is in drivedesk's supported_locales but SetLocale cannot serve
-        // it, so publishing /nl would advertise a URL serving the wrong language.
+        // `nl` left drivedesk's supported_locales in BAN-330 and SetLocale could
+        // never serve it anyway, so publishing /nl would advertise a URL serving
+        // the wrong language.
         $this->get('/nl')->assertNotFound();
-        // `ary` is excluded as a duplicate of `ar`.
+        // `ary` is excluded as a duplicate of `ar` -- still true, and still
+        // independent of the list: Locales::forPublicUrls() filters it by name.
         $this->get('/ary')->assertNotFound();
         $this->get('/zz')->assertNotFound();
     }
@@ -246,7 +248,9 @@ class LocaleUrlTest extends TestCase
 
         $locales = Locales::forPublicUrls();
 
-        $this->assertSame(['en', 'fr', 'ar'], $locales);
+        // Order follows the client's own list, which BAN-330 rewrote to
+        // fr,ar,en.
+        $this->assertSame(['fr', 'ar', 'en'], $locales);
         $this->assertNotContains('nl', $locales);
         $this->assertNotContains('ary', $locales);
     }
