@@ -1081,5 +1081,22 @@
     "detail_day": "day",
     "detail_pick_dates": "Choose your dates to see the total.",
     "detail_price_note": "No online payment. The final amount is confirmed by the branch before pick-up.",
-    "detail_similar_title": "Similar vehicles"
+    "detail_similar_title": "Similar vehicles",
+    "step_short_1": "Car",
+    "step_short_2": "Dates",
+    "step_short_3": "Your details",
+    "step_short_4": "Payment",
+    "summary_title": "Summary",
+    "summary_from": "From",
+    "summary_to": "To",
+    "summary_amount_note": "Amount confirmed by the branch before pick-up.",
+    "summary_cash_note": "No online payment. You pay at the branch.",
+    "driver_eligibility_note": "The driver must be 21 or over and have held a licence for at least 2 years.",
+    "confirmation_heading_short": "Request sent",
+    "confirmation_nothing_charged": "Nothing has been charged.",
+    "confirmation_reference_label": "Reference",
+    "bring_title": "Bring this at pick-up",
+    "bring_licence": "Original driving licence, held and valid for at least 2 years.",
+    "bring_id": "Photo ID (national ID card or passport).",
+    "bring_deposit": "Means to pay the rental and, where required, the deposit — refunded when the car is returned."
 }

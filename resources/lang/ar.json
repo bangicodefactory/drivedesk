@@ -1569,5 +1569,22 @@
     "detail_day": "يوم",
     "detail_pick_dates": "اختر تواريخك لعرض المجموع.",
     "detail_price_note": "لا يوجد دفع عبر الإنترنت. تؤكد الوكالة المبلغ النهائي قبل الاستلام.",
-    "detail_similar_title": "سيارات مماثلة"
+    "detail_similar_title": "سيارات مماثلة",
+    "step_short_1": "السيارة",
+    "step_short_2": "التواريخ",
+    "step_short_3": "معلوماتك",
+    "step_short_4": "الدفع",
+    "summary_title": "ملخص",
+    "summary_from": "من",
+    "summary_to": "إلى",
+    "summary_amount_note": "تؤكد الوكالة المبلغ قبل الاستلام.",
+    "summary_cash_note": "لا يوجد دفع عبر الإنترنت. تدفع في الوكالة.",
+    "driver_eligibility_note": "يجب أن يكون عمر السائق 21 سنة على الأقل وأن يحمل رخصة السياقة منذ سنتين على الأقل.",
+    "confirmation_heading_short": "تم إرسال الطلب",
+    "confirmation_nothing_charged": "لم يتم خصم أي مبلغ.",
+    "confirmation_reference_label": "المرجع",
+    "bring_title": "ما يجب إحضاره عند الاستلام",
+    "bring_licence": "رخصة السياقة الأصلية، سارية المفعول منذ سنتين على الأقل.",
+    "bring_id": "وثيقة الهوية (البطاقة الوطنية أو جواز السفر).",
+    "bring_deposit": "ما يكفي لأداء ثمن الكراء، وعند الاقتضاء مبلغ الضمان — الذي يُعاد عند إرجاع السيارة."
 }

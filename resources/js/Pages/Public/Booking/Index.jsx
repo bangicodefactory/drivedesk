@@ -14,6 +14,7 @@ import FieldError from '@/components/FieldError';
 import { fieldA11y } from '@/lib/fieldA11y';
 import PageBanner from '@/components/PageBanner';
 import Stepper from '@/components/booking/Stepper';
+import BookingSummary from '@/components/booking/BookingSummary';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
@@ -245,40 +246,54 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
         setValue('payment_preference', mode === 'cash' ? 'cash' : undefined, { shouldValidate: true });
     };
 
+    // step_1..step_4 keep their existing values for anyone still rendering
+    // them; the stepper reads the shorter step_short_* keys, which fit a phone
+    // without being clipped mid-word (CLAUDE.md §4: keys are added, not
+    // repurposed).
     const stepLabels = [
-        t('step_1', 'Sélectionner une Voiture'),
-        t('step_2', 'Sélectionner les Dates'),
-        t('step_3', 'Vos Informations'),
-        t('step_4', 'Paiement'),
+        t('step_short_1', 'Voiture'),
+        t('step_short_2', 'Dates'),
+        t('step_short_3', 'Vos infos'),
+        t('step_short_4', 'Paiement'),
     ];
+
+    const summary = (
+        <BookingSummary
+            vehicle={selectedVehicle}
+            places={places}
+            pickupId={pickupAddress}
+            dropOffId={dropOffAddress}
+            startDate={startDate}
+            startTime={startTime}
+            endDate={endDate}
+            endTime={endTime}
+            days={days}
+            total={total}
+            t={t}
+        />
+    );
 
     return (
         <>
             <Head title={pageTitle} />
             <PageBanner title={t('booking_title', 'Réservez Votre Voiture')} subtitle={t('booking_banner_subtitle', 'Complétez votre réservation en quelques étapes simples')} />
 
-            <section className="py-12 md:py-16 lg:py-24">
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="mb-10 md:mb-16 text-center">
-                        <h2 className="font-display text-4xl md:text-5xl mb-4">{t('booking_title', 'Réservez Votre Voiture')}</h2>
-                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">{t('booking_section_subtitle', 'Complétez votre réservation en 3 étapes simples')}</p>
-                    </div>
-
+            <section className="py-10 md:py-12">
+                <div className="container mx-auto px-4 max-w-6xl">
                     <Stepper current={step} labels={stepLabels} />
 
                     {step === 1 && (
                         <CarPicker vehicles={vehicles} selectedId={vehicleId} onSelect={selectCar} t={t} />
                     )}
 
+                    {/* Steps 2-4 sit beside the summary; step 1 is the car grid
+                        itself, where there is nothing to summarise yet. */}
+                    <div className={step === 1 ? 'contents' : 'grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_320px]'}>
+                    <div className="space-y-6">
+
                     {step === 2 && selectedVehicle && (
-                        <div className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8">
-                            <div className="flex items-center mb-6">
-                                <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                <div>
-                                    <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                    <p className="text-muted-foreground">{t('from', 'À partir de')} {Number(selectedVehicle.daily_rate).toFixed(0)} MAD {t('per_day', 'par jour')}</p>
-                                </div>
-                            </div>
+                        <div className="rounded-lg border border-border bg-card p-5 md:p-6">
+                            <h2 className="font-display text-2xl uppercase mb-5">{t('step_2', 'Sélectionner les Dates')}</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
@@ -369,18 +384,12 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                     )}
 
                     {step === 3 && selectedVehicle && (
-                        <div className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8 space-y-6">
-                            <div className="flex items-center justify-between mb-2 pb-6 border-b">
-                                <div className="flex items-center">
-                                    <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                    <div>
-                                        <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                        <p className="text-muted-foreground text-sm">
-                                            {startDate} - {endDate} ({days} {t('days', 'jours')})
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-display text-primary shrink-0 ms-2">{total.toFixed(0)} MAD</p>
+                        <div className="rounded-lg border border-border bg-card p-5 md:p-6 space-y-6">
+                            <div>
+                                <h2 className="font-display text-2xl uppercase">{t('step_3', 'Vos Informations')}</h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {t('driver_eligibility_note', 'Le conducteur doit avoir 21 ans et le permis depuis 2 ans au moins.')}
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -447,21 +456,10 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                     )}
 
                     {step === 4 && selectedVehicle && (
-                        <form onSubmit={submit('post', route('booking.store_request'))} className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8 space-y-6">
+                        <form onSubmit={submit('post', route('booking.store_request'))} className="rounded-lg border border-border bg-card p-5 md:p-6 space-y-6">
                             <input type="hidden" {...register('vehicle_id')} />
 
-                            <div className="flex items-center justify-between mb-2 pb-6 border-b">
-                                <div className="flex items-center">
-                                    <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                    <div>
-                                        <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                        <p className="text-muted-foreground text-sm">
-                                            {startDate} - {endDate} ({days} {t('days', 'jours')})
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-display text-primary shrink-0 ms-2">{total.toFixed(0)} MAD</p>
-                            </div>
+                            <h2 className="font-display text-2xl uppercase">{t('step_4', 'Paiement')}</h2>
 
                             <div>
                                 <Label className="mb-2 block">{t('payment_method_label', 'Comment souhaitez-vous payer ?')}</Label>
@@ -530,6 +528,9 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                             </div>
                         </form>
                     )}
+                    </div>
+                    {step !== 1 && summary}
+                    </div>
                 </div>
             </section>
         </>

@@ -1579,5 +1579,22 @@
   "detail_day": "jour",
   "detail_pick_dates": "Choisissez vos dates pour voir le total.",
   "detail_price_note": "Aucun paiement en ligne. Le montant définitif est confirmé par l'agence avant le retrait.",
-  "detail_similar_title": "Véhicules similaires"
+  "detail_similar_title": "Véhicules similaires",
+  "step_short_1": "Voiture",
+  "step_short_2": "Dates",
+  "step_short_3": "Vos infos",
+  "step_short_4": "Paiement",
+  "summary_title": "Récapitulatif",
+  "summary_from": "Du",
+  "summary_to": "Au",
+  "summary_amount_note": "Montant confirmé par l'agence avant le retrait.",
+  "summary_cash_note": "Aucun paiement en ligne. Vous réglez à l'agence.",
+  "driver_eligibility_note": "Le conducteur doit avoir 21 ans et le permis depuis 2 ans au moins.",
+  "confirmation_heading_short": "Demande envoyée",
+  "confirmation_nothing_charged": "Rien n'a été prélevé.",
+  "confirmation_reference_label": "Référence",
+  "bring_title": "À apporter au retrait",
+  "bring_licence": "Permis de conduire original, en cours de validité depuis 2 ans au moins.",
+  "bring_id": "Pièce d’identité (CIN ou passeport).",
+  "bring_deposit": "De quoi régler la location et, le cas échéant, la caution — restituée au retour du véhicule."
 }
