@@ -23,6 +23,7 @@ use App\Models\VehicleType;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Seeds realistic test data for every business table, scoped to the owner.
@@ -149,14 +150,18 @@ class DevDataSeeder extends Seeder
         // gear/fuel use the keys from Vehicle::$gearbox and Vehicle::$fuelType
         // (automatic|manual, essence|diesel|petrol|hybrid|electric|gas) so the
         // show page and edit form resolve their labels correctly.
+        // `photo` names a fixture in database/seeders/fixtures/fleet/, written
+        // onto the public disk below. Optional: a vehicle without one keeps the
+        // default placeholder the storefront already falls back to. Three of
+        // the seven have none on purpose -- see docs/demo-fleet-photos.md.
         $vehicles = [
-            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000],
+            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000, 'photo' => 'toyota-rav4.jpg'],
             ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000],
-            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000],
+            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000, 'photo' => 'renault-clio.jpg'],
             ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000],
-            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000],
+            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000, 'photo' => 'peugeot-208.jpg'],
             ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000],
-            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000],
+            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000, 'photo' => 'ford-transit.jpg'],
         ];
 
         $yearCol = 'year_of_ﬁrst_immatriculation'; // Unicode ligature — matches DB column exactly
@@ -185,10 +190,70 @@ class DevDataSeeder extends Seeder
                     'parent_id'                => $this->ownerId,
                 ]);
             }
+            if (!empty($v['photo'])) {
+                $this->ensureFleetPhoto($existing, $v['photo']);
+            }
+
             $ids[] = $existing->id;
         }
         $this->command->info('  Vehicles: ' . count($ids));
         return $ids;
+    }
+
+    /**
+     * Give a demo vehicle its stock photo.
+     *
+     * Fixtures live in database/seeders/fixtures/fleet/ and are written onto
+     * the public disk, because `picture` is a bare filename the storefront
+     * resolves as /storage/upload/picture/<name> — an uploaded-file path, not
+     * an asset path. Writing them is what makes them behave like uploads
+     * without anyone uploading. They sit outside public/ deliberately: the
+     * docroot serves anything in it, and a fixture directory is not something
+     * to publish.
+     *
+     * Three rules, in order:
+     *
+     *  - an admin's own upload is untouchable. If `picture` names anything
+     *    other than one of these fixtures, nothing here runs — that is what
+     *    stops the nightly demo:seed at 03:30 replacing a real photo of a
+     *    real car.
+     *  - a fixture already assigned is re-checked against the repo copy and
+     *    rewritten when it differs. Copying by filename alone froze the first,
+     *    wrong version of this fleet onto every environment that had already
+     *    run the seeder: a corrected image could never reach them.
+     *  - a write that fails leaves `picture` alone. Setting it anyway pointed
+     *    the row at a file that does not exist, and the early return meant no
+     *    later run ever retried — a permission problem latched permanently,
+     *    showing a broken image on the admin's vehicle page.
+     */
+    private function ensureFleetPhoto(Vehicle $vehicle, string $photo): void
+    {
+        // Anything that is not one of ours belongs to the admin.
+        if (!empty($vehicle->picture) && $vehicle->picture !== $photo) {
+            return;
+        }
+
+        $source = database_path('seeders/fixtures/fleet/' . $photo);
+        if (!is_file($source)) {
+            $this->command->warn("  Fleet photo missing, skipped: {$photo}");
+            return;
+        }
+
+        $disk   = Storage::disk('public');
+        $path   = 'upload/picture/' . $photo;
+        $wanted = file_get_contents($source);
+
+        if (!$disk->exists($path) || $disk->get($path) !== $wanted) {
+            if (!$disk->put($path, $wanted)) {
+                $this->command->warn("  Could not write fleet photo, skipped: {$photo}");
+                return;
+            }
+        }
+
+        if ($vehicle->picture !== $photo) {
+            $vehicle->picture = $photo;
+            $vehicle->save();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
