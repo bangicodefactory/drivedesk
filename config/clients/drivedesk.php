@@ -16,13 +16,24 @@ return [
         'trim',
         explode(',', trim((string) env('CLIENT_SUPPORTED_LOCALES', '')) !== ''
             ? (string) env('CLIENT_SUPPORTED_LOCALES')
-            : 'en,fr,nl,ar,ary')
-    ))) ?: ['en', 'fr', 'nl', 'ar', 'ary'],
+            : 'fr,ar,en')
+    ))) ?: ['fr', 'ar', 'en'],
 
-    // Anonymous/guest visitors (e.g. the marketing landing) default to Moroccan
-    // Arabic (Darija, 'ary'). Logged-in users keep their own saved language.
-    // Read by App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
-    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'ary',
+    // Anonymous/guest visitors (e.g. the marketing landing) default to French.
+    // Logged-in users keep their own saved language. Read by
+    // App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
+    //
+    // Was 'ary' (Moroccan Darija). Two reasons it is not: the copy filed under
+    // ary.json was rewritten into Modern Standard Arabic, so 'ary' and 'ar'
+    // were the same language at two names -- Locales::forPublicUrls() already
+    // excluded it from public URLs for exactly that reason -- and ary.json
+    // carries 63 keys against en.json's 1000+, so a guest landing on the
+    // storefront got an RTL layout wrapped around mostly-French fallback copy.
+    //
+    // SetLocale::SUPPORTED still lists 'ary', deliberately: an account that
+    // already chose it keeps it, and /language/ary still works. What changes is
+    // only what an anonymous visitor gets by default.
+    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'fr',
 
     // Where the public "Book a demo" form is delivered (DemoRequestController).
     'demo_request_to' => env('CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'),
@@ -78,7 +89,7 @@ return [
 
     /*
      * Public SEO copy (BAN-262). Written in English rather than the guest
-     * default locale (`ary`): the buyer here is a rental-agency owner, the
+     * default locale (French since BAN-330): the buyer here is a rental-agency owner, the
      * product is sold beyond Morocco, and a crawler is served the guest locale
      * regardless of who is searching. Description is 149 chars.
      */

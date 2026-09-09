@@ -126,8 +126,13 @@ class ClientFeatureMatrixTest extends TestCase
         // the guard -- editing a default still does.
         $source = file_get_contents(base_path('config/clients/drivedesk.php'));
         foreach ([
-            'CLIENT_SUPPORTED_LOCALES'     => "'en,fr,nl,ar,ary'",
-            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "'ary'",
+            'CLIENT_SUPPORTED_LOCALES'     => "'fr,ar,en'",
+            // The whole fallback expression, not just "'fr'": that string also
+            // appears in the supported_locales literal two lines above it in
+            // the config, so the bare form passed even when the default was
+            // edited to something else -- exactly what this guard promises to
+            // catch.
+            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "?: 'fr'",
             'CLIENT_DEMO_REQUEST_TO'       => "'admin@bangicode.ma'",
         ] as $var => $default) {
             $this->assertStringContainsString($var, $source);
