@@ -554,6 +554,40 @@ class RequestBookingControllerTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.show'));
     }
 
+    // ── the flag the wizard's payment tile reads ─────────────────────────
+
+    /**
+     * BAN-334. The wizard shows its online-payment tile from
+     * `client.features.booking_payment`, and that exact path is where BAN-328
+     * went wrong: the page read `props.features`, which the app has never
+     * shared, so the tile could not have appeared whatever the flag said -- and
+     * the component test's mock had invented the missing prop, so it agreed
+     * with the bug.
+     *
+     * Now that the flag is on for a real client, pin the path end to end rather
+     * than trusting a mock. Forced rather than inherited (§10.2 rule 6): what a
+     * given client resolves is ClientFeatureMatrixTest's job.
+     */
+    public function test_the_wizard_receives_the_payment_flag_where_it_looks_for_it(): void
+    {
+        config(['client.features.public_storefront' => true]);
+        config(['client.features.booking_payment' => true]);
+
+        $this->get(route('reserve.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('client.features.booking_payment', true));
+    }
+
+    public function test_the_wizard_sees_the_payment_flag_turned_off(): void
+    {
+        config(['client.features.public_storefront' => true]);
+        config(['client.features.booking_payment' => false]);
+
+        $this->get(route('reserve.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('client.features.booking_payment', false));
+    }
+
     // ── the registration year, and the ligature in its column name ──────
 
     /**
