@@ -1623,5 +1623,9 @@
   "New message from the website": "Nouveau message depuis le site",
   "Booking reference": "Référence de réservation",
   "Message": "Message",
-  "Reply to :name": "Répondre à :name"
+  "Reply to :name": "Répondre à :name",
+  "reassurance_1_title_card": "Paiement à l'agence ou par carte",
+  "reassurance_1_desc_card": "Rien n'est prélevé au moment de la demande. Vous réglez au retrait, ou l'agence vous rappelle pour la carte.",
+  "summary_payment_note_card": "Rien n'est prélevé maintenant. Vous réglez à l'agence, ou par carte après confirmation.",
+  "detail_price_note_card": "Rien n'est prélevé au moment de la demande. Le montant définitif est confirmé par l'agence avant le retrait."
 }

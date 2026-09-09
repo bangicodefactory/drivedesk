@@ -261,8 +261,18 @@ class RequestBookingControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * The flag is forced, not inherited. This test is about the value being
+     * persisted, so it must supply the precondition it depends on rather than
+     * borrowing acme's -- CLAUDE.md §10.2 rule 6, and the reason this went red
+     * when BAN-334 made the accepted set follow feature('booking_payment'):
+     * a test that inherits a client's flag changes meaning the day that
+     * client's config does, for a reason unrelated to what it asserts.
+     */
     public function test_store_booking_persists_the_chosen_payment_preference(): void
     {
+        config(['client.features.booking_payment' => true]);
+
         $this->post(route('booking.store_request'), [
             'vehicle_id'         => $this->vehicle->id,
             'name'               => 'Karim B',
@@ -552,6 +562,62 @@ class RequestBookingControllerTest extends TestCase
 
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.index'));
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.show'));
+    }
+
+    /**
+     * BAN-334. The flag has to gate what the server accepts, not only what the
+     * wizard draws. It was a fixed in:cash,cmi, so a deployment that had
+     * deliberately turned card payment off still accepted a hand-crafted POST
+     * carrying payment_preference=cmi -- and the guest's confirmation then
+     * promised a follow-up about an online payment that business had switched
+     * off. Forced rather than inherited (§10.2 rule 6).
+     */
+    public function test_a_card_preference_is_refused_where_card_payment_is_off(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasErrors('payment_preference');
+
+        $this->assertDatabaseMissing('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    public function test_a_card_preference_is_accepted_where_card_payment_is_on(): void
+    {
+        config(['client.features.booking_payment' => true]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    /** Cash is always accepted -- it is what the flag being off leaves. */
+    public function test_cash_is_accepted_either_way(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cash']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cash']);
+    }
+
+    /** A complete, valid storefront booking request, overridable per test. */
+    private function bookingPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'vehicle_id'       => $this->vehicle->id,
+            'name'             => 'Yassine Berrada',
+            'email'            => 'yassine@example.com',
+            'phone_number'     => '+212661223344',
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-10-05',
+            'start_time'       => '09:00',
+            'end_date'         => '2026-10-09',
+            'end_time'         => '18:00',
+        ], $overrides);
     }
 
     // ── the flag the wizard's payment tile reads ─────────────────────────

@@ -14,6 +14,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { specLabels } from '@/lib/vehicleSpecs';
 import { useCurrency } from '@/hooks/useCurrency';
 import { dayAfter } from '@/lib/dates';
+import { useOnlinePayment } from '@/hooks/useOnlinePayment';
 
 /**
  * Booking-first storefront landing (BAN-333).
@@ -22,6 +23,10 @@ import { dayAfter } from '@/lib/dates';
  * sits above the fleet, because a visitor here is trying to rent a car on
  * given dates, not read about us. Everything below it exists to support that
  * one action.
+ *
+ * The payment reassurance branches on client.features.booking_payment: with
+ * card payment offered, "nothing is paid online" is a promise the wizard four
+ * steps later breaks.
  *
  * Three things this page deliberately does NOT carry, all of which it used to:
  *   - four testimonials with invented names and quotes,
@@ -202,19 +207,31 @@ function SearchPanel({ places }) {
 }
 
 /**
- * What a renter actually worries about before handing over a card number —
- * and here, that they will not have to. Every line is something the app
- * genuinely does: nothing takes payment online (booking_payment is off), the
- * agency approves each request before it becomes a booking.
+ * What a renter actually worries about before handing over a card number. Every
+ * line is something the app genuinely does: the agency approves each request
+ * before it becomes a booking, and nothing is taken at request time.
+ *
+ * The first line branches. While booking_payment is off, cash at the branch is
+ * the only route and the page can say so flatly. With it on, the wizard offers
+ * a card option -- so "aucun prélèvement en ligne" would be contradicted two
+ * steps later by a tile headed "Paiement en Ligne". Both variants stay true to
+ * the same fact: nothing is charged when the request is made.
  */
 function Reassurance() {
     const t = useTranslations();
+    const onlinePayment = useOnlinePayment();
     const points = [
-        {
-            icon: Banknote,
-            title: t('reassurance_1_title', "Paiement à l'agence"),
-            desc: t('reassurance_1_desc', 'Aucun prélèvement en ligne. Vous réglez au retrait du véhicule.'),
-        },
+        onlinePayment
+            ? {
+                icon: Banknote,
+                title: t('reassurance_1_title_card', "Paiement à l'agence ou par carte"),
+                desc: t('reassurance_1_desc_card', "Rien n'est prélevé au moment de la demande. Vous réglez au retrait, ou l'agence vous rappelle pour la carte."),
+            }
+            : {
+                icon: Banknote,
+                title: t('reassurance_1_title', "Paiement à l'agence"),
+                desc: t('reassurance_1_desc', 'Aucun prélèvement en ligne. Vous réglez au retrait du véhicule.'),
+            },
         {
             icon: ShieldCheck,
             title: t('reassurance_2_title', 'Assurance comprise'),

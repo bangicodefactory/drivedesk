@@ -117,3 +117,29 @@ describe('Confirmation', () => {
         expect(screen.getByText(/rien n'a été prélevé/i)).toBeInTheDocument();
     });
 });
+
+describe('Confirmation — PayPal is not a supported preference', () => {
+    /**
+     * storeBooking() validates payment_preference as cash|cmi, so 'paypal'
+     * cannot reach this page. The branch that checked for it read as though
+     * PayPal were still supported, and it was the last one left in the public
+     * booking flow.
+     */
+    it('never names PayPal', () => {
+        const { container } = renderConfirmation({ paymentPreference: 'cmi' });
+
+        expect(container.textContent).not.toMatch(/paypal/i);
+    });
+
+    it('shows the follow-up wording for a card preference', () => {
+        renderConfirmation({ paymentPreference: 'cmi' });
+
+        expect(screen.getByText(/finaliser votre paiement en ligne/i)).toBeInTheDocument();
+    });
+
+    it('shows the plain wording for cash', () => {
+        renderConfirmation({ paymentPreference: 'cash' });
+
+        expect(screen.queryByText(/finaliser votre paiement en ligne/i)).not.toBeInTheDocument();
+    });
+});

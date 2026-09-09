@@ -47,7 +47,8 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        // On, deliberately and with a caveat (BAN-334).
+        // On, deliberately and with a caveat (BAN-334). This is the documented
+        // exception to the note in _default.php, which keeps it off by default.
         //
         // What this actually switches on is one tile in the /reserve wizard's
         // payment step. It gates no route, and nothing in this codebase can

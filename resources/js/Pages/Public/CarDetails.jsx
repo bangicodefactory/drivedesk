@@ -13,6 +13,7 @@ import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { useTranslations } from '@/hooks/useTranslations';
 import { specLabels } from '@/lib/vehicleSpecs';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useOnlinePayment } from '@/hooks/useOnlinePayment';
 import { dayAfter } from '@/lib/dates';
 
 /**
@@ -127,6 +128,7 @@ function Conditions({ t }) {
  */
 function BookingCard({ car, places, t }) {
     const { symbol } = useCurrency();
+    const onlinePayment = useOnlinePayment();
     const [place, setPlace] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -227,7 +229,9 @@ function BookingCard({ car, places, t }) {
             </Button>
 
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                {t('detail_price_note', "Aucun paiement en ligne. Le montant définitif est confirmé par l'agence avant le retrait.")}
+                {onlinePayment
+                    ? t('detail_price_note_card', "Rien n'est prélevé au moment de la demande. Le montant définitif est confirmé par l'agence avant le retrait.")
+                    : t('detail_price_note', "Aucun paiement en ligne. Le montant définitif est confirmé par l'agence avant le retrait.")}
             </p>
         </form>
     );

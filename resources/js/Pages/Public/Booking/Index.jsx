@@ -17,6 +17,7 @@ import Stepper from '@/components/booking/Stepper';
 import BookingSummary from '@/components/booking/BookingSummary';
 import { specLabels } from '@/lib/vehicleSpecs';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useOnlinePayment } from '@/hooks/useOnlinePayment';
 import { dayAfter } from '@/lib/dates';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
@@ -180,20 +181,16 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
     // payment step. Separate from payment_preference because "online" alone
     // isn't a complete choice until a gateway is picked underneath it.
     const [paymentMode, setPaymentMode] = useState(null);
-    // No gateway is integrated yet -- no route, no callback, nothing that can
-    // charge a card -- so the online option only appears where a deployment
-    // has deliberately turned booking_payment on.
+    // Whether this deployment offers card at all. Still no gateway anywhere in
+    // the codebase, so what the tile collects is an intent for staff to follow
+    // up on, never a charge -- see useOnlinePayment for the flag's path and why
+    // it is read in exactly one place.
     //
-    // client.features, not features: HandleInertiaRequests shares the flags
-    // inside buildClient(), and there is no top-level `features` prop. Reading
-    // the wrong path was falsy for every prop shape, so the option could never
-    // have appeared at all.
-    //
-    // Which matters more than it looks: drivedesk ships booking_payment => true.
-    // Correcting the path is therefore what makes the CMI tile show up on that
-    // client -- an option for a gateway that cannot charge anything. The flag
-    // wants flipping false there before this reaches a public storefront.
-    const onlinePaymentEnabled = Boolean(usePage().props.client?.features?.booking_payment);
+    // drivedesk turns it on deliberately (BAN-334). This comment used to end
+    // "the flag wants flipping false there before this reaches a public
+    // storefront", which was true when it was written and is now an
+    // instruction to undo a decision that has been made.
+    const onlinePaymentEnabled = useOnlinePayment();
 
     const vehicleId = watch('vehicle_id');
     const startDate = watch('start_date');

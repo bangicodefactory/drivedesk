@@ -51,8 +51,31 @@ class RouteIntegrityTest extends TestCase
      */
     public function test_no_route_hides_behind_the_booking_payment_flag(): void
     {
+        // Resolved through the router, not read off the route.
+        // Route::gatherMiddleware() returns what the route was *declared* with,
+        // so a group -- middlewareGroup('cmi', ['feature:booking_payment', ...])
+        // -- comes back as the bare string "cmi" and an exact-match filter sails
+        // past it. Verified: a probe route behind such a group passed this
+        // assertion before this change. gatherRouteMiddleware() expands groups
+        // the way the kernel does at request time.
+        $router = app('router');
+
         $guarded = collect(Route::getRoutes()->getRoutes())
-            ->filter(fn ($route) => in_array('feature:booking_payment', $route->gatherMiddleware(), true))
+            ->filter(function ($route) use ($router) {
+                foreach ($router->gatherRouteMiddleware($route) as $middleware) {
+                    // Lowercased contains, not equality. gatherRouteMiddleware()
+                    // resolves the `feature` alias to its class, so the entry
+                    // arrives as "App\Http\Middleware\RequireFeature:booking_payment"
+                    // -- a capital F that a case-sensitive match walks straight
+                    // past, which is how the first version of this guard still
+                    // let the group probe through.
+                    if (is_string($middleware) && str_contains(strtolower($middleware), 'feature:booking_payment')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
             ->map(fn ($route) => $route->methods()[0].' /'.ltrim($route->uri(), '/'))
             ->values();
 

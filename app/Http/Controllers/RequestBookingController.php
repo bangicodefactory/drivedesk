@@ -223,7 +223,15 @@ class RequestBookingController extends Controller
              // up on a method the business cannot take. CMI is the real card
              // gateway and stays, as a stated intent only, until its callback
              // exists behind feature('booking_payment').
-             'payment_preference' => 'nullable|in:cash,cmi',
+             //
+             // And the accepted set follows that flag. It used to be a fixed
+             // in:cash,cmi, so a deployment that had deliberately turned card
+             // payment off still accepted a hand-crafted or replayed POST with
+             // payment_preference=cmi -- and then rendered the guest a
+             // confirmation promising a follow-up about an online payment the
+             // business had switched off. The wizard never sends it in that
+             // state; nothing else stopped it either (BAN-334).
+             'payment_preference' => 'nullable|in:'.(feature('booking_payment') ? 'cash,cmi' : 'cash'),
          ]);
 
          if ($validator->fails()) {

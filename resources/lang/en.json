@@ -1126,5 +1126,9 @@
     "Booking reference": "Booking reference",
     "Message": "Message",
     "Reply to :name": "Reply to :name",
-    "Phone": "Phone"
+    "Phone": "Phone",
+    "reassurance_1_title_card": "Pay at the branch, or by card",
+    "reassurance_1_desc_card": "Nothing is charged when you make the request. You pay on pick-up, or the branch calls you to arrange card payment.",
+    "summary_payment_note_card": "Nothing is charged now. You pay at the branch, or by card once confirmed.",
+    "detail_price_note_card": "Nothing is charged when you make the request. The final amount is confirmed by the branch before pick-up."
 }

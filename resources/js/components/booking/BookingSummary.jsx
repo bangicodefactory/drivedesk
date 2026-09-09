@@ -1,6 +1,7 @@
 import { Banknote } from 'lucide-react';
 import { specLabels } from '@/lib/vehicleSpecs';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useOnlinePayment } from '@/hooks/useOnlinePayment';
 
 /**
  * The wizard's persistent summary (BAN-333).
@@ -19,6 +20,7 @@ export default function BookingSummary({
     days = 0, total = 0, t,
 }) {
     const { symbol } = useCurrency();
+    const onlinePayment = useOnlinePayment();
 
     if (!vehicle) return null;
 
@@ -86,10 +88,14 @@ export default function BookingSummary({
 
             {/* The single most reassuring thing this flow can say, and the one a
                 visitor is most likely to be looking for at the moment they are
-                asked for a phone number. */}
+                asked for a phone number. It sits beside step 4, so where card
+                payment is offered it must not deny that the option exists --
+                what stays true either way is that nothing is taken now. */}
             <p className="flex items-start gap-2 border-t border-border bg-accent px-4 py-3 text-xs font-semibold leading-relaxed text-accent-foreground">
                 <Banknote className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.9} />
-                {t('summary_cash_note', "Aucun paiement en ligne. Vous réglez à l'agence.")}
+                {onlinePayment
+                    ? t('summary_payment_note_card', "Rien n'est prélevé maintenant. Vous réglez à l'agence, ou par carte après confirmation.")
+                    : t('summary_cash_note', "Aucun paiement en ligne. Vous réglez à l'agence.")}
             </p>
         </aside>
     );

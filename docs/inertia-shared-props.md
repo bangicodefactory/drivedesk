@@ -49,13 +49,13 @@ overrides live in `config/clients/<client>.php`.
 |------|---------|-------------|
 | `paypal` | `true` | PayPal checkout |
 | `stripe` | `true` | Stripe checkout |
-| `booking_payment` | `true` | Payment step in booking flow |
+| `booking_payment` | `false` | Whether the booking wizard offers card payment alongside cash. It gates that tile and the `payment_preference` values the server accepts — nothing else, and no route. No gateway is integrated, so "card" is a stated intent staff follow up on. `drivedesk` turns it on (BAN-334); read it via `useOnlinePayment()`, never off `props.features` (BAN-328) |
 | `excel_import` | `true` | Excel bulk-import |
 | `multi_branch` | `false` | Multi-branch fleet management |
 | `tva_renumber` | `true` | TVA invoice renumbering |
 | `signatures` | `true` | Digital signature pad |
 | `traffic_violations` | `false` | Traffic violation (contravention / PV) tracking — BAN-260 |
-| `public_storefront` | `true` | Public B2C rental storefront (`/landing`, `/contact`, `/search`, newsletter) — off for DriveDesk, BAN-261 |
+| `public_storefront` | `true` | Public B2C rental storefront (`/landing`, `/car/{id}`, `/reserve`, `/contact`, `/search`, newsletter). Was off for DriveDesk under BAN-261; on again since BAN-329, alongside the demo gateway rather than instead of it |
 
 ### Reading props in a page component
 

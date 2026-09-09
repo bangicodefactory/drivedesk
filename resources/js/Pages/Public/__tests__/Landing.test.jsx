@@ -176,3 +176,45 @@ describe('Landing — search panel', () => {
         expect(end.value).toBe('');
     });
 });
+
+describe('Landing — payment reassurance follows the flag', () => {
+    /**
+     * BAN-334. Turning booking_payment on made this card lie: it promised
+     * "aucun prélèvement en ligne" while the wizard, two steps later, offered a
+     * tile headed "Paiement en Ligne". Exactly the stale-copy failure that PR
+     * fixed elsewhere, introduced by the same PR here.
+     */
+    it('promises cash-only while card payment is off', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: false } } },
+        });
+        renderLanding();
+
+        expect(screen.getByText(/aucun prélèvement en ligne/i)).toBeInTheDocument();
+    });
+
+    it('stops promising cash-only once card payment is offered', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: true } } },
+        });
+        renderLanding();
+
+        expect(screen.queryByText(/aucun prélèvement en ligne/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/paiement à l'agence ou par carte/i)).toBeInTheDocument();
+        // Still true in both modes, and the part that actually reassures.
+        expect(screen.getByText(/rien n'est prélevé au moment de la demande/i)).toBeInTheDocument();
+    });
+
+    /** Whatever the flag says, PayPal is not a method this app offers. */
+    it('never names PayPal', () => {
+        for (const booking_payment of [true, false]) {
+            vi.mocked(usePage).mockReturnValue({
+                props: { translations: {}, client: { features: { booking_payment } } },
+            });
+            const { container, unmount } = renderLanding();
+
+            expect(container.textContent).not.toMatch(/paypal/i);
+            unmount();
+        }
+    });
+});
