@@ -149,14 +149,18 @@ class DevDataSeeder extends Seeder
         // gear/fuel use the keys from Vehicle::$gearbox and Vehicle::$fuelType
         // (automatic|manual, essence|diesel|petrol|hybrid|electric|gas) so the
         // show page and edit form resolve their labels correctly.
+        // `photo` names a fixture in public/images/fleet/, copied onto the
+        // public disk below. Optional: a vehicle without one keeps the default
+        // placeholder the storefront already falls back to. Three of the seven
+        // have none on purpose -- see public/images/fleet/CREDITS.md.
         $vehicles = [
-            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000],
+            ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000, 'photo' => 'toyota-rav4.jpg'],
             ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000],
-            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000],
+            ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000, 'photo' => 'renault-clio.jpg'],
             ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000],
-            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000],
+            ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000, 'photo' => 'peugeot-208.jpg'],
             ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000],
-            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000],
+            ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000, 'photo' => 'ford-transit.jpg'],
         ];
 
         $yearCol = 'year_of_ﬁrst_immatriculation'; // Unicode ligature — matches DB column exactly
@@ -185,10 +189,56 @@ class DevDataSeeder extends Seeder
                     'parent_id'                => $this->ownerId,
                 ]);
             }
+            if (!empty($v['photo'])) {
+                $this->ensureFleetPhoto($existing, $v['photo']);
+            }
+
             $ids[] = $existing->id;
         }
         $this->command->info('  Vehicles: ' . count($ids));
         return $ids;
+    }
+
+    /**
+     * Give a demo vehicle its stock photo, if it does not already have one.
+     *
+     * The fixtures live in public/images/fleet/ and are copied onto the public
+     * disk, because `picture` is a bare filename that the storefront resolves
+     * as /storage/upload/picture/<name> — an uploaded-file path, not an asset
+     * path. Copying is what makes them real uploads without anyone uploading.
+     *
+     * Two deliberate limits:
+     *
+     *  - it never overwrites. A vehicle that already carries a picture keeps
+     *    it, so an admin who uploads a real photo of their real car does not
+     *    lose it to the nightly demo:seed at 03:30.
+     *  - a missing fixture is skipped, not fatal. The seeder's job is demo
+     *    data; it should not take the whole run down because an image did not
+     *    ship.
+     */
+    private function ensureFleetPhoto(Vehicle $vehicle, string $photo): void
+    {
+        if (!empty($vehicle->picture)) {
+            return;
+        }
+
+        $source = public_path('images/fleet/' . $photo);
+        if (!is_file($source)) {
+            $this->command->warn("  Fleet photo missing, skipped: {$photo}");
+            return;
+        }
+
+        $target = storage_path('app/public/upload/picture');
+        if (!is_dir($target)) {
+            mkdir($target, 0755, true);
+        }
+
+        if (!is_file($target . DIRECTORY_SEPARATOR . $photo)) {
+            copy($source, $target . DIRECTORY_SEPARATOR . $photo);
+        }
+
+        $vehicle->picture = $photo;
+        $vehicle->save();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
