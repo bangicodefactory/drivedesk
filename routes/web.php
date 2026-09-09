@@ -81,14 +81,30 @@ Route::middleware('feature:public_storefront')->group(function () {
     // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
     Route::view('/contact', 'client.pages.contact')->name('contact');
     Route::get('/search', function (\Illuminate\Http\Request $request) {
-        $q = $request->get('q');
+        // Coerced to a string by hand. ->get() handed a query array
+        // (/search?q[]=x) straight to the view, where Blade's e() calls
+        // htmlspecialchars() on it -- a TypeError, so a 500 on a public URL
+        // anyone can construct. ->string() is no better: it constructs a
+        // Stringable, which rejects the array just as loudly. Only an
+        // is_string() check survives both.
+        $raw = $request->query('q');
+        $q = is_string($raw) ? $raw : '';
         return view('client.pages.search', compact('q'));
     })->name('search');
+    // Unauthenticated public form, rate-limited like its sibling
+    // POST /demo-request. It stores nothing today, so the blast radius is a
+    // validation oracle rather than a mailbox flood -- but it must not become
+    // one the moment somebody wires the TODO below up.
     Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
         $data = $request->validate(['email' => 'required|email']);
-        // TODO: store subscription or dispatch job
+        // TODO: store subscription or dispatch job.
+        //
+        // Until then this endpoint tells a visitor they subscribed and throws
+        // the address away. That is a lie on a public page, and it is why the
+        // storefront footer must not carry this form on a live domain --
+        // tracked with /contact and /search still being scaffolding.
         return back()->with('status', 'Subscribed with ' . $data['email']);
-    })->name('newsletter.subscribe');
+    })->middleware('throttle:5,1')->name('newsletter.subscribe');
 });
 
 // "Book a demo" form on the demo-gateway landing — guarded so the endpoint only

@@ -20,7 +20,7 @@
                             <h4>{{ __('footer_contact') }}</h4>
                         </div>
                         <div class="footer-content">
-                            <p>{{ $settings['company_address'] ?? '123 Street, City, Country' }}</p>
+                            <p>{{ $settings['company_address'] ?: '123 Street, City, Country' }}</p>
                             <ul class="contact-info">
                                 <li>
                                     <i class="fa-regular fa-envelope"></i>

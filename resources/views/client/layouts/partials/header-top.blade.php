@@ -15,12 +15,12 @@
                 <li>
                     <i class="fas fa-envelope"></i>
                     <a href="mailto:{{$settings['company_email']}}" class="link">
-                        {{ $settings['company_email'] ?? __('header_top_email') }}
+                        {{ $settings['company_email'] ?: __('header_top_email') }}
                     </a>
                 </li>
                 <li>
                     <i class="fas fa-map-marker-alt"></i>
-                    {{ $settings['company_address'] ?? __('header_top_address') }}
+                    {{ $settings['company_address'] ?: __('header_top_address') }}
                 </li>
             </ul>
             <div class="header-top-right">

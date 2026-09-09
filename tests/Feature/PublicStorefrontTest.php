@@ -86,13 +86,20 @@ class PublicStorefrontTest extends TestCase
     }
 
     /**
-     * With the flag on, every one of them *works* -- not merely "is not a 404".
+     * With the flag on, every one of them answers without erroring.
      *
      * assertNotSame(404) was the first version of this and it was worthless:
      * /contact and /search render the legacy Blade shell, whose partials read
      * settings keys that drivedesk's branding_seed does not set, so both were
      * returning 500 and this test was green. Confirmed against a running
      * instance, not just here.
+     *
+     * What it still does not prove is that the pages are *fit to publish*.
+     * /contact and /search are literal scaffolding ("This is a placeholder
+     * contact page"), and the newsletter endpoint reports success while
+     * discarding the address. A status check cannot see either. Those are
+     * content problems, tracked separately -- do not read a green run here as
+     * the storefront being ready for a commercial domain.
      *
      * The flag is forced rather than read off drivedesk (CLAUDE.md 10.2 rule
      * 6): what a given client actually resolves belongs in
@@ -118,6 +125,39 @@ class PublicStorefrontTest extends TestCase
             $response->getStatusCode(),
             "{$method} {$uri} returned {$response->getStatusCode()}"
         );
+    }
+
+    /**
+     * The 500 that the status check above would have caught only by accident:
+     * /search read `q` straight off the request and handed it to a view, so a
+     * query array made Blade's e() call htmlspecialchars() on an array. Anyone
+     * could construct it, and the page is crawlable now.
+     */
+    public function test_search_survives_a_query_array(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
+
+        $this->get('/search?q[]=x')->assertSuccessful();
+    }
+
+    /**
+     * The newsletter form is rate-limited like its sibling public form
+     * (POST /demo-request). It writes nothing today, so this guards the moment
+     * somebody makes it write.
+     */
+    public function test_the_newsletter_form_is_rate_limited(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/newsletter/subscribe', ['email' => "sub{$i}@example.com"])
+                ->assertRedirect();
+        }
+
+        $this->post('/newsletter/subscribe', ['email' => 'six@example.com'])
+            ->assertStatus(429);
     }
 
     public function test_landing_still_serves_clients_that_keep_the_storefront(): void
