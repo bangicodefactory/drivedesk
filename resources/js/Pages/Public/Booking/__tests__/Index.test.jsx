@@ -43,8 +43,10 @@ function withOnlinePayment() {
 }
 
 const vehicles = [
-    { id: 1, name: 'Renault Clio', model: '2024', daily_rate: 350, number_of_seats: 5, gearbox: 'Manuelle', fuel_type: 'Diesel', picture: null },
-    { id: 2, name: 'Dacia Logan', model: '2025', daily_rate: 280, number_of_seats: 5, gearbox: 'Manuelle', fuel_type: 'Diesel', picture: null },
+    // Lowercase slugs, the way the column actually stores them
+    // (App\Models\Vehicle::$gearbox / ::$fuelType).
+    { id: 1, name: 'Renault Clio', model: '2024', daily_rate: 350, number_of_seats: 5, gearbox: 'manual', fuel_type: 'diesel', picture: null },
+    { id: 2, name: 'Dacia Logan', model: '2025', daily_rate: 280, number_of_seats: 5, gearbox: 'manual', fuel_type: 'diesel', picture: null },
 ];
 const places = [
     { id: 10, name: 'Bureau Principal', city: 'Tétouan' },
@@ -224,5 +226,33 @@ describe('Public/Booking/Index', () => {
 
             expect(screen.getByLabelText('Nom Complet')).toBeInTheDocument();
         });
+    });
+});
+
+describe('Booking wizard — step 1', () => {
+    /**
+     * vehicleSpecs.js exists because the storefront was printing the raw
+     * column slugs. It was wired into the landing, the detail page, the
+     * similar-car cards and the summary rail -- but not into this grid, which
+     * is the largest list of cars on the storefront and step 1 of the flow.
+     */
+    it('translates the stored gearbox and fuel slugs', () => {
+        render(<Booking vehicles={vehicles} places={places} />);
+
+        expect(screen.getAllByText(/Manuelle/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Diesel/).length).toBeGreaterThan(0);
+        expect(screen.queryByText(/manual/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/petrol/)).not.toBeInTheDocument();
+    });
+
+    /**
+     * Step 1 priced in MAD while the summary rail sitting beside step 2 said
+     * Dh, so the two halves of one flow disagreed on the currency.
+     */
+    it('prices in the same currency as the rest of the flow', () => {
+        render(<Booking vehicles={vehicles} places={places} />);
+
+        expect(screen.queryByText(/MAD/)).not.toBeInTheDocument();
+        expect(screen.getAllByText(/350 Dh/).length).toBeGreaterThan(0);
     });
 });

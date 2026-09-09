@@ -62,6 +62,15 @@ class PublicStorefrontTest extends TestCase
         return [
             'landing'    => ['get', '/landing', []],
             'contact'    => ['get', '/contact', []],
+            // Both verbs, because /contact grew a POST when it stopped being a
+            // Route::view placeholder (BAN-333) and it must disappear with the
+            // rest of the family. Deliverability is ContactControllerTest's
+            // subject; this is only about the gate.
+            'contact-send' => ['post', '/contact', [
+                'name'    => 'Crawler',
+                'email'   => 'crawler@example.com',
+                'message' => 'Hello.',
+            ]],
             'search'     => ['get', '/search', []],
             'reserve'    => ['get', '/reserve', []],
             // A payload, because the endpoint validates: without it the route
@@ -227,6 +236,23 @@ class PublicStorefrontTest extends TestCase
         $this->get('/landing')->assertInertia(fn (Assert $page) => $page
             ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->contains($available->id)
                 && collect($vehicles)->pluck('id')->doesntContain($hidden->id))
+        );
+    }
+
+    /**
+     * BAN-333. The landing groups its fleet cards by vehicle type client-side,
+     * against the `vehicleTypes` list it is given. The vehicles select did not
+     * include `type`, so every card carried an undefined one and the filter
+     * matched nothing -- a control that silently emptied the grid.
+     */
+    public function test_landing_exposes_the_vehicle_type_its_fleet_filter_groups_by(): void
+    {
+        $this->asClient('acme');
+        $vehicle = Vehicle::factory()->create(['available_for_rent' => true]);
+
+        $this->get('/landing')->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)
+                ->firstWhere('id', $vehicle->id)['type'] === $vehicle->type)
         );
     }
 
