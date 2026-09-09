@@ -743,3 +743,14 @@ next obvious targets; everything else sits in the 160–330 ms band.
 > built-in server with **cwd = `public/`** — the vendor `server.php` router
 > resolves static files via `getcwd()`, and a project-root cwd silently routes
 > every built asset through Laravel).
+
+### F-24: the public fleet grid ships six unresized 1600px JPEGs (~1.7 MB)
+- **Page / endpoint:** `/landing` (fleet grid) and `/reserve` step 1 (car picker), both public and both now reachable on `drivedesk.ma`.
+- **Symptom:** six demo vehicles carry stock photographs at 1600px wide, 160–350 KB each, served at their native size. The landing card box renders them at roughly 480×208 CSS px and the wizard's at 16:9, so every byte above ~2× that width is discarded by the browser after download.
+- **Evidence:** `database/seeders/fixtures/fleet/` — `renault-clio.jpg` 303 KB, `volkswagen-t-roc.jpg` 339 KB, `toyota-rav4.jpg` 391 KB, `dacia-duster.jpg` 261 KB, `ford-transit.jpg` 208 KB, `peugeot-208.jpg` 159 KB. Before BAN-331 every card used one shared 38 KB placeholder, so the grid's image payload went from ~38 KB to ~1.7 MB.
+- **Production relevance:** real. The storefront's audience is Moroccan mobile, often on cellular. Both grids use `loading="lazy"`, so below-the-fold cards do not block first paint, but the first two or three do.
+- **Fix sketch:** not a code change — resize the fixtures. Two 800px-wide variants (1× and 2×) plus `srcset`/`sizes` on the two cards would cut this by roughly 4× with no visible difference. WebP would cut it again. The fixtures are seeder assets, so regenerating them is a one-file commit.
+- **Estimated effort:** S. **Estimated impact:** ~1.3 MB off the public fleet grid. **Risk:** none. **Priority:** P3 (measured from file sizes, not from a trace; do it when the storefront gets its next pass)
+
+> Recorded rather than fixed, per §7 — audit during the migration, optimize
+> after. Raised in review of PR #47.

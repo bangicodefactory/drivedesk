@@ -98,28 +98,42 @@ class DemoFleetPhotoTest extends TestCase
         $this->assertSame($this->fixtureBytes(), Storage::disk('public')->get(self::PATH));
     }
 
+    /** Every vehicle that declares a fixture gets it, and the file lands. */
+    public function test_every_declared_fixture_reaches_the_disk(): void
+    {
+        $this->seed(DevDataSeeder::class);
+
+        $expected = [
+            'Toyota RAV4'      => 'toyota-rav4.jpg',
+            'Dacia Duster'     => 'dacia-duster.jpg',
+            'Renault Clio'     => 'renault-clio.jpg',
+            'Peugeot 208'      => 'peugeot-208.jpg',
+            'Volkswagen T-Roc' => 'volkswagen-t-roc.jpg',
+            'Ford Transit'     => 'ford-transit.jpg',
+        ];
+
+        foreach ($expected as $name => $photo) {
+            $this->assertSame(
+                $photo,
+                Vehicle::where('name', $name)->firstOrFail()->picture,
+                "{$name} did not get its fixture"
+            );
+            Storage::disk('public')->assertExists('upload/picture/' . $photo);
+        }
+    }
+
     /**
-     * Not every seeded vehicle has a fixture — three ship without one on
-     * purpose. Those keep a null picture and the storefront's own placeholder,
-     * and the run does not fall over.
+     * A vehicle may legitimately declare no fixture — the seeder treats `photo`
+     * as optional and the storefront falls back to its own placeholder. The
+     * Mercedes is that case, so this covers the branch rather than asserting
+     * the whole fleet has a picture, which would fail the day someone adds an
+     * eighth demo vehicle without one.
      */
     public function test_a_vehicle_without_a_fixture_keeps_the_default_placeholder(): void
     {
         $this->seed(DevDataSeeder::class);
 
-        $this->assertNull(Vehicle::where('name', 'Dacia Duster')->firstOrFail()->picture);
         $this->assertNull(Vehicle::where('name', 'Mercedes GLE')->firstOrFail()->picture);
-        $this->assertNull(Vehicle::where('name', 'Volkswagen T-Roc')->firstOrFail()->picture);
-    }
-
-    /** And the ones that do have a fixture all actually land. */
-    public function test_every_declared_fixture_reaches_the_disk(): void
-    {
-        $this->seed(DevDataSeeder::class);
-
-        foreach (['toyota-rav4.jpg', 'renault-clio.jpg', 'peugeot-208.jpg', 'ford-transit.jpg'] as $photo) {
-            Storage::disk('public')->assertExists('upload/picture/' . $photo);
-            $this->assertDatabaseHas('vehicles', ['picture' => $photo]);
-        }
+        Storage::disk('public')->assertMissing('upload/picture/mercedes-gle.jpg');
     }
 }
