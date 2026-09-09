@@ -11,12 +11,18 @@ class SetLocale
     /**
      * Locales the app can actually serve.
      *
-     * 'ary' = Moroccan Arabic (Darija); a client opts into it via its
-     * public_default_locale (e.g. drivedesk). Harmless for clients that
-     * don't link to it. The base set is unchanged so directonderweg's
-     * behaviour (nl users still fall back to fr, etc.) is preserved — note
-     * that a client may list `nl` in supported_locales without it being
-     * servable here, which is why App\Support\Locales intersects the two.
+     * 'ary' = Moroccan Arabic (Darija). **No client defaults to it any more**
+     * -- drivedesk did until BAN-330 -- and it is in no config, no public URL
+     * set and neither language switcher. It stays here anyway, deliberately:
+     * BAN-330 was a change of default, not a withdrawal, and an account that
+     * already stores 'ary' must keep working. Removing it from this list is
+     * what would break that promise;
+     * LocaleResolutionTest::test_explicit_ary_language_switch_is_still_accepted
+     * is the only thing standing in the way, so read this before deleting it.
+     *
+     * Note also that a client may list a locale in supported_locales without it
+     * being servable here (the acme fixture lists `nl`), which is why
+     * App\Support\Locales intersects the two.
      */
     public const SUPPORTED = ['ar', 'fr', 'en', 'ary'];
 
@@ -38,8 +44,9 @@ class SetLocale
         }
 
         // Per-client default for anonymous/guest visitors. Defaults to 'fr'
-        // (today's behaviour) when a client doesn't set it — directonderweg
-        // is unset, so it keeps defaulting to French.
+        // when a client doesn't set it, which since BAN-330 is also what
+        // drivedesk sets -- the two agree today, so a test that only asserts
+        // 'fr' cannot tell which one produced it.
         $clientDefault = config('client.public_default_locale', 'fr');
 
         // Priority 1: Get from authenticated user. Guarded on $locale so a

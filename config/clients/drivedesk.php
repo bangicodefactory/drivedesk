@@ -69,7 +69,7 @@ return [
 
     /*
      * Public SEO copy (BAN-262). Written in English rather than the guest
-     * default locale (`ary`): the buyer here is a rental-agency owner, the
+     * default locale (French since BAN-330): the buyer here is a rental-agency owner, the
      * product is sold beyond Morocco, and a crawler is served the guest locale
      * regardless of who is searching. Description is 149 chars.
      */

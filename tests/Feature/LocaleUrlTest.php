@@ -41,18 +41,27 @@ class LocaleUrlTest extends TestCase
     {
         $this->asClient('drivedesk');
 
-        $this->get('/fr')->assertOk()->assertSee('lang="fr"', false);
-        $this->get('/en')->assertOk()->assertSee('lang="en"', false);
+        // The whole <html> tag, not a bare lang="xx". Every one of these pages
+        // also emits <link rel="alternate" hreflang="fr" ...>, and
+        // `hreflang="fr"` *contains* `lang="fr"` -- so the substring form was
+        // satisfied by the alternate link no matter what language the document
+        // was actually in.
+        $this->get('/fr')->assertOk()->assertSee('<html lang="fr" dir="ltr">', false);
+        $this->get('/en')->assertOk()->assertSee('<html lang="en" dir="ltr">', false);
         // `ar` is Modern Standard Arabic, which is what the copy actually is.
-        $this->get('/ar')->assertOk()->assertSee('lang="ar" dir="rtl"', false);
+        $this->get('/ar')->assertOk()->assertSee('<html lang="ar" dir="rtl">', false);
     }
 
     public function test_the_unprefixed_home_still_serves_the_guest_default(): void
     {
         $this->asClient('drivedesk');
 
-        // drivedesk's public_default_locale is `fr` since BAN-330.
-        $this->get('/')->assertOk()->assertSee('lang="fr"', false);
+        // drivedesk's public_default_locale is `fr` since BAN-330. Asserted on
+        // the whole <html> tag: see the note above -- the bare substring is
+        // matched by this page's own hreflang="fr" alternate, so it passed even
+        // when the document was English. This is the assertion the locale
+        // change hangs on, and it could not fail.
+        $this->get('/')->assertOk()->assertSee('<html lang="fr" dir="ltr">', false);
     }
 
     public function test_a_signed_in_visitor_keeps_their_own_language(): void
@@ -65,7 +74,7 @@ class LocaleUrlTest extends TestCase
         $this->asClient('drivedesk');
         $user = User::factory()->create(['type' => 'owner', 'parent_id' => 0, 'lang' => 'en']);
 
-        $this->actingAs($user)->get('/fr')->assertSee('lang="en"', false);
+        $this->actingAs($user)->get('/fr')->assertSee('<html lang="en" dir="ltr">', false);
     }
 
     public function test_the_url_wins_for_a_guest_with_a_session_language(): void
@@ -74,7 +83,7 @@ class LocaleUrlTest extends TestCase
         // locale that disagrees with the URL.
         $this->asClient('drivedesk');
 
-        $this->withSession(['locale' => 'en'])->get('/fr')->assertSee('lang="fr"', false);
+        $this->withSession(['locale' => 'en'])->get('/fr')->assertSee('<html lang="fr" dir="ltr">', false);
     }
 
     public function test_an_unsupported_locale_is_not_a_route(): void
@@ -253,5 +262,20 @@ class LocaleUrlTest extends TestCase
         $this->assertSame(['fr', 'ar', 'en'], $locales);
         $this->assertNotContains('nl', $locales);
         $this->assertNotContains('ary', $locales);
+    }
+
+    /**
+     * The SetLocale::SUPPORTED intersection, which drivedesk stopped exercising
+     * the moment BAN-330 took `nl` out of its list: with fr/ar/en all servable,
+     * deleting that filter from forPublicUrls() would keep every drivedesk
+     * assertion green. acme still lists `nl`, so it is the client that can
+     * still tell the difference.
+     */
+    public function test_a_client_listing_an_unservable_locale_does_not_publish_it(): void
+    {
+        $this->asClient('acme');
+
+        $this->assertContains('nl', config('client.supported_locales'), 'fixture no longer lists nl');
+        $this->assertNotContains('nl', Locales::forPublicUrls());
     }
 }

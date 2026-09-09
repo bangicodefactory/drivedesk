@@ -43,6 +43,24 @@ class LocaleResolutionTest extends TestCase
             );
     }
 
+    /**
+     * That the *client config* is what decides, not SetLocale's own fallback.
+     *
+     * Both are 'fr', so the test above cannot tell them apart: delete
+     * public_default_locale from drivedesk.php and it still passes. Pointing
+     * the config somewhere else and following it is the only assertion that
+     * distinguishes them.
+     */
+    public function test_the_client_config_is_what_sets_the_guest_default(): void
+    {
+        $this->asClient('drivedesk');
+        config(['client.public_default_locale' => 'ar']);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'ar'));
+    }
+
     public function test_a_client_without_a_public_default_locale_falls_back_to_french(): void
     {
         $this->asClient('acme');
