@@ -15,6 +15,9 @@ import { fieldA11y } from '@/lib/fieldA11y';
 import PageBanner from '@/components/PageBanner';
 import Stepper from '@/components/booking/Stepper';
 import BookingSummary from '@/components/booking/BookingSummary';
+import { specLabels } from '@/lib/vehicleSpecs';
+import { useCurrency } from '@/hooks/useCurrency';
+import { dayAfter } from '@/lib/dates';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
@@ -57,6 +60,48 @@ function daysBetween(startDate, endDate) {
     return Math.max(1, diff);
 }
 
+function CarCard({ vehicle, selected, onSelect, t }) {
+    const { gearbox, fuel } = specLabels(vehicle, t);
+    const { symbol } = useCurrency();
+
+    return (
+        <div
+            onClick={() => onSelect(vehicle)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(vehicle); }}
+            className={`bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 cursor-pointer border ${
+                selected ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
+            }`}
+        >
+            <div className="relative pt-[56.25%] bg-muted overflow-hidden">
+                <img
+                    src={vehiclePictureUrl(vehicle)}
+                    alt={vehicle.name}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/assets/images/client/default-car.jpg'; }}
+                />
+            </div>
+            <div className="p-6">
+                <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold">{vehicle.name}</h3>
+                    <div className="text-end shrink-0 ms-2">
+                        <div className="text-sm text-muted-foreground">{t('from', 'À partir de')}</div>
+                        <div className="text-lg font-display text-primary">
+                            {Number(vehicle.daily_rate).toFixed(0)} {symbol}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{t('per_day', 'par jour')}</div>
+                    </div>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                    {gearbox} • {vehicle.number_of_seats ?? '—'} {t('seats', 'Sièges')} • {fuel}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 function CarPicker({ vehicles, selectedId, onSelect, t }) {
     if (vehicles.length === 0) {
         return (
@@ -69,39 +114,13 @@ function CarPicker({ vehicles, selectedId, onSelect, t }) {
     return (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {vehicles.map((vehicle) => (
-                <div
+                <CarCard
                     key={vehicle.id}
-                    onClick={() => onSelect(vehicle)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(vehicle); }}
-                    className={`bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 cursor-pointer border ${
-                        String(selectedId) === String(vehicle.id) ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
-                    }`}
-                >
-                    <div className="relative pt-[56.25%] bg-muted overflow-hidden">
-                        <img
-                            src={vehiclePictureUrl(vehicle)}
-                            alt={vehicle.name}
-                            loading="lazy"
-                            className="absolute inset-0 w-full h-full object-cover"
-                            onError={(e) => { e.target.src = '/assets/images/client/default-car.jpg'; }}
-                        />
-                    </div>
-                    <div className="p-6">
-                        <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-xl font-bold">{vehicle.name}</h3>
-                            <div className="text-end shrink-0 ms-2">
-                                <div className="text-sm text-muted-foreground">{t('from', 'À partir de')}</div>
-                                <div className="text-lg font-display text-primary">{Number(vehicle.daily_rate).toFixed(0)} MAD</div>
-                                <div className="text-xs text-muted-foreground">{t('per_day', 'par jour')}</div>
-                            </div>
-                        </div>
-                        <p className="text-muted-foreground text-sm">
-                            {vehicle.gearbox ?? '—'} • {vehicle.number_of_seats ?? '—'} {t('seats', 'Sièges')} • {vehicle.fuel_type ?? '—'}
-                        </p>
-                    </div>
-                </div>
+                    vehicle={vehicle}
+                    selected={String(selectedId) === String(vehicle.id)}
+                    onSelect={onSelect}
+                    t={t}
+                />
             ))}
         </div>
     );
@@ -186,16 +205,30 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
     const termsAccepted = watch('termsAccepted');
     const paymentPreference = watch('payment_preference');
 
-    const selectedVehicle = useMemo(
-        () => vehicles.find((v) => String(v.id) === String(vehicleId)) ?? null,
-        [vehicles, vehicleId],
-    );
+    // Remembered rather than derived from `vehicles` alone.
+    //
+    // goToCustomerStep() replaces `vehicles` with the list filtered to the
+    // chosen dates. When the car turns out to be taken it is *absent* from that
+    // list -- so a plain find() returned null, `{step === 2 && selectedVehicle
+    // && ...}` unmounted the whole step, and the "no longer available" message
+    // this very check had just triggered went with it, along with the Back
+    // button. The visitor was left with a stepper and nothing else.
+    const [lastChosenVehicle, setLastChosenVehicle] = useState(preselected ?? null);
+
+    const selectedVehicle = useMemo(() => {
+        const found = vehicles.find((v) => String(v.id) === String(vehicleId));
+        if (found) return found;
+
+        // Same car, just filtered out of the current availability list.
+        return String(lastChosenVehicle?.id) === String(vehicleId) ? lastChosenVehicle : null;
+    }, [vehicles, vehicleId, lastChosenVehicle]);
 
     const days = daysBetween(startDate, endDate);
     const total = selectedVehicle ? days * Number(selectedVehicle.daily_rate) : 0;
 
     const selectCar = (vehicle) => {
         setValue('vehicle_id', String(vehicle.id), { shouldValidate: true });
+        setLastChosenVehicle(vehicle);
         setAvailabilityError(false);
         setStep(2);
     };
@@ -331,7 +364,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                 <div className="space-y-4">
                                     <div>
                                         <Label htmlFor="end_date">{t('return_date', 'Date de Retour')}</Label>
-                                        <IconInput icon={Calendar} id="end_date" type="date" min={startDate || today}
+                                        <IconInput icon={Calendar} id="end_date" type="date" min={dayAfter(startDate) || today}
                                             disabled={!startDate}
                                             {...register('end_date')} {...fieldA11y(errors, 'end_date')} />
                                         <FieldError name="end_date" errors={errors} />

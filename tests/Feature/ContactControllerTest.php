@@ -140,6 +140,29 @@ class ContactControllerTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    /**
+     * SMTP credentials are per-tenant settings an owner fills in, so a wrong
+     * password is a configuration mistake rather than an exceptional one. An
+     * uncaught TransportException would be a 500 on a public URL -- exactly
+     * the failure BAN-329 was about -- and it would also tell the visitor
+     * nothing about whether their message arrived.
+     */
+    public function test_a_failing_mailer_is_reported_not_a_500(): void
+    {
+        $this->setContactEmail('agence@example.com');
+
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp is down'));
+
+        $response = $this->post(route('contact.send'), [
+            'name'    => 'Yassine Berrada',
+            'email'   => 'yassine@example.com',
+            'message' => 'Bonjour.',
+        ]);
+
+        $this->assertLessThan(400, $response->getStatusCode());
+        $response->assertSessionHas('error')->assertSessionMissing('success');
+    }
+
     public function test_it_validates_before_sending(): void
     {
         Mail::fake();
@@ -205,6 +228,56 @@ class ContactControllerTest extends TestCase
         ]))->render();
 
         $this->assertStringContainsString('Yassine Berrada', $html);
+    }
+
+    /**
+     * Every user-visible string this controller and its mailable produce goes
+     * through __() with an English sentence as the key -- the convention
+     * DemoRequestController already uses. The first version of this PR added
+     * 95 storefront keys per locale and forgot its own PHP ones, so a French
+     * visitor got an English toast and the agency's notification arrived
+     * half-translated. drivedesk's public default locale is French.
+     */
+    public function test_its_own_strings_are_translated_into_the_locales_this_client_serves(): void
+    {
+        $strings = [
+            'Thanks — your message has been sent. We will reply shortly.',
+            'Sending is unavailable right now. Please call or message us instead.',
+            'Message from :name',
+            'Message from :name — booking :reference',
+            'New message from the website',
+            'Booking reference',
+            'Reply to :name',
+        ];
+
+        foreach (config('client.supported_locales') as $locale) {
+            $catalogue = json_decode(file_get_contents(base_path("resources/lang/{$locale}.json")), true);
+
+            foreach ($strings as $string) {
+                $this->assertArrayHasKey(
+                    $string,
+                    $catalogue,
+                    "resources/lang/{$locale}.json is missing \"{$string}\""
+                );
+            }
+        }
+    }
+
+    /** The subject line is the half a French recipient sees first. */
+    public function test_the_email_subject_is_translated(): void
+    {
+        app()->setLocale('fr');
+
+        $mail = new ContactMessage([
+            'name'      => 'Yassine Berrada',
+            'email'     => 'yassine@example.com',
+            'phone'     => null,
+            'reference' => 'BR-00001',
+            'message'   => 'Bonjour.',
+        ]);
+        $mail->build();
+
+        $this->assertSame('Message de Yassine Berrada — réservation BR-00001', $mail->subject);
     }
 
     /** Both verbs live behind feature:public_storefront, so both disappear together. */

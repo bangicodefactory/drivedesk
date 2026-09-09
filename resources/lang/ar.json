@@ -1605,5 +1605,13 @@
     "contact_send": "إرسال",
     "contact_form_unavailable": "النموذج غير متاح حاليًا. يُرجى الاتصال بنا هاتفيًا أو عبر واتساب.",
     "contact_hours_title": "ساعات العمل",
-    "optional": "اختياري"
+    "optional": "اختياري",
+    "Thanks — your message has been sent. We will reply shortly.": "شكرًا — تم إرسال رسالتكم. سنرد عليكم قريبًا.",
+    "Sending is unavailable right now. Please call or message us instead.": "الإرسال غير متاح حاليًا. يُرجى الاتصال بنا أو مراسلتنا عبر واتساب.",
+    "Message from :name": "رسالة من :name",
+    "Message from :name — booking :reference": "رسالة من :name — الحجز :reference",
+    "New message from the website": "رسالة جديدة من الموقع",
+    "Booking reference": "مرجع الحجز",
+    "Message": "الرسالة",
+    "Reply to :name": "الرد على :name"
 }

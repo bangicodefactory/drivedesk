@@ -80,9 +80,11 @@ Route::middleware('feature:public_storefront')->group(function () {
 
     // Contact. Was Route::view('/contact', 'client.pages.contact'), whose whole
     // body was "This is a placeholder contact page. Replace with real content."
-    // -- on a URL in sitemap.xml, linked from the header, the footer and the
-    // booking confirmation. Same path, same verb, same route name (CLAUDE.md
-    // §4); only the response body changed, from a Blade stub to an Inertia page.
+    // -- linked from the storefront header, the footer and the booking
+    // confirmation, so it was the answer a visitor got when a rental went
+    // wrong. (Not in sitemap.xml: SeoController excludes it, for reasons this
+    // change removes.) Same path, same verb, same route name (CLAUDE.md §4);
+    // only the response body changed, from a Blade stub to an Inertia page.
     Route::get('/contact', [\App\Http\Controllers\ContactController::class, 'index'])->name('contact');
 
     // Unauthenticated public form that sends mail, so it is throttled exactly

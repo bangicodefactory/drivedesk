@@ -1117,5 +1117,14 @@
     "contact_send": "Send",
     "contact_form_unavailable": "The form is unavailable right now. Please contact us by phone or WhatsApp.",
     "contact_hours_title": "Opening hours",
-    "optional": "optional"
+    "optional": "optional",
+    "Thanks — your message has been sent. We will reply shortly.": "Thanks — your message has been sent. We will reply shortly.",
+    "Sending is unavailable right now. Please call or message us instead.": "Sending is unavailable right now. Please call or message us instead.",
+    "Message from :name": "Message from :name",
+    "Message from :name — booking :reference": "Message from :name — booking :reference",
+    "New message from the website": "New message from the website",
+    "Booking reference": "Booking reference",
+    "Message": "Message",
+    "Reply to :name": "Reply to :name",
+    "Phone": "Phone"
 }

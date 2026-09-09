@@ -1,5 +1,6 @@
 import { Banknote } from 'lucide-react';
 import { specLabels } from '@/lib/vehicleSpecs';
+import { useCurrency } from '@/hooks/useCurrency';
 
 /**
  * The wizard's persistent summary (BAN-333).
@@ -17,6 +18,8 @@ export default function BookingSummary({
     startDate, startTime, endDate, endTime,
     days = 0, total = 0, t,
 }) {
+    const { symbol } = useCurrency();
+
     if (!vehicle) return null;
 
     const { gearbox, fuel } = specLabels(vehicle, t);
@@ -66,10 +69,10 @@ export default function BookingSummary({
                         <>
                             <div className="flex items-baseline justify-between">
                                 <span className="text-sm font-bold">{t('detail_total_estimated', 'Total estimé')}</span>
-                                <span className="font-display text-2xl text-primary">{total.toFixed(0)} Dh</span>
+                                <span className="font-display text-2xl text-primary">{total.toFixed(0)} {symbol}</span>
                             </div>
                             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                                {days} {days > 1 ? t('detail_days', 'jours') : t('detail_day', 'jour')} × {rate.toFixed(0)} Dh.{' '}
+                                {days} {days > 1 ? t('detail_days', 'jours') : t('detail_day', 'jour')} × {rate.toFixed(0)} {symbol}.{' '}
                                 {t('summary_amount_note', "Montant confirmé par l'agence avant le retrait.")}
                             </p>
                         </>

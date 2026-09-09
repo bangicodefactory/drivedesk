@@ -3,6 +3,7 @@ import { Check, MessageCircle, IdCard, Banknote, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useCurrency } from '@/hooks/useCurrency';
 
 /**
  * What a visitor sees the moment they have handed over their details
@@ -23,6 +24,7 @@ function Confirmation({
     startDate, startTime, endDate, endTime, days, amount, paymentPreference,
 }) {
     const t = useTranslations();
+    const { symbol } = useCurrency();
     const { contact, branding } = usePage().props;
 
     // Suffix with the tenant's actual name (Settings → General, "Application
@@ -110,7 +112,7 @@ function Confirmation({
                         ))}
                         <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
                             <dt className="font-bold">{t('summary_total', 'Total estimé')}</dt>
-                            <dd className="font-display text-2xl">{Number(amount).toFixed(0)} Dh</dd>
+                            <dd className="font-display text-2xl">{Number(amount).toFixed(0)} {symbol}</dd>
                         </div>
                     </dl>
 

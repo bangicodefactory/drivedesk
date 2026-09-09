@@ -554,16 +554,11 @@ class RequestBookingControllerTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.show'));
     }
 
-    /**
-     * BAN-321: a vehicle withdrawn from the storefront must not reappear as a
-     * "similar car" suggestion on another vehicle's page -- that route is the
-     * one place a guest could still be offered it.
-     */
     // ── the registration year, and the ligature in its column name ──────
 
     /**
      * BAN-333. `vehicles` has a column spelled with a U+FB01 LATIN SMALL
-     * year_of_ﬁrst_immatriculation FI. Every PHP caller that typed a plain "fi" read null, so the
+     * LIGATURE FI. Every PHP caller that typed a plain "fi" read null, so the
      * detail page printed "N/A" for the year of a car whose year is right
      * there in the row.
      */
@@ -580,6 +575,27 @@ class RequestBookingControllerTest extends TestCase
                 ->component('Public/CarDetails')
                 ->where('car.first_registration_year', '2019')
             );
+    }
+
+    /**
+     * The column is a YEAR with ->default(0) and VehicleController writes a
+     * literal 0 for "not filled in", which MySQL returns as the string "0000".
+     * Truthy, so the first version of this accessor put a badge reading 0000
+     * over the car photo and wrote "year": "0000" into the snapshot -- worse
+     * than the null it was fixing.
+     */
+    public function test_an_unset_registration_year_reads_as_nothing_not_as_0000(): void
+    {
+        $vehicle = Vehicle::factory()->create([
+            'parent_id' => $this->owner->id,
+            'year_of_ﬁrst_immatriculation' => 0,
+        ]);
+
+        $this->assertNull($vehicle->fresh()->first_registration_year);
+
+        $this->get(route('client.details', $vehicle->id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('car.first_registration_year', null));
     }
 
     /**
@@ -720,6 +736,11 @@ class RequestBookingControllerTest extends TestCase
         );
     }
 
+    /**
+     * BAN-321: a vehicle withdrawn from the storefront must not reappear as a
+     * "similar car" suggestion on another vehicle's page -- that route is the
+     * one place a guest could still be offered it.
+     */
     public function test_car_details_excludes_similar_cars_marked_unavailable_for_rent(): void
     {
         $hidden = Vehicle::factory()->create([

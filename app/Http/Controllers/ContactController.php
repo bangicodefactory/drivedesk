@@ -67,13 +67,28 @@ class ContactController extends Controller
             return back()->with('error', __('Sending is unavailable right now. Please call or message us instead.'));
         }
 
-        Mail::to($recipient)->send(new ContactMessage([
-            'name'      => $data['name'],
-            'email'     => $data['email'],
-            'phone'     => $data['phone'] ?? null,
-            'reference' => $data['reference'] ?? null,
-            'message'   => $data['message'],
-        ]));
+        try {
+            Mail::to($recipient)->send(new ContactMessage([
+                'name'      => $data['name'],
+                'email'     => $data['email'],
+                'phone'     => $data['phone'] ?? null,
+                'reference' => $data['reference'] ?? null,
+                'message'   => $data['message'],
+            ]));
+        } catch (\Throwable $e) {
+            // SMTP credentials are per-tenant settings an owner fills in, so a
+            // wrong password here is a configuration mistake, not an
+            // exceptional one -- and an uncaught TransportException would be a
+            // 500 on a public URL, which is the failure BAN-329 was about.
+            // Report the same refusal as the no-recipient branch: the visitor's
+            // message did not arrive either way, and telling them so is the
+            // whole point of this controller.
+            Log::error('ContactController: sending the contact message failed.', [
+                'exception' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', __('Sending is unavailable right now. Please call or message us instead.'));
+        }
 
         return back()->with('success', __('Thanks — your message has been sent. We will reply shortly.'));
     }

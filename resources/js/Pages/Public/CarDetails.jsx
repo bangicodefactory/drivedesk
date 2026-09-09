@@ -12,6 +12,8 @@ import {
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { useTranslations } from '@/hooks/useTranslations';
 import { specLabels } from '@/lib/vehicleSpecs';
+import { useCurrency } from '@/hooks/useCurrency';
+import { dayAfter } from '@/lib/dates';
 
 /**
  * Public vehicle detail page (BAN-333).
@@ -124,6 +126,7 @@ function Conditions({ t }) {
  * filled in.
  */
 function BookingCard({ car, places, t }) {
+    const { symbol } = useCurrency();
     const [place, setPlace] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -154,7 +157,7 @@ function BookingCard({ car, places, t }) {
         >
             <p className="mb-4">
                 <span className="font-display text-3xl text-primary">{rate.toFixed(0)}</span>
-                <span className="text-sm font-semibold text-muted-foreground"> Dh / {t('car_per_day', 'jour')}</span>
+                <span className="text-sm font-semibold text-muted-foreground"> {symbol} / {t('car_per_day', 'jour')}</span>
             </p>
 
             <div className="space-y-3">
@@ -191,7 +194,7 @@ function BookingCard({ car, places, t }) {
                             {t('dropoff_date_label', 'Date de restitution')}
                         </label>
                         <Input
-                            id="detail-end" type="date" className="h-11" min={startDate || today} value={endDate}
+                            id="detail-end" type="date" className="h-11" min={dayAfter(startDate) || today} value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </div>
@@ -203,13 +206,13 @@ function BookingCard({ car, places, t }) {
                     <>
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                             <span>
-                                {days} {days > 1 ? t('detail_days', 'jours') : t('detail_day', 'jour')} × {rate.toFixed(0)} Dh
+                                {days} {days > 1 ? t('detail_days', 'jours') : t('detail_day', 'jour')} × {rate.toFixed(0)} {symbol}
                             </span>
-                            <span>{total.toFixed(0)} Dh</span>
+                            <span>{total.toFixed(0)} {symbol}</span>
                         </div>
                         <div className="mt-2 flex items-baseline justify-between">
                             <span className="font-bold">{t('detail_total_estimated', 'Total estimé')}</span>
-                            <span className="font-display text-2xl">{total.toFixed(0)} Dh</span>
+                            <span className="font-display text-2xl">{total.toFixed(0)} {symbol}</span>
                         </div>
                     </>
                 ) : (
@@ -232,6 +235,7 @@ function BookingCard({ car, places, t }) {
 
 function SimilarCar({ car, t }) {
     const { gearbox, fuel } = specLabels(car, t);
+    const { symbol } = useCurrency();
 
     return (
         <article className="overflow-hidden rounded-lg border border-border bg-card">
@@ -253,7 +257,7 @@ function SimilarCar({ car, t }) {
                     </h3>
                     <p className="shrink-0 whitespace-nowrap">
                         <span className="font-display text-lg text-primary">{Number(car.daily_rate ?? 0).toFixed(0)}</span>
-                        <span className="text-xs font-semibold text-muted-foreground"> Dh/{t('car_per_day', 'jour')}</span>
+                        <span className="text-xs font-semibold text-muted-foreground"> {symbol}/{t('car_per_day', 'jour')}</span>
                     </p>
                 </div>
                 <p className="text-[13px] font-semibold text-muted-foreground">

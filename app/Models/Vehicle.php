@@ -56,7 +56,16 @@ class Vehicle extends Model
      */
     public function getFirstRegistrationYearAttribute()
     {
-        return $this->attributes["year_of_ﬁrst_immatriculation"] ?? null;
+        $year = $this->attributes["year_of_ﬁrst_immatriculation"] ?? null;
+
+        // The column is a YEAR with ->default(0), and VehicleController writes a
+        // literal 0 when the admin leaves the field empty -- which MySQL hands
+        // back as the string "0000", not null. Truthy, four characters, and
+        // wrong everywhere it lands: a badge reading 0000 over the car photo, a
+        // spec row saying "Année: 0000", and "year": "0000" persisted into a
+        // booking request's snapshot. VehicleController:164 already guards it
+        // this way for the admin screen.
+        return (! empty($year) && $year != 0) ? $year : null;
     }
 
     public function types()

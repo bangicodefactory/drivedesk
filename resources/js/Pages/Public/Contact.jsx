@@ -74,7 +74,7 @@ function Contact({ canSendMessage = false }) {
     const { form, submit } = useZodForm(schema, {
         defaultValues: { name: '', email: '', phone: '', reference: '', message: '' },
     });
-    const { register, formState: { errors, isSubmitting } } = form;
+    const { register, reset, formState: { errors, isSubmitting } } = form;
 
     const channels = [
         contact?.whatsapp && {
@@ -158,7 +158,16 @@ function Contact({ canSendMessage = false }) {
             <section className="container mx-auto grid grid-cols-1 items-start gap-5 px-4 py-8 lg:grid-cols-[1fr_340px]">
                 {canSendMessage ? (
                     <form
-                        onSubmit={submit('post', route('contact.send'))}
+                        // reset on success: `back()` re-renders this same
+                        // component instance, so react-hook-form state survives
+                        // the round trip. Without it the fields stay populated
+                        // after the toast fades, which reads as "it did not
+                        // send" and invites a second press -- straight into
+                        // throttle:5,1.
+                        onSubmit={submit('post', route('contact.send'), {
+                            preserveScroll: true,
+                            onSuccess: () => reset(),
+                        })}
                         className="rounded-lg border border-border bg-card p-5 md:p-6"
                     >
                         <h2 className="font-display text-2xl uppercase">{t('contact_form_title', 'Écrivez-nous')}</h2>

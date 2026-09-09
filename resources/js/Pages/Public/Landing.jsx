@@ -12,6 +12,8 @@ import {
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { useTranslations } from '@/hooks/useTranslations';
 import { specLabels } from '@/lib/vehicleSpecs';
+import { useCurrency } from '@/hooks/useCurrency';
+import { dayAfter } from '@/lib/dates';
 
 /**
  * Booking-first storefront landing (BAN-333).
@@ -169,7 +171,10 @@ function SearchPanel({ places }) {
                                 value={startDate}
                                 onChange={(e) => {
                                     setStartDate(e.target.value);
-                                    if (endDate && e.target.value && endDate < e.target.value) setEndDate('');
+                                    // <=, not <: storeBooking() validates
+                                    // end_date as after:start_date, so an equal
+                                    // pair is a request the server will refuse.
+                                    if (endDate && e.target.value && endDate <= e.target.value) setEndDate('');
                                 }}
                             />
                         </div>
@@ -179,7 +184,7 @@ function SearchPanel({ places }) {
                                 {t('dropoff_date_label', 'Date de restitution')}
                             </label>
                             <Input
-                                id="search-end" type="date" className="h-12" min={startDate || today}
+                                id="search-end" type="date" className="h-12" min={dayAfter(startDate) || today}
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
                             />
@@ -241,6 +246,7 @@ function Reassurance() {
 
 function FleetCard({ vehicle, t }) {
     const { gearbox, fuel } = specLabels(vehicle, t);
+    const { symbol } = useCurrency();
 
     return (
         <article className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-foreground/25">
@@ -264,7 +270,7 @@ function FleetCard({ vehicle, t }) {
                     <h3 className="font-display text-xl uppercase">{vehicle.name}</h3>
                     <p className="shrink-0 whitespace-nowrap">
                         <span className="font-display text-xl text-primary">{Number(vehicle.daily_rate).toFixed(0)}</span>
-                        <span className="text-xs font-semibold text-muted-foreground"> Dh/{t('car_per_day', 'jour')}</span>
+                        <span className="text-xs font-semibold text-muted-foreground"> {symbol}/{t('car_per_day', 'jour')}</span>
                     </p>
                 </div>
 

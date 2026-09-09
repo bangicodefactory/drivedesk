@@ -109,6 +109,13 @@ class HandleInertiaRequests extends Middleware
             'cssVars'         => $cssVars,
             'layoutMode'      => $s['layout_mode']      ?? 'lightmode',
             'layoutDirection' => $s['layout_direction'] ?? 'ltrmode',
+            // Both are per-tenant settings (settingsKeys() defaults them to MAD
+            // and "Dh"), and the storefront prints a price on nearly every
+            // screen. It used to hardcode the symbol, which is exactly what
+            // CLAUDE.md §10.2 rule 1 forbids -- a second customer billing in
+            // euros would have read "1400 Dh" on their own site.
+            'currency'        => $s['CURRENCY']        ?? 'MAD',
+            'currencySymbol'  => $s['CURRENCY_SYMBOL'] ?? 'Dh',
         ];
     }
 

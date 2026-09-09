@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { usePage } from '@inertiajs/react';
 import BookingSummary from '@/components/booking/BookingSummary';
+
+// The rail prints a price, and the currency symbol is a per-tenant setting
+// shared as branding.currencySymbol (useCurrency).
+vi.mock('@inertiajs/react', () => ({
+    usePage: vi.fn(),
+}));
+
+beforeEach(() => {
+    vi.mocked(usePage).mockReturnValue({ props: { branding: { currencySymbol: 'Dh' } } });
+});
 
 const t = (key, fallback = key) => fallback;
 
@@ -90,6 +101,18 @@ describe('BookingSummary', () => {
         renderSummary({ days: 1, total: 180 });
 
         expect(screen.getByText(/1 jour × 180 Dh/)).toBeInTheDocument();
+    });
+
+    /**
+     * CURRENCY_SYMBOL is a per-tenant Setting. The rail hardcoded "Dh", which
+     * is right for this deployment and wrong for the next one (§10.2 rule 1).
+     */
+    it("prints the tenant's own currency symbol", () => {
+        vi.mocked(usePage).mockReturnValue({ props: { branding: { currencySymbol: '€' } } });
+        renderSummary();
+
+        expect(screen.getByText('720 €')).toBeInTheDocument();
+        expect(screen.queryByText('720 Dh')).not.toBeInTheDocument();
     });
 
     /**

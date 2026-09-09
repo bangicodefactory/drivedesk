@@ -1615,5 +1615,13 @@
   "contact_send": "Envoyer",
   "contact_form_unavailable": "Le formulaire est indisponible pour le moment. Contactez-nous par téléphone ou WhatsApp.",
   "contact_hours_title": "Horaires",
-  "optional": "facultatif"
+  "optional": "facultatif",
+  "Thanks — your message has been sent. We will reply shortly.": "Merci — votre message a bien été envoyé. Nous vous répondrons rapidement.",
+  "Sending is unavailable right now. Please call or message us instead.": "L'envoi est indisponible pour le moment. Appelez-nous ou écrivez-nous sur WhatsApp.",
+  "Message from :name": "Message de :name",
+  "Message from :name — booking :reference": "Message de :name — réservation :reference",
+  "New message from the website": "Nouveau message depuis le site",
+  "Booking reference": "Référence de réservation",
+  "Message": "Message",
+  "Reply to :name": "Répondre à :name"
 }
