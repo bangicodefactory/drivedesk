@@ -78,8 +78,20 @@ Route::middleware('feature:public_storefront')->group(function () {
     // Public landing (client) home page using new modular Blade layout
     Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
 
-    // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
-    Route::view('/contact', 'client.pages.contact')->name('contact');
+    // Contact. Was Route::view('/contact', 'client.pages.contact'), whose whole
+    // body was "This is a placeholder contact page. Replace with real content."
+    // -- on a URL in sitemap.xml, linked from the header, the footer and the
+    // booking confirmation. Same path, same verb, same route name (CLAUDE.md
+    // §4); only the response body changed, from a Blade stub to an Inertia page.
+    Route::get('/contact', [\App\Http\Controllers\ContactController::class, 'index'])->name('contact');
+
+    // Unauthenticated public form that sends mail, so it is throttled exactly
+    // like its two siblings (POST /demo-request, POST /newsletter/subscribe).
+    // Unlike the newsletter one, it refuses rather than reporting success when
+    // it has nowhere to deliver -- see ContactController.
+    Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('contact.send');
     Route::get('/search', function (\Illuminate\Http\Request $request) {
         // Coerced to a string by hand. ->get() handed a query array
         // (/search?q[]=x) straight to the view, where Blade's e() calls

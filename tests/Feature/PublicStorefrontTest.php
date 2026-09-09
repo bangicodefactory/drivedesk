@@ -62,6 +62,15 @@ class PublicStorefrontTest extends TestCase
         return [
             'landing'    => ['get', '/landing', []],
             'contact'    => ['get', '/contact', []],
+            // Both verbs, because /contact grew a POST when it stopped being a
+            // Route::view placeholder (BAN-333) and it must disappear with the
+            // rest of the family. Deliverability is ContactControllerTest's
+            // subject; this is only about the gate.
+            'contact-send' => ['post', '/contact', [
+                'name'    => 'Crawler',
+                'email'   => 'crawler@example.com',
+                'message' => 'Hello.',
+            ]],
             'search'     => ['get', '/search', []],
             'reserve'    => ['get', '/reserve', []],
             // A payload, because the endpoint validates: without it the route
