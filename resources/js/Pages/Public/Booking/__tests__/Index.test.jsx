@@ -18,15 +18,27 @@ beforeEach(() => {
     // from a prior test (e.g. one that always calls options.onSuccess) would
     // otherwise blow up a later test whose call site has no onSuccess at all.
     vi.mocked(router.get).mockReset();
-    // Default: no online payment. booking_payment is off for every client
-    // today, so this is what a real visitor sees.
-    vi.mocked(usePage).mockReturnValue({ props: { translations: {} } });
+    // Default: online payment off, spelled the way the server spells it.
+    // Omitting `client` entirely -- which this used to do -- is a shape
+    // HandleInertiaRequests never produces, so the negative test below would
+    // have passed because the prop was absent rather than because the flag was
+    // false. That is the same mistake this file's subject bug was made of.
+    vi.mocked(usePage).mockReturnValue({
+        props: { translations: {}, client: { features: { booking_payment: false } } },
+    });
 });
 
-/** Turn the online-payment option on for the tests that are about it. */
+/**
+ * Turn the online-payment option on for the tests that are about it.
+ *
+ * Shaped like the real shared props: HandleInertiaRequests puts the flags
+ * under `client.features`, and there is no top-level `features`. The mock used
+ * to invent one, which is how the page came to read a path that does not
+ * exist -- the test agreed with the bug instead of catching it.
+ */
 function withOnlinePayment() {
     vi.mocked(usePage).mockReturnValue({
-        props: { translations: {}, features: { booking_payment: true } },
+        props: { translations: {}, client: { features: { booking_payment: true } } },
     });
 }
 
@@ -171,8 +183,8 @@ describe('Public/Booking/Index', () => {
         it('offers no online payment while booking_payment is off', async () => {
             await reachPaymentStep();
 
-            // The flag is off for every client today, and no gateway is wired to
-            // anything, so cash at the agency is the only choice on offer.
+            // No gateway is wired to anything, and the flag is off by default
+            // for that reason, so cash at the agency is the only choice.
             expect(screen.queryByText('Paiement en Ligne')).not.toBeInTheDocument();
             expect(screen.getByText('Paiement à la Livraison')).toBeInTheDocument();
         });

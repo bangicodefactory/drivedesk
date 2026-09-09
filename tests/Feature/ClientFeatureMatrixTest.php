@@ -79,7 +79,11 @@ class ClientFeatureMatrixTest extends TestCase
 
         $this->assertTrue(feature('paypal'));
         $this->assertTrue(feature('stripe'));
-        $this->assertTrue(feature('booking_payment'));
+        // BAN-328: off, and this is the assertion holding it down. Nothing here
+        // can charge a card, and the flag now renders the booking wizard's
+        // online-payment tile -- true would offer drivedesk's visitors a method
+        // the business cannot take.
+        $this->assertFalse(feature('booking_payment'));
 
         // BAN-318: DriveDesk provides no subscription capability. Asserted as an
         // absent *key*, not a false value -- a false flag is a switch someone can
