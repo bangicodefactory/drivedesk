@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     meta_seo_title:       z.string().min(1, 'Required'),
@@ -63,18 +65,18 @@ function SiteSeo({ settings }) {
                         <CardContent className="space-y-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="meta_seo_title">{t('Meta Title')}</Label>
-                                <Input id="meta_seo_title" placeholder={t('Enter meta SEO title')} {...register('meta_seo_title')} />
-                                {errors.meta_seo_title && <p className="text-sm text-destructive">{errors.meta_seo_title.message}</p>}
+                                <Input id="meta_seo_title" placeholder={t('Enter meta SEO title')} {...register('meta_seo_title')} {...fieldA11y(errors, 'meta_seo_title')} />
+                                <FieldError name="meta_seo_title" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="meta_seo_keyword">{t('Meta Keyword')}</Label>
-                                <Input id="meta_seo_keyword" placeholder={t('Enter meta SEO keyword')} {...register('meta_seo_keyword')} />
-                                {errors.meta_seo_keyword && <p className="text-sm text-destructive">{errors.meta_seo_keyword.message}</p>}
+                                <Input id="meta_seo_keyword" placeholder={t('Enter meta SEO keyword')} {...register('meta_seo_keyword')} {...fieldA11y(errors, 'meta_seo_keyword')} />
+                                <FieldError name="meta_seo_keyword" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="meta_seo_description">{t('Meta Description')}</Label>
-                                <Textarea id="meta_seo_description" rows={3} placeholder={t('Enter meta SEO description')} {...register('meta_seo_description')} />
-                                {errors.meta_seo_description && <p className="text-sm text-destructive">{errors.meta_seo_description.message}</p>}
+                                <Textarea id="meta_seo_description" rows={3} placeholder={t('Enter meta SEO description')} {...register('meta_seo_description')} {...fieldA11y(errors, 'meta_seo_description')} />
+                                <FieldError name="meta_seo_description" errors={errors} />
                             </div>
                             <div className="flex justify-end">
                                 <Button type="submit" disabled={isSubmitting}>

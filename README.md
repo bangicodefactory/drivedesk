@@ -133,6 +133,25 @@ php artisan storage:link
 > **Windows:** `storage:link` requires Developer Mode enabled or an elevated
 > terminal. Re-run as Administrator if it fails silently.
 
+### 4a. Give tests their own database — do this before running `php artisan test`
+
+```bash
+mysql -u root -e "CREATE DATABASE rentcar_testing;"
+cp .env.testing.example .env.testing
+```
+
+**Why this matters:** tests run with `APP_ENV=testing` (set in `phpunit.xml`),
+and Laravel loads `.env.testing` *instead of* `.env` whenever it exists for
+that environment — never both. Skip this file and tests fall back to your
+real `.env`, running directly against your real database. Laravel's
+`RefreshDatabase` trait runs `migrate:fresh` — dropping every table — on
+whatever `DB_DATABASE` it finds the moment a new migration hasn't been
+applied yet, so the very next `php artisan test` after adding a migration
+silently wipes your real data (vehicles, uploaded pictures, settings,
+everything). `.env.testing.example` already points at a separate
+`rentcar_testing` database so this can't happen — see the comments at the
+top of that file for the full explanation.
+
 ### 4b. Fake data for local testing
 
 `db:seed` already runs `DevDataSeeder`, which seeds every business table
@@ -200,7 +219,7 @@ mailpit                  # http://localhost:8025 — catches outgoing mail
 
 | Task | Command |
 | --- | --- |
-| Run PHP tests | `php artisan test` |
+| Run PHP tests | `php artisan test` — needs `.env.testing` set up first, see [step 4a](#4a-give-tests-their-own-database--do-this-before-running-php-artisan-test) |
 | Run a single test | `php artisan test --filter=BookingTest` |
 | Run frontend tests | `npm test` (Vitest) |
 | Build for production | `npm run build` |

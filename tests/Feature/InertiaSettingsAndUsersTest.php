@@ -26,13 +26,17 @@ class InertiaSettingsAndUsersTest extends TestCase
         parent::setUp();
         $this->asClient('acme');
 
-        foreach (['manage user', 'manage role', 'manage setting'] as $name) {
+        // BAN-306: 'create role' and 'edit role' were seeded but never checked,
+        // so these render tests reached role.create/role.edit without them.
+        // BAN-308: same for 'edit user' and users.edit.
+        $permissions = ['manage user', 'edit user', 'manage role', 'create role', 'edit role', 'manage setting'];
+        foreach ($permissions as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
-        $this->owner->givePermissionTo(['manage user', 'manage role', 'manage setting']);
+        $this->owner->givePermissionTo($permissions);
     }
 
     public function test_settings_account_renders_account_component(): void

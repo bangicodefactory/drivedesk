@@ -13,9 +13,9 @@ use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
 /**
- * Blacklist enforcement on booking creation (BAN-252, PR 2): a blacklisted
- * driver blocks the booking unless the owner acknowledges, and the override is
- * recorded.
+ * Blacklist enforcement on booking creation and edit (BAN-252, PR 2): a
+ * blacklisted driver blocks the save unless the owner acknowledges, and the
+ * override is recorded.
  */
 class BookingBlacklistTest extends TestCase
 {
@@ -104,5 +104,77 @@ class BookingBlacklistTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('bookings', ['driver' => $this->driver->id]);
+    }
+
+    // ── update() ─────────────────────────────────────────────────────────────
+    // BAN-285 review: store() gated on the blacklist but update() did not, so a
+    // booking created with a clean driver could be edited onto a blacklisted one
+    // and bypass the gate entirely — server and UI both silent.
+
+    private function bookingForDriver(): Booking
+    {
+        return Booking::factory()->create([
+            'vehicle'   => $this->vehicle->id,
+            'driver'    => $this->driver->id,
+            'parent_id' => $this->owner->id,
+            'status'    => 'yet_to_start', // matches the payload, so no status email
+        ]);
+    }
+
+    /** update() requires every store() field plus daily_price. */
+    private function updatePayload(array $overrides = []): array
+    {
+        return array_merge($this->payload(), ['daily_price' => 150], $overrides);
+    }
+
+    public function test_update_blocked_when_driver_blacklisted_without_acknowledgement(): void
+    {
+        $booking = $this->bookingForDriver();
+        $originalAmount = $booking->amount;
+        $this->blacklistDriver();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), $this->updatePayload(['amount' => 777]))
+            ->assertSessionHas('error');
+
+        $booking->refresh();
+        $this->assertEquals((string) $originalAmount, (string) $booking->amount);
+    }
+
+    public function test_update_proceeds_with_acknowledgement_and_records_override(): void
+    {
+        $booking   = $this->bookingForDriver();
+        $blacklist = $this->blacklistDriver('Late returns');
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), $this->updatePayload([
+                'amount'                => 777,
+                'acknowledge_blacklist' => 1,
+            ]))
+            ->assertRedirect();
+
+        $booking->refresh();
+        $this->assertEquals(777, (int) $booking->amount);
+
+        $blacklist->refresh();
+        $this->assertCount(1, $blacklist->overrides);
+        $entry = $blacklist->overrides[0];
+        $this->assertSame('booking', $entry['context_type']);
+        $this->assertSame($booking->id, $entry['context_id']);
+        $this->assertSame($this->owner->id, $entry['by_user_id']);
+        $this->assertSame($this->driver->id, $entry['driver_user_id']);
+        $this->assertSame('Late returns', $entry['reason_snapshot']);
+    }
+
+    public function test_update_with_clean_driver_saves_without_warning(): void
+    {
+        $booking = $this->bookingForDriver();
+
+        $this->actingAs($this->owner)
+            ->put(route('booking.update', $booking->id), $this->updatePayload(['amount' => 777]))
+            ->assertRedirect();
+
+        $booking->refresh();
+        $this->assertEquals(777, (int) $booking->amount);
     }
 }

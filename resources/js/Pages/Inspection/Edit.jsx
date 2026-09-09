@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/inspection/edit.blade.php.
 // Submits multipart PUT to route('inspection.update') via a spoofed _method=PUT
@@ -96,7 +98,7 @@ function InspectionEdit({
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="vehicle"><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
+                                                <SelectTrigger id="vehicle" {...fieldA11y(errors, 'vehicle')}><SelectValue placeholder={t('Select Vehicle')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(vehicles).filter(([k]) => k !== '').map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -105,19 +107,19 @@ function InspectionEdit({
                                             </Select>
                                         )}
                                     />
-                                    {errors.vehicle && <p className="text-sm text-destructive">{errors.vehicle.message}</p>}
+                                    <FieldError name="vehicle" errors={errors} />
                                 </div>
 
                                 <div className="space-y-1.5">
                                     <Label htmlFor="inspector">{t('Inspection By')}</Label>
-                                    <Input id="inspector" {...register('inspector')} />
-                                    {errors.inspector && <p className="text-sm text-destructive">{errors.inspector.message}</p>}
+                                    <Input id="inspector" {...register('inspector')} {...fieldA11y(errors, 'inspector')} />
+                                    <FieldError name="inspector" errors={errors} />
                                 </div>
 
                                 <div className="space-y-1.5">
                                     <Label htmlFor="inspection_date">{t('Inspection Date')}</Label>
-                                    <Input id="inspection_date" type="date" {...register('inspection_date')} />
-                                    {errors.inspection_date && <p className="text-sm text-destructive">{errors.inspection_date.message}</p>}
+                                    <Input id="inspection_date" type="date" {...register('inspection_date')} {...fieldA11y(errors, 'inspection_date')} />
+                                    <FieldError name="inspection_date" errors={errors} />
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -127,7 +129,7 @@ function InspectionEdit({
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="status"><SelectValue placeholder={t('Inspection Status')} /></SelectTrigger>
+                                                <SelectTrigger id="status" {...fieldA11y(errors, 'status')}><SelectValue placeholder={t('Inspection Status')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(status).map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -136,7 +138,7 @@ function InspectionEdit({
                                             </Select>
                                         )}
                                     />
-                                    {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
+                                    <FieldError name="status" errors={errors} />
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -146,7 +148,7 @@ function InspectionEdit({
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger id="repair_status"><SelectValue placeholder={t('Repair Status')} /></SelectTrigger>
+                                                <SelectTrigger id="repair_status" {...fieldA11y(errors, 'repair_status')}><SelectValue placeholder={t('Repair Status')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(repairStatus).map(([k, label]) => (
                                                         <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -155,7 +157,7 @@ function InspectionEdit({
                                             </Select>
                                         )}
                                     />
-                                    {errors.repair_status && <p className="text-sm text-destructive">{errors.repair_status.message}</p>}
+                                    <FieldError name="repair_status" errors={errors} />
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -172,8 +174,8 @@ function InspectionEdit({
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="amount">{t('Amount')}</Label>
-                                        <Input id="amount" type="number" placeholder={t('Enter amount')} {...register('amount')} />
-                                        {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                                        <Input id="amount" type="number" placeholder={t('Enter amount')} {...register('amount')} {...fieldA11y(errors, 'amount')} />
+                                        <FieldError name="amount" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="receipt">{t('Receipt')}</Label>
@@ -191,8 +193,8 @@ function InspectionEdit({
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="incoming_date">{t('Date')}</Label>
-                                        <Input id="incoming_date" type="date" {...register('incoming_date')} />
-                                        {errors.incoming_date && <p className="text-sm text-destructive">{errors.incoming_date.message}</p>}
+                                        <Input id="incoming_date" type="date" {...register('incoming_date')} {...fieldA11y(errors, 'incoming_date')} />
+                                        <FieldError name="incoming_date" errors={errors} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="meter_reading_incoming">{t('Meter Reading (km)')}</Label>
@@ -200,9 +202,9 @@ function InspectionEdit({
                                             id="meter_reading_incoming"
                                             type="number"
                                             placeholder={t('Enter meter reading incoming (km)')}
-                                            {...register('meter_reading_incoming')}
+                                            {...register('meter_reading_incoming')} {...fieldA11y(errors, 'meter_reading_incoming')}
                                         />
-                                        {errors.meter_reading_incoming && <p className="text-sm text-destructive">{errors.meter_reading_incoming.message}</p>}
+                                        <FieldError name="meter_reading_incoming" errors={errors} />
                                     </div>
                                 </div>
                             </CardContent>

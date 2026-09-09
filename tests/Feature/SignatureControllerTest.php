@@ -85,14 +85,15 @@ class SignatureControllerTest extends TestCase
 
     public function test_store_rejects_missing_user_id(): void
     {
-        // ValidationException is caught by the controller's generic catch(\Exception)
-        // so validation errors land in the 'error' flash, not 'errors' bag.
+        // BAN-285: ValidationException must reach the session error bag so the
+        // SPA can show the message under the field, rather than being swallowed
+        // by the controller's generic catch(\Exception) and flattened to a flash.
         $this->actingAs($this->owner)
             ->post(route('signature.store'), [
                 'signature' => 'data:image/png;base64,' . self::VALID_PNG_BASE64,
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['user_id']);
     }
 
     public function test_store_rejects_missing_signature(): void
@@ -102,7 +103,7 @@ class SignatureControllerTest extends TestCase
                 'user_id' => $this->owner->id,
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['signature']);
     }
 
     public function test_store_rejects_non_existent_user_id(): void
@@ -113,7 +114,7 @@ class SignatureControllerTest extends TestCase
                 'signature' => 'data:image/png;base64,' . self::VALID_PNG_BASE64,
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors(['user_id']);
     }
 
     public function test_store_replay_creates_second_record_for_same_user(): void

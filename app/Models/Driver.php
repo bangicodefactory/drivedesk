@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
@@ -13,6 +14,10 @@ use Creagia\LaravelSignPad\Contracts\CanBeSigned;
 class Driver extends Authenticatable implements CanBeSigned
 {
     use HasFactory,Notifiable, RequiresSignature;
+    // Tenant isolation (roadmap Tranche S.1). Safe despite extending
+    // Authenticatable: config/auth.php's only provider is App\Models\User, so
+    // the scope's Auth::check() cannot recurse through this model.
+    use BelongsToTenant;
 
     protected $fillable=[
         'driver_id',

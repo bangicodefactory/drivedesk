@@ -65,6 +65,13 @@ describe('Vehicle/Index permission gating', () => {
         expect(screen.getByText('Create Vehicle')).toBeInTheDocument();
     });
 
+    it('aligns the actions column with a logical (RTL-safe) utility', () => {
+        renderWith(['delete vehicle']);
+        const header = screen.getByRole('columnheader', { name: 'Action' });
+        expect(header).toHaveClass('text-end');
+        expect(header).not.toHaveClass('text-right');
+    });
+
     it('renders the vehicle row name', () => {
         renderWith(['manage vehicle']);
         expect(screen.getByText('Test Car')).toBeInTheDocument();

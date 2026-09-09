@@ -28,8 +28,8 @@ class TvaController extends Controller
 
         // Base query scoped to current parent (tenant) and not soft deleted
         $query = Tva::whereNull('deleted_at');
-        if (function_exists('parentId') && parentId()) {
-            $query->where('parent_id', parentId());
+        if (function_exists('parentId') && tenantKey()) {
+            $query->where('parent_id', tenantKey());
         }
 
         // Unified filtering on facture_date (business date) instead of created_at
@@ -103,7 +103,14 @@ class TvaController extends Controller
     }
     public function create()
     {
-        $books = Booking::where('parent_id', parentId())->get()->pluck('name', 'id');
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $books = Booking::where('parent_id', tenantKey())->get()->pluck('name', 'id');
         // $books->prepend(__('Select Vehicle'), '');
 
 
@@ -111,11 +118,23 @@ class TvaController extends Controller
     }
     public function bulkDownload(Request $request)
     {
+        // BAN-295: this action had no permission check and no tenant constraint,
+        // on a route that carried no auth middleware either — so arbitrary invoice
+        // ids returned a zip of any tenant's factures.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $request->validate([
             'invoice_ids' => 'required|array',
         ]);
 
-        $invoices = Tva::whereIn('id', $request->invoice_ids)->get();
+        // No super-admin exemption any more: index() scopes them to the
+        // customer's invoices via tenantKey(), so exempting the download let the
+        // two halves of one screen disagree about which rows exist (BAN-316).
+        $query = Tva::whereIn('id', $request->invoice_ids)
+            ->where('parent_id', tenantKey());
+        $invoices = $query->get();
         $zipFileName = 'invoices_' . now()->format('Ymd_His') . '.zip';
         $zipPath = storage_path("app/public/{$zipFileName}");
         $zip = new \ZipArchive;
@@ -263,6 +282,13 @@ class TvaController extends Controller
     }
     public function edit($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
 
         return Inertia::render('Tva/Edit', [
@@ -284,6 +310,14 @@ class TvaController extends Controller
 
     public function update(Request $request, $id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        // Checked before validation so a denied user cannot probe the rules.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $validated = $request->validate([
             'facture_date' => 'required|date',
             'montant_ttc' => 'required|numeric',
@@ -310,6 +344,13 @@ class TvaController extends Controller
 
     public function show($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
 
         return Inertia::render('Tva/Show', [
@@ -330,6 +371,13 @@ class TvaController extends Controller
     }
     public function destroy($id)
     {
+        // BAN-304: this action had no permission check. Tenant isolation came
+        // from the global scope, but any authenticated user of the tenant --
+        // including roles with no TVA access at all -- could reach it by URL.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $tva = Tva::findOrFail($id);
         $tva->delete();
         return redirect()->back()->with('success', 'The TVA has been deleted.');
@@ -462,6 +510,13 @@ class TvaController extends Controller
 
     public function generateMonthlyTva(Request $request)
     {
+        // BAN-295: this action had no permission check, on a route that carried no
+        // auth middleware either — and it is destructive, soft-deleting every
+        // business's factures for the month before regenerating them.
+        if (!\Auth::user()->can('manage tva')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $request->validate([
             'month' => 'required|date_format:Y-m',
         ]);
@@ -480,16 +535,48 @@ class TvaController extends Controller
         // generation. (Hard uniqueness still needs the DB unique index — IST-230.)
         return \DB::transaction(function () use ($monthStart, $monthEnd) {
         // 1. Delete existing TVA records in the selected month (facture_date within month)
-        $deleteQuery = Tva::whereYear('facture_date', $monthStart->year)
+        // BAN-298: acrossTenants() keeps today's behaviour exactly. Tva is
+        // tenant-scoped as of this commit, which would otherwise have made this
+        // delete — and the payment scan below — silently tenant-local, changing
+        // what a run produces. Whether generation *should* span businesses is a
+        // product question (the loop is keyed by each booking's own parent_id and
+        // a test depends on it), so it is left as-is rather than changed by a
+        // side effect of the scope. The rest of this method needs the same
+        // treatment for the same reason — see the due-amount and
+        // lastFactureNumberForYear() notes below. An earlier version of this
+        // comment claimed 'every other Tva path is now scoped', which was wrong.
+        $deleteQuery = Tva::acrossTenants()
+            ->whereYear('facture_date', $monthStart->year)
             ->whereMonth('facture_date', $monthStart->month);
         $deletedCount = $deleteQuery->count();
         $deleteQuery->delete();
 
         // 2. Pull BookingPayments in that month to build TVAs (per payment)
-        $paymentQuery = BookingPayment::whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+        // BAN-298: as above — the scan must see every business's payments for the
+        // regeneration to reproduce what it deleted.
+        $paymentQuery = BookingPayment::acrossTenants()
+            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
         $payments = $paymentQuery->get();
 
         $setting = settings();
+
+        // BAN-295: settings() is keyed on the *generating* user's parentId(), so
+        // hoisting it stamped that tenant's company identity onto every other
+        // business's regenerated facture — wrong supplier name, address and
+        // ICE/RC/IF on a legally numbered document. Resolved per booking instead,
+        // memoised so a month with many payments still reads each tenant once.
+        $settingsByParent = [];
+        $settingsFor = function ($pid) use (&$settingsByParent) {
+            if (!array_key_exists($pid, $settingsByParent)) {
+                $rows = \DB::table('settings')->where('parent_id', $pid)->get();
+                $details = settingsKeys();
+                foreach ($rows as $row) {
+                    $details[$row->name] = $row->value;
+                }
+                $settingsByParent[$pid] = $details;
+            }
+            return $settingsByParent[$pid];
+        };
         $createdCount = 0;
 
         // Per-year numbering: invoice numbers reset to 1 at the start of each
@@ -514,7 +601,16 @@ class TvaController extends Controller
         $dueByBooking = [];
 
         foreach ($payments as $payment) {
-            $booking = Booking::with('drivers')->find($payment->booking_id);
+            // BAN-292: acrossTenants() is required here, not optional. This action
+            // is deliberately cross-tenant — step 1 above soft-deletes every
+            // business's factures for the month and this loop regenerates them,
+            // keyed by the booking's own parent_id. Under the BelongsToTenant
+            // scope (BAN-288) a plain owner running generation resolved null for
+            // every other business's booking and skipped it, so their invoices
+            // were deleted and never recreated. The existing regression test
+            // passes because it generates as a super admin, who bypasses the
+            // scope; the data loss only appeared for a non-super-admin.
+            $booking = Booking::acrossTenants()->with('drivers')->find($payment->booking_id);
             if (!$booking) {
                 continue;
             }
@@ -523,7 +619,25 @@ class TvaController extends Controller
             // booking still has an outstanding balance gets no facture — skip it.
             // Round to cents (float amounts) so a residual isn't read as owing.
             if (feature('invoice_on_full_payment')) {
-                $due = $dueByBooking[$booking->id] ??= round((float) $booking->getTotalDueAmount(), 2);
+                // BAN-299: getTotalDueAmount() walks Booking::payments(), and
+                // BookingPayment is tenant-scoped as of BAN-298 — so for another
+                // business's booking the relation returned nothing, the booking
+                // looked entirely unpaid, and `continue` below skipped it. Step 1
+                // has already deleted its factures, so they were deleted and never
+                // regenerated: the BAN-292 loss, reintroduced. Only reachable with
+                // invoice_on_full_payment on, which drivedesk runs and the acme test
+                // fixture disables — the CLAUDE.md 10.2.6 trap exactly.
+                // BAN-300: the sum has to stay *inside* the memo. Hoisting it ran one
+                // SUM per payment row rather than per booking — 500 queries for 200
+                // bookings, inside the generation transaction — while the comment
+                // above still promised the value was not re-summed per row.
+                $due = $dueByBooking[$booking->id] ??= round(
+                    (float) $booking->getTotalAmount()
+                        - (float) BookingPayment::acrossTenants()
+                            ->where('booking_id', $booking->id)
+                            ->sum('amount'),
+                    2
+                );
                 if ($due > 0) {
                     continue;
                 }
@@ -543,7 +657,12 @@ class TvaController extends Controller
             $driverAddress = '';
             if ($booking->drivers) {
                 $driverName = $booking->drivers->name ?? 'N/A';
-                $driver = Driver::where('user_id', $booking->driver)->first();
+                // BAN-293: acrossTenants() for the same reason as the Booking
+                // lookup above — this loop regenerates every business's factures,
+                // and once Driver gained the tenant scope (BAN-291) a plain owner
+                // resolved null for other businesses' drivers, silently reissuing
+                // their invoices with a blank client address.
+                $driver = Driver::acrossTenants()->where('user_id', $booking->driver)->first();
                 $driverAddress = $driver->address ?? '';
             }
 
@@ -590,8 +709,9 @@ class TvaController extends Controller
             $tva->facture_date = $payment->date ?? $monthStart->toDateString();
             $tva->client_name = $driverName;
             $tva->client_address = $driverAddress;
-            $tva->company_name = $setting['company_name'];
-            $tva->company_address = $setting['company_address'];
+            $bookingSetting = $settingsFor($bookingParentId);
+            $tva->company_name = $bookingSetting['company_name'];
+            $tva->company_address = $bookingSetting['company_address'];
             $tva->designation = trim($vehicleName . (($vehicleName && $vehicleLicensePlate) ? ' - ' : '') . $vehicleLicensePlate);
             $tva->idpaiment = $payment->id;
             $tva->quantity = number_format($totalDays, 2, '.', '');
@@ -599,9 +719,9 @@ class TvaController extends Controller
             $tva->total_ht = number_format($totalHt, 2, '.', '');
             $tva->tva = number_format($tvaAmount, 2, '.', '');
             $tva->montant_ttc = number_format($paymentTtc, 2, '.', '');
-            $tva->ice_number = $setting['ice'];
-            $tva->rc_number = $setting['rc'];
-            $tva->nif_number = $setting['if'];
+            $tva->ice_number = $bookingSetting['ice'];
+            $tva->rc_number = $bookingSetting['rc'];
+            $tva->nif_number = $bookingSetting['if'];
             // `generated_date` is a NOT NULL timestamp in the DB schema.
             $tva->generated_date = $payment->date ?? now();
             $tva->total_amount = number_format($paymentTtc, 2, '.', '');
@@ -633,7 +753,13 @@ class TvaController extends Controller
      */
     private function lastFactureNumberForYear(int $year, $parentId): int
     {
-        $numbers = Tva::query()
+        // BAN-299: acrossTenants() — the tenant scope injected
+        // `tvas.parent_id = parentId()` here, contradicting the explicit
+        // parent_id below (the *booking's* business). For any other business the
+        // seed was therefore always 0, so a second month reissued facture 1 and
+        // duplicated a legal invoice number. The whereNull branch could never
+        // match under the scope either.
+        $numbers = Tva::acrossTenants()
             ->where(fn ($q) => $parentId === null
                 ? $q->whereNull('parent_id')
                 : $q->where('parent_id', $parentId))
@@ -659,8 +785,8 @@ class TvaController extends Controller
 
         // Base query scoped to current parent (tenant) and not soft deleted
         $query = Tva::whereNull('deleted_at');
-        if (function_exists('parentId') && parentId()) {
-            $query->where('parent_id', parentId());
+        if (function_exists('parentId') && tenantKey()) {
+            $query->where('parent_id', tenantKey());
         }
 
         // Get current year for default filter
@@ -770,8 +896,8 @@ class TvaController extends Controller
         // Get available years for dropdown
         $availableYears = Tva::selectRaw('YEAR(facture_date) as year')
             ->whereNull('deleted_at')
-            ->when(function_exists('parentId') && parentId(), function ($q) {
-                return $q->where('parent_id', parentId());
+            ->when(function_exists('parentId') && tenantKey(), function ($q) {
+                return $q->where('parent_id', tenantKey());
             })
             ->distinct()
             ->orderByDesc('year')

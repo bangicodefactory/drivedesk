@@ -71,7 +71,9 @@ Route::get('/llms.txt', [\App\Http\Controllers\SeoController::class, 'llms'])->n
 // Public B2C rental storefront: the fleet/booking landing plus the pages its
 // layout partials link to. Guarded by `feature:public_storefront` (BAN-261) so a
 // client whose public face is not a rental storefront 404s the whole family
-// instead of serving pages aimed at the opposite audience.
+// instead of serving pages aimed at the opposite audience. drivedesk had it off
+// for exactly that reason and has it on again since BAN-329, alongside its demo
+// gateway rather than instead of it.
 Route::middleware('feature:public_storefront')->group(function () {
     // Public landing (client) home page using new modular Blade layout
     Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
@@ -79,14 +81,30 @@ Route::middleware('feature:public_storefront')->group(function () {
     // Simple placeholder public pages used by layout partials (can be replaced with real controllers later)
     Route::view('/contact', 'client.pages.contact')->name('contact');
     Route::get('/search', function (\Illuminate\Http\Request $request) {
-        $q = $request->get('q');
+        // Coerced to a string by hand. ->get() handed a query array
+        // (/search?q[]=x) straight to the view, where Blade's e() calls
+        // htmlspecialchars() on it -- a TypeError, so a 500 on a public URL
+        // anyone can construct. ->string() is no better: it constructs a
+        // Stringable, which rejects the array just as loudly. Only an
+        // is_string() check survives both.
+        $raw = $request->query('q');
+        $q = is_string($raw) ? $raw : '';
         return view('client.pages.search', compact('q'));
     })->name('search');
+    // Unauthenticated public form, rate-limited like its sibling
+    // POST /demo-request. It stores nothing today, so the blast radius is a
+    // validation oracle rather than a mailbox flood -- but it must not become
+    // one the moment somebody wires the TODO below up.
     Route::post('/newsletter/subscribe', function (\Illuminate\Http\Request $request) {
         $data = $request->validate(['email' => 'required|email']);
-        // TODO: store subscription or dispatch job
+        // TODO: store subscription or dispatch job.
+        //
+        // Until then this endpoint tells a visitor they subscribed and throws
+        // the address away. That is a lie on a public page, and it is why the
+        // storefront footer must not carry this form on a live domain --
+        // tracked with /contact and /search still being scaffolding.
         return back()->with('status', 'Subscribed with ' . $data['email']);
-    })->name('newsletter.subscribe');
+    })->middleware('throttle:5,1')->name('newsletter.subscribe');
 });
 
 // "Book a demo" form on the demo-gateway landing — guarded so the endpoint only
@@ -219,7 +237,9 @@ Route::group(
     function () {
 
         Route::get('logged/history', [UserController::class, 'loggedHistory'])->name('logged.history');
-        Route::get('logged/{id}/history/show', [UserController::class, 'loggedHistoryShow'])->name('logged.history.show');
+        // BAN-309: `logged.history.show` removed. Its view was never written, so
+        // the success path threw View [logged_history.show] not found -- a 500 on
+        // every authorised request. Nothing linked to it.
         Route::delete('logged/{id}/history', [UserController::class, 'loggedHistoryDestroy'])->name('logged.history.destroy');
 
 
@@ -492,7 +512,11 @@ Route::group([
         'XSS',
     ],
 ], function () {
-    Route::prefix('tva/renumber')->name('tva.renumber.')->group(function () {
+    // BAN-304: `feature:tva_renumber` was declared in config/features.php and
+    // enforced nowhere. True in both `_default` and `drivedesk`, so this is a
+    // no-op today and a real guard for any client that turns it off.
+    Route::prefix('tva/renumber')->name('tva.renumber.')
+        ->middleware('feature:tva_renumber')->group(function () {
         Route::get('/',        [TvaRenumberController::class, 'index'])->name('index');
         Route::post('/apply',  [TvaRenumberController::class, 'apply'])->name('apply');
         Route::get('/preview', [TvaRenumberController::class, 'previewJson'])->name('preview');
@@ -528,7 +552,12 @@ Route::delete('signature/{signature}', [SignatureController::class, 'destroy'])-
 Route::get('/drivers/search', [App\Http\Controllers\RentalAgreementController::class, 'searchDrivers'])->name('drivers.search');
 
 
-Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])->name('tva.bulk.download');
+// BAN-295: was declared outside every Route::group, so it carried no auth
+// middleware at all — any caller with a CSRF token could POST invoice ids and
+// receive a zip of any tenant's factures. Permission and tenant scoping are
+// enforced in the controller.
+Route::post('/tva/bulk-download', [TvaController::class, 'bulkDownload'])
+    ->middleware(['auth', 'XSS'])->name('tva.bulk.download');
 
 // --------------------------------------------------------------------------
 // Sentry smoke-test — local env only, any authenticated user.
@@ -539,10 +568,24 @@ if (app()->environment('local')) {
     Route::get('/sentry-test', function () {
         throw new \RuntimeException('Sentry smoke-test — intentional exception from /sentry-test');
     })->middleware('auth')->name('sentry.test');
+
+    // Preview the public B2C storefront home page regardless of the active
+    // APP_CLIENT / `public_storefront` flag — lets you eyeball the layout
+    // while developing without editing .env. Renders with whatever vehicles/
+    // places/branding the local DB and active client already have, so SEO
+    // meta and copy reflect the *actual* active client, not necessarily the
+    // client the storefront is being built for. Never registered outside
+    // `local` (no feature flag, no auth — would otherwise leak the storefront
+    // to any client regardless of its `public_storefront` setting).
+    Route::get('/dev/landing', [HomeController::class, 'landing'])
+        ->middleware('XSS')->name('dev.landing');
 }
 
 // genere tva par mois
-Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])->name('tva.generate');
+// BAN-295: likewise unauthenticated. This one is destructive — it soft-deletes
+// every business's factures for the month before regenerating them.
+Route::post('/tva/generate', [TvaController::class, 'generateMonthlyTva'])
+    ->middleware(['auth', 'XSS'])->name('tva.generate');
 
 // --------------------------------------------------------------------------
 // UI COMPONENT TEST ROUTES (temporary for style / JS debugging)
@@ -569,7 +612,41 @@ Route::prefix('ui-test')->name('ui.test.')->group(function () {
 });
     Route::get('/car/{id}', [RequestBookingController::class, 'showSimilarCars'])->name('client.details');
     Route::post('/booking_request', [RequestBookingController::class, 'storeBooking'])->name('booking.store_request');
-    Route::resource('booking_requests', RequestBookingController::class);
+    // BAN-322: the admin-side listing of booking requests. Registered here
+    // beside the public storefront endpoints it shares a controller with, it
+    // inherited their lack of auth -- so `GET /booking_requests` served every
+    // request in the database, with guest names, to anyone. `auth` closes that;
+    // the `manage booking` check lives in the controller, matching how every
+    // other admin action in this app gates itself.
+    Route::resource('booking_requests', RequestBookingController::class)
+        // index and show are the only two the controller implements. The other
+        // five were registered all along and could only ever raise
+        // BadMethodCallException -- a 500 where a 404 belongs, and before this
+        // commit an unauthenticated one. Registering what exists is the whole
+        // surface this screen needs: it is a read-only listing, and approve /
+        // refuse have their own named routes below.
+        ->only(['index', 'show'])
+        ->middleware(['auth', 'XSS']);
+
+    // Public booking wizard. Named /reserve rather than /booking because
+    // Route::resource('booking', BookingController::class) already owns
+    // GET/POST /booking for the admin CRUD.
+    //
+    // Guarded by feature:public_storefront (CLAUDE.md 10.2 rule 3). Its
+    // siblings above -- /car/{id} and /booking_request -- are not, which is a
+    // gap of their own rather than a precedent: a client whose public face is
+    // the B2B demo gateway must 404 here, not serve a full B2C booking flow to
+    // the audience it sells the platform to (BAN-261).
+    Route::middleware('feature:public_storefront')->group(function () {
+        Route::get('/reserve', [RequestBookingController::class, 'create'])
+            ->name('reserve.create');
+
+        // Signed: booking_requests carries a guest's name, email and phone and
+        // is neither tenant- nor auth-scoped, so the id alone must not be
+        // enough to open one.
+        Route::get('/reserve/confirmation/{bookingRequest}', [RequestBookingController::class, 'confirmation'])
+            ->middleware('signed')->name('reserve.confirmation');
+    });
 
 // BAN-51 smoke-test — remove after Hello.tsx is verified
 Route::get('/hello', fn () => Inertia::render('Hello'))->name('inertia.hello');

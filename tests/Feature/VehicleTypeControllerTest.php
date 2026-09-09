@@ -73,7 +73,10 @@ class VehicleTypeControllerTest extends TestCase
     {
         // NOTE: VehicleTypeController::destroy checks 'delete client' (not 'delete vehicle type').
         $noPerms = User::factory()->create(['type' => 'employee', 'parent_id' => $this->owner->id]);
-        $vt = VehicleType::factory()->create();
+        // BAN-296: the fixture has to sit in the acting user's tenant now that
+        // VehicleType is scoped, or binding 404s before the permission check this
+        // test is actually about.
+        $vt = VehicleType::factory()->create(['parent_id' => $this->owner->id]);
         $this->actingAs($noPerms)->delete(route('vehicle-type.destroy', $vt))->assertSessionHas('error');
     }
 

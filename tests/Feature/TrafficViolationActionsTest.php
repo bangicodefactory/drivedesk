@@ -127,7 +127,11 @@ class TrafficViolationActionsTest extends TestCase
 
         $this->actingAs($this->owner)
             ->post(route('traffic-violation.rematch', $violation->id))
-            ->assertRedirect(route('traffic-violation.index'));
+            // BAN-298: TrafficViolation is tenant-scoped now, so route-model
+            // binding refuses to resolve another tenant's violation and Laravel
+            // answers 404 before the controller's own redirect-with-error runs.
+            // Both deny access; 404 is what every scoped model answers.
+            ->assertStatus(404);
     }
 
     // ── Assign ───────────────────────────────────────────────────────────────
@@ -265,7 +269,11 @@ class TrafficViolationActionsTest extends TestCase
                 'status'       => 'paid',
                 'liable_party' => 'renter',
             ])
-            ->assertRedirect(route('traffic-violation.index'));
+            // BAN-298: TrafficViolation is tenant-scoped now, so route-model
+            // binding refuses to resolve another tenant's violation and Laravel
+            // answers 404 before the controller's own redirect-with-error runs.
+            // Both deny access; 404 is what every scoped model answers.
+            ->assertStatus(404);
 
         $this->assertSame('new', $violation->fresh()->status);
     }

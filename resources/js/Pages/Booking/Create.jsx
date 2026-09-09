@@ -18,6 +18,8 @@ import { confirmBlacklist } from '@/lib/blacklist';
 import { formatDt } from '@/lib/datetime';
 import { BlacklistNotice } from '@/components/BlacklistNotice';
 import axios from 'axios';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, addons }) {
     const t = useTranslation();
@@ -166,14 +168,14 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
 
                             <div className="space-y-1">
                                 <Label htmlFor="start_date_time">{t('Start Date & Time')}</Label>
-                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} />
-                                {serverErrors?.start_date_time && <p className="text-sm text-destructive">{serverErrors.start_date_time}</p>}
+                                <Input id="start_date_time" type="datetime-local" {...register('start_date_time', { required: true })} {...fieldA11y(serverErrors, 'start_date_time')} />
+                                <FieldError name="start_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label htmlFor="end_date_time">{t('End Date & Time')}</Label>
-                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} />
-                                {serverErrors?.end_date_time && <p className="text-sm text-destructive">{serverErrors.end_date_time}</p>}
+                                <Input id="end_date_time" type="datetime-local" {...register('end_date_time', { required: true })} {...fieldA11y(serverErrors, 'end_date_time')} />
+                                <FieldError name="end_date_time" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -185,8 +187,9 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     placeholder={t('Select Vehicle')}
                                     searchPlaceholder={t('Search vehicle…')}
                                     ariaLabel={t('Vehicle')}
+                                    {...fieldA11y(serverErrors, 'vehicle')}
                                 />
-                                {serverErrors?.vehicle && <p className="text-sm text-destructive">{serverErrors.vehicle}</p>}
+                                <FieldError name="vehicle" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -198,45 +201,49 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     placeholder={t('Select Driver')}
                                     searchPlaceholder={t('Search driver…')}
                                     ariaLabel={t('Driver')}
+                                    {...fieldA11y(serverErrors, 'driver')}
                                 />
-                                {serverErrors?.driver && <p className="text-sm text-destructive">{serverErrors.driver}</p>}
+                                <FieldError name="driver" errors={serverErrors} />
                                 <BlacklistNotice drivers={drivers} selectedIds={[watch('driver')]} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Pickup Address')}</Label>
                                 <Select onValueChange={(v) => setValue('pickup_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'pickup_address')}><SelectValue placeholder={t('Select Pickup Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="pickup_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Drop Off Address')}</Label>
                                 <Select onValueChange={(v) => setValue('drop_off_address', v)}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'drop_off_address')}><SelectValue placeholder={t('Select Drop Off Address')} /></SelectTrigger>
                                     <SelectContent>
                                         {places.map((p) => (
                                             <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="drop_off_address" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
                                 <Label>{t('Status')}</Label>
                                 <Select defaultValue={statuses?.[0]?.value} onValueChange={(v) => setValue('status', v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger {...fieldA11y(serverErrors, 'status')}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {statuses?.map((s) => (
                                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError name="status" errors={serverErrors} />
                             </div>
 
                             <div className="space-y-1">
@@ -285,7 +292,7 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                     <table className="w-auto text-sm border-collapse">
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground">{t('Duration')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground">{t('Duration')}</td>
                                                 <td dangerouslySetInnerHTML={{ __html: priceBreakdown.duration }} />
                                             </tr>
                                         </tbody>
@@ -300,11 +307,11 @@ function BookingCreate({ vehicles: initialVehicles, drivers, statuses, places, a
                                         )}
                                         <tbody>
                                             <tr>
-                                                <td className="pr-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
+                                                <td className="pe-8 py-1 text-muted-foreground font-medium">{t('Discount')}</td>
                                                 <td className="font-medium">{priceBreakdown.discountAmount} Dh</td>
                                             </tr>
                                             <tr>
-                                                <td className="pr-8 py-1 font-semibold">{t('Total Amount')}</td>
+                                                <td className="pe-8 py-1 font-semibold">{t('Total Amount')}</td>
                                                 <td className="font-semibold">{priceBreakdown.finalTotal} Dh</td>
                                             </tr>
                                         </tbody>

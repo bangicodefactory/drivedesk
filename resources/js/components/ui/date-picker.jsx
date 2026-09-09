@@ -55,7 +55,7 @@ const DatePicker = React.forwardRef(function DatePicker(
             >
                 {value ? formatDmy(value) : placeholder}
             </span>
-            <Calendar aria-hidden="true" className="pointer-events-none ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+            <Calendar aria-hidden="true" className="pointer-events-none ms-2 h-4 w-4 shrink-0 text-muted-foreground" />
             <input
                 ref={setRef}
                 id={id}

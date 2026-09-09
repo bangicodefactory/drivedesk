@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Concerns\BelongsToTenant;
 
 /**
  * A driver (keyed by the driver's users.id) flagged for a tenant, with the
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class DriverBlacklist extends Model
 {
+    // Tenant isolation (roadmap Tranche S.1): constrains every query to the
+    // caller's tenant, so another tenant's row cannot resolve by id.
+    use BelongsToTenant;
     protected $fillable = [
         'driver_user_id',
         'parent_id',

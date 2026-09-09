@@ -25,7 +25,13 @@ class SignatureController extends Controller
             // ->with('drivers')  // Eager load the drivers relationship
             // ->orderBy('created_at', 'desc')
             // ->get();
-            $signatures = Signature::with('user')->orderBy('created_at', 'desc')->get();
+            // BAN-297: signatures has no parent_id, so the tenant link is the
+            // owning user. Without this the list showed every tenant's signature
+            // images and driver names to anyone holding 'manage driver'.
+            $signatures = Signature::with('user')
+                ->whereHas('user', fn ($q) => $this->constrainToTenant($q))
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -40,10 +46,10 @@ class SignatureController extends Controller
     }
     public function create(){    
         
-        $users = User::where('id', parentId())->orderBy('created_at', 'desc')->get();
+        $users = User::where('id', tenantKey())->orderBy('created_at', 'desc')->get();
         
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
                    ->where('type', 'driver')
                    ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                    ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
@@ -56,13 +62,19 @@ class SignatureController extends Controller
     }
     public function store(Request $request)
     {
+        // BAN-285: validated before the try. A ValidationException thrown inside
+        // it would be caught by the generic catch(\Exception) below, logged as an
+        // error and flattened into a flash — so the field-level messages never
+        // reached session('errors') and the SPA could not show them.
+        $request->validate([
+            // BAN-296: tenant-scoped; a bare exists: ignores the model's global
+            // scope. includeTenantOwner: the signature subject may be the tenant
+            // owner themselves, whose row is id = T with parent_id = 0.
+            'user_id' => ['required', tenantExistsRule('users', 'id', includeTenantOwner: true)],
+            'signature' => 'required'
+        ]);
+
         try {
-            // Validate request
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'signature' => 'required'
-            ]);
-    
             // Get the base64 image data
             $signature = $request->input('signature');
             
@@ -130,6 +142,13 @@ class SignatureController extends Controller
 
     public function destroy(Signature $signature){
         if (\Auth::user()->can('delete driver')) {
+            // BAN-297: implicit binding is unscoped and signatures has no
+            // parent_id, so any signature was deletable by id, from any tenant.
+            $owner = \App\Models\User::query();
+            $this->constrainToTenant($owner);
+            if (!$owner->whereKey($signature->user_id)->exists()) {
+                abort(404);
+            }
             
             \Log::info('Signature Path: ' . $signature->signature_path);
             \Log::info('Signature ID: ' . $signature->id);
@@ -147,4 +166,23 @@ class SignatureController extends Controller
         }
     }
 
+    /**
+     * Constrain a users query to the caller's tenant.
+     *
+     * A user belongs to tenant T when parent_id = T, or when the row *is* T
+     * (the owner, whose parent_id is 0). Super admins are unconstrained, as in
+     * BelongsToTenant.
+     */
+    private function constrainToTenant($query)
+    {
+        if (\Auth::check() && \Auth::user()->type === 'super admin') {
+            return $query;
+        }
+
+        $tenantId = tenantKey();
+
+        return $query->where(function ($q) use ($tenantId) {
+            $q->where('parent_id', $tenantId)->orWhere('id', $tenantId);
+        });
+    }
 }

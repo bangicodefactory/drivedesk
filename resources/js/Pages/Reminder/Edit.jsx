@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     _method: z.string().optional(),
@@ -49,8 +51,8 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name">{t('Name')}</Label>
-                                <Input id="name" placeholder={t('Enter name')} {...register('name')} />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                <Input id="name" placeholder={t('Enter name')} {...register('name')} {...fieldA11y(errors, 'name')} />
+                                <FieldError name="name" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -60,7 +62,7 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
                                     control={control}
                                     render={({ field }) => (
                                         <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger id="type"><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
+                                            <SelectTrigger id="type" {...fieldA11y(errors, 'type')}><SelectValue placeholder={t('Select Type')} /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(type).filter(([k]) => k !== '').map(([k, label]) => (
                                                     <SelectItem key={k} value={String(k)}>{label}</SelectItem>
@@ -69,7 +71,7 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
                                         </Select>
                                     )}
                                 />
-                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                                <FieldError name="type" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -79,8 +81,8 @@ function ReminderEdit({ reminder = {}, type = {}, vehicleName = '' }) {
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="reminder_date">{t('Reminder Date')}</Label>
-                                <Input id="reminder_date" type="date" {...register('reminder_date')} />
-                                {errors.reminder_date && <p className="text-sm text-destructive">{errors.reminder_date.message}</p>}
+                                <Input id="reminder_date" type="date" {...register('reminder_date')} {...fieldA11y(errors, 'reminder_date')} />
+                                <FieldError name="reminder_date" errors={errors} />
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">

@@ -48,8 +48,25 @@
  * @property {string}          logoUrl          - Full URL (asset(Storage::url('upload/logo/...')))
  * @property {string}          faviconUrl       - Full URL
  * @property {BrandingCssVars} cssVars          - Applied to :root via applyBranding() in app.jsx
- * @property {'lightmode'|'darkmode'}    layoutMode
+ * @property {'lightmode'|'darkmode'|'systemmode'} layoutMode
  * @property {'ltrmode'|'rtlmode'}       layoutDirection
+ */
+
+// ---------------------------------------------------------------------------
+// Contact / business info
+// ---------------------------------------------------------------------------
+
+/**
+ * @typedef {Object} Contact
+ * @property {string|null} phone
+ * @property {string|null} whatsapp        - Digits only, e.g. '212500000000' — build wa.me links with it
+ * @property {string|null} email
+ * @property {string|null} address
+ * @property {string|null} hoursWeekday
+ * @property {string|null} hoursSaturday
+ * @property {string|null} hoursSunday
+ * @property {string|null} facebookUrl
+ * @property {string|null} instagramUrl
  */
 
 // ---------------------------------------------------------------------------
@@ -60,7 +77,6 @@
  * @typedef {Object} ClientFeatures
  * @property {boolean} paypal
  * @property {boolean} stripe
- * @property {boolean} subscriptions
  * @property {boolean} booking_payment
  * @property {boolean} excel_import
  * @property {boolean} multi_branch
@@ -98,6 +114,7 @@
  * @typedef {Object} SharedProps
  * @property {Auth}                      auth
  * @property {Branding}                  branding
+ * @property {Contact}                   contact
  * @property {Client}                    client
  * @property {Record<string,string>}     translations  - Current locale key→value strings
  * @property {Flash}                     flash

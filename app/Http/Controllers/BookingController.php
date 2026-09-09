@@ -56,7 +56,7 @@ class BookingController extends Controller
     {
         [$search, $month] = $this->bookingFilters($request);
 
-        return Booking::where('parent_id', '=', parentId())
+        return Booking::where('parent_id', '=', tenantKey())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
                     $w->where('booking_id', 'like', "%{$search}%")
@@ -117,19 +117,19 @@ class BookingController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create booking')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->limit(500)->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->limit(500)->get();
 
             // Load every driver for the tenant (newest first). The driver
             // SearchableSelect filters client-side, so a capped slice made older
             // drivers unfindable once a tenant had >500 of them (BAN-266).
             // Server-side search is the follow-up for larger scale.
-            $drivers = User::where('parent_id', parentId())
+            $drivers = User::where('parent_id', tenantKey())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc')
                 ->orderBy('id', 'desc') // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
-            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
             $driversProp = $drivers->map(fn($d) => [
                 'id'               => $d->id,
                 'name'             => $d->name,
@@ -141,8 +141,8 @@ class BookingController extends Controller
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
 
-            $places = Place::where('parent_id', parentId())->limit(500)->get();
-            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
+            $places = Place::where('parent_id', tenantKey())->limit(500)->get();
+            $addon = Addon::where('parent_id', tenantKey())->limit(500)->get()->pluck('name', 'id');
 
             return Inertia::render('Booking/Create', [
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
@@ -310,10 +310,18 @@ class BookingController extends Controller
         $validator = \Validator::make(
             $request->all(),
             [
-                'vehicle' => 'required|exists:vehicles,id',
+                // BAN-294: tenantExistsRule() keeps the tenant constraint but
+                // exempts super admins — the bare where('parent_id', parentId())
+                // here rejected every vehicle for them, since parentId() returns
+                // their own id and that is never a vehicle's parent_id.
+                'vehicle' => ['required', tenantExistsRule('vehicles')],
                 'start_date_time' => 'required|date',
                 'end_date_time' => 'required|date|after:start_date_time',
-                'driver' => 'required|exists:users,id',
+                // BAN-295: tenantExistsRule() keeps the tenant constraint but
+                // exempts super admins, matching the vehicle rule and
+                // findDriverUser(). The bare where('parent_id', parentId()) here
+                // rejected every driver for them.
+                'driver' => ['required', tenantExistsRule('users')],
                 'pickup_address' => 'required|string',
                 'drop_off_address' => 'required|string',
                 'status' => 'required|string',
@@ -323,13 +331,19 @@ class BookingController extends Controller
 
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
-            return redirect()->back()->with('error', $messages->first());
+
+            // BAN-285: withErrors() is what writes session('errors'), which is the
+            // only source Inertia's shared `errors` prop reads. The flash is kept
+            // so anything still reading session('error') is unaffected.
+            return redirect()->back()
+                ->withErrors($validator)
+                ->with('error', $messages->first());
         }
 
         // 🔹 Blacklist check (BAN-252): warn-and-override. If the driver is
         // blacklisted and the owner hasn't acknowledged, block; the React picker
         // surfaces the warning so this only fires as the server-side safety net.
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $request->driver)
             ->whereNull('lifted_at')
             ->first();
@@ -373,7 +387,7 @@ class BookingController extends Controller
             'name' => $vehicle_detail->name,
             'license_plate' => $vehicle_detail->license_plate,
         ];
-        $booking->parent_id = parentId();
+        $booking->parent_id = tenantKey();
         $booking->daily_price_final = $request->daily_price ?? 0;
         $booking->save();
 
@@ -388,7 +402,7 @@ class BookingController extends Controller
 
         // 🔹 Notification by email (optional)
         $module = 'new_booking';
-        $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+        $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
         $setting = settings();
         $errorMessage = '';
         if (!empty($notification) && $notification->enabled_email == 1) {
@@ -422,7 +436,7 @@ class BookingController extends Controller
 
             // Enforce tenant scope and fail with 404 if not found
             $booking = Booking::where('id', $decryptedId)
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->first();
 
             if (!$booking) {
@@ -491,19 +505,49 @@ class BookingController extends Controller
     public function edit($id)
     {
         if (\Auth::user()->can('edit booking')) {
-            $booking = Booking::find(Crypt::decrypt($id));
+            // BAN-292: mirror show()'s fallback — an unencrypted id (a stale
+            // bookmark, an old link) threw DecryptException here and answered 500.
+            try {
+                $decryptedId = Crypt::decrypt($id);
+            } catch (\Exception $e) {
+                $decryptedId = $id;
+            }
+
+            // BAN-289: the tenant scope (BAN-288) makes another tenant's booking
+            // resolve to null here. Without this guard the next line dereferenced it
+            // and answered 500; show() has always answered 404 for the same case.
+            $booking = Booking::find($decryptedId);
+            if (!$booking) {
+                abort(404);
+            }
+
+            // BAN-292: the policy was registered but nothing invoked it, so the
+            // "explicit backstop" it documents provided nothing. The scope already
+            // stops a foreign id resolving; this covers a model arriving from
+            // acrossTenants() or a relation, which the scope never sees.
+            $this->authorize('update', $booking);
+
             $booking->start_date_time = date('Y/m/d H:i', strtotime($booking->start_date . ' ' . $booking->start_time));
             $booking->end_date_time = date('Y/m/d H:i', strtotime($booking->end_date . ' ' . $booking->end_time));
 
             // All drivers for the tenant (newest first); see create() — a capped
             // slice made older drivers unfindable in the picker (BAN-266).
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get()->pluck('name', 'id');
+            $drivers = User::where('parent_id', tenantKey())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
+            // Flag blacklisted drivers so the picker can warn before submit (BAN-252),
+            // matching create(). update() enforces the same gate server-side.
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
+            $driversProp = $drivers->map(fn($d) => [
+                'id'               => $d->id,
+                'name'             => $d->name,
+                'blacklisted'      => $blacklists->has($d->id),
+                'blacklist_reason' => optional($blacklists->get($d->id))->reason,
+            ])->values();
 
             $status = Booking::$status;
             $paymentStatus = Booking::$paymentStatus;
-            $places = Place::where('parent_id', parentId())->limit(500)->get();
+            $places = Place::where('parent_id', tenantKey())->limit(500)->get();
 
-            $addon = Addon::where('parent_id', parentId())->limit(500)->get()->pluck('name', 'id');
+            $addon = Addon::where('parent_id', tenantKey())->limit(500)->get()->pluck('name', 'id');
 
             $startDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->start_date_time)));
             $endDateTime = Carbon::createFromFormat('Y/m/d H:i', date('Y/m/d H:i', strtotime($booking->end_date_time)));
@@ -522,7 +566,7 @@ class BookingController extends Controller
                     });
                 })->distinct()->pluck('vehicle')->toArray();
 
-            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booked)->limit(500)->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->whereNotIn('id', $booked)->limit(500)->get();
 
             return Inertia::render('Booking/Edit', [
                 'booking'  => [
@@ -542,7 +586,7 @@ class BookingController extends Controller
                     'details'         => $booking->details,
                 ],
                 'vehicles' => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
-                'drivers'  => $drivers->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
+                'drivers'  => $driversProp,
                 'statuses' => collect(Booking::$status)->map(fn($l, $v) => ['value' => $v, 'label' => $l])->values(),
                 'places'   => $places->map(fn($p) => ['id' => $p->id, 'name' => $p->name]),
                 'addons'   => $addon->map(fn($name, $id) => ['id' => $id, 'name' => $name])->values(),
@@ -558,10 +602,15 @@ class BookingController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    // BAN-285 review: `exists` mirrors store()'s rules. Without them a
+                    // stale or foreign id reached Vehicle::find()/User::find() below
+                    // and fatalled on a null deref instead of returning a field error.
+                    // BAN-294: tenant-scoped and super-admin-safe, see store().
+                    'vehicle' => ['required', tenantExistsRule('vehicles')],
                     'start_date_time' => 'required',
                     'end_date_time' => 'required',
-                    'driver' => 'required',
+                    // BAN-295: tenant-scoped and super-admin-safe, see store().
+                    'driver' => ['required', tenantExistsRule('users')],
                     'pickup_address' => 'required',
                     'drop_off_address' => 'required',
                     'status' => 'required',
@@ -572,7 +621,25 @@ class BookingController extends Controller
 
             if ($validator->fails()) {
                 $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+
+                // BAN-285: withErrors() is what writes session('errors'), which is
+                // the only source Inertia's shared `errors` prop reads. The flash is
+                // kept so anything still reading session('error') is unaffected.
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->with('error', $messages->first());
+            }
+
+            // BAN-285 review: same warn-and-override gate store() applies (BAN-252).
+            // Without it a booking could be created with a clean driver and then
+            // edited onto a blacklisted one, bypassing the check entirely.
+            $blacklist = DriverBlacklist::where('parent_id', tenantKey())
+                ->where('driver_user_id', $request->driver)
+                ->whereNull('lifted_at')
+                ->first();
+            if ($blacklist && !$request->boolean('acknowledge_blacklist')) {
+                return redirect()->back()->withInput()
+                    ->with('error', __('This driver is blacklisted: ') . $blacklist->reason);
             }
 
             $bookingStatus = $booking->status != $request->status;
@@ -607,6 +674,11 @@ class BookingController extends Controller
             ];
             $booking->daily_price_final = $request->daily_price;
             $booking->save();
+
+            // Record the override if the owner proceeded past a blacklist warning.
+            if ($blacklist) {
+                $blacklist->recordOverride('booking', $booking->id, (int) $request->driver);
+            }
 
             //update dynamic with tva section
             // $tva = Tva::where('booking_id', $booking->id)->first();
@@ -645,7 +717,7 @@ class BookingController extends Controller
             if ($bookingStatus) {
                 $user = User::find($request->driver);
                 $module = 'booking_status';
-                $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+                $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
                 $setting = settings();
                 $errorMessage = '';
                 if (!empty($notification) && $notification->enabled_email == 1) {
@@ -675,7 +747,13 @@ class BookingController extends Controller
     {
         if (\Auth::user()->can('delete booking')) {
             // Delete associated TVA record first
-            Tva::where('booking_id', $booking->id)->delete();
+            //
+            // BAN-300: acrossTenants() because tvas.parent_id is nullable with no
+            // backfill — a booking's pre-2025-07-11 factures would otherwise
+            // survive the booking and be orphaned. BAN-298 added parent_id to the
+            // fixtures covering this instead of fixing the query, which kept the
+            // tests green while leaving production's untagged rows behind.
+            Tva::acrossTenants()->where('booking_id', $booking->id)->delete();
 
             // Then delete the booking
             $booking->delete();
@@ -702,14 +780,16 @@ class BookingController extends Controller
         // this, a crafted id list could delete another tenant's bookings —
         // bulkMarkPaid already scopes the same way.
         $ownedIds = Booking::whereIn('id', $ids)
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->pluck('id');
 
         if ($ownedIds->isEmpty()) {
             return redirect()->back()->with('error', __('No bookings selected.'));
         }
 
-        Tva::whereIn('booking_id', $ownedIds)->delete();
+        // BAN-300: as destroy() — the ids are already tenant-verified above, so
+        // dropping the scope here widens nothing but reaches untagged factures.
+        Tva::acrossTenants()->whereIn('booking_id', $ownedIds)->delete();
         Booking::whereIn('id', $ownedIds)->delete();
 
         return redirect()->route('booking.index')->with('success', __('Selected bookings successfully deleted.'));
@@ -745,7 +825,7 @@ class BookingController extends Controller
         DB::transaction(function () use ($validated, $date, $method, $isCash, $cashMax, $splitCash, &$paid, &$skippedAlreadyPaid, &$skippedCash) {
             // Tenant-scoped: only the caller's own bookings can be touched.
             $bookings = Booking::whereIn('id', $validated['ids'])
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->get();
 
             foreach ($bookings as $booking) {
@@ -817,7 +897,7 @@ class BookingController extends Controller
             // Persist the invoice day-count so deferred invoicing reproduces the
             // exact days (manual override or cash-split share) at flush time.
             $payment->invoice_days = ($quantity && $quantity > 0) ? $quantity : null;
-            $payment->parent_id = parentId();
+            $payment->parent_id = tenantKey();
             $payment->save();
 
             // Status from the freshly-summed payments (includes the row just saved).
@@ -856,7 +936,12 @@ class BookingController extends Controller
         $date          = $payment->date;
         $paymentMethod = $payment->payment_method;
 
-        $setting = settings();
+        // tenantSettings(), not settings(): this facture is stamped into the
+        // customer's tenant and appears in their invoice list and PDF export, so
+        // company_name / ICE / RC / NIF have to be theirs. During a support
+        // session settings() resolves to the acting super admin's rows and would
+        // print the wrong legal identity on the customer's invoice (BAN-316).
+        $setting = tenantSettings();
         $user    = User::find($booking->driver);
         $driver1 = Driver::where('user_id', $booking->driver)->first();
 
@@ -871,7 +956,13 @@ class BookingController extends Controller
 
         // Global last facture number (matches paymentStore; per-year unification
         // is tracked in IST-230).
-        $lastFacture = Tva::orderByDesc('id')->first();
+        //
+        // BAN-300: acrossTenants() — this is the same failure mode BAN-299 fixed
+        // in lastFactureNumberForYear() and this sibling was left scoped. With no
+        // matching row the seed falls to 0 and the next facture is numbered 1,
+        // duplicating an already-issued legal invoice number. 'Global' in the
+        // comment above is only true if the query stays unscoped.
+        $lastFacture = Tva::acrossTenants()->orderByDesc('id')->first();
         $lastNumber = ($lastFacture && preg_match('/\d+$/', (string) $lastFacture->facture_number, $matches)) ? (int) $matches[0] : 0;
         $factureNumber = $lastNumber + 1;
 
@@ -892,7 +983,7 @@ class BookingController extends Controller
         $tva->ice_number = $setting['ice'] ?? null;
         $tva->rc_number = $setting['rc'] ?? null;
         $tva->nif_number = $setting['if'] ?? null;
-        $tva->parent_id = parentId();
+        $tva->parent_id = tenantKey();
         $tva->booking_id = $booking->id;
         $tva->generated_date = now()->toDateString();
         $tva->total_amount = number_format($booking->amount, 2, '.', '');
@@ -917,7 +1008,10 @@ class BookingController extends Controller
      */
     private function flushBookingFactures(Booking $booking): void
     {
-        $invoicedPaymentIds = Tva::withTrashed()
+        // BAN-299: acrossTenants() because tvas.parent_id is nullable with no
+        // backfill; scoping this guard would hide pre-July-2025 factures and
+        // re-issue invoices that already exist.
+        $invoicedPaymentIds = Tva::acrossTenants()->withTrashed()
             ->where('booking_id', $booking->id)
             ->whereNotNull('idpaiment')
             ->pluck('idpaiment')
@@ -1136,7 +1230,7 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('The file has no data rows.'));
         }
 
-        $pid         = parentId();
+        $pid         = tenantKey();
         $driverRole  = Role::where('name', 'driver')->where('parent_id', $pid)->first();
 
         // Cache already-loaded drivers and vehicles to avoid duplicate DB hits per row
@@ -1393,7 +1487,7 @@ class BookingController extends Controller
 
     public function bookingNumber()
     {
-        $latest = Booking::where('parent_id', parentId())->latest()->first();
+        $latest = Booking::where('parent_id', tenantKey())->latest()->first();
         if (!$latest) {
             return 1;
         }
@@ -1402,7 +1496,18 @@ class BookingController extends Controller
 
     public function paymentCreate($id)
     {
+        // BAN-289: this action had no permission check of any kind, and no tenant
+        // filter — it rendered whatever booking the id resolved to. paymentSplitPreview
+        // is the correct shape and is mirrored here.
+        if (!\Auth::user()->can('create booking payment')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
         $booking = Booking::find($id);
+        if (!$booking) {
+            abort(404);
+        }
+
         $paymentMethod = BookingPayment::$paymentMethod;
         
         // Calculate default quantity (total days adjusted by payment amount)
@@ -1456,6 +1561,15 @@ class BookingController extends Controller
             $paymentMethodNormalized = strtolower($request->payment_method);
             $isCash = $paymentMethodNormalized === 'espece';
             $booking = Booking::find($id);
+            if (!$booking) {
+                // BAN-292: every other failure branch here answers JSON to a
+                // non-Inertia AJAX caller; a bare abort() handed them an HTML
+                // error page their handler could not parse.
+                if (!$request->hasHeader('X-Inertia') && $request->ajax()) {
+                    return response()->json(['status' => 'error', 'message' => __('Booking not found.')], 404);
+                }
+                abort(404); // BAN-289: was a null deref inside the record* helpers.
+            }
 
             if ($isCash && $numericAmount > $cashMax) {
                 if (!feature('cash_split')) {
@@ -1515,7 +1629,7 @@ class BookingController extends Controller
             return response()->json(['message' => __('Permission Denied.')], 403);
         }
 
-        $booking = Booking::where('parent_id', parentId())->find($id);
+        $booking = Booking::where('parent_id', tenantKey())->find($id);
         if (!$booking) {
             return response()->json(['message' => __('Not found')], 404);
         }
@@ -1553,15 +1667,27 @@ class BookingController extends Controller
     public function paymentDestroy($booking_id, $id)
     {
         if (\Auth::user()->can('delete booking payment')) {
-            $payment = BookingPayment::find($id);
+            // BAN-289: the booking is resolved *first*. It used to be looked up
+            // after the delete, so once the tenant scope (BAN-288) made a foreign
+            // booking return null the request destroyed the payment and its TVA
+            // rows and then 500'd before updating payment_status — a
+            // half-completed cross-tenant write. BookingPayment gained its own
+            // tenant scope in BAN-298, so the id lookup is now guarded twice; the
+            // booking_id constraint stays as the explicit statement of intent.
+            $bookinmg = Booking::find($booking_id);
+            if (!$bookinmg) {
+                abort(404);
+            }
+
+            $payment = BookingPayment::where('booking_id', $bookinmg->id)->find($id);
             if ($payment) {
-                // Delete linked TVA records created for this payment via idpaiment
-                Tva::where('idpaiment', $payment->id)->delete();
-                
+                // Delete linked TVA records created for this payment via idpaiment.
+                // BAN-300: acrossTenants() — the payment is already tenant-checked
+                // above, and its factures may predate the parent_id column.
+                Tva::acrossTenants()->where('idpaiment', $payment->id)->delete();
                 $payment->delete();
             }
 
-            $bookinmg = Booking::find($booking_id);
             if ($bookinmg->getTotalDueAmount() <= 0) {
                 $status = 'paye';
             } elseif ($bookinmg->getTotalDueAmount() == $bookinmg->getTotalAmount()) {
@@ -1627,7 +1753,7 @@ class BookingController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $parentId = parentId();
+        $parentId = tenantKey();
         $bookings = Booking::where('parent_id', $parentId)->with('drivers')->get();
         $vehicles = Vehicle::where('parent_id', $parentId)->get();
 

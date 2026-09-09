@@ -13,7 +13,9 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        // Tenant ownership (roadmap Tranche S.1). The BelongsToTenant global
+        // scope is the primary defence; these are the explicit backstop.
+        \App\Models\Booking::class => \App\Policies\BookingPolicy::class,
     ];
 
     /**

@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Vehicle extends Model
 {
+    // Tenant isolation (roadmap Tranche S.1): constrains every query to the
+    // caller's tenant, so another tenant's vehicle cannot resolve by id.
+    use BelongsToTenant;
+
     use HasFactory;
     protected $fillable=[
         'vehicle_id',
@@ -27,6 +32,11 @@ class Vehicle extends Model
         'option',
         'notes',
         'parent_id',
+        'available_for_rent',
+    ];
+
+    protected $casts = [
+        'available_for_rent' => 'boolean',
     ];
 
     public function types()

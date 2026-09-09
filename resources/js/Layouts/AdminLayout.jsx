@@ -75,7 +75,7 @@ function LanguageSwitcher() {
                         className={cn('cursor-pointer', current === l.code && 'font-semibold')}
                     >
                         <span className="flex-1">{l.label}</span>
-                        {current === l.code && <Check className="ml-2 h-4 w-4" />}
+                        {current === l.code && <Check className="ms-2 h-4 w-4" />}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>
@@ -132,7 +132,7 @@ function UserMenu() {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="me-2 h-4 w-4" />
                     {t('Log out')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
@@ -224,8 +224,8 @@ export default function AdminLayout({ children, breadcrumbs }) {
             <SidebarInset>
                 {/* TopBar */}
                 <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card px-4 print:hidden">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator orientation="vertical" className="mr-1 h-5" />
+                    <SidebarTrigger className="-ms-1" />
+                    <Separator orientation="vertical" className="me-1 h-5" />
                     <div className="flex-1">
                         <Breadcrumbs items={breadcrumbs} />
                     </div>

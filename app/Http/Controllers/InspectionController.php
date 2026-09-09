@@ -16,7 +16,7 @@ class InspectionController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage inspection')) {
-            $inspections = Inspection::where('parent_id', '=', parentId())->get();
+            $inspections = Inspection::where('parent_id', '=', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -33,14 +33,14 @@ class InspectionController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create inspection')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
             $vehicles->prepend(__('Select Vehicle'),'');
 
             $status=Inspection::$status;
             $repairStatus=Inspection::$repairStatus;
             $fuelLevel=Inspection::$fuelLevel;
 
-            $types = InspectionType::where('parent_id', parentId())->get();
+            $types = InspectionType::where('parent_id', tenantKey())->get();
             return Inertia::render('Inspection/Create', compact('vehicles','status','repairStatus','fuelLevel','types'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
@@ -54,7 +54,10 @@ class InspectionController extends Controller
         if (\Auth::user()->can('create inspection')) {
             $validator = \Validator::make(
                 $request->all(), [
-                    'vehicle' => 'required',
+                    // BAN-297: was 'required' with no exists at all, so an inspection
+                    // could be pointed at another tenant's vehicle. The audit only
+                    // looked for exists: rules, so a bare required FK was invisible.
+                    'vehicle' => ['required', tenantExistsRule('vehicles')],
                     'inspector' => 'required',
                     'inspection_date' => 'required',
                     'incoming_date' => 'required',
@@ -81,7 +84,7 @@ class InspectionController extends Controller
             $inspection->status = $request->status;
             $inspection->amount = $request->amount;
             $inspection->repair_status = $request->repair_status;
-            $inspection->parent_id = parentId();
+            $inspection->parent_id = tenantKey();
             if (!empty($request->receipt)) {
                 $expenseFilenameWithExt = $request->file('receipt')->getClientOriginalName();
                 $expenseFilename = pathinfo($expenseFilenameWithExt, PATHINFO_FILENAME);
@@ -106,7 +109,13 @@ class InspectionController extends Controller
 
     public function show($id)
     {
-        $inspection=Inspection::find(Crypt::decrypt($id));
+        // BAN-297: the audit looked for a deref right after Model::find(), so a
+        // find() wrapped in Crypt::decrypt() slipped past it. Under the tenant
+        // scope a foreign id resolves to null and setRelation() below fatals.
+        $inspection = Inspection::find(Crypt::decrypt($id));
+        if (!$inspection) {
+            abort(404);
+        }
         $checklists=!empty($inspection->details)?json_decode($inspection->details):[];
 
         $types = InspectionType::findMany(array_keys((array) $checklists))->keyBy('id');
@@ -125,14 +134,23 @@ class InspectionController extends Controller
 
     public function edit($id)
     {
-        $inspection=Inspection::find(Crypt::decrypt($id));
         if (\Auth::user()->can('edit inspection')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+            // BAN-297: as show() — without this the page rendered with a null
+            // inspection prop and the React component faulted. The permission
+            // check stays ahead of the lookup so a caller without 'edit
+            // inspection' keeps getting the permission-denied redirect for every
+            // id, and cannot tell an id that exists from one that does not.
+            $inspection = Inspection::find(Crypt::decrypt($id));
+            if (!$inspection) {
+                abort(404);
+            }
+
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
             $vehicles->prepend(__('Select Vehicle'),'');
             $status=Inspection::$status;
             $repairStatus=Inspection::$repairStatus;
             $fuelLevel=Inspection::$fuelLevel;
-            $types = InspectionType::where('parent_id', parentId())->get();
+            $types = InspectionType::where('parent_id', tenantKey())->get();
 
             $checklists=!empty($inspection->details)?json_decode($inspection->details):[];
 
@@ -155,7 +173,10 @@ class InspectionController extends Controller
         if (\Auth::user()->can('edit inspection')) {
             $validator = \Validator::make(
                 $request->all(), [
-                    'vehicle' => 'required',
+                    // BAN-297: was 'required' with no exists at all, so an inspection
+                    // could be pointed at another tenant's vehicle. The audit only
+                    // looked for exists: rules, so a bare required FK was invisible.
+                    'vehicle' => ['required', tenantExistsRule('vehicles')],
                     'inspector' => 'required',
                     'inspection_date' => 'required',
                     'incoming_date' => 'required',

@@ -1,0 +1,736 @@
+# DriveDesk — Product roadmap (market research + app audit)
+
+Date: 2026-08-29 · Owner: Ahmed · Status: proposed
+
+This document is the outcome of three investigations run on 2026-08-29:
+
+1. a **feature inventory** of this repository (routes, controllers, models,
+   migrations, `config/features.php`, `config/clients/drivedesk.php`);
+2. a **UI/UX audit** of `resources/js/` (layouts, pages, shadcn primitives,
+   i18n/RTL, mobile, accessibility, tests);
+3. **market research** on car-rental management software serving Morocco,
+   the marketplaces that feed inbound demand, international benchmarks, and
+   the Moroccan regulatory calendar.
+
+It replaces nothing in `docs/migration-plan.md`; it sits after it. Every item
+below is sized S / M / L and, where it is a variant, names the feature flag it
+must ship behind (`config/features.php` + `config/clients/<client>.php`, see
+`CLAUDE.md` §10).
+
+---
+
+## 1. Where DriveDesk stands today
+
+The sales handbook (`docs/sales/training-en.html`, §9 "What you must not
+promise") already lists what the marketing site overstates. This table is the
+engineering view of the same question, reconciled with the code.
+
+| Area | Status | Where |
+| --- | --- | --- |
+| Bookings, Excel import, bulk actions, select-all-matching | **Real** | `app/Http/Controllers/BookingController.php`, `resources/js/Pages/Booking/` |
+| Planning board (vehicle × day Gantt) | **Real**, fragile | `Pages/Booking/Planning.jsx` loads a vendored 991 KB FullCalendar bundle (`public/js/index.global.js`) and uses `resourceTimeline*` (Premium) views |
+| Fleet, vehicle types, options | **Real** | `VehicleController`, `Pages/Vehicle/` |
+| Customers (drivers), blacklist | **Real** | `DriverController`, `driver_blacklists`, `components/BlacklistNotice.jsx` |
+| Rental agreements + in-app e-signature | **Real** | `RentalAgreementController`, `creagia/laravel-sign-pad`, `components/SignaturePad.jsx` |
+| Inspections (checklist, notes, odometer, cost, one file) | **Real**, no photos / no damage diagram | `InspectionController` |
+| Expenses, reminders (hourly/daily scheduler), credits | **Real** | `ExpenseController`, `ReminderController`, `app/Console/Kernel.php`, `CreditController` |
+| Traffic violations w/ plate → booking matcher | **Real** (flag `traffic_violations`) | `TrafficViolationController`, `app/Services/ViolationMatcher.php` |
+| TVA invoices, PDF, monthly report, gap-free renumbering | **Real** | `TvaController`, `TvaRenumberController`, `resources/views/pdf/invoice1.blade.php` |
+| Cash ceiling (CGI art. 193, 5 000 MAD) split into compliant receipts | **Real** (flag `cash_split`) | `app/Services/CashPaymentSplitter.php` |
+| Invoice only once fully paid | **Real** (flag `invoice_on_full_payment`) | `BookingController::recordBookingPayment` |
+| Roles / ~100 permissions, audit log | **Real** | spatie, `logged_histories`, `config/audit.php` |
+| Per-tenant SMTP + 6 mailables, reCAPTCHA, Sentry | **Real** | `SettingController`, `app/Mail/` |
+| Demo gateway + demo-request approval | **Real** (flag `demo_gateway`) | `Pages/Public/DemoGateway.jsx`, `DemoApprovalController` |
+| SEO: sitemap, `llms.txt`, hreflang, locale-prefixed public URLs | **Real** | `SeoController`, `app/Support/{Seo,Locales}.php` |
+| Locales en / fr / ar / ary with true RTL | **Real** | `app/Http/Middleware/SetLocale.php`, `resources/js/app.jsx` |
+| Stripe / PayPal / Flutterwave | **Settings-only** — credential fields, no SDK, no checkout, no webhook | `Pages/Settings/Payment.jsx` |
+| Subscriptions, packages | **Schema-only** — tables, no model/controller/route | `database/migrations/*subscriptions*`, `*package_transactions*` |
+| Coupons | **Schema-only** | `*create_coupons_table*`, ~10 orphan keys in `resources/lang/en.json` |
+| Multi-branch | **Flag-only** — `multi_branch` has no enforcement point; Places are pick-up points with a surcharge, not branches | `config/features.php` |
+| SMS, WhatsApp | **Absent** (`ReminderController` has a commented `sendSMSNotification`) | — |
+| Reminder e-mails | **Broken, silently** — `ReminderController` calls `Mail::send('emails.reminder_notification')` / `'emails.daily_reminder_summary'` and the daily summary is scheduled, but the views live under `resources/views/email/` (singular) and `daily_reminder_summary.blade.php` does not exist; the `try/catch` downgrades the exception to `Log::error` | `app/Http/Controllers/ReminderController.php:447,631`, `app/Console/Kernel.php` |
+| Deposit / caution, franchise, km limit, late fee | **Absent** — mentioned in contract terms text only | `config/clients/drivedesk.php` `terms.rental_agreement` |
+| Vehicle document expiry (assurance / vignette / visite technique) | **Absent** as fields — only `registration_expiry` exists | `vehicles` table |
+| Weekly / monthly rate cards | **Absent** — daily rate + manual discount | `vehicles.daily_rate` |
+| Damages / état des lieux with photos | **Absent** | — |
+| Maps / geocoding, GPS | **Absent** | `places` are free-text addresses |
+| Public API / mobile app / PWA | **Absent** — `routes/api.php` is the Sanctum stub | — |
+| In-app notification centre | **Absent** | — |
+| Accounting export, DGI e-invoicing (UBL 2.1 / CII) | **Absent** | — |
+
+### Hygiene debt found on the way
+
+- 7 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
+  `booking_payment`, `excel_import`, `multi_branch`, `tva_renumber`,
+  `signatures`. Flipping them changes nothing.
+  *(Updated BAN-318: `subscriptions` used to be the exception — seven
+  `feature('subscriptions')` branches in still-shipped Blade, one of which hid
+  the Logged History menu entry. One of those branches called a model BAN-199
+  had deleted, so the flag being **true** for drivedesk 500'd that page in
+  production (BAN-317). Both Blades are now clear of it and the flag is gone,
+  so the count is 13 rather than 14 — the original "13" was itself already
+  stale, written before `registration` was added.)*
+- `app/Http/Controllers/HomeController.php` imports five classes that do not
+  exist (`Contact`, `Fuel`, `NoticeBoard`, `Service`, `Support`).
+- `routes/web.php`: `ui-test/*` (15 unauthenticated Blade previews) and
+  `GET /hello` are marked "remove before production"; `POST /newsletter/subscribe`
+  validates and discards the address.
+- `tvas.company_name` defaults to `'DIRECT ONDERWEG'`; `settingsKeys()` default
+  timezone is `Pacific/Tahiti`; the bank section asks for an Indian `IFSC` code
+  instead of a RIB/IBAN.
+- Ten dead locale bundles under `resources/lang/` (`danish`, `dutch`, …) that
+  `SetLocale::SUPPORTED` never serves; `nl` is declared in
+  `config/clients/drivedesk.php` but not servable.
+- `composer.lock.backup` committed; product still named `rentcar` in
+  `package.json`, `.env.example`, and the `CLAUDE.md` title.
+- `docs/phase6-execution-plan.md` reports ~13 % of the Blade port done; the
+  `resources/js/Pages/` tree shows it is essentially complete. The Phase 6 exit
+  gate ("`resources/views/` only holds `app.blade.php` + email/PDF") is still not
+  met. Still Blade and still routed: `tva/create`, `booking/payment`,
+  `booking_requests/*`, `logged_history/*`, `user_permission/*`,
+  `settings/testmail`, `reminder/days_remaining` (returned by
+  `ReminderController.php:297`), `auth/confirm-password`, and the whole
+  `client/**` storefront — plus the scaffolding they extend:
+  `layouts/{app,auth,guest,landing}`, `admin/{menu,content,header,footer,head}`,
+  `dashboard/{index,super_admin}`, `driver/new_create`,
+  `reminder/_date_modal`, `tva/{days_remaining,_date_modal}`, `partials/alerts`.
+  Roughly 30 files, not 7.
+- Two vitest conventions coexist (`Pages/**/__tests__/` and
+  `resources/js/tests/`), duplicating e.g. the Login test; no coverage threshold.
+
+---
+
+## 2. Competitive landscape
+
+### 2.1 Moroccan rental-management SaaS (direct competitors)
+
+The market is crowded and the price floor is low (117–300 DH/month). "Fleet +
+contracts + invoices" is commoditised.
+
+| Product | Positioning |
+| --- | --- |
+| [Rentyx](https://rentyx.ma) | Morocco-only, 2 500 MAD/yr unlimited fleet, plus a commission plan; heavy "Excel vs logiciel" content marketing |
+| [GestLoc](https://gestloc.ma) | Most enterprise-shaped local player: drag-and-drop planning, multi-agency, bank integration, 10+ reports, 299 → 2 499 DH/mo |
+| [CRSApp](https://www.crsapp.ma) | 85+ agencies; 699 DH / 6 months starter; sells 6- and 12-month plans only; has an "infractions" module |
+| [GoRently](https://gorently.ma) | Founded 2024; AI-first: WhatsApp/web conversational booking, AI photo damage detection, OTA-ready REST API; 490 / 890 MAD/mo |
+| [Locapp](https://locapp.ma) | Rabat, 70+ agencies; classic stack + strong Darija social proof; 7-day trial |
+| [Loc.ma](https://www.loc.ma) | SaaS + a free storefront per agency (`agence.loc.ma`) with direct booking |
+| [LocaFlotte](https://locaflotte.com) | 169 MAD/mo entry, FR/AR/EN/ES, Android app; publicly admits no Arabic PDF contracts and no booking module |
+| Fleety, Fleetement, ISY Solutions | All-in-one; ISY headlines digital état des lieux + e-signature; Fleetement markets "reservations arriving via WhatsApp" |
+| [MekLoc](https://mekloc.com), [NextFlotte](https://nextflotte.com), Agencar, GENIPARC / Genicars, Maroc Rent Solutions, GestFlotte, Loca-Smart | Long tail; NextFlotte runs the best research blog in the niche (caution guides, AI état des lieux) |
+| [Qualitrace](https://qualitrace.ma), [Geo4tech](https://geo4tech.ma) | Rental software bundled with GPS/telematics |
+| RAKIB, ProFleetPlus, VestraCar (Google Play) | Mobile-first agency managers: contract generation, check-in/out photo documentation, KPI dashboard |
+
+### 2.2 Demand-side channels (integrate with, do not fight)
+
+[KARVYX](https://karvyx.com) (new Moroccan marketplace, partner extranet),
+[LocalRent](https://www.localrent.com/en/morocco/) (dominant cash-deposit
+marketplace, 15–20 % prepay), [OneClickDrive.ma](https://www.oneclickdrive.ma),
+Sogme, plus the European comparators (Carigami, HappyCar, Liligo, Skyscanner,
+BSP-Auto, Rentcars). Avis.ma / Europcar / Hertz set the UX bar customers compare
+against.
+
+### 2.3 International benchmarks
+
+| Product | What sets the bar |
+| --- | --- |
+| [RentSyst](https://rentsyst.com) | Inspection module with photos + notes, e-sign contracts, mileage/date-triggered workflows, GPS + payment APIs; €1.60/car/month |
+| [HQ Rental Software](https://www.capterra.com/p/156984/HQ-Rental-Software/) | Reservations, rate rules, add-ons, maintenance, embeddable booking plugin, sales-agent channel |
+| [Coastr](https://www.coastr.com) | Telematics, remote immobilisation, biometric verification, white-label portal |
+| [Rent Centric](https://www.rentcentric.com) | Licence-barcode auto entry, image/video capture, e-sign, kiosks |
+| [Booqable](https://booqable.com) | Website builder + embeddable booking widget, pricing rules, iOS/Android app; $29–149 |
+
+---
+
+## 3. Moroccan regulatory and market must-haves
+
+| Requirement | What it means for the product | Sources |
+| --- | --- | --- |
+| **DGI e-facturation** (clearance model: invoice validated by the DGI platform *before* it reaches the customer; UBL 2.1 or CII only; qualified e-signature). Calendar: large IS companies 1 Jan 2026 → medium 1 Jul 2026 → **TPE (< 10 M DH) and auto-entrepreneurs 1 Jan 2027**. Everyone must be able to *receive* e-invoices from 2026. | DriveDesk's ICP lands in the Jan-2027 wave. UBL 2.1 export + ICE validation + a clearance adapter is a category-defining feature; no Moroccan rental SaaS advertises it. | [Upsilon](https://www.upsilon-consulting.com/facturation-electronique-maroc-2026/), [Hisab](https://hisab.ma/fr/docs/mandate-2026), [Experio](https://experio.ma/facturation-electronique-maroc-2026-guide-conformite/) |
+| **Art. 145 CGI** — 12 mandatory invoice mentions; ICE is 15 digits and the DGI platform auto-rejects a missing/invalid one; TVA 20 % standard. | Validate ICE format on driver/company records and on `tvas`; keep the 12 mentions on `invoice1.blade.php`. | [C2M checklist](https://www.c2m.ma/mentions-obligatoires-sur-une-facture-au-maroc-la-checklist-complete-pour-eviter-le-rejet-dgi-en-2026/), [ClicPaie ICE](https://clicpaie.ma/blogs/ice-maroc/) |
+| **Cahier des charges** for location sans chauffeur (in force 15 Apr 2024; compliance deadline end-2025, fleet standards for existing agencies until 2027): ≥ 7 vehicles, CNSS registration, registered office, qualified licence holder, 500 000 DH funds/bonds. | An "agency compliance file" (fleet count vs threshold, CNSS, licence, insurance policies, document expiry) — nobody offers it. | [Médias24](https://medias24.com/2025/04/12/nouveau-cahier-des-charges-pour-la-location-de-voitures-les-anciennes-agences-partiellement-exonerees/), [Le Matin](https://lematin.ma/nation/location-de-voitures-nouveau-delai-pour-appliquer-le-cahier-des-charges/277176), [Manis](https://manisconsulting.ma/guide/fr/cahier-charges-location-voitures/) |
+| **Contract mandatory elements**: CIN, permis n° + category + issue date, vehicle + km de départ, exact dates, prix TTC, **caution** (amount, form, release), insurance company + policy n° + type + **franchise**, return conditions, liability, jurisdiction, dated signatures. | Caution, franchise, km départ/retour, policy n° must become fields, not prose in `terms.rental_agreement`. | [NextFlotte](https://nextflotte.com/blog/contrats-location-voiture-maroc-modeles-gratuits), [Clic1Car](https://clic1car.com/blog/assurance-franchise-caution-location-voiture-maroc/) |
+| **Caution norms**: 8 000–15 000 MAD (SUV), up to 25 000 (premium); forms are pré-autorisation CB, chèque de garantie, espèces; many tourist offers are deposit-free. | Model caution as its own object: type, amount, hold date, release date, deductions. | [NextFlotte caution](https://nextflotte.com/blog/caution-depot-garantie-location-voiture-maroc), [Jacaranda](https://www.jacarandacar.com/blog/post/location-de-voiture-au-maroc-payer-carte-ou-esp%C3%A8ces) |
+| **PV / amendes**: since 1 Jul 2011 agencies no longer settle fines for non-residents (collected at the border); for residents the agency receives the PV, may advance it, then re-invoices + a processing fee. | Extend `traffic_violations` with resident/non-resident routing and a re-invoice line. | [Aujourd'hui le Maroc](https://aujourdhui.ma/societe/infractions-au-code-de-la-route-les-agences-de-location-de-voitures-ne-payent-plus-pour-les-non-residents-80543) |
+| **Payment gateways in MAD**: YouCan Pay 2.5 % + 3 MAD, no monthly fee, online onboarding; CMI 3 000–5 000 DH setup + 2.5–3.5 % + monthly; Payzone 2.5–3.5 %. | YouCan Pay is the low-friction default for deposit prepay and for DriveDesk's own billing; CMI for larger agencies. | [Digitoyou](https://digitoyou.com/blog/paiement-en-ligne-maroc-cmi-stripe-2026/), [Sinesi](https://www.sinesi.net/blog/paiement-en-ligne-au-maroc-cmi-cashplus-ou-payzone-le-comparatif) |
+| **WhatsApp** is the #1 closing channel for independent agencies (ahead of e-mail): booking confirmation, contract + photos, pre-pickup reminder, incident reporting on the same thread. | Ship WhatsApp as a transactional channel, starting with `wa.me` deep links, later the Business API. | [Perfect Rental](https://perfectrental.ma/fr/blog/whatsapp-business-car-rental-agency) |
+| **Digital état des lieux**: ~27 % fewer disputes; > 40 % of disputes concern end-of-rental damage and fail for lack of dated photos. | Guided photo capture (same angles at departure and return), timestamped signature, PDF to e-mail + WhatsApp. | [NextFlotte EDL](https://nextflotte.com/blog/etat-des-lieux-numerique-scan-ia-location-voiture), [Fleetee](https://www.fleetee.io/blog/etat-des-lieux-numerique) |
+| **Market shape**: 11 246 agencies, 201 462 vehicles (2025); most agencies run < 7 vehicles; hubs Marrakech (least seasonal), Casablanca (CMN), Agadir, Tanger; MRE peak June–September. | ICP = a 3–10-vehicle, phone-first, one- or two-person agency with no accountant. | [Bladi.net](https://www.bladi.net/000-agences-marche-eclate-fragilites-location-voitures-maroc,118515.html), [NextFlotte 2026](https://nextflotte.com/blog/marche-location-voiture-maroc-2026-tendances) |
+
+---
+
+## 4. Feature gap matrix
+
+Importance is for the Moroccan ICP. Effort: S ≤ 1 PR, M = 2–4 PRs, L = an
+epic. "MA" = at least one Moroccan competitor ships it; "Intl" = the
+international benchmarks ship it.
+
+| Feature | MA | Intl | Importance | DriveDesk | Effort |
+| --- | :-: | :-: | :-: | --- | :-: |
+| Reservations + colour planning w/ drag-and-drop + conflict detection | ✅ | ✅ | High | Planning is read-only, no drag | M |
+| Expiry alerts: assurance, vignette, visite technique | ✅ | 🟡 | High | Only `registration_expiry` | S |
+| Caution / deposit lifecycle | 🟡 | 🟡 | High | Absent | S–M |
+| Km limit + extra-km billing, franchise per booking | 🟡 | ✅ | High | Absent | S |
+| État des lieux with photos, départ vs retour comparison | 🟡 | ✅ | High | Checklist + 1 file | M |
+| E-signature on contract | 🟡 | ✅ | High | ✅ | — |
+| Arabic UI + true RTL | 🟡 | ❌ | High | ✅ UI (list pages break, see §5) | S |
+| Bilingual FR/AR contract & EDL **PDF** | ❌ | ❌ | High — clear gap | Absent (English terms, LTR PDF) | M |
+| WhatsApp: send contract / EDL / reminders | 🟡 | ❌ | High | Absent | S (links) / M (API) |
+| Mixed cash + virement + chèque + card on one contract | 🟡 | ❌ | High | ✅ partial payments, cash ceiling | — |
+| PV register + resident/non-resident + re-invoice | 🟡 | 🟡 | High | ✅ register; routing/re-invoice absent | S |
+| DGI e-facturation (UBL 2.1 / CII, ICE validation, clearance) | ❌ | ❌ | High — 2027 forcing function | Absent | M–L |
+| Art. 145 invoice mentions incl. 15-digit ICE | 🟡 | ❌ | High | ✅ fields; no ICE validation | S |
+| Weekly / monthly rate cards, seasonal grids | 🟡 | ✅ | Med-High | Daily only | S–M |
+| Airport / hotel delivery & one-way fees | 🟡 | 🟡 | High | ✅ via Places surcharge | — |
+| LLD / long-term with monthly invoicing | 🟡 | ✅ | Med-High | Absent | M |
+| Maintenance / vidange scheduling | ✅ | ✅ | Med-High | ✅ via Reminders | — |
+| Reports export (Excel/PDF), 10+ reports | ✅ | ✅ | High | TVA report + bulk PDF only | M |
+| Multi-agency / multi-branch | ✅ | ✅ | High | Flag-only | L |
+| Included storefront / embeddable booking widget | ✅ | ✅ | High | Blade storefront, off for drivedesk | M |
+| OTA / marketplace connectivity (Karvyx, LocalRent, Booking) | 🟡 | ✅ | High | Absent | L |
+| Online deposit prepay (YouCan Pay / CMI) | 🟡 | ✅ | Med | Absent | M |
+| Field-agent mobile app / PWA | ✅ | ✅ | High | Responsive web only, weak on phones | M–L |
+| GPS / telematics | 🟡 | ✅ | Med | Absent | L |
+| Customer portal / self-service | ❌ | ✅ | Low-Med | Absent | L |
+| Cahier des charges compliance file | ❌ | ❌ | Med — unique | Absent | S–M |
+| Sub-rental between agencies | ❌ | ❌ | Med — unique | Absent | M |
+
+---
+
+## 5. UI/UX audit findings
+
+Stack correction first: the frontend runs **Tailwind 3.4** (`tailwind.config.js`,
+`postcss.config.js`, `@tailwind` directives in `resources/css/app.css`), not
+Tailwind 4 as `CLAUDE.md` §1 targets. Any plan written against v4 (`@theme`,
+CSS-first config) does not apply until that upgrade lands.
+
+### What is strong
+
+- Design tokens: complete light/dark HSL token set in `resources/css/app.css`;
+  `Pages/Settings/Branding.jsx` derives foreground colours by iterating to WCAG
+  4.5:1 contrast (mirrors `App\Support\ThemePalette`); `app.jsx:applyBranding`
+  applies before first paint, no theme flash.
+- `hooks/useZodForm.js` — RHF ↔ Inertia bridge with 422 mapping, cancel-safe.
+- `ConfirmProvider` replaces `window.confirm`; `lib/nav.jsx` filters nav by
+  permission **and** feature flag; `components/ui/date-picker.jsx` reuses the
+  native picker.
+- `Pages/Booking/Index.jsx` is the reference list: debounced server search,
+  month filter, contextual bulk bar, select-all-matching with `AbortController`,
+  filtered vs empty states.
+
+### Gaps, ranked by leverage
+
+1. **Form errors are never announced.** `components/ui/form.jsx` is dead code —
+   no page imports it. 63 pages hand-roll `Label + Input + <p class="text-destructive">`;
+   the only `aria-invalid` under `resources/js/` is inside that unused primitive —
+   no page sets it.
+2. **RTL breaks on every list page.** 189 physical-direction utilities
+   (`text-right`, `ml-`/`mr-`/`pl-`/`pr-`) across 49 files; ~24 index pages
+   override `TableHead`'s `text-start` with `text-right` on the actions column
+   (`Pages/Vehicle/Index.jsx`, `Pages/Place/Index.jsx`, `Pages/Booking/Index.jsx`, …).
+   Worst offenders: `Pages/Tva/Report.jsx` (30), `Pages/Booking/Show.jsx` (12) —
+   both financial layouts where mirroring matters most.
+3. `components/Pagination.jsx` hardcodes "Prev" / "Next" / "of", has no
+   `<nav aria-label>`, no page links, no per-page selector (`per_page` appears
+   nowhere).
+4. **"System" theme is a lie.** `Pages/Settings/Branding.jsx` offers a System
+   tile (zod enum accepts `systemmode`) but `app.jsx` maps anything ≠ `darkmode`
+   to light and sets `enableSystem={false}`.
+5. 16 index pages ship the whole dataset and filter client-side (`Users`,
+   `Inspection`, `Reminder`, `Credit`, `Place`, `Addon`, `Option`, all `*Type`,
+   `Roles`, `Notification`, `BookingRequest`); 7 are server-paginated.
+6. No column sorting anywhere; bulk actions on 2 of 24 lists (`Booking`, `Tva`).
+7. **Mobile is the weakest area.** 45 of 95 pages have zero responsive classes
+   (all Auth, all Settings, 16 index pages). Tables are raw `<table>` with
+   horizontal scroll and no card fallback; forms are `grid-cols-1` with no
+   `md:grid-cols-2`.
+8. 43 of 95 pages have no `<h1>` (every Create/Edit/most Show); no per-page
+   `<Head>` title in the admin; no skip link and no `<main>` in `AdminLayout.jsx`.
+9. `components/ui/searchable-select.jsx` is not an accessible combobox: no
+   `listbox`/`option` roles, no arrow keys, no Escape; hardcoded English defaults.
+10. `Pages/Booking/Planning.jsx` injects the FullCalendar script with no loading
+    or error state, hardcoded `rgba(33,150,243,…)` colours (unreadable in dark
+    mode), and uses **Premium** `resourceTimeline*` views — licence risk.
+11. `Pages/Public/Landing.jsx` auto-advances a carousel every 5 s with no pause
+    (WCAG 2.2.2) and unlabeled arrows; `Pages/Public/DemoGateway.jsx` bypasses
+    tokens with 56 inline styles and labels without `htmlFor`.
+12. Two form conventions: 45 pages on `useZodForm`, 9 on raw Inertia `useForm` —
+    and those 9 are the most complex forms (`Booking/{Create,Edit}`,
+    `RentalAgreement/{Create,Edit}`, `Credit/*`, `Notification/*`, `Tva/Edit`),
+    i.e. the ones without client-side validation.
+13. Loading states: `Skeleton` used once (`dashboard/StatCard.jsx`); submit
+    buttons disable but show no spinner. (Inertia's default top progress bar is
+    active — `app.jsx` passes no `progress` option — so that part is fine.)
+14. Only `en`/`fr`/`ar` are exposed in `AdminLayout.jsx`; the `ar.json` bundle
+    (89 KB) is inlined into every page's props.
+
+### UX conventions of the best apps in this market
+
+- Dashboard = "départs du jour / retours du jour" lists + alert stack
+  (assurance / vignette / visite technique / vidange / retours en retard /
+  cautions non restituées). DriveDesk's dashboard already has the KPI row,
+  immediate actions and a 7-day fleet strip; it lacks the two "today" lists.
+- Planning = vehicle rows × day columns, colour by status, drag to extend/move
+  with conflict detection, quick-add from an empty cell.
+- Contract creation = a wizard (client → véhicule → dates & tarif → options /
+  franchise / km → caution → signature) with reuse-first client lookup by
+  CIN / phone and inline CIN / permis capture.
+- Field agent = a phone flow for the état des lieux: fixed photo angles,
+  offline-tolerant, one-thumb.
+- Localisation = FR / AR / EN switcher, RTL down to the PDF, MAD, `+212`
+  normalisation. Support via WhatsApp 7/7 is sold as a feature.
+
+---
+
+## 6. Prioritized backlog
+
+Rules for every item: additive, reversible migrations only; default behaviour
+unchanged for the existing client; variant behaviour behind a flag; tests first.
+
+### Tranche S — security (ahead of everything below)
+
+| # | Item | Effort |
+| --- | --- | :-: |
+| S.1 | **Tenant isolation is not enforced on 44 of 59 route-model-bound actions** — see below | M |
+
+#### S.1: `parent_id` is checked on read paths but not on most write paths
+
+Found by audit while implementing 0.8 (BAN-286), prompted by a review finding
+that flagged `BookingController::update()` specifically; the pattern turned out
+to be systemic rather than local to Booking.
+
+**Correction (2026-09-04).** This tranche was written on the premise that
+"multiple owners share one database by design" — inferred from
+`UserController` letting a super admin create `owner` accounts and
+`HomeController` reporting `User::where('type','owner')->count()` as
+"totalOrganization". That is a shape the code permits, not the way DriveDesk
+ships. **Each business owner gets their own deployment: their own database,
+domain and hosting, sharing nothing with any other customer.** The isolation
+boundary is the deployment; `config/clients/drivedesk.php` says as much —
+DriveDesk is "the product's own reference/demo client".
+
+The work still stands, with a smaller claim. Inside one deployment
+`parent_id` separates the owner from their staff, and the read paths
+(dashboards and every `index()`) already applied it while most write paths
+did not — so a permission alone reached a row the caller should not have
+touched. That is worth closing on its own terms. It is defence in depth
+between an owner and their staff, **not** what keeps two customers apart, and
+it should not be read as a reason to invest in further tenancy work.
+
+`BookingController::show()` shows the intended pattern:
+
+```php
+$booking = Booking::where('id', $decryptedId)
+    ->where('parent_id', parentId())
+    ->first();
+if (!$booking) { abort(404); }
+```
+
+But most `show`/`edit`/`update`/`destroy` actions take a route-model-bound
+instance (`public function update(Request $request, Addon $addon)`), check only
+the **permission**, and then read or write whatever row the id resolved to.
+Permission is not ownership: a user holding `edit addon` in tenant A can `PUT
+/addon/{id}` for tenant B's addon. There is no global scope on the models and
+no tenant middleware on the routes — the permission check is the only gate.
+
+Audit (`show`/`edit`/`update`/`destroy` with a model-typed parameter, checked
+for any `parent_id` / `parentId()` reference in the body): **44 of 59 have
+none**, spanning Addon, Booking (`destroy`), Expense, ExpenseType, Inspection,
+InspectionType, Notification, Option, Place, Reminder, ReminderType,
+RentalAgreement (`destroy`), Signature (`destroy`), Vehicle, VehicleType.
+
+Isolation is already a deliberate, tested concept elsewhere —
+`BookingControllerTest`, `CreditControllerTest`, `TvaControllerTest` and the
+TrafficViolation suites all carry cross-tenant tests — so this is an
+inconsistently applied rule, not an unconsidered one.
+
+**Not fixed in BAN-285/286, deliberately.** It is a change to production
+authorization across ~44 endpoints; done wrong it either leaves the hole open
+or locks legitimate users out of their own records. It needs an explicit
+decision on approach before any code moves:
+
+1. a global scope or `BelongsToTenant` trait on the models (broadest, one
+   place, but changes every query in the app including super-admin views,
+   which legitimately read across tenants);
+2. `Gate`/policy per model, enforced via `authorize()` in each action
+   (explicit and testable, ~44 call sites);
+3. `Route::bind` / `scopeBindings()` on the resource routes (smallest diff,
+   but silent about intent at the call site).
+
+**A constraint that rules out the naive version of all three**, found while
+reviewing BAN-287: `parentId()` (`app/Helper/helper.php`) returns the *caller's
+own id* for a super admin, not a tenant's:
+
+```php
+if (\Auth::user()->type == 'owner' || \Auth::user()->type == 'super admin') {
+    return \Auth::user()->id;
+}
+return \Auth::user()->parent_id;
+```
+
+A super admin's id is never any tenant's `parent_id`, so a blanket
+`where('parent_id', parentId())` + `abort(404)` locks super admins out of every
+record in the system — the exact "locks legitimate users out" failure this item
+warns about. Any approach needs an explicit super-admin bypass, and the
+super-admin path needs its own test alongside the cross-tenant one. This is also
+why BAN-287 did **not** opportunistically add the check to Booking's
+`update()`/`destroy()` while fixing the other two findings there.
+
+Whichever is chosen, each converted action needs a cross-tenant test **and** a
+super-admin-still-has-access test in the same commit, mirroring
+`test_show_returns_404_for_other_tenant`. Suggested sequence:
+Booking/Vehicle/Driver first (the highest-value records), then the rest by
+cluster.
+
+#### S.1 follow-ups left open (BAN-300)
+
+Two of these are decisions, not omissions.
+
+**A support login's writes are orphaned, and the fix is a read-side change too
+(BAN-315).** `parentId()` returns a super admin their *own* id, which is no
+tenant's key, so every row a vendor support session creates is invisible to the
+customer who owns the deployment — a vehicle their fleet list never shows, a
+booking that never blocks their planning board, a TVA invoice in a numbering
+bucket of its own. Undetectably, because `BelongsToTenant` bypasses the tenant
+scope on reads for super admins, so it all looks correct from support's side.
+
+PR #27 attempted this as a write-side change and was **closed unmerged**,
+because that shape is worse than the bug. The generated numbers, the uniqueness
+guards and the paired read filters all resolve through `parentId()` too, so
+redirecting only the write stamps the row into the customer's tenant while its
+number comes from the super admin's empty bucket:
+
+| Site | Scoped to `parentId()` | Consequence of a write-only fix |
+| --- | --- | --- |
+| `VehicleController::vehicleNumber()` | yes | duplicate `vehicle_id` in the customer's fleet |
+| `BookingController::bookingNumber()` | yes | customer's booking numbering restarts at 1 |
+| `RentalAgreementController::agreementNumber()` | yes | **duplicate contract number on a signed document** |
+| `DriverController::driverNumber()` | yes | duplicate `driver_id` |
+| `VehicleController::licensePlateExists()` | yes | duplicate-plate guard silently passes |
+| `BookingController` blacklist lookup (BAN-252) | yes | blacklist warning silently passes |
+| `CreditController` show/edit/update/destroy | yes | support creates a credit it cannot then open |
+
+Two further traps found in the same review:
+
+- **The `BelongsToTenant` creating hook cannot help.** It is gated on
+  `tenantScopeApplies()`, which returns `false` for a super admin, so the hook
+  returns early during exactly the sessions that need it. Changing what the hook
+  stamps is a no-op that reads as coverage.
+- **`TrafficViolationController::store()` and the Excel import path**
+  (`BookingController` `$pid = parentId()`) set `parent_id` explicitly, so they
+  are orphaned too and no hook change reaches them.
+
+The real shape is one tenant key that both sides resolve through — the value a
+support *request* operates on — applied to the writes, the number generators,
+the uniqueness guards and the read filters together. Note this changes what
+support **sees**, not only what it writes, and it touches invoice and agreement
+numbering, so CLAUDE.md §4 and §9 apply: tests first, and a sandbox smoke test
+at the phase boundary.
+
+Not a candidate for a blanket change to `parentId()` itself: identity rows need
+the super admin's own id. `UserController::index`'s super-admin branch,
+`UserController::store`'s owner creation, `RoleController::index`/`store` and
+`findUserInTenant()` all depend on it, and an owner's `parent_id` *is* the super
+admin who created them.
+
+The branch `fix/support-writes-reach-the-customer` is kept as a starting point.
+The activity-log half of this divergence is already fixed (BAN-312).
+
+
+**`tvas.parent_id` is nullable and was never backfilled.** The column was added
+2025-07-11 to a table created 2025-02-04, so every invoice issued in between has
+`parent_id IS NULL` and matches no tenant. Seven query sites had to be pinned
+with `acrossTenants()` to keep working (numbering ×2, three deletes, the
+renumber service and its year list).
+
+Deriving `tvas.parent_id` from the booking is the real fix — it would let all
+seven be scoped normally — but **it must not be a migration.** Two review passes
+found ways an unattended version destroys or mis-attributes legal documents:
+
+- `booking_id` has no foreign key, and `TvaSeeder` writes
+  `booking_id => rand(1, 100)` with a NULL `parent_id`, so seeder noise joins to
+  whichever booking happens to hold that id and gets attributed to a real
+  tenant. `idpaiment` cannot separate the two — it was added 2025-08-31, *after*
+  `parent_id`, so the invoices needing repair have it NULL as well.
+- On `drivedesk`, `DemoSeed` hard-deletes every `tvas` row belonging to the first
+  owner, nightly. A NULL-owner invoice does not match that filter and survives
+  today; stamping it with an owner hands it to the next run.
+
+So it ships as `tva:backfill-parent-id` (`app/Console/Commands/`), which reports
+by default, lists what it would touch, warns about facture-number collisions,
+and refuses `--apply` while `demo_gateway` is on. A human runs it against the
+database in front of them. Until someone does, `Tva::findOrFail()` in
+`edit`/`update`/`show`/`destroy` will 404 a tenant's *own* pre-July-2025
+invoices if the URL is reached directly (they are already absent from the list,
+which filters on `parent_id`).
+
+**Two `acrossTenants()` writes — still open, but lower priority.**
+`generateMonthlyTva` (`Tva::acrossTenants()->whereYear()->whereMonth()->delete()`)
+and `TvaRenumberService` rewrite factures without an owner filter. The
+question was: should one owner's "Generate" reissue another business's
+factures for that month, or one owner's "Renumber 2025" merge every owner's
+numbers into one sequence?
+
+Under one deployment per business owner these are latent, not live. **They are
+not resolved.** An earlier revision of this section closed them outright on
+the reasoning that "global and per-owner select the same rows" — which is
+false twice over, and this same page says so below: rows with
+`parent_id IS NULL` (every invoice predating 2025-07-11) and rows written by
+a super admin are *precisely* the rows an owner-scoped query drops and
+`acrossTenants()` keeps. And nothing enforces one owner per deployment —
+`UserController@store` lets a super admin create further `type='owner'`
+users, and `HomeController` counts them — so a second owner in any database,
+including DriveDesk's own demo deployment, makes both writes live again.
+
+Keep the pins: they are load-bearing for the legacy-NULL reason regardless.
+What is unresolved is whether one-owner-per-deployment should be **enforced**
+(reject owner creation when one already exists) or the two writes should be
+owner-scoped with a legacy-NULL fallback. Do not drop the pins after
+`tva:backfill-parent-id` runs without answering that.
+
+Both are gated on `manage tva` as of BAN-304 — before that, any authenticated
+user could call the renumber routes.
+
+**A super admin's writes land outside the owner's tenant.** `parentId()` returns
+a super admin's *own user id*, which is never any row's `parent_id`. Twenty-nine
+controller paths set the column explicitly (`$model->parent_id = parentId();` —
+`BookingController.php:390`, `AddonController.php:55`, and so on), so those rows
+carry **the super admin's user id**. Only models whose controller leaves it
+unset reach `BelongsToTenant`'s `creating` hook, which skips super admins and
+lets the column default apply — and on `inspections` and `settings`,
+`parent_id` is `integer NOT NULL` with *no* default, so under
+`'strict' => true` that insert errors (1364) rather than defaulting quietly.
+
+Either way the business owner, filtering on their own id, cannot see the row,
+while the super admin bypasses the scope on reads and never notices. **An audit
+query looking for `parent_id IN (0, NULL)` would miss almost all of it**, and a
+fix applied only to the trait hook would not cover the 29 explicit call sites.
+
+This predates Tranche S.1 (the read paths filtered by hand the same way); the
+trait generalised it rather than introducing it. It matters more under
+one-deployment-per-customer than it would under a shared database, because a
+vendor super admin logging in to support a customer is then routine rather than
+exceptional. **Needs a decision**: either stamp super-admin writes with the
+deployment's owner id, or keep support logins read-only.
+
+**Smaller:** `Inspection`/`Notification` `$fillable` still list columns that do
+not exist; `DriverFactory` types `driver_id` as a `'DR-####'` string into an
+integer column; `TvaFactory` omits `parent_id`, which is why several call sites
+set it by hand. *(`TvaController::destroy` had no permission check — fixed in
+BAN-304 along with seven sibling actions.)*
+
+### Tranche 0 — foundation
+
+Items 0.1–0.4 are implemented on branch `ux/a11y-rtl-foundation` (PR #4,
+commits BAN-271/273/274/275). Item 0.1's remaining pages are implemented on
+`ux/a11y-forms-adoption` (PR #5, commits BAN-278–283) — every page that used
+to hand-roll `{errors.x && <p>}` now uses `FieldError` + `fieldA11y`. Items
+0.5–0.8 are follow-up PRs.
+
+| # | Item | Effort |
+| --- | --- | :-: |
+| 0.1 | Accessible field errors: `FieldError` + `fieldA11y()` helpers (`resources/js/components/FieldError.jsx`, `resources/js/lib/fieldA11y.js`), adopted across every form page (PR #4, PR #5) | S + M |
+| 0.2 | RTL sweep: physical → logical utilities (`text-end`, `ms-`/`me-`/`ps-`/`pe-`, `start-`/`end-`) with a guard test | S |
+| 0.3 | `Pagination.jsx`: `<nav aria-label>`, translated labels, `aria-current` | S |
+| 0.4 | System theme: honour `systemmode` in `app.jsx` (`enableSystem`) | S |
+| 0.5 | `<h1>` + `<Head>` title per page, skip link + `<main>` in `AdminLayout` | S |
+| 0.6 | Accessible combobox for `searchable-select.jsx` (roles, arrow keys, Escape, i18n) | S |
+| 0.7 | Submit spinners on form buttons (`isSubmitting` currently only disables) | S |
+| 0.8 | **Server-only validation never reaches the user as a field-level message** — see below | M |
+
+#### 0.8 in detail: controllers flash a generic error instead of `withErrors()`
+
+Found while landing PR #5. Across **19 controllers** — `Addon`, `Booking`,
+`Driver`, `Expense`, `ExpenseType`, `Inspection`, `InspectionType`,
+`Notification`, `Option`, `Permission`, `Place`, `Reminder`, `ReminderType`,
+`Role`, `Setting`, `TrafficViolation`, `User`, `Vehicle`, `VehicleType`
+(`Vehicle` does it correctly for its duplicate-plate check but not for its two
+required-field checks; `TrafficViolation` writes the same bug as
+`$validator->getMessageBag()->first()`) — every `\Validator::make(...)->fails()`
+branch does:
+
+```php
+return redirect()->back()->with('error', $messages->first());
+```
+
+instead of
+
+```php
+return redirect()->back()->withErrors($validator);
+```
+
+**Impact is narrower than it first looks.** Inertia's `errors` shared prop is
+only populated by `withErrors()`. For the ~45 pages on `useZodForm`, the zod
+schema mirrors most `required` rules and validates client-side before any
+request is sent — so the common "left a required field blank" case already
+works correctly and is not affected. What silently never reaches the user as
+a field-specific message is any rule that exists **only** on the server and
+has no zod counterpart — a uniqueness check, a file `mimes`/`max` rule, a
+cross-field business rule — the user gets only a generic flash string with no
+indication of which field to fix.
+
+**Two corrections to the first draft of this item**, found when BAN-285 went
+to implement it — both were wrong in the direction of overstating the damage:
+
+- **`CreditController` is not affected.** It uses `$request->validate()`,
+  which throws `ValidationException` and lets Laravel's handler populate the
+  error bag. `CreditControllerTest` already asserts
+  `assertSessionHasErrors(['driver_id'])` and passes.
+- **`SignatureController` was affected, but not for this reason.** It also
+  uses `$request->validate()` — correctly — but inside a `try` whose
+  `catch (\Exception $e)` swallowed the `ValidationException`, logged it and
+  flattened it into the same generic flash. `SignatureControllerTest` even
+  carried a comment documenting the behaviour. Fixed in BAN-285 by validating
+  before the `try`.
+
+`RentalAgreementController` is likewise clean — `store()` and `update()` both
+call `withErrors($validator)`; its `vehicle` field's missing error display on
+`Edit.jsx` was a pure frontend gap, fixed in BAN-283.
+
+So the genuinely broken set is the `\Validator::make` + manual-return
+controllers listed above. **`BookingController` (store + update) is done**
+(BAN-285, with the happy- and failure-path `update()` tests that did not
+exist before); **18 remain**.
+
+Verify the remaining count with:
+
+```bash
+grep -rl 'messages->first()' app/Http/Controllers/          # 18, incl. the now-fixed Booking
+grep -rl 'getMessageBag()->first()' app/Http/Controllers/   # TrafficViolation
+```
+
+Booking still matches the first grep because BAN-285 kept the flash *alongside*
+`withErrors()`; it is fixed. (An earlier revision of this item said "16 remain",
+which undercounted — corrected in BAN-286.)
+
+**Why it was not fixed in PR #5** (Booking has since been done in BAN-285,
+the rest still stand): this is 17 controllers deep, and
+`BookingController::update()` — one of the two highest-traffic entry
+points — had **zero existing test coverage** (not even a happy path). Per
+CLAUDE.md §3 ("the controller's endpoints must already have feature-test
+coverage for both the happy path and at least one failure path... If they
+don't, write the tests first"), fixing this properly means a happy-path +
+failure-path test for every affected action before touching it — a
+correctly-scoped, separate PR (or a few, split by domain like PR #5's
+commits), not a rider on an accessibility PR.
+
+**Suggested approach:** one PR per controller-cluster (mirroring BAN-279–282's
+grouping works well), each PR: (1) add the missing happy/failure-path test(s)
+in their own commit, (2) change `with('error', $messages->first())` →
+`withErrors($validator)->with('error', $messages->first())` (keep the flash;
+some UI may still read `session('error')`), (3) verify the corresponding
+`FieldError`/`fieldA11y` wiring (already in place from PR #4/#5) now actually
+renders. `Booking` and `RentalAgreement` should go first — they're the pages
+with zero client-side fallback today.
+
+### Tranche 1 — Moroccan table stakes (S/M, additive schema)
+
+| # | Item | Flag | Effort |
+| --- | --- | --- | :-: |
+| 1.1 | Vehicle document dates: `insurance_expiry`, `vignette_expiry`, `technical_inspection_expiry` (+ policy n°) → feed existing Reminders + dashboard Immediate Actions | — | S |
+| 1.2 | Caution as a first-class object on bookings: type (empreinte CB / chèque / espèces / none), amount, held/released dates, deductions; printed on the contract | — | S–M |
+| 1.3 | Franchise, km limit, km départ/retour, extra-km rate on booking + contract; `PricingServiceContract` computes extra-km | — | S |
+| 1.4 | WhatsApp share (`wa.me` deep link with prefilled text) on Booking/Show, RentalAgreement/Show, Tva/Show; `+212` phone normalisation | `whatsapp` | S |
+| 1.5 | Weekly / monthly rates on vehicles, chosen by `PricingServiceContract`; seasonal grid later | — | S–M |
+| 1.6 | Dashboard "Départs du jour" / "Retours du jour" lists | — | S |
+| 1.7 | Defaults hygiene: a per-client `default_timezone` in `config/clients/drivedesk.php` (`Africa/Casablanca`) read by `settingsKeys()` — the core default stays `Pacific/Tahiti` so other tenants are unchanged (CLAUDE.md §10.2 rules 1–2); RIB/IBAN instead of IFSC (add columns, keep old key); ICE 15-digit validator on drivers/companies/tvas | — | S |
+| 1.8 | Reminder e-mails: fix the `emails.*` → `email.*` view namespace in `ReminderController`, add the missing `daily_reminder_summary` template, and stop swallowing the exception (surface via Sentry) | — | S |
+| 1.9 | Late-return fee: grace period + hourly/daily rate on the booking, computed by `PricingServiceContract` and shown on the contract | — | S |
+
+### Tranche 2 — differentiators (M/L)
+
+| # | Item | Flag | Effort |
+| --- | --- | --- | :-: |
+| 2.1 | État des lieux: guided multi-photo capture on Inspections (departure/return pairs, timestamp, signature), mobile-first, PDF | `inspection_photos` | M |
+| 2.2 | Bilingual FR/AR contract PDF with true RTL (dompdf + Cairo, per-client terms in both languages) | — | M |
+| 2.3 | DGI e-invoicing: UBL 2.1 export per `tvas` row, ICE/IF validation, then a clearance adapter when the DGI API is published | `e_invoicing` | M–L |
+| 2.4 | PV: resident / non-resident routing, advance + re-invoice line with processing fee | `traffic_violations` (existing) | S |
+| 2.5 | Cahier des charges compliance file (fleet count vs 7, CNSS, licence, bonds, expiries) | `compliance_file` (new) | S–M |
+| 2.6 | Online deposit prepay via YouCan Pay / CMI, replacing the dead Stripe/PayPal settings. Becomes the enforcement point of the **existing** `booking_payment` flag (no new key); `stripe` / `paypal` are retired in the same PR | `booking_payment` (existing) | M |
+| 2.7 | Shared `DataTable` (server pagination, sort, per-page, bulk) extracted from `Booking/Index.jsx`, adopted on the 16 client-filtered lists | — | M |
+| 2.8 | Mobile: table → card fallback, `md:grid-cols-2` forms, responsive Settings/Auth | — | M |
+| 2.9 | Contract creation wizard with CIN/permis capture | — | M |
+| 2.10 | Planning: drag-to-extend/move with conflict detection; decide FullCalendar Premium licence vs. a React Gantt | — | M |
+| 2.11 | Reports: utilisation, revenue per vehicle, receivables, cautions outstanding; Excel/PDF export | — | M |
+
+### Tranche 3 — growth
+
+| # | Item | Flag | Effort |
+| --- | --- | --- | :-: |
+| 3.1 | Per-agency storefront / embeddable booking widget (port the Blade storefront) | `public_storefront` (existing) | M |
+| 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` (new) | L |
+| 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` (new) | L |
+| 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` (new, shared with 1.4) | M |
+| 3.5 | Accounting CSV export (Sage / EBP formats) | — | S |
+| 3.6 | Real multi-branch (fleet per branch, branch on bookings/users) — the enforcement point of the existing `multi_branch` flag | `multi_branch` (existing) | L |
+
+### Cleanup
+
+Ordered by the constraints in `CLAUDE.md` §4/§8 and `docs/migration-plan.md`
+Phase 7 (item 0: "leave the DB tables in place; drop them in a post-migration
+schema cleanup PR after Phase 8"). The "additive only" rule at the top of §6
+applies here too.
+
+*Safe now (no schema, no translation keys):* drop the dangling `HomeController`
+imports; delete `ui-test/*` and `/hello`; finish or remove
+`/newsletter/subscribe`; remove `composer.lock.backup`; rename `rentcar` →
+DriveDesk in `package.json`, `.env.example`, `CLAUDE.md`; correct
+`docs/phase6-execution-plan.md`; merge the two vitest trees; remove the
+unservable `nl` entry from `supported_locales`; for each of the seven no-op
+flags either add its enforcement point (2.6, 3.6) or delete the key with a
+matching edit to every `config/clients/*.php`.
+
+*Phase 6 exit gate:* finish the Blade tail (~30 files, list in §1).
+*(The `feature('subscriptions')` branches that used to gate this are gone —
+BAN-317 removed the reachable one in `admin/menu.blade.php`, BAN-318 the rest
+and the flag itself, so retiring the Blade tail no longer waits on it.)*
+
+*After Phase 8 only, each in its own ticket:* drop the `coupons`,
+`coupon_histories`, `subscriptions`, `package_transactions` tables; remove the
+orphan coupon / subscription translation keys and the ten locale bundles
+`SetLocale` never serves (CLAUDE.md §4 requires a follow-up ticket for any key
+removal).
+
+---
+
+## 7. Consequences for sales collateral
+
+`docs/sales/README.md` "Known gaps" stays accurate. Each handbook §9 line maps
+to one backlog item and may be rewritten only after that item is merged and
+verified in the running app: *automatic deposit and late-fee calculation* →
+1.2 **and** 1.9 (both; deposit alone does not clear the line); *reminder
+e-mails / SMS* → 1.8 (e-mail half only — SMS stays a no); *daily rates only* →
+1.5; *online payment* → 2.6; *photo damage capture* → 2.1; *multi-branch* →
+3.6; *accounting integration* → 3.5; *mobile app* → 3.3.
+
+### 7.1 Deliberate behaviour changes (not "same functionality")
+
+Most work here preserves observable behaviour per `CLAUDE.md` §4. Where it does
+not, the change and its cost are recorded here so nobody has to reconstruct the
+reasoning from a diff.
+
+**Blacklist gate now fires on booking *edit*, not only create (BAN-287).**
+
+- *What changed.* `BookingController::update()` applies the same BAN-252
+  warn-and-override gate `store()` already had, and records the override.
+  `Booking/Edit.jsx` gained the `BlacklistNotice` and the confirm prompt, which
+  it needs — without them the server would refuse the edit with no way to
+  accept it.
+- *Why it is justified.* The gap was a bypass: a booking could be created with a
+  clean driver and then edited onto a blacklisted one, with nothing recorded.
+  The salesperson's handbook already tells prospects the blacklist stops
+  "anyone trying to create a booking or a contract" and that "it fires on both
+  bookings and contracts" — so this closes a gap between what is *sold* and what
+  was *enforced*, rather than inventing a new restriction. No collateral needs
+  rewriting; it became true.
+- *What it costs.* The gate keys on the booking's driver being blacklisted, not
+  on the driver having changed — matching `store()`. So editing any field of a
+  booking whose driver was blacklisted *after* the booking was created now costs
+  one confirm click. Ordinary edits are untouched: `confirmBlacklist()`
+  early-returns when no selected driver is flagged, so there is no prompt and no
+  extra request.
+- *If that proves annoying in practice*, the narrower rule is to gate only when
+  `driver` differs from the stored value. It was not chosen because it diverges
+  from `store()` and would let a pre-existing blacklisted driver ride along
+  silently through every future edit — the quieter behaviour is also the one
+  that loses the audit trail.

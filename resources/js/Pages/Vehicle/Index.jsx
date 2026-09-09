@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -57,18 +58,18 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('Search vehicles…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {can('manage vehicle') && (
                     <Button size="sm" asChild>
                         <Link href={route('vehicle.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('Create Vehicle')}
+                            <Plus className="me-2 h-4 w-4" /> {t('Create Vehicle')}
                         </Link>
                     </Button>
                 )}
@@ -85,13 +86,14 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                 <TableHead>{t('License Plate')}</TableHead>
                                 <TableHead>{t('Registration Expiration Date')}</TableHead>
                                 <TableHead>{t('Engine Type')}</TableHead>
-                                {showActions && <TableHead className="text-right">{t('Action')}</TableHead>}
+                                <TableHead>{t('Available for Rent')}</TableHead>
+                                {showActions && <TableHead className="text-end">{t('Action')}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {vehicles.data.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                                         {search ? t('No vehicles match your search') : t('No vehicles yet')}
                                     </TableCell>
                                 </TableRow>
@@ -105,8 +107,15 @@ function VehicleIndex({ vehicles = { data: [] }, filters = {} }) {
                                     <TableCell>{v.license_plate}</TableCell>
                                     <TableCell>{v.registration_expiry_date_display ?? '-'}</TableCell>
                                     <TableCell>{v.engine_type}</TableCell>
+                                    <TableCell>
+                                        {v.available_for_rent ? (
+                                            <Badge variant="success">{t('Available')}</Badge>
+                                        ) : (
+                                            <Badge variant="secondary">{t('Unavailable')}</Badge>
+                                        )}
+                                    </TableCell>
                                     {showActions && (
-                                        <TableCell className="text-right space-x-1">
+                                        <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                             {can('show vehicle') && (
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={route('vehicle.show', v.id)} aria-label={t('Details')}>

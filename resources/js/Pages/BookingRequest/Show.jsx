@@ -63,6 +63,12 @@ function BookingRequestShow({ booking }) {
                         <div className="flex justify-between"><span className="text-muted-foreground">{t('Name')}</span><span>{booking.guest_name}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">{t('Email')}</span><span>{booking.guest_email}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">{t('Phone')}</span><span>{booking.guest_phone ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('WhatsApp')}</span><span>{booking.whatsapp ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Age')}</span><span>{booking.age ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Nationality')}</span><span>{booking.nationality ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Years Driving')}</span><span>{booking.driving_experience ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Passengers')}</span><span>{booking.passengers ?? '—'}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">{t('Payment Preference')}</span><span className="capitalize">{booking.payment_preference ?? '—'}</span></div>
                     </CardContent>
                 </Card>
 

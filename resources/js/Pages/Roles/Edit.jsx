@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     title: z.string().min(1, 'Role name is required'),
@@ -41,8 +43,8 @@ function RolesEdit({ role, permissions = [], assignedPermissions = [] }) {
                     <form onSubmit={submit('put', route('role.update', role.id))} className="space-y-6">
                         <div className="space-y-1.5">
                             <Label htmlFor="title">{t('Role name')}</Label>
-                            <Input id="title" {...register('title')} />
-                            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                            <Input id="title" {...register('title')} {...fieldA11y(errors, 'title')} />
+                            <FieldError name="title" errors={errors} />
                         </div>
 
                         <div className="space-y-2">
@@ -51,7 +53,12 @@ function RolesEdit({ role, permissions = [], assignedPermissions = [] }) {
                                 name="user_permission"
                                 control={control}
                                 render={({ field }) => (
-                                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div
+                                        role="group"
+                                        aria-label={t('Permissions')}
+                                        className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+                                        {...fieldA11y(errors, 'user_permission')}
+                                    >
                                         {permissions.map((p) => (
                                             <label
                                                 key={p.id}
@@ -67,9 +74,7 @@ function RolesEdit({ role, permissions = [], assignedPermissions = [] }) {
                                     </div>
                                 )}
                             />
-                            {errors.user_permission && (
-                                <p className="text-sm text-destructive">{errors.user_permission.message}</p>
-                            )}
+                            <FieldError name="user_permission" errors={errors} />
                         </div>
 
                         <div className="flex gap-2">

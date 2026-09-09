@@ -18,8 +18,8 @@ class CreditController extends Controller
         }
 
         $query = Credit::query();
-        if (function_exists('parentId') && parentId()) {
-            $query->where('parent_id', parentId());
+        if (function_exists('parentId') && tenantKey()) {
+            $query->where('parent_id', tenantKey());
         }
 
         if ($request->filled('driver_id')) {
@@ -34,7 +34,7 @@ class CreditController extends Controller
 
         $credits = $query->with('driver')->orderByDesc('created_at')->get();
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
             ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
@@ -61,7 +61,7 @@ class CreditController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (function_exists('parentId') && $credit->parent_id != parentId()) {
+        if (function_exists('parentId') && $credit->parent_id != tenantKey()) {
             return redirect()->route('credit.index')->with('error', __('Permission Denied.'));
         }
 
@@ -117,7 +117,7 @@ class CreditController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
             ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
@@ -137,7 +137,11 @@ class CreditController extends Controller
         }
 
         $request->validate([
-            'driver_id' => 'required|exists:users,id',
+            // BAN-296: tenant-scoped. users has no global scope (it is the auth
+            // provider), so this rule is what stops crediting another tenant's
+            // driver. No includeTenantOwner: a credit's subject is a driver
+            // (parent_id = T), which is all the picker in create()/edit() lists.
+            'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',
             'credit_date' => 'nullable|date',
@@ -148,7 +152,7 @@ class CreditController extends Controller
         $credit->amount = $request->amount;
         $credit->status = $request->get('status', Credit::STATUS_NON_PAYE);
         $credit->credit_date = $request->filled('credit_date') ? $request->credit_date : now()->toDateString();
-        $credit->parent_id = parentId() ?? 0;
+        $credit->parent_id = tenantKey() ?? 0;
         $credit->save();
 
         $this->logCreditAction('credit_create', $credit->id, __('Credit #:id created', ['id' => $credit->id]));
@@ -166,11 +170,11 @@ class CreditController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (function_exists('parentId') && $credit->parent_id != parentId()) {
+        if (function_exists('parentId') && $credit->parent_id != tenantKey()) {
             return redirect()->route('credit.index')->with('error', __('Permission Denied.'));
         }
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
             ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
@@ -190,12 +194,16 @@ class CreditController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (function_exists('parentId') && $credit->parent_id != parentId()) {
+        if (function_exists('parentId') && $credit->parent_id != tenantKey()) {
             return redirect()->route('credit.index')->with('error', __('Permission Denied.'));
         }
 
         $request->validate([
-            'driver_id' => 'required|exists:users,id',
+            // BAN-296: tenant-scoped. users has no global scope (it is the auth
+            // provider), so this rule is what stops crediting another tenant's
+            // driver. No includeTenantOwner: a credit's subject is a driver
+            // (parent_id = T), which is all the picker in create()/edit() lists.
+            'driver_id' => ['required', tenantExistsRule('users')],
             'amount' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:non payé,payé',
             'credit_date' => 'nullable|date',
@@ -218,7 +226,7 @@ class CreditController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        if (function_exists('parentId') && $credit->parent_id != parentId()) {
+        if (function_exists('parentId') && $credit->parent_id != tenantKey()) {
             return redirect()->route('credit.index')->with('error', __('Permission Denied.'));
         }
 
@@ -236,7 +244,7 @@ class CreditController extends Controller
     public function searchDrivers(Request $request)
     {
         $q = $request->get('q', '');
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->when($q, function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%");
@@ -269,7 +277,8 @@ class CreditController extends Controller
             'date' => now(),
             'details' => $details,
             'type' => $type,
-            'parent_id' => function_exists('parentId') ? (parentId() ?? 0) : 0,
+            // BAN-312: same tenant key as every other activity-log row.
+            'parent_id' => activityLogParentId(),
         ]);
     }
 
@@ -277,7 +286,7 @@ class CreditController extends Controller
     {
         if (Auth::user()->can('manage rental agreement') || Auth::user()->can('manage driver') || Auth::user()->can('create rental agreement')) {
              $credits = Credit::where('driver_id', $driver_id)
-                ->where('parent_id', parentId())
+                ->where('parent_id', tenantKey())
                 ->get();
 
             $totalUnpaid = $credits->where('status', 'non payé')->sum('amount');

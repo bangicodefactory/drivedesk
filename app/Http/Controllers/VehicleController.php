@@ -23,7 +23,7 @@ class VehicleController extends Controller
 
         $search = trim((string) $request->get('search', ''));
 
-        $vehicles = Vehicle::where('parent_id', '=', parentId())
+        $vehicles = Vehicle::where('parent_id', '=', tenantKey())
             ->with('types')
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
@@ -55,11 +55,11 @@ class VehicleController extends Controller
 
     public function create()
     {
-        $types = VehicleType::where('parent_id', parentId())->get()->pluck('type', 'id');
+        $types = VehicleType::where('parent_id', tenantKey())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
         $gearbox = Vehicle::$gearbox;
         $fuelType = Vehicle::$fuelType;
-        $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
+        $option = Option::where('parent_id', tenantKey())->get()->pluck('name', 'id');
 
         return Inertia::render('Vehicle/Create', compact('types', 'fuelType', 'gearbox', 'option'));
     }
@@ -129,7 +129,10 @@ class VehicleController extends Controller
             $vehicle->kilometers = $request->kilometers;
             $vehicle->option = !empty($request->option) ? implode(',', $request->option) : null;
             $vehicle->notes = !empty($request->notes) ? $request->notes : null;
-            $vehicle->parent_id = parentId();
+            $vehicle->parent_id = tenantKey();
+            // Defaults to available (matches the column default) when the
+            // request omits it entirely, e.g. an older API caller.
+            $vehicle->available_for_rent = $request->boolean('available_for_rent', true);
             if (!empty($request->document)) {
                 $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
@@ -172,9 +175,9 @@ class VehicleController extends Controller
     {
         $gearbox = Vehicle::$gearbox;
         $fuelType = Vehicle::$fuelType;
-        $types = VehicleType::where('parent_id', parentId())->get()->pluck('type', 'id');
+        $types = VehicleType::where('parent_id', tenantKey())->get()->pluck('type', 'id');
         $types->prepend(__('Select Type'), '');
-        $option = Option::where('parent_id', parentId())->get()->pluck('name', 'id');
+        $option = Option::where('parent_id', tenantKey())->get()->pluck('name', 'id');
 
         return Inertia::render('Vehicle/Edit', compact('types', 'vehicle', 'gearbox', 'fuelType', 'option'));
     }
@@ -227,6 +230,14 @@ class VehicleController extends Controller
             $vehicle->kilometers = $request->kilometers;
             $vehicle->option = !empty($request->option) ? implode(',', $request->option) : null;
             $vehicle->notes = $request->notes;
+            // Falls back to the vehicle's current value, not to true: an update
+            // that does not mention the field must not silently put a
+            // deliberately withdrawn vehicle back on the storefront. The edit
+            // form always sends it, so this only governs other callers.
+            $vehicle->available_for_rent = $request->boolean(
+                'available_for_rent',
+                (bool) $vehicle->available_for_rent
+            );
             if (!empty($request->document)) {
                 $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
                 $documentFilename = pathinfo($documentFilenameWithExt, PATHINFO_FILENAME);
@@ -267,7 +278,7 @@ class VehicleController extends Controller
 
     public function vehicleNumber()
     {
-        $max = Vehicle::where('parent_id', parentId())->max('vehicle_id');
+        $max = Vehicle::where('parent_id', tenantKey())->max('vehicle_id');
         return ($max ?? 0) + 1;
     }
 
@@ -287,7 +298,7 @@ class VehicleController extends Controller
         // LOWER(TRIM()) can't strip the non-breaking spaces that slip in via
         // imports, so it would miss visually-identical plates. Vehicle counts
         // per tenant are small, so loading them to compare is cheap.
-        return Vehicle::where('parent_id', parentId())
+        return Vehicle::where('parent_id', tenantKey())
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
             ->get(['id', 'license_plate'])
             ->contains(fn ($v) => Vehicle::plateKey($v->license_plate) === $key);
@@ -414,7 +425,7 @@ class VehicleController extends Controller
                 });
             })->distinct()->pluck('vehicle')->toArray();
 
-            $vehicles = Vehicle::where('parent_id', parentId())->whereNotIn('id', $booking)->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->whereNotIn('id', $booking)->get();
             $data = [];
 
 

@@ -14,7 +14,7 @@ class PlaceController extends Controller
     public function index()
     {
         if (\Auth::user()->can('manage place')) {
-            $places = Place::where('parent_id', parentId())->get();
+            $places = Place::where('parent_id', tenantKey())->get();
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -56,7 +56,7 @@ class PlaceController extends Controller
             $place->price = $request->price;
             $place->depo_name = $request->depo_name;
             $place->depo_address = $request->depo_address;
-            $place->parent_id = parentId();
+            $place->parent_id = tenantKey();
             $place->save();
             return redirect()->route('place.index')->with('success', __('Place successfully created.'));
         } else {
@@ -119,6 +119,27 @@ class PlaceController extends Controller
 
     public function getPlaceRateCalculation(Request $request)
     {
+        // BAN-297: a place id that does not resolve for this caller -- another
+        // tenant's row, or a legacy row still at the parent_id = 0 column
+        // default -- used to fall straight through to a 0 fee, so the quote came
+        // back short by the pickup/drop-off amount with nothing on the response
+        // to say it had been dropped. Refuse the request instead: a silently
+        // wrong total on a customer quote is worse than a failed recalculation.
+        //
+        // Answered as JSON regardless of the Accept header, because the callers
+        // are XHR and a redirect-with-errors would reach them as HTML.
+        $placeCheck = \Validator::make($request->all(), [
+            'pickup_place'   => ['nullable', tenantExistsRule('places')],
+            'drop_off_place' => ['nullable', tenantExistsRule('places')],
+        ]);
+
+        if ($placeCheck->fails()) {
+            return response()->json([
+                'error'  => __('Place not found.'),
+                'errors' => $placeCheck->errors(),
+            ], 422);
+        }
+
         $addonAmount=0;
         $totalRate=0;
         $considerDays=1;

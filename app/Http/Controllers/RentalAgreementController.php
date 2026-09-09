@@ -36,7 +36,7 @@ class RentalAgreementController extends Controller
                 ->filter(fn ($label, $key) => $search !== '' && (stripos($label, $search) !== false || stripos($key, $search) !== false))
                 ->keys()
                 ->all();
-            $agreements = RentalAgreement::where('parent_id', parentId())
+            $agreements = RentalAgreement::where('parent_id', tenantKey())
                 ->select(['id', 'agreement_id', 'date', 'rental_start_date', 'rental_end_date', 'rental_duration', 'status', 'driver', 'vehicle', 'created_at'])
                 ->with(['drivers:id,name', 'vehicles:id,name,license_plate'])
                 ->when($search !== '', function ($q) use ($search, $statusKeys) {
@@ -82,17 +82,17 @@ class RentalAgreementController extends Controller
     public function create()
     {
         if (\Auth::user()->can('create rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->orderBy('created_at', 'desc')->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->orderBy('created_at', 'desc')->get();
 
-            $drivers = User::where('parent_id', parentId())
+            $drivers = User::where('parent_id', tenantKey())
                 ->where('type', 'driver')
                 ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                 ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                 ->get();
             // Flag blacklisted drivers so the picker can warn before submit (BAN-252).
-            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), parentId());
+            $blacklists = DriverBlacklist::activeFor($drivers->pluck('id')->all(), tenantKey());
 
-            $defaultTerms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
+            $defaultTerms = rentalAgreementTerms();
             return Inertia::render('RentalAgreement/Create', [
                 'vehicles'     => $vehicles->map(fn($v) => ['id' => $v->id, 'label' => $v->name . ' - ' . $v->license_plate]),
                 'drivers'      => $drivers->map(fn($u) => [
@@ -117,7 +117,7 @@ class RentalAgreementController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    'vehicle' => ['required', tenantExistsRule('vehicles')], // BAN-294
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',
@@ -135,7 +135,7 @@ class RentalAgreementController extends Controller
             // Warn-and-override — block unless acknowledged; the React picker
             // surfaces the warning so this is the server-side safety net.
             $driverIds = array_values(array_filter([$request->driver, $request->driver2]));
-            $blacklists = DriverBlacklist::where('parent_id', parentId())
+            $blacklists = DriverBlacklist::where('parent_id', tenantKey())
                 ->whereIn('driver_user_id', $driverIds)
                 ->whereNull('lifted_at')
                 ->get();
@@ -163,7 +163,7 @@ class RentalAgreementController extends Controller
             $rentalAgreement->terms_condition = $request->terms_condition;
             $rentalAgreement->description = $request->description;
             $rentalAgreement->status = $request->status;
-            $rentalAgreement->parent_id = parentId();
+            $rentalAgreement->parent_id = tenantKey();
             $rentalAgreement->save();
 
             // Record an override per blacklisted driver if the owner proceeded.
@@ -173,7 +173,7 @@ class RentalAgreementController extends Controller
 
             $user = User::find($request->driver);
             $module = 'new_agreement';
-            $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+            $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
             $setting = settings();
             $errorMessage = '';
             if (!empty($notification) && $notification->enabled_email == 1) {
@@ -208,12 +208,12 @@ class RentalAgreementController extends Controller
                 }
 
                 // Use an existing place (e.g. Tetouan) or first place for parent; fallback 0
-                $defaultPlaceId = Place::where('parent_id', parentId())
+                $defaultPlaceId = Place::where('parent_id', tenantKey())
                     ->where(function ($q) {
                         $q->where('name', 'Tetouan')->orWhere('city', 'Tetouan');
                     })
                     ->value('id')
-                    ?? Place::where('parent_id', parentId())->value('id')
+                    ?? Place::where('parent_id', tenantKey())->value('id')
                     ?? 0;
                 $booking->pickup_address = $defaultPlaceId;
                 $booking->drop_off_address = $defaultPlaceId;
@@ -238,13 +238,22 @@ class RentalAgreementController extends Controller
                 ]);
                 $booking->amount = (int) round($totalRate);
 
+                // BAN-294: this dereference was unguarded, and store()/update()
+                // validate `vehicle` as `required` only — no exists. Once Vehicle
+                // gained the tenant scope a foreign id resolved to null and fatalled
+                // here, *after* the agreement row was already saved and outside any
+                // transaction, leaving an agreement with no companion booking.
                 $vehicle = Vehicle::find($request->vehicle);
+                if (!$vehicle) {
+                    abort(404);
+                }
+
                 $booking->vehicle_details = [
                     'id' => $vehicle->id,
                     'name' => $vehicle->name,
                     'license_plate' => $vehicle->license_plate,
                 ];
-                $booking->parent_id = parentId();
+                $booking->parent_id = tenantKey();
                 $booking->daily_price_final = $dailyPrice;
                 $booking->save();
             }
@@ -264,7 +273,15 @@ class RentalAgreementController extends Controller
     {
         if (\Auth::user()->can('show rental agreement')) {
             $id = Crypt::decrypt($ids);
+
+            // BAN-298: the tenant scope makes another tenant's agreement resolve
+            // to null here, and the driver ids are read off it on the next line.
+            // The find() sits behind Crypt::decrypt(), which is where the earlier
+            // audit script stopped looking (BAN-297).
             $rentalAgreement = RentalAgreement::find($id);
+            if (!$rentalAgreement) {
+                abort(404);
+            }
 
             // Batch-load both drivers' user records and Driver profiles in 2 queries
             $driverIds    = array_values(array_filter([$rentalAgreement->driver, $rentalAgreement->driver2]));
@@ -279,8 +296,24 @@ class RentalAgreementController extends Controller
             $settings = settings();
 
             // display Terms and conditions
-            $terms = str_replace('\n', "\n", config('client.terms.rental_agreement', ''));
-            $terms = nl2br($terms);
+            //
+            // BAN-311 review: prefer the terms this agreement was signed under.
+            // store() snapshots them into terms_condition; rendering the global
+            // text instead was harmless while that text only moved on deploy,
+            // but an owner can now edit it, and rewriting the terms printed on
+            // an already-signed contract is not something a settings screen
+            // should be able to do. Blank falls back for agreements predating
+            // the snapshot.
+            $signedTerms = (string) $rentalAgreement->terms_condition;
+            $terms = trim($signedTerms) !== '' ? $signedTerms : rentalAgreementTerms();
+
+            // e() before nl2br(): Show.jsx renders this with
+            // dangerouslySetInnerHTML, and the source is no longer a committed
+            // config file -- settings/company has no permission middleware and
+            // the XSS middleware sanitises nothing, so any authenticated user
+            // of the tenant could otherwise store script that runs in the
+            // owner's session on every agreement view and print.
+            $terms = nl2br(e($terms));
 
             //display Signature
             $driver1Signature = $this->getUserSignature($rentalAgreement->driver);
@@ -330,9 +363,9 @@ class RentalAgreementController extends Controller
     public function edit(RentalAgreement $rentalAgreement)
     {
         if (\Auth::user()->can('edit rental agreement')) {
-            $vehicles = Vehicle::where('parent_id', parentId())->get();
+            $vehicles = Vehicle::where('parent_id', tenantKey())->get();
 
-            $drivers = User::where('parent_id', parentId())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
+            $drivers = User::where('parent_id', tenantKey())->where('type', 'driver')->orderBy('created_at', 'desc')->orderBy('id', 'desc')->get();
 
             $status = RentalAgreement::$status;
 
@@ -365,7 +398,7 @@ class RentalAgreementController extends Controller
             $validator = \Validator::make(
                 $request->all(),
                 [
-                    'vehicle' => 'required',
+                    'vehicle' => ['required', tenantExistsRule('vehicles')], // BAN-294
                     'rental_start_date' => 'required',
                     'rental_end_date' => 'required|after_or_equal:rental_start_date',
                     'rental_duration' => 'required',
@@ -399,7 +432,7 @@ class RentalAgreementController extends Controller
             if ($agreementStatus) {
                 $user = User::find($request->driver);
                 $module = 'agreement_status';
-                $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+                $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
                 $setting = settings();
                 $errorMessage = '';
                 if (!empty($notification) && $notification->enabled_email == 1) {
@@ -438,7 +471,7 @@ class RentalAgreementController extends Controller
 
     public function agreementNumber()
     {
-        $latest = RentalAgreement::where('parent_id', parentId())->latest()->first();
+        $latest = RentalAgreement::where('parent_id', tenantKey())->latest()->first();
         if (!$latest) {
             return 1;
         }

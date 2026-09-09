@@ -23,7 +23,7 @@ class DriverControllerTest extends TestCase
         parent::setUp();
         $this->asClient('acme');
 
-        $perms = ['manage driver', 'create driver', 'edit driver', 'delete driver'];
+        $perms = ['manage driver', 'create driver', 'edit driver', 'delete driver', 'show driver'];
         foreach ($perms as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }

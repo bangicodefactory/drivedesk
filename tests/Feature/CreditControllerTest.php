@@ -123,19 +123,73 @@ class CreditControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * BAN-316. CreditController guards show/edit/update/destroy on
+     * `parent_id != parentId()` with no super-admin exemption, and index()
+     * filters the same way -- so stamping the row with the customer's id while
+     * the guards resolved through the super admin's own left support able to
+     * create a credit and then denied on opening it.
+     */
+    public function test_support_can_open_the_credit_it_just_created(): void
+    {
+        $superAdmin = \App\Models\User::factory()->create(['type' => 'super admin', 'parent_id' => 0]);
+        $superAdmin->givePermissionTo('manage driver');   // the permission CreditController actually checks
+
+        $this->actingAs($superAdmin)
+            ->post(route('credit.store'), $this->validCreditPayload())
+            ->assertRedirect();
+
+        $credit = \App\Models\Credit::withoutGlobalScope('tenant')->orderByDesc('id')->first();
+
+        $this->assertSame($this->owner->id, (int) $credit->parent_id);
+
+        $this->actingAs($superAdmin)
+            ->get(route('credit.edit', $credit->id))
+            ->assertOk();
+    }
+
     public function test_store_logs_credit_action(): void
     {
         $this->actingAs($this->owner)
             ->post(route('credit.store'), $this->validCreditPayload())
             ->assertRedirect();
 
-        $this->assertDatabaseHas('logged_histories', ['type' => 'credit_create']);
+        // BAN-312: the row's tenant key, not just its type. Without this the
+        // writer at CreditController:280 is unpinned -- reverting it to
+        // parentId() left the whole suite green.
+        $this->assertDatabaseHas('logged_histories', [
+            'type'      => 'credit_create',
+            'parent_id' => $this->owner->id,
+        ]);
     }
 
     public function test_store_rejects_missing_driver_id(): void
     {
         $this->actingAs($this->owner)
             ->post(route('credit.store'), ['amount' => 100])
+            ->assertSessionHasErrors(['driver_id']);
+    }
+
+    public function test_store_rejects_another_tenants_driver(): void
+    {
+        $otherOwner  = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $otherDriver = User::factory()->driver()->create(['parent_id' => $otherOwner->id]);
+
+        $this->actingAs($this->owner)
+            ->post(route('credit.store'), $this->validCreditPayload(['driver_id' => $otherDriver->id]))
+            ->assertSessionHasErrors(['driver_id']);
+    }
+
+    /**
+     * BAN-296: tenantExistsRule() takes includeTenantOwner and credit does not
+     * pass it. A credit's subject is a driver (parent_id = T); the owner row
+     * (id = T, parent_id = 0) is not one, and the create/edit picker never
+     * offers it. Only the signature subject opts the owner row in.
+     */
+    public function test_store_rejects_the_tenant_owner_as_driver(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('credit.store'), $this->validCreditPayload(['driver_id' => $this->owner->id]))
             ->assertSessionHasErrors(['driver_id']);
     }
 
@@ -179,10 +233,13 @@ class CreditControllerTest extends TestCase
     {
         $credit = $this->makeCredit(); // belongs to $this->owner
 
+        // BAN-296: Credit is tenant-scoped now, so route-model binding fails to
+        // resolve another tenant's credit and Laravel answers 404 before the
+        // controller's own redirect-with-error runs. Both deny access; 404 is
+        // what every other scoped model in Tranche S.1 answers.
         $this->actingAs($this->makeOtherOwner())
             ->put(route('credit.update', $credit), $this->validCreditPayload())
-            ->assertRedirect(route('credit.index'))
-            ->assertSessionHas('error');
+            ->assertStatus(404);
     }
 
     // ── CreditController::destroy ─────────────────────────────────────────────
@@ -203,10 +260,13 @@ class CreditControllerTest extends TestCase
     {
         $credit = $this->makeCredit(); // belongs to $this->owner
 
+        // BAN-296: Credit is tenant-scoped now, so route-model binding fails to
+        // resolve another tenant's credit and Laravel answers 404 before the
+        // controller's own redirect-with-error runs. Both deny access; 404 is
+        // what every other scoped model in Tranche S.1 answers.
         $this->actingAs($this->makeOtherOwner())
             ->delete(route('credit.destroy', $credit))
-            ->assertRedirect(route('credit.index'))
-            ->assertSessionHas('error');
+            ->assertStatus(404);
     }
 
     // ── CreditController::getDriverCredit (JSON) ──────────────────────────────

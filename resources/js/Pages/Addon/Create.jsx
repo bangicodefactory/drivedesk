@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/addon/create.blade.php.
 // Field names match the Blade form 1:1 (name, price, billing_type). Posts to
@@ -46,18 +48,18 @@ function AddonCreate({ billingType = {} }) {
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name">{t('Addon')}</Label>
-                                <Input id="name" placeholder={t('Enter addon name')} {...register('name')} />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                                <Input id="name" placeholder={t('Enter addon name')} {...register('name')} {...fieldA11y(errors, 'name')} />
+                                <FieldError name="name" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="price">{t('Price')}</Label>
-                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} />
-                                {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+                                <Input id="price" type="number" placeholder={t('Enter price')} {...register('price')} {...fieldA11y(errors, 'price')} />
+                                <FieldError name="price" errors={errors} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="billing_type">{t('Billing Type')}</Label>
                                 <Select value={selectedBilling} onValueChange={(v) => setValue('billing_type', v)}>
-                                    <SelectTrigger id="billing_type">
+                                    <SelectTrigger id="billing_type" {...fieldA11y(errors, 'billing_type')}>
                                         <SelectValue placeholder={t('Select billing type')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -66,7 +68,7 @@ function AddonCreate({ billingType = {} }) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.billing_type && <p className="text-sm text-destructive">{errors.billing_type.message}</p>}
+                                <FieldError name="billing_type" errors={errors} />
                             </div>
                         </div>
 

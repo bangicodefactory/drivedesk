@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
+use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\BookingRequest;
 use App\Models\Place;
@@ -14,10 +15,56 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class RequestBookingController extends Controller
 {
+    /**
+     * The /reserve booking wizard: dates/locations, then a car (filtered to
+     * ones actually free for those dates), then customer details. Reuses the
+     * same Vehicle/Place/Booking data as the rest of the app — no separate
+     * "Car" model, no separate bookings table.
+     *
+     * Re-invoked via an Inertia partial reload (`only: ['vehicles']`) once the
+     * wizard's date step is filled in, so `vehicles` reflects availability for
+     * whatever range the query string carries.
+     */
+    public function create(Request $request)
+    {
+        $vehiclesQuery = Vehicle::where('available_for_rent', true)
+            ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture');
+
+        $startDate = $request->query('start_date');
+        $endDate   = $request->query('end_date');
+
+        if ($startDate && $endDate) {
+            $start = $startDate . ' ' . ($request->query('start_time') ?: '00:00') . ':00';
+            $end   = $endDate . ' ' . ($request->query('end_time') ?: '23:59') . ':00';
+
+            // Same overlap rule as VehicleController::getAvailableVehicle() (the
+            // admin planning screen): two ranges overlap unless one ends before
+            // the other starts. Not tenant-scoped — Booking's tenant scope is
+            // inert for a guest request (BelongsToTenant::tenantScopeApplies()),
+            // matching how landingProps()/showSimilarCars() already read Vehicle
+            // for the same unauthenticated storefront.
+            $unavailableVehicleIds = Booking::whereNotIn('status', ['completed', 'cancelled'])
+                ->whereRaw("CONCAT(start_date, ' ', start_time) <= ?", [$end])
+                ->whereRaw("CONCAT(end_date, ' ', end_time) >= ?", [$start])
+                ->pluck('vehicle');
+
+            $vehiclesQuery->whereNotIn('id', $unavailableVehicleIds);
+        }
+
+        $places = Place::select('id', 'name', 'city')->get();
+
+        return Inertia::render('Public/Booking/Index', [
+            'vehicles'           => $vehiclesQuery->get(),
+            'places'             => $places,
+            'preselectedVehicle' => $request->query('vehicle'),
+        ]);
+    }
+
     /**
      * Display the specific car details and similar cars
      */
@@ -25,7 +72,16 @@ class RequestBookingController extends Controller
     {
         $car = Vehicle::with('types')->where('id', $id)->firstOrFail();
 
+        // BAN-297: the storefront belongs to the car's tenant. Everything this
+        // page offers -- similar cars, pickup/drop-off places -- has to come
+        // from that same tenant, or the booking form hands a visitor ids that
+        // storeBooking() must then reject. The visitor is normally a guest, so
+        // the global tenant scope is inert here and parent_id is applied by hand.
         $similarCars = Vehicle::with('types')->where('id', '!=', $id)
+            ->where('parent_id', $car->parent_id)
+            // A vehicle withdrawn from the storefront must not come back as a
+            // suggestion -- that is the whole point of the flag.
+            ->where('available_for_rent', true)
             ->where(function ($query) use ($car) {
                 $query->where('type', $car->type)
                     ->orWhere('fuel_type', $car->fuel_type)
@@ -38,7 +94,7 @@ class RequestBookingController extends Controller
             ->limit(3)
             ->get();
 
-        $places = Place::all(['id', 'name', 'city']);
+        $places = Place::where('parent_id', $car->parent_id)->get(['id', 'name', 'city']);
 
         return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
     }
@@ -49,14 +105,37 @@ class RequestBookingController extends Controller
 
      public function storeBooking(Request $request)
      {
+         // BAN-297: the tenant comes from the requested vehicle, not from Auth.
+         // This is the public storefront form and its submitter is normally a
+         // guest, for whom tenantExistsRule() is deliberately inert -- scoping
+         // the places on Auth would close nothing on the only path this endpoint
+         // actually serves, while rejecting a signed-in visitor who is browsing
+         // another tenant's storefront. The vehicle picks the tenant, so both
+         // places must belong to it.
+         //
+         // Null when vehicle_id is missing or does not resolve; the vehicle_id
+         // rule below fails the request in that case, so the places fall back to
+         // a bare exists and the outcome is the same.
+         $vehicleTenantId = Vehicle::whereKey($request->input('vehicle_id'))->value('parent_id');
+
+         $placeRule = function () use ($vehicleTenantId) {
+             $rule = \Illuminate\Validation\Rule::exists('places', 'id');
+
+             if ($vehicleTenantId !== null) {
+                 $rule->where('parent_id', $vehicleTenantId);
+             }
+
+             return $rule;
+         };
+
          // Validate the request
          $validator = Validator::make($request->all(), [
-             'vehicle_id'       => 'required|exists:vehicles,id',
+             'vehicle_id'       => ['required', tenantExistsRule('vehicles')], // BAN-294
              'name'             => 'required|string|max:255',
              'email'            => 'required|email',
              'phone_number'     => 'required|string|max:20',
-             'pickup_address'   => 'required|exists:places,id',
-             'drop_off_address' => 'required|exists:places,id',
+             'pickup_address'   => ['required', $placeRule()],
+             'drop_off_address' => ['required', $placeRule()],
              'start_date'       => 'required|date',
              'end_date'         => 'required|date|after:start_date',
              'start_time'       => 'required',
@@ -65,6 +144,31 @@ class RequestBookingController extends Controller
              'notes'            => 'nullable|string',
              'company_name'     => 'nullable|string',
              'city'             => 'nullable|string',
+             // Optional customer details. The existing storefront form
+             // (CarDetails.jsx) sends none of them, so every rule is nullable
+             // and that path is unaffected -- the columns exist for the fuller
+             // booking flow that collects them.
+             'age'                => 'nullable|integer|min:18|max:100',
+             'nationality'        => 'nullable|string|max:80',
+             'driving_experience' => 'nullable|integer|min:0|max:80',
+             // Bounded by the actual vehicle: a 15-seat minibus should take a
+             // 12-passenger booking, and a 2-seater should not take 9. Falls
+             // back to a permissive ceiling when the vehicle does not resolve
+             // -- the vehicle_id rule fails that request anyway.
+             'passengers'         => 'nullable|integer|min:1|max:'
+                 . (Vehicle::whereKey($request->input('vehicle_id'))->value('number_of_seats') ?: 60),
+             'whatsapp'           => 'nullable|string|max:30',
+             // What the customer said they intend to pay with. Nothing is
+             // charged: no gateway is integrated anywhere in this codebase.
+             // It records the intent so staff know how to follow up.
+             //
+             // No 'paypal'. PayPal is inert here -- no package, no route, no
+             // webhook -- and it is not a method a Moroccan agency's customers
+             // reach for; offering it as an intent would have staff following
+             // up on a method the business cannot take. CMI is the real card
+             // gateway and stays, as a stated intent only, until its callback
+             // exists behind feature('booking_payment').
+             'payment_preference' => 'nullable|in:cash,cmi',
          ]);
 
          if ($validator->fails()) {
@@ -119,6 +223,19 @@ class RequestBookingController extends Controller
              $booking->amount = $amount;
              $booking->payment_status = 'pending';
              $booking->notes = $request->notes;
+             // The tenant, taken from the vehicle rather than from Auth -- the
+             // submitter is a guest. Same source the place validation above
+             // uses (BAN-297), so a request cannot straddle two tenants. Left
+             // unset, this stayed at the column default of 0 and the row
+             // belonged to nobody: invisible to any scoped query, and the
+             // reason booking-request numbering never worked.
+             $booking->parent_id = (int) $vehicleTenantId;
+             $booking->age = $request->age;
+             $booking->nationality = $request->nationality;
+             $booking->driving_experience = $request->driving_experience;
+             $booking->passengers = $request->passengers;
+             $booking->whatsapp = $request->whatsapp;
+             $booking->payment_preference = $request->payment_preference;
 
              $booking->vehicle_details = json_encode([
                 'name'          => $vehicle->name,
@@ -135,7 +252,11 @@ class RequestBookingController extends Controller
 
              DB::commit();
 
-             return redirect()->back()->with('success', 'Booking request submitted successfully! We will contact you soon.');
+             // Signed so a guest cannot open another request's confirmation by
+             // guessing an id -- booking_requests carries a name, email and
+             // phone and is neither tenant- nor auth-scoped for a guest.
+             return redirect()->to(URL::signedRoute('reserve.confirmation', ['bookingRequest' => $booking->id]))
+                 ->with('success', 'Booking request submitted successfully! We will contact you soon.');
          } catch (\Exception $e) {
              DB::rollBack();
              return redirect()->back()->with('error', 'An error occurred. Please try again. Error: ' . $e->getMessage());
@@ -143,10 +264,51 @@ class RequestBookingController extends Controller
      }
 
     /**
+     * The confirmation page a guest lands on right after submitting /reserve
+     * (or CarDetails.jsx's booking form). Signed URL only — see the note above
+     * storeBooking()'s redirect.
+     */
+    public function confirmation(BookingRequest $bookingRequest)
+    {
+        $bookingRequest->load(['car', 'pickupPlace', 'dropOffPlace']);
+
+        $start = new DateTime($bookingRequest->start_date);
+        $end   = new DateTime($bookingRequest->end_date);
+        $days  = max(1, $end->diff($start)->days);
+
+        return Inertia::render('Public/Booking/Confirmation', [
+            'reference'    => 'BR-' . str_pad($bookingRequest->id, 5, '0', STR_PAD_LEFT),
+            'car'          => [
+                'name'    => $bookingRequest->car?->name,
+                'model'   => $bookingRequest->car?->model,
+                'picture' => $bookingRequest->car?->picture,
+            ],
+            'pickupPlace'  => $bookingRequest->pickupPlace?->name,
+            'dropOffPlace' => $bookingRequest->dropOffPlace?->name,
+            'startDate'    => $bookingRequest->start_date,
+            'startTime'    => $bookingRequest->start_time,
+            'endDate'      => $bookingRequest->end_date,
+            'endTime'      => $bookingRequest->end_time,
+            'days'         => $days,
+            'amount'       => $bookingRequest->amount,
+            'paymentPreference' => $bookingRequest->payment_preference,
+        ]);
+    }
+
+    /**
      * Display a listing of the booking requests.
      */
     public function index()
     {
+        // dashboard, not back(): url()->previous() prefers the Referer, and for
+        // a request coming *from* this page -- an Inertia partial reload after
+        // the account's permission is revoked mid-session -- that is this page,
+        // so back() 302s to itself until the browser gives up. The two guarded
+        // routes can also ping-pong off each other's stored previous URL.
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->route('dashboard')->with('error', __('Permission Denied.'));
+        }
+
         $bookingRequests = BookingRequest::with(['guest', 'car'])->latest()->get();
 
         return Inertia::render('BookingRequest/Index', [
@@ -164,6 +326,11 @@ class RequestBookingController extends Controller
 
     public function show($id)
     {
+        // See the note in index(): back() on a GET guard can redirect to itself.
+        if (! \Auth::user()->can('manage booking')) {
+            return redirect()->route('dashboard')->with('error', __('Permission Denied.'));
+        }
+
         $bookingId = is_string($id) ? Crypt::decrypt($id) : $id;
         $booking = BookingRequest::with(['guest', 'car', 'pickupPlace', 'dropOffPlace'])->findOrFail($bookingId);
 
@@ -183,13 +350,42 @@ class RequestBookingController extends Controller
                 'pickup_place' => $booking->pickupPlace?->name,
                 'dropoff_place'=> $booking->dropOffPlace?->name,
                 'notes'        => $booking->notes,
+                // Optional details the storefront may have collected. Null for
+                // every request taken before they existed, and for the simpler
+                // form that does not ask -- the page renders a dash.
+                'age'                => $booking->age,
+                'nationality'        => $booking->nationality,
+                'driving_experience' => $booking->driving_experience,
+                'passengers'         => $booking->passengers,
+                'whatsapp'           => $booking->whatsapp,
+                'payment_preference' => $booking->payment_preference,
             ],
         ]);
     }
 
+    /**
+     * The next booking number for this tenant.
+     *
+     * Reads `bookings`, not `booking_requests`. It used to read the latter --
+     * whose `booking_id` column nothing writes, under a parent_id nothing set
+     * -- so it returned 1 unconditionally and every booking approved from a
+     * request was numbered 1. Mirrors BookingController::bookingNumber(),
+     * which is what numbers a booking created by hand.
+     */
     public function bookingNumber()
     {
-        $latest = BookingRequest::where('parent_id', parentId())->latest()->first();
+        // Ordered by booking_id, not by latest(). created_at is second-precision
+        // with no unique index on booking_id, and the Excel import creates many
+        // bookings inside one second -- among those the tie-break is arbitrary,
+        // so latest() can return a row that is not the highest-numbered and the
+        // next approval reuses a number. BookingController::bookingNumber() has
+        // the same shape and the same flaw; it is left for its own ticket
+        // rather than bundled into a change about booking requests.
+        //
+        // This does not make the read safe under concurrency: two staff
+        // approving at the same moment still read the same maximum. Closing
+        // that needs a lock at both call sites.
+        $latest = Booking::where('parent_id', tenantKey())->orderByDesc('booking_id')->first();
         if (!$latest) {
             return 1;
         }
@@ -251,7 +447,7 @@ class RequestBookingController extends Controller
             $booking = new \App\Models\Booking();
             $booking->vehicle = $car->id;
             $booking->booking_id = $this->bookingNumber();
-            $booking->parent_id = parentId();
+            $booking->parent_id = tenantKey();
             $booking->driver = $user->id;
             $booking->start_date = $bookingRequest->start_date;
             $booking->start_time = $bookingRequest->start_time;

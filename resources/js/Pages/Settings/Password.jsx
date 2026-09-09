@@ -6,6 +6,8 @@ import { Label }  from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     current_password: z.string().min(1, 'Current password is required'),
@@ -44,20 +46,20 @@ function Password() {
                     >
                         <div className="space-y-1.5">
                             <Label htmlFor="current_password">{t('Current password')}</Label>
-                            <Input id="current_password" type="password" autoComplete="current-password" {...register('current_password')} />
-                            {errors.current_password && <p className="text-sm text-destructive">{errors.current_password.message}</p>}
+                            <Input id="current_password" type="password" autoComplete="current-password" {...register('current_password')} {...fieldA11y(errors, 'current_password')} />
+                            <FieldError name="current_password" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="new_password">{t('New password')}</Label>
-                            <Input id="new_password" type="password" autoComplete="new-password" {...register('new_password')} />
-                            {errors.new_password && <p className="text-sm text-destructive">{errors.new_password.message}</p>}
+                            <Input id="new_password" type="password" autoComplete="new-password" {...register('new_password')} {...fieldA11y(errors, 'new_password')} />
+                            <FieldError name="new_password" errors={errors} />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="confirm_password">{t('Confirm new password')}</Label>
-                            <Input id="confirm_password" type="password" autoComplete="new-password" {...register('confirm_password')} />
-                            {errors.confirm_password && <p className="text-sm text-destructive">{errors.confirm_password.message}</p>}
+                            <Input id="confirm_password" type="password" autoComplete="new-password" {...register('confirm_password')} {...fieldA11y(errors, 'confirm_password')} />
+                            <FieldError name="confirm_password" errors={errors} />
                         </div>
 
                         <Button type="submit" disabled={isSubmitting}>

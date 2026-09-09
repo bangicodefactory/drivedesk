@@ -125,11 +125,11 @@ function DriverShow({ driver = {}, user = {}, is_blacklisted = false, blacklist_
                     {canBlacklist && (
                         is_blacklisted ? (
                             <Button variant="outline" size="sm" onClick={liftBlacklist}>
-                                <ShieldCheck className="mr-2 h-4 w-4" /> {t('Remove from blacklist')}
+                                <ShieldCheck className="me-2 h-4 w-4" /> {t('Remove from blacklist')}
                             </Button>
                         ) : (
                             <Button variant="destructive" size="sm" onClick={() => { setReason(''); setOpen(true); }}>
-                                <Ban className="mr-2 h-4 w-4" /> {t('Blacklist')}
+                                <Ban className="me-2 h-4 w-4" /> {t('Blacklist')}
                             </Button>
                         )
                     )}

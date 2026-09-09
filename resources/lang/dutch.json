@@ -703,5 +703,10 @@
   "Line :line: reference :reference already imported.": "Regel :line: referentie :reference is al geïmporteerd.",
   "Line :line: unreadable amount.": "Regel :line: onleesbaar bedrag.",
   "Stopped at row :max — split the file and import the rest separately.": "Gestopt bij regel :max — splits het bestand en importeer de rest apart.",
-  "The rentals have changed since this was matched — re-run the match.": "De verhuringen zijn sinds deze koppeling gewijzigd — voer de koppeling opnieuw uit."
+  "The rentals have changed since this was matched — re-run the match.": "De verhuringen zijn sinds deze koppeling gewijzigd — voer de koppeling opnieuw uit.",
+    "Pagination": "Paginering",
+    "Previous": "Vorige",
+    "Next": "Volgende",
+    ":from–:to of :total": ":from–:to van :total",
+    "Page :current of :last": "Pagina :current van :last"
 }

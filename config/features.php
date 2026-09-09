@@ -14,7 +14,6 @@
 return [
     'paypal'           => env('FEATURE_PAYPAL', null),
     'stripe'           => env('FEATURE_STRIPE', null),
-    'subscriptions'    => env('FEATURE_SUBSCRIPTIONS', null),
     'booking_payment'  => env('FEATURE_BOOKING_PAYMENT', null),
     'excel_import'     => env('FEATURE_EXCEL_IMPORT', null),
     'multi_branch'     => env('FEATURE_MULTI_BRANCH', null),
@@ -25,4 +24,5 @@ return [
     'invoice_on_full_payment' => env('FEATURE_INVOICE_ON_FULL_PAYMENT', null),
     'traffic_violations' => env('FEATURE_TRAFFIC_VIOLATIONS', null),
     'public_storefront' => env('FEATURE_PUBLIC_STOREFRONT', null),
+    'registration'     => env('FEATURE_REGISTRATION', null),
 ];

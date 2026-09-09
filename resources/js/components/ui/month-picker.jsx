@@ -43,7 +43,7 @@ const MonthPicker = React.forwardRef(function MonthPicker(
                 className,
             )}
         >
-            <Calendar aria-hidden="true" className="pointer-events-none mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+            <Calendar aria-hidden="true" className="pointer-events-none me-2 h-4 w-4 shrink-0 text-muted-foreground" />
             <span
                 aria-hidden="true"
                 className={cn('pointer-events-none flex-1 truncate tabular-nums', !value && 'text-muted-foreground')}

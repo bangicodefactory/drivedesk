@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth'         => $this->buildAuth($request),
             'branding'     => $this->buildBranding(),
+            'contact'      => $this->buildContact(),
             'client'       => $this->buildClient(),
             'recaptcha'    => $this->buildRecaptcha(),
             'locale'       => app()->getLocale(),
@@ -112,6 +113,27 @@ class HandleInertiaRequests extends Middleware
     }
 
     // -------------------------------------------------------------------------
+    // Contact / business info (public storefront: Header, Footer, Contact page)
+    // -------------------------------------------------------------------------
+
+    private function buildContact(): array
+    {
+        $s = $this->loadSettings();
+
+        return [
+            'phone'       => $s['company_phone']     ?? null,
+            'whatsapp'    => $s['company_whatsapp']  ?? null,
+            'email'       => $s['company_email']     ?? null,
+            'address'     => $s['company_address']   ?? null,
+            'hoursWeekday'  => $s['hours_weekday']   ?? null,
+            'hoursSaturday' => $s['hours_saturday']  ?? null,
+            'hoursSunday'   => $s['hours_sunday']    ?? null,
+            'facebookUrl'  => $s['social_facebook']  ?? null,
+            'instagramUrl' => $s['social_instagram'] ?? null,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
     // Client / feature flags
     // -------------------------------------------------------------------------
 
@@ -121,7 +143,16 @@ class HandleInertiaRequests extends Middleware
             'name'              => config('app.client', 'directonderweg'),
             'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
             'supported_locales' => config('client.supported_locales', []),
-            'features'          => config('client.features', []),
+            // Resolved through feature(), not read raw. feature() checks the
+            // FEATURE_* env override before the client config; sharing the raw
+            // array meant an operator could turn something off for PHP and
+            // leave it on in React -- the server 404s the route while the page
+            // still renders the button for it. Verified against a running
+            // instance: FEATURE_PUBLIC_STOREFRONT=true served /landing while
+            // the shared props still said false.
+            'features'          => collect(array_keys((array) config('client.features', [])))
+                ->mapWithKeys(fn ($name) => [$name => feature($name)])
+                ->all(),
             'cash_max'          => (float) config('client.cash_payment_max', 5000),
         ];
     }

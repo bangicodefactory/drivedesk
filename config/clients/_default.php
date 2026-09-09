@@ -10,8 +10,12 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        'subscriptions'   => true,
-        'booking_payment' => true,
+        // Off. Nothing in this codebase can charge a card -- no SDK, no route,
+        // no callback -- and this flag now drives a real UI: the booking
+        // wizard's online-payment tile. Left true, every deployment that
+        // inherits these defaults offers a card payment it cannot take.
+        // It turns on when CMI's callback exists, not before.
+        'booking_payment' => false,
         'excel_import'    => true,
         'multi_branch'    => false,
         'tva_renumber'    => true,
@@ -36,6 +40,12 @@ return [
         // is today's behavior for every existing client (§10.2 rule 2). Turn it
         // off for clients whose public face is not a rental storefront.
         'public_storefront' => true,
+        // Public self-registration at /register. Off: DriveDesk ships one
+        // deployment per business owner, and that owner's account is created at
+        // install -- a stranger signing themselves up as a second owner on a
+        // customer's system is never wanted. On only for a deployment that
+        // really does recruit its own owners. BAN-307.
+        'registration' => false,
     ],
 
     /*
@@ -53,6 +63,25 @@ return [
     'seo' => [],
 
     /*
+     * BAN-311 review: these three gained an env path in drivedesk.php, but a
+     * customer onboarded as their own variant writes their own client file and
+     * would inherit no env path at all -- setting CLIENT_SUPPORTED_LOCALES in
+     * their .env would silently do nothing. Defined here too, so the override
+     * works for any client whose own file leaves the key alone. A client file
+     * that sets the key still wins, as it always has.
+     */
+    'supported_locales' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', trim((string) env('CLIENT_SUPPORTED_LOCALES', '')) !== ''
+            ? (string) env('CLIENT_SUPPORTED_LOCALES')
+            : 'en,fr')
+    ))) ?: ['en', 'fr'],
+
+    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'fr',
+
+    'demo_request_to' => trim((string) env('CLIENT_DEMO_REQUEST_TO', '')) ?: null,
+
+    /*
      * How far outside a rental window a violation may still be attributed to
      * that rental, in hours. Covers late returns and same-day turnovers, which
      * the booking data cannot express (there is no actual-return timestamp).
@@ -65,7 +94,14 @@ return [
      * either rejected (cash_split off) or split into receipts each within this
      * cap (cash_split on). Read via config('client.cash_payment_max', 5000).
      */
-    'cash_payment_max' => 5000,
+    // (int) 'abc' and (int) '' are both 0, and every read site passes 5000 as a
+    // config() default that never fires because the key exists. 0 either
+    // rejects every cash payment (cash_split off) or, with cash_split on, makes
+    // CashPaymentSplitter clamp to 1 cent and expand one payment into hundreds
+    // of thousands of receipts inside a single transaction.
+    'cash_payment_max' => ((int) env('CLIENT_CASH_PAYMENT_MAX', 5000)) > 0
+        ? (int) env('CLIENT_CASH_PAYMENT_MAX', 5000)
+        : 5000,
 
     /*
      * Interface → concrete bindings resolved by ClientServiceProvider.
@@ -83,6 +119,9 @@ return [
      * Each client must define terms.rental_agreement. Empty string = no default.
      */
     'terms' => [
+        // BAN-311: a deployment can override this from the Setting model
+        // (`rental_agreement_terms`, editable on Settings -> Company). This
+        // stays the fallback for a variant that ships its own default text.
         'rental_agreement' => '',
     ],
 ];

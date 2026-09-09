@@ -10,13 +10,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
+
+// Home banners accept a wider set of formats than logo/favicon/landing_logo
+// (which stay PNG-only) — matches the mimes:png,jpg,jpeg,webp rule in
+// SettingController::generalData().
+const HOME_BANNER_ACCEPT = '.png,.jpg,.jpeg,.webp';
 
 const schema = z.object({
     application_name: z.string().min(1, 'Application name is required'),
     logo:             z.any().optional(),
     favicon:          z.any().optional(),
     image_home_1:     z.any().optional(),
-    image_home_2:     z.any().optional(),
+    image_home_1_desktop: z.any().optional(),
+    image_home_1_mobile:  z.any().optional(),
     landing_logo:     z.any().optional(),
 });
 
@@ -28,6 +36,11 @@ function General({ settings, loginUser }) {
         defaultValues: { application_name: settings?.app_name ?? '' },
     });
     const { register, setValue, formState: { errors, isSubmitting } } = form;
+
+    // Home banner values stored on `settings` are bare filenames living under
+    // upload/home/ (see HomeController::heroImageUrl()) — build the same
+    // public URL here so admins can see what's currently uploaded.
+    const homeImageUrl = (key) => (settings?.[key] ? `/storage/upload/home/${settings[key]}` : null);
 
     // Admin signature pad
     const sigRef = useRef(null);
@@ -62,8 +75,8 @@ function General({ settings, loginUser }) {
                     <form onSubmit={submit('post', route('setting.general'), { forceFormData: true })} className="space-y-4">
                         <div className="space-y-1">
                             <Label htmlFor="application_name">{t('Application Name')}</Label>
-                            <Input id="application_name" {...register('application_name')} />
-                            {errors.application_name && <p className="text-sm text-destructive">{errors.application_name.message}</p>}
+                            <Input id="application_name" {...register('application_name')} {...fieldA11y(errors, 'application_name')} />
+                            <FieldError name="application_name" errors={errors} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
@@ -74,14 +87,6 @@ function General({ settings, loginUser }) {
                                 <Label htmlFor="favicon">{t('Favicon (.png)')}</Label>
                                 <Input id="favicon" type="file" accept=".png" onChange={(e) => setValue('favicon', e.target.files?.[0] ?? null)} />
                             </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="image_home_1">{t('Première image accueil')}</Label>
-                                <Input id="image_home_1" type="file" accept=".png" onChange={(e) => setValue('image_home_1', e.target.files?.[0] ?? null)} />
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="image_home_2">{t('Deuxième image accueil')}</Label>
-                                <Input id="image_home_2" type="file" accept=".png" onChange={(e) => setValue('image_home_2', e.target.files?.[0] ?? null)} />
-                            </div>
                             {isSuperAdmin && (
                                 <div className="space-y-1 col-span-2">
                                     <Label htmlFor="landing_logo">{t('Landing Page Logo (.png)')}</Label>
@@ -89,6 +94,53 @@ function General({ settings, loginUser }) {
                                 </div>
                             )}
                         </div>
+
+                        <div className="space-y-3">
+                            <p className="text-sm font-medium">{t('Bannière de la page d\'accueil')}</p>
+                            {/* The public hero is a single static banner (not a carousel) —
+                                only one image pair is managed here. Recommended pixel sizes
+                                match the hero band's rendered height (Landing.jsx: h-[600px]
+                                on mobile, h-[720px] on desktop) so uploads aren't stretched
+                                or excessively cropped by the cover-fit. */}
+                            <div className="grid grid-cols-2 gap-4 border rounded-md p-3">
+                                <div className="space-y-1">
+                                    <Label htmlFor="image_home_1_desktop">{t('Bureau (.png, .jpg, .webp)')}</Label>
+                                    <p className="text-xs text-muted-foreground">{t('Taille recommandée : 1920 × 720 px (min. 1600 × 600)')}</p>
+                                    <Input
+                                        id="image_home_1_desktop" type="file" accept={HOME_BANNER_ACCEPT}
+                                        onChange={(e) => setValue('image_home_1_desktop', e.target.files?.[0] ?? null)}
+                                    />
+                                    {homeImageUrl('image_home_1_desktop') && (
+                                        <img src={homeImageUrl('image_home_1_desktop')} alt="" className="mt-1 h-16 w-full rounded border object-cover" />
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="image_home_1_mobile">{t('Mobile (.png, .jpg, .webp)')}</Label>
+                                    <p className="text-xs text-muted-foreground">{t('Taille recommandée : 828 × 1200 px (min. 750 × 1000)')}</p>
+                                    <Input
+                                        id="image_home_1_mobile" type="file" accept={HOME_BANNER_ACCEPT}
+                                        onChange={(e) => setValue('image_home_1_mobile', e.target.files?.[0] ?? null)}
+                                    />
+                                    {homeImageUrl('image_home_1_mobile') && (
+                                        <img src={homeImageUrl('image_home_1_mobile')} alt="" className="mt-1 h-16 w-full rounded border object-cover" />
+                                    )}
+                                </div>
+                                <div className="col-span-2 space-y-1">
+                                    <Label htmlFor="image_home_1">
+                                        {t('Image de secours')}
+                                        {' '}<span className="text-xs text-muted-foreground">({t('utilisée si Bureau/Mobile ne sont pas définis')})</span>
+                                    </Label>
+                                    <Input
+                                        id="image_home_1" type="file" accept={HOME_BANNER_ACCEPT}
+                                        onChange={(e) => setValue('image_home_1', e.target.files?.[0] ?? null)}
+                                    />
+                                    {homeImageUrl('image_home_1') && (
+                                        <img src={homeImageUrl('image_home_1')} alt="" className="mt-1 h-16 w-full rounded border object-cover" />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? t('Saving…') : t('Save')}
                         </Button>
@@ -122,10 +174,10 @@ function General({ settings, loginUser }) {
                     </div>
                     <div className="flex gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => { sigRef.current?.clear(); setSigEmpty(true); }}>
-                            <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
+                            <Eraser className="me-2 h-4 w-4" /> {t('Clear')}
                         </Button>
                         <Button type="button" size="sm" disabled={sigEmpty || savingSig} onClick={saveSig}>
-                            <Save className="mr-2 h-4 w-4" /> {savingSig ? t('Saving…') : t('Save Signature')}
+                            <Save className="me-2 h-4 w-4" /> {savingSig ? t('Saving…') : t('Save Signature')}
                         </Button>
                     </div>
                 </CardContent>

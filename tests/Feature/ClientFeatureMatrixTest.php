@@ -28,6 +28,49 @@ class ClientFeatureMatrixTest extends TestCase
     use RefreshDatabase;
     use WithClient;
 
+    /**
+     * Globbed, not a list of client names. The invariant is that the key does
+     * not return *anywhere* in the resolution chain, and a named list cannot
+     * enforce that: a new client config is written by copying an existing one
+     * (CLAUDE.md 10.2.7), and the removed key rides along in the copy. A
+     * hardcoded ['drivedesk','acme'] would stay green while it came back in a
+     * file the list does not name.
+     */
+    public function test_no_client_config_declares_a_subscription_flag(): void
+    {
+        // ?: [] on both -- glob() returns false, not [], when a directory cannot
+        // be read, and array_merge(false, ...) is a TypeError in PHP 8. That
+        // would kill the suite before reaching the guard below, which exists to
+        // explain exactly that situation.
+        $files = array_merge(
+            glob(config_path('clients/*.php')) ?: [],
+            glob(base_path('tests/Fixtures/clients/*.php')) ?: []
+        );
+
+        $this->assertNotEmpty($files, 'no client configs found to check');
+
+        foreach ($files as $file) {
+            $config = require $file;
+            $this->assertArrayNotHasKey(
+                'subscriptions',
+                $config['features'] ?? [],
+                basename($file)
+            );
+        }
+
+        $this->assertArrayNotHasKey('subscriptions', require config_path('features.php'));
+    }
+
+    public function test_no_client_resolves_a_subscription_capability(): void
+    {
+        foreach (['drivedesk', 'acme'] as $client) {
+            $this->asClient($client);
+
+            $this->assertArrayNotHasKey('subscriptions', config('client.features', []), $client);
+            $this->assertFalse(feature('subscriptions'), $client);
+        }
+    }
+
     public function test_drivedesk_keeps_its_full_demo_surface(): void
     {
         // All four are `true` in _default.php; drivedesk is the showcase tenant
@@ -36,15 +79,78 @@ class ClientFeatureMatrixTest extends TestCase
 
         $this->assertTrue(feature('paypal'));
         $this->assertTrue(feature('stripe'));
-        $this->assertTrue(feature('subscriptions'));
-        $this->assertTrue(feature('booking_payment'));
+        // BAN-328: off, and this is the assertion holding it down. Nothing here
+        // can charge a card, and the flag now renders the booking wizard's
+        // online-payment tile -- true would offer drivedesk's visitors a method
+        // the business cannot take.
+        $this->assertFalse(feature('booking_payment'));
+
+        // BAN-318: DriveDesk provides no subscription capability. Asserted as an
+        // absent *key*, not a false value -- a false flag is a switch someone can
+        // flip, and this is a product decision, not a toggle. If the key comes
+        // back anywhere in the resolution chain, this fails.
+        $this->assertArrayNotHasKey('subscriptions', config('client.features', []));
+        $this->assertArrayNotHasKey('subscriptions', config('features', []));
+        $this->assertFalse(feature('subscriptions'));
 
         $this->assertTrue(feature('cash_split'));
         $this->assertTrue(feature('invoice_on_full_payment'));
         $this->assertTrue(feature('demo_gateway'));
         $this->assertTrue(feature('traffic_violations'));
-        // The B2C storefront stays off — DriveDesk sells the platform (BAN-261).
-        $this->assertFalse(feature('public_storefront'));
+        // BAN-329: the storefront family is on. `/` is untouched -- it still
+        // serves the B2B demo gateway, asserted in DemoGatewayTest -- so this
+        // opens /landing and its siblings beside the gateway, not instead of it.
+        $this->assertTrue(feature('public_storefront'));
+        // BAN-307: public self-registration creates a `type = 'owner'` account.
+        // RegistrationTest forces this flag on to test the route's behaviour, so
+        // this is the only assertion holding the live value down. If it goes
+        // true, unauthenticated owner-creation returns to a real deployment.
+        $this->assertFalse(feature('registration'));
+    }
+
+    /**
+     * BAN-311 gave these keys an env path. Neither client config contained a
+     * single env() call before, so a customer differing on any of them needed a
+     * committed config file of its own. The env defaults must reproduce today's
+     * values exactly -- this is what fails if a default is edited by accident.
+     */
+    public function test_the_env_backed_client_values_keep_their_shipped_defaults(): void
+    {
+        $this->asClient('drivedesk');
+
+        // The shipped defaults, asserted against the file rather than the
+        // resolved config: a deployment that actually sets one of these vars --
+        // the entire point of the feature -- would otherwise fail the suite.
+        // Asserted as (env var, shipped default) pairs rather than a literal
+        // expression, so reshaping how the fallback is written does not break
+        // the guard -- editing a default still does.
+        $source = file_get_contents(base_path('config/clients/drivedesk.php'));
+        foreach ([
+            'CLIENT_SUPPORTED_LOCALES'     => "'fr,ar,en'",
+            // The whole fallback expression, not just "'fr'": that string also
+            // appears in the supported_locales literal two lines above it in
+            // the config, so the bare form passed even when the default was
+            // edited to something else -- exactly what this guard promises to
+            // catch.
+            'CLIENT_PUBLIC_DEFAULT_LOCALE' => "?: 'fr'",
+            'CLIENT_DEMO_REQUEST_TO'       => "'admin@bangicode.ma'",
+        ] as $var => $default) {
+            $this->assertStringContainsString($var, $source);
+            $this->assertStringContainsString($default, $source);
+        }
+
+        $defaults = file_get_contents(base_path('config/clients/_default.php'));
+        $this->assertStringContainsString('CLIENT_CASH_PAYMENT_MAX', $defaults);
+        $this->assertStringContainsString('5000', $defaults);
+
+        // And whatever the environment resolved them to has to be usable. A
+        // blank env var parses to an empty locale list, which makes
+        // Locales::routeConstraint() emit '(?!)' and 404 every locale-prefixed
+        // public URL; a non-numeric cash ceiling casts to 0, which either
+        // rejects all cash or explodes one payment into 500k receipts.
+        $this->assertNotEmpty(config('client.supported_locales'));
+        $this->assertNotEmpty(config('client.public_default_locale'));
+        $this->assertGreaterThan(0, config('client.cash_payment_max'));
     }
 
     /**

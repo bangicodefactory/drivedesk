@@ -67,6 +67,13 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
+                // BAN-307: one owner per deployment. Nothing enforced this, so
+                // a support login could add a second tenant inside a customer's
+                // database -- invisible to the customer, counted in their totals.
+                if (User::ownerExists()) {
+                    return redirect()->back()->with('error', __('This deployment already has an owner.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->email = $request->email;
@@ -74,6 +81,10 @@ class UserController extends Controller
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
                 $user->type = 'owner';
                 $user->lang = 'english';
+                // parentId(), not tenantKey(): an owner's parent_id is the
+                // super admin who created them, which is what makes them
+                // resolvable from users.index. Routing this through the tenant
+                // helper would point the first owner at themselves (BAN-315).
                 $user->parent_id = parentId();
                 $user->save();
                 $userRole = Role::findByName('owner');
@@ -116,7 +127,15 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userRole = Role::findById($request->role);
+                // BAN-307: Role::findById() was unscoped while create() only
+                // offers this tenant's roles, so a crafted role id set the new
+                // user's type to anything -- including 'owner'. Resolve within
+                // the tenant, exactly as the form was populated.
+                $userRole = Role::where('parent_id', parentId())->find($request->role);
+                if ($userRole === null || isReservedRoleName($userRole->name)) {
+                    return redirect()->back()->with('error', __('Permission Denied.'));
+                }
+
                 $user = new User();
                 $user->name = $request->name;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -167,7 +186,15 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        // BAN-308: this action had no can() check. The resource route carries
+        // only `auth` + `XSS`, so any authenticated user of the tenant -- a
+        // driver account included -- could read another user's name, email,
+        // type and company_name off this page.
+        if (! \Auth::user()->can('edit user')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $user = $this->findUserInTenant($id);
         $userRoles = Role::where('parent_id', '=', parentId())->whereNotIn('name', ['driver'])->get()->pluck('name', 'id');
 
         return Inertia::render('Users/Edit', [
@@ -189,6 +216,12 @@ class UserController extends Controller
     {
         if (\Auth::user()->can('edit user')) {
             if (\Auth::user()->type == 'super admin') {
+                // Deliberately unscoped, and the only lookup here that is.
+                // Whether a support login should reach across tenants is the
+                // open question; test_update_persists_changes_as_super_admin and
+                // test_update_ignores_a_password_in_the_request_as_super_admin
+                // encode today's answer. Settling it is its own change -- until
+                // then this stays as it was rather than being decided in passing.
                 $user = User::findOrFail($id);
 
                 $validator = \Validator::make(
@@ -203,7 +236,16 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userData = $request->all();
+                // BAN-307: an allowlist, not a denylist. $request->all() filled
+                // every fillable column: `type` and `parent_id` (promote a user
+                // to 'owner', or move them to another tenant) and also
+                // `password`, which User has no `hashed` cast for -- a crafted
+                // request wrote it to the column in plaintext and locked the
+                // account out. These are the fields Users/Edit.jsx actually
+                // posts, plus the profile fields the form may carry.
+                $userData = $request->only([
+                    'name', 'email', 'phone_number', 'is_active', 'company_name', 'city',
+                ]);
                 $user->fill($userData)->save();
 
                 return redirect()->route('users.index')->with('success', 'User successfully updated.');
@@ -223,8 +265,20 @@ class UserController extends Controller
                     return redirect()->back()->with('error', $messages->first());
                 }
 
-                $userRole = Role::findById($request->role);
-                $user = User::findOrFail($id);
+                // BAN-307: both lookups were unscoped, and `type` is set from
+                // the role's name below. Role::findById() reaches the seeded
+                // `owner` role (parent_id = the super admin's id, so edit()'s
+                // picker never offers it), so any holder of `edit user` could
+                // PUT role=<owner role id> and promote a user -- themselves
+                // included -- to a second owner, with that role's permissions
+                // synced on. User::findOrFail() reached rows outside the
+                // caller's tenant, matching neither index() nor edit()'s picker.
+                $userRole = Role::where('parent_id', parentId())->find($request->role);
+                if ($userRole === null || isReservedRoleName($userRole->name)) {
+                    return redirect()->back()->with('error', __('Permission Denied.'));
+                }
+
+                $user = $this->findUserInTenant($id);
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
@@ -243,7 +297,18 @@ class UserController extends Controller
     {
 
         if (\Auth::user()->can('delete user') ) {
-            $user = User::find($id);
+            $user = $this->findUserInTenant($id);
+
+            // BAN-312: the owner is reachable here -- their parent_id is the
+            // super admin's id, which is what parentId() returns for a super
+            // admin, and index() lists exactly those rows with a delete control.
+            // Deleting the last one leaves the deployment with no tenant key:
+            // every activity-log row becomes unreadable and new ones are
+            // orphaned again, which is the bug BAN-312 exists to fix.
+            if ($user->type === 'owner' && ! User::where('type', 'owner')->where('id', '!=', $user->id)->exists()) {
+                return redirect()->back()->with('error', __("The deployment's owner cannot be deleted."));
+            }
+
             $user->delete();
 
             return redirect()->route('users.index')->with('success', __('User successfully deleted.'));
@@ -255,18 +320,15 @@ class UserController extends Controller
     public function loggedHistory()
     {
         if (\Auth::user()->can('manage logged history')) {
-            $histories = LoggedHistory::where('parent_id', parentId())->get();
+            // BAN-312: the deployment is the tenant, so the customer and their
+            // staff see one log, and vendor support logins are written into it.
+            // Support cannot read it back: the seeded super-admin role holds
+            // neither `manage logged history` nor `delete logged history`, so
+            // this action and loggedHistoryDestroy() both deny them. That is the
+            // only thing stopping support erasing its own footprint -- think
+            // before granting either permission to that role.
+            $histories = LoggedHistory::where('parent_id', activityLogParentId())->get();
             return view('logged_history.index', compact('histories'));
-        } else {
-            return redirect()->back()->with('error', __('Permission Denied.'));
-        }
-    }
-
-    public function loggedHistoryShow($id)
-    {
-        if (\Auth::user()->can('manage logged history')) {
-            $histories = LoggedHistory::find($id);
-            return view('logged_history.show', compact('histories'));
         } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
@@ -275,7 +337,7 @@ class UserController extends Controller
     public function loggedHistoryDestroy($id)
     {
         if (\Auth::user()->can('delete logged history')) {
-            $histories = LoggedHistory::find($id);
+            $histories = $this->findHistoryInTenant($id);
             $histories->delete();
             return redirect()->back()->with('success', 'Logged history succefully deleted.');
         } else {
@@ -283,5 +345,61 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Resolve a user id within the caller's tenant (BAN-308).
+     *
+     * index() has always scoped its list to `parent_id = parentId()`, but every
+     * lookup taking an id off the URL resolved against the whole table -- so
+     * `delete user` deleted any user in the database, the deployment's owner
+     * included, and edit() rendered another tenant's name, email and type.
+     *
+     * User carries no global scope (see BelongsToTenant: applying one to the
+     * auth provider model recurses without bound), so the boundary has to be
+     * drawn at each call site. 404 rather than a redirect: it is the same answer
+     * for an id that does not exist and one that belongs to someone else, so it
+     * says nothing about which.
+     *
+     * No super-admin exemption. An earlier pass gave the helper one, mirroring
+     * BelongsToTenant, and justified it with two update() tests -- but the
+     * helper also serves destroy(), so it left this PR's headline bug open for
+     * exactly the role that can do the most damage. Scoping them settles
+     * nothing new: index() offers a super admin only the owners they created
+     * (parent_id = parentId()), which this still resolves, so support keeps
+     * what it reaches through the UI and loses only what it could reach by
+     * crafting a URL. The one lookup that stays unscoped is update()'s
+     * super-admin branch, marked there.
+     *
+     * Note that an owner's own row is not in their own tenant: it carries the
+     * super admin's id as parent_id while parentId() returns the owner's own
+     * id. So an owner cannot edit or delete themselves here. index() never
+     * listed that row and nothing links to it -- account changes go through
+     * SettingController -- but it is a change from find()/findOrFail().
+     */
+    private function findUserInTenant($id): User
+    {
+        $user = User::where('parent_id', parentId())->find($id);
 
+        abort_if($user === null, 404);
+
+        return $user;
+    }
+
+    /**
+     * The same boundary for an activity-log row, matching loggedHistory()'s
+     * list. The log records who touched a deployment, and the delete removed
+     * someone else's evidence.
+     *
+     * activityLogParentId() rather than parentId(), for the reason given there:
+     * the deployment is the tenant, so a support login's row belongs to the
+     * customer who should be able to see it (BAN-312). No super-admin exemption
+     * -- with one key for the whole deployment there is nothing to exempt.
+     */
+    private function findHistoryInTenant($id): LoggedHistory
+    {
+        $history = LoggedHistory::where('parent_id', activityLogParentId())->find($id);
+
+        abort_if($history === null, 404);
+
+        return $history;
+    }
 }

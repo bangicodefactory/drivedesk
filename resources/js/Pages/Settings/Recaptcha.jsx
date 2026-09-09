@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 const schema = z.object({
     google_recaptcha: z.string().optional(),
@@ -50,13 +52,13 @@ function Recaptcha({ settings }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <Label htmlFor="recaptcha_key">{t('Recaptcha Key')}</Label>
-                                <Input id="recaptcha_key" autoComplete="off" {...register('recaptcha_key')} />
-                                {errors.recaptcha_key && <p className="text-sm text-destructive">{errors.recaptcha_key.message}</p>}
+                                <Input id="recaptcha_key" autoComplete="off" {...register('recaptcha_key')} {...fieldA11y(errors, 'recaptcha_key')} />
+                                <FieldError name="recaptcha_key" errors={errors} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="recaptcha_secret">{t('Recaptcha Secret')}</Label>
-                                <Input id="recaptcha_secret" autoComplete="off" {...register('recaptcha_secret')} />
-                                {errors.recaptcha_secret && <p className="text-sm text-destructive">{errors.recaptcha_secret.message}</p>}
+                                <Input id="recaptcha_secret" autoComplete="off" {...register('recaptcha_secret')} {...fieldA11y(errors, 'recaptcha_secret')} />
+                                <FieldError name="recaptcha_secret" errors={errors} />
                             </div>
                         </div>
 

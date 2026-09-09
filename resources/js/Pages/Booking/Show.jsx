@@ -106,7 +106,7 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
-                    <CreditCard className="mr-2 h-4 w-4" /> {t('Payment')}
+                    <CreditCard className="me-2 h-4 w-4" /> {t('Payment')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -154,7 +154,7 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
                                         <TableHead>{t('Receipt')}</TableHead>
                                         <TableHead>{t('Date')}</TableHead>
                                         <TableHead>{t('Quantity (Days)')}</TableHead>
-                                        <TableHead className="text-right">{t('Amount')}</TableHead>
+                                        <TableHead className="text-end">{t('Amount')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -163,7 +163,7 @@ function PaymentDialog({ bookingId, dueAmount, defaultQuantity, paymentMethods }
                                             <TableCell>{i + 1}</TableCell>
                                             <TableCell>{r.date}</TableCell>
                                             <TableCell>{r.days}</TableCell>
-                                            <TableCell className="text-right">{r.amount}</TableCell>
+                                            <TableCell className="text-end">{r.amount}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -212,12 +212,12 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                 {can('edit booking') && (
                     <Button size="sm" asChild>
                         <Link href={route('booking.edit', booking.encrypted_id)}>
-                            <Pencil className="mr-2 h-4 w-4" /> {t('Edit')}
+                            <Pencil className="me-2 h-4 w-4" /> {t('Edit')}
                         </Link>
                     </Button>
                 )}
                 <Button size="sm" variant="outline" onClick={print}>
-                    <Printer className="mr-2 h-4 w-4" /> {t('Print')}
+                    <Printer className="me-2 h-4 w-4" /> {t('Print')}
                 </Button>
             </div>
 
@@ -240,7 +240,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                 <li>{settings?.company_email}</li>
                             </ul>
                         </div>
-                        <ul className="space-y-1 text-sm text-right">
+                        <ul className="space-y-1 text-sm text-end">
                             <li>IF: {settings?.if}</li>
                             <li>RC: {settings?.rc}</li>
                             <li>Patente: {settings?.patente}</li>
@@ -314,24 +314,24 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                     </Table>
 
                     {/* Totals */}
-                    <div className="ml-auto w-full max-w-xs">
+                    <div className="ms-auto w-full max-w-xs">
                         <Table>
                             <TableBody>
                                 <TableRow>
                                     <TableCell>{t('Total Amount (HT)')}</TableCell>
-                                    <TableCell className="text-right">{booking.total_ht} Dh</TableCell>
+                                    <TableCell className="text-end">{booking.total_ht} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell>{t('TVA (20%)')}</TableCell>
-                                    <TableCell className="text-right">{booking.tva_amount} Dh</TableCell>
+                                    <TableCell className="text-end">{booking.tva_amount} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell>{t('Rest')}</TableCell>
-                                    <TableCell className="text-right">{Number(booking.due_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Dh</TableCell>
+                                    <TableCell className="text-end">{Number(booking.due_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Dh</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="font-semibold">{t('Due Amount (TTC)')}</TableCell>
-                                    <TableCell className="text-right font-semibold">{booking.total_amount} Dh</TableCell>
+                                    <TableCell className="text-end font-semibold">{booking.total_amount} Dh</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
@@ -353,7 +353,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                 <TableHead>{t('Notes')}</TableHead>
                                 <TableHead>{t('Amount')}</TableHead>
                                 {can('delete booking payment') && (
-                                    <TableHead className="text-right">{t('Action')}</TableHead>
+                                    <TableHead className="text-end">{t('Action')}</TableHead>
                                 )}
                             </TableRow>
                         </TableHeader>
@@ -372,7 +372,7 @@ function BookingShow({ booking, settings, paymentMethods, defaultQuantity }) {
                                     <TableCell>{p.notes}</TableCell>
                                     <TableCell>{p.amount} Dh</TableCell>
                                     {can('delete booking payment') && (
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-end">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

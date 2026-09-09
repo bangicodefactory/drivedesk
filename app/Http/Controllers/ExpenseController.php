@@ -20,7 +20,7 @@ class ExpenseController extends Controller
         $search = trim((string) $request->get('search', ''));
 
         $expenses = Expense::with(['vehicles', 'types'])
-            ->where('parent_id', '=', parentId())
+            ->where('parent_id', '=', tenantKey())
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($w) use ($search) {
                     $w->where('title', 'like', "%{$search}%")
@@ -41,10 +41,10 @@ class ExpenseController extends Controller
 
     public function create()
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+        $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
         $vehicles->prepend(__('Select Vehicle'), '');
 
-        $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
+        $types = ExpenseType::where('parent_id', tenantKey())->get()->pluck('title', 'id');
         $types->prepend(__('Select Type'), '');
 
         return Inertia::render('Expense/Create', compact('vehicles', 'types'));
@@ -74,7 +74,7 @@ class ExpenseController extends Controller
             $expense->date = $request->date;
             $expense->amount = $request->amount;
             $expense->notes = $request->notes;
-            $expense->parent_id = parentId();
+            $expense->parent_id = tenantKey();
 
             if (!empty($request->receipt)) {
 
@@ -109,10 +109,10 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        $vehicles = Vehicle::where('parent_id', parentId())->get()->pluck('name', 'id');
+        $vehicles = Vehicle::where('parent_id', tenantKey())->get()->pluck('name', 'id');
         $vehicles->prepend(__('Select Vehicle'), '');
 
-        $types = ExpenseType::where('parent_id', parentId())->get()->pluck('title', 'id');
+        $types = ExpenseType::where('parent_id', tenantKey())->get()->pluck('title', 'id');
         $types->prepend(__('Select Type'), '');
 
         return Inertia::render('Expense/Edit', compact('vehicles', 'expense', 'types'));

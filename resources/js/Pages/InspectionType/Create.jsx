@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 // Port of resources/views/inspection_type/create.blade.php.
 // Field name matches the Blade form 1:1 (type). Posts to
@@ -35,8 +37,8 @@ function InspectionTypeCreate() {
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="type">{t('Type')}</Label>
-                                <Input id="type" placeholder={t('Enter type')} {...register('type')} />
-                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                                <Input id="type" placeholder={t('Enter type')} {...register('type')} {...fieldA11y(errors, 'type')} />
+                                <FieldError name="type" errors={errors} />
                             </div>
                         </div>
 

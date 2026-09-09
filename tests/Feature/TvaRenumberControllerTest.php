@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Tva;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -14,15 +15,76 @@ class TvaRenumberControllerTest extends TestCase
     use WithClient;
 
     protected User $owner;
+    protected User $outsider;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->asClient('acme');
 
-        // TvaRenumberController has no can() permission check — any authenticated
-        // user may call all three routes. Tests below document that behavior.
+        // BAN-304: this block used to read "TvaRenumberController has no can()
+        // permission check — any authenticated user may call all three routes.
+        // Tests below document that behavior." It was an accurate description of
+        // a hole, written as though it were the specification. apply() rewrites
+        // facture numbers on legally numbered documents; previewJson() returns
+        // every number and date for a year. Both are now gated on `manage tva`,
+        // and the denial cases are covered below.
+        Permission::firstOrCreate(['name' => 'manage tva', 'guard_name' => 'web']);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // The flag is forced rather than inherited from the acme fixture:
+        // asClient() picks a realistic tenant and must not supply the flag under
+        // test (CLAUDE.md 10.2.6).
+        config(['client.features.tva_renumber' => true]);
+
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->owner->givePermissionTo('manage tva');
+
+        // Authenticated, same tenant, no TVA permission — the case the old
+        // comment declared allowed.
+        $this->outsider = User::factory()->create(['type' => 'user', 'parent_id' => $this->owner->id]);
+    }
+
+    // ── authorization (BAN-304) ───────────────────────────────────────────────
+
+    public function test_index_is_denied_without_manage_tva(): void
+    {
+        $this->actingAs($this->outsider)
+            ->get(route('tva.renumber.index'))
+            ->assertRedirect();
+    }
+
+    public function test_preview_is_denied_without_manage_tva(): void
+    {
+        $this->actingAs($this->outsider)
+            ->getJson(route('tva.renumber.preview', ['year' => 2025]))
+            ->assertForbidden();
+    }
+
+    public function test_apply_is_denied_without_manage_tva_and_changes_nothing(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create([
+            'parent_id'      => $this->owner->id,
+            'facture_date'   => '2025-04-01',
+            'facture_number' => 'ORIGINAL-9',
+        ]);
+
+        $this->actingAs($this->outsider)
+            ->post(route('tva.renumber.apply'), ['year' => 2025])
+            ->assertRedirect();
+
+        $this->assertSame('ORIGINAL-9', $tva->fresh()->facture_number);
+    }
+
+    // ── feature flag (BAN-304) ────────────────────────────────────────────────
+
+    public function test_the_routes_404_when_tva_renumber_is_off(): void
+    {
+        config(['client.features.tva_renumber' => false]);
+
+        $this->actingAs($this->owner)->get(route('tva.renumber.index'))->assertNotFound();
+        $this->actingAs($this->owner)->getJson(route('tva.renumber.preview', ['year' => 2025]))->assertNotFound();
+        $this->actingAs($this->owner)->post(route('tva.renumber.apply'), ['year' => 2025])->assertNotFound();
     }
 
     // ── unauthenticated ───────────────────────────────────────────────────────
@@ -53,7 +115,7 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_index_accepts_year_query_param(): void
     {
-        Tva::factory()->withInvoice()->create(['facture_date' => '2024-06-01', 'facture_number' => '1']);
+        Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2024-06-01', 'facture_number' => '1']);
 
         $this->actingAs($this->owner)
             ->get(route('tva.renumber.index', ['year' => 2024]))
@@ -64,7 +126,7 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_preview_returns_json_with_correct_structure(): void
     {
-        Tva::factory()->withInvoice()->create(['facture_date' => '2025-03-01', 'facture_number' => '5']);
+        Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-03-01', 'facture_number' => '5']);
 
         $this->actingAs($this->owner)
             ->getJson(route('tva.renumber.preview', ['year' => 2025]))
@@ -101,8 +163,8 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_apply_renumbers_invoices_and_redirects_with_success(): void
     {
-        Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-15', 'facture_number' => '10']);
-        Tva::factory()->withInvoice()->create(['facture_date' => '2025-07-20', 'facture_number' => '50']);
+        Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-01-15', 'facture_number' => '10']);
+        Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-07-20', 'facture_number' => '50']);
 
         $this->actingAs($this->owner)
             ->post(route('tva.renumber.apply'), ['year' => 2025])
@@ -112,8 +174,8 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_apply_persists_sequential_numbers(): void
     {
-        $t1 = Tva::factory()->withInvoice()->create(['facture_date' => '2025-02-01', 'facture_number' => '100']);
-        $t2 = Tva::factory()->withInvoice()->create(['facture_date' => '2025-09-01', 'facture_number' => '200']);
+        $t1 = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-02-01', 'facture_number' => '100']);
+        $t2 = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-09-01', 'facture_number' => '200']);
 
         $this->actingAs($this->owner)
             ->post(route('tva.renumber.apply'), ['year' => 2025]);
@@ -124,7 +186,7 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_apply_is_idempotent(): void
     {
-        $t1 = Tva::factory()->withInvoice()->create(['facture_date' => '2025-04-01', 'facture_number' => 'X']);
+        $t1 = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-04-01', 'facture_number' => 'X']);
 
         $this->actingAs($this->owner)
             ->post(route('tva.renumber.apply'), ['year' => 2025]);
@@ -138,11 +200,11 @@ class TvaRenumberControllerTest extends TestCase
 
     public function test_apply_does_not_touch_other_years(): void
     {
-        $other = Tva::factory()->withInvoice()->create([
+        $other = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 
             'facture_date'   => '2024-12-31',
             'facture_number' => 'UNTOUCHED',
         ]);
-        Tva::factory()->withInvoice()->create(['facture_date' => '2025-01-01', 'facture_number' => 'X']);
+        Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id, 'facture_date' => '2025-01-01', 'facture_number' => 'X']);
 
         $this->actingAs($this->owner)
             ->post(route('tva.renumber.apply'), ['year' => 2025]);

@@ -21,8 +21,14 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `branding.logoUrl` | `string` | Logo filename from the `Setting` model |
 | `branding.faviconUrl` | `string` | Favicon filename from the `Setting` model |
 | `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
-| `branding.layoutMode` | `'lightmode' \| 'darkmode'` | Drives `ThemeProvider` initial theme |
+| `branding.layoutMode` | `'lightmode' \| 'darkmode' \| 'systemmode'` | Drives `ThemeProvider` initial theme via `resolveTheme()` in `resources/js/lib/theme.js`; `systemmode` follows `prefers-color-scheme` |
 | `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
+| `contact.phone` | `string \| null` | Business phone, from `Setting.company_phone` |
+| `contact.whatsapp` | `string \| null` | WhatsApp number, digits only (e.g. `'212500000000'`) — build `wa.me/{whatsapp}` links with it |
+| `contact.email` | `string \| null` | Business email, from `Setting.company_email` |
+| `contact.address` | `string \| null` | Business address, from `Setting.company_address` |
+| `contact.hoursWeekday` / `hoursSaturday` / `hoursSunday` | `string \| null` | Opening hours copy |
+| `contact.facebookUrl` / `instagramUrl` | `string \| null` | Social links |
 | `client.name` | `string` | Active `APP_CLIENT` value (e.g. `'drivedesk'`) |
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
 | `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
@@ -41,7 +47,6 @@ overrides live in `config/clients/<client>.php`.
 |------|---------|-------------|
 | `paypal` | `true` | PayPal checkout |
 | `stripe` | `true` | Stripe checkout |
-| `subscriptions` | `true` | Subscription billing |
 | `booking_payment` | `true` | Payment step in booking flow |
 | `excel_import` | `true` | Excel bulk-import |
 | `multi_branch` | `false` | Multi-branch fleet management |
@@ -193,7 +198,8 @@ Two persistent layouts are available under `resources/js/Layouts/`:
 | Layout | File | Use for |
 |--------|------|---------|
 | `AdminLayout` | `AdminLayout.jsx` | All ported admin/dashboard pages |
-| `PublicLayout` | `PublicLayout.jsx` | Landing, login, register, guest pages |
+| `PublicLayout` | `PublicLayout.jsx` | Auth pages (login, register, forgot/reset password, verify email) |
+| `StorefrontLayout` | `StorefrontLayout.jsx` | The public B2C rental storefront (Home, Fleet, Booking, Contact, Services, About, Travel Guide) — nav, footer, WhatsApp float, language switcher |
 
 ### How to assign a layout (Inertia persistent layout pattern)
 

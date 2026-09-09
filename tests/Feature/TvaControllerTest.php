@@ -16,6 +16,7 @@ class TvaControllerTest extends TestCase
     use WithClient;
 
     protected User $owner;
+    protected User $outsider;
 
     protected function setUp(): void
     {
@@ -31,7 +32,81 @@ class TvaControllerTest extends TestCase
         $this->owner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $this->owner->givePermissionTo($perms);
 
+        // BAN-304: authenticated, same tenant, no TVA permission. edit/update/
+        // show/destroy/create had no can() check, so this user could read and
+        // delete the tenant's invoices by URL. The global scope stopped them
+        // reaching another tenant's rows, which is what made the gap easy to
+        // miss: the isolation test passed while the authorization one did not
+        // exist.
+        $this->outsider = User::factory()->create(['type' => 'user', 'parent_id' => $this->owner->id]);
+
         $this->seedCompanySettings($this->owner->id);
+    }
+
+    // ── authorization (BAN-304) ───────────────────────────────────────────────
+
+    public function test_create_is_denied_without_manage_tva(): void
+    {
+        $this->actingAs($this->outsider)->get(route('tva.create'))->assertRedirect();
+    }
+
+    public function test_edit_is_denied_without_manage_tva(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)->get(route('tva.edit', $tva))->assertRedirect();
+    }
+
+    public function test_show_is_denied_without_manage_tva(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)->get(route('tva.show', $tva))->assertRedirect();
+    }
+
+    public function test_update_is_denied_without_manage_tva_and_changes_nothing(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create([
+            'parent_id'      => $this->owner->id,
+            'facture_number' => 'ORIGINAL-1',
+        ]);
+
+        $this->actingAs($this->outsider)
+            ->put(route('tva.update', $tva), [
+                'facture_date'   => '2025-05-01',
+                'montant_ttc'    => 999,
+                'unit_price_ht'  => 999,
+                'tva'            => 20,
+                'facture_number' => 'HIJACKED',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('ORIGINAL-1', $tva->fresh()->facture_number);
+    }
+
+    /**
+     * The denial has to land before validation, or an empty body would return
+     * 422 and tell an unauthorized caller what the rules are.
+     */
+    public function test_update_denies_before_it_validates(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)
+            ->put(route('tva.update', $tva), [])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_destroy_is_denied_without_manage_tva_and_deletes_nothing(): void
+    {
+        $tva = Tva::factory()->withInvoice()->create(['parent_id' => $this->owner->id]);
+
+        $this->actingAs($this->outsider)
+            ->delete(route('tva.destroy', $tva))
+            ->assertRedirect();
+
+        $this->assertNotSoftDeleted('tvas', ['id' => $tva->id]);
     }
 
     /**
@@ -313,7 +388,7 @@ class TvaControllerTest extends TestCase
     // NOTE: update has no permission check and no tenant scoping — any authenticated
     // user can mutate any TVA record regardless of parent_id. These tests document
     // that gap so a future fix can close it.
-    public function test_update_succeeds_cross_tenant_documents_missing_scope(): void
+    public function test_update_refuses_another_tenants_tva(): void
     {
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $tva = Tva::factory()->withInvoice()->create(['parent_id' => $otherOwner->id]);
@@ -326,10 +401,13 @@ class TvaControllerTest extends TestCase
                 'tva'            => 83.33,
                 'facture_number' => 'CROSS',
             ])
-            ->assertRedirect(route('tva.index'));
+            ->assertStatus(404);
 
-        // Succeeds — no scoping guard exists yet
-        $this->assertDatabaseHas('tvas', ['id' => $tva->id, 'facture_number' => 'CROSS']);
+        // BAN-298: this test previously asserted the opposite — that the update
+        // succeeded — with the comment 'no scoping guard exists yet'. Tva is
+        // tenant-scoped now, so route-model binding refuses to resolve another
+        // tenant's invoice and the row is untouched.
+        $this->assertDatabaseMissing('tvas', ['id' => $tva->id, 'facture_number' => 'CROSS']);
     }
 
     // ── TvaController::destroy ────────────────────────────────────────────────
@@ -353,18 +431,21 @@ class TvaControllerTest extends TestCase
             ->assertNotFound();
     }
 
-    // NOTE: destroy has no permission check and no tenant scoping — documents the gap.
-    public function test_destroy_succeeds_cross_tenant_documents_missing_scope(): void
+    // NOTE: destroy still has no permission check — that gap is separate and
+    // remains open. The tenant gap it also documented is closed (BAN-298).
+    public function test_destroy_refuses_another_tenants_tva(): void
     {
         $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
         $tva = Tva::factory()->withInvoice()->create(['parent_id' => $otherOwner->id]);
 
         $this->actingAs($this->owner)
             ->delete(route('tva.destroy', $tva))
-            ->assertRedirect();
+            ->assertStatus(404);
 
-        // Succeeds — no scoping guard exists yet
-        $this->assertSoftDeleted('tvas', ['id' => $tva->id]);
+        // BAN-298: previously asserted the delete succeeded, commenting 'no
+        // scoping guard exists yet'. Tva is tenant-scoped now, so binding refuses
+        // to resolve another tenant's invoice and the row survives.
+        $this->assertNotSoftDeleted('tvas', ['id' => $tva->id]);
     }
 
     // ── TvaController::report ─────────────────────────────────────────────────
@@ -392,11 +473,15 @@ class TvaControllerTest extends TestCase
     // NOTE: bulkDownload is registered OUTSIDE the auth middleware group.
     // Unauthenticated requests are NOT redirected to login — this is a security gap.
 
-    public function test_bulk_download_is_publicly_accessible_documents_missing_auth(): void
+    public function test_bulk_download_requires_authentication(): void
     {
-        // No actingAs — unauthenticated request should hit validation, not login redirect
+        // BAN-295: this test previously asserted the opposite — that an
+        // unauthenticated POST reached validation — pinning the fact that the
+        // route sat outside every Route::group and carried no auth middleware.
+        // Combined with the missing tenant constraint in bulkDownload(), that
+        // let any caller with a CSRF token fetch a zip of any tenant's factures.
         $this->post(route('tva.bulk.download'), [])
-            ->assertSessionHasErrors(['invoice_ids']);
+            ->assertRedirect(route('login'));
     }
 
     public function test_bulk_download_rejects_missing_invoice_ids(): void
@@ -547,11 +632,13 @@ class TvaControllerTest extends TestCase
     // NOTE: tva.generate is registered OUTSIDE the auth middleware group.
     // Unauthenticated requests hit validation, not a login redirect.
 
-    public function test_generate_monthly_tva_validates_when_unauthenticated(): void
+    public function test_generate_monthly_tva_requires_authentication(): void
     {
-        // Outside auth middleware — no login redirect, just validation
+        // BAN-295: as above. This endpoint is destructive — it soft-deletes every
+        // business's factures for the month before regenerating them — and it was
+        // reachable without logging in.
         $this->post(route('tva.generate'), [])
-            ->assertSessionHasErrors(['month']);
+            ->assertRedirect(route('login'));
     }
 
     public function test_generate_monthly_tva_validates_month_format(): void
@@ -860,6 +947,111 @@ class TvaControllerTest extends TestCase
         // Still numbered 1 and 2 — not 3 and 4.
         $active = Tva::whereNull('deleted_at')->where('parent_id', $this->owner->id)->pluck('facture_number')->sort()->values()->all();
         $this->assertEquals(['1', '2'], $active);
+    }
+
+    /**
+     * BAN-292: generation deletes every business's factures for the month and
+     * regenerates them from all payments in that month. When the Booking model
+     * gained a tenant scope (BAN-288), a plain owner running generation resolved
+     * null for every *other* business's booking and skipped it — so those
+     * invoices were deleted and never recreated. The neighbouring regression
+     * test does not catch this because it generates as a super admin, who
+     * bypasses the scope.
+     */
+    /**
+     * BAN-299: the same loss as BAN-292, but reachable only with
+     * invoice_on_full_payment on. getTotalDueAmount() walks Booking::payments(),
+     * which BookingPayment's tenant scope (BAN-298) emptied for another
+     * business's booking — so it looked unpaid, the loop skipped it, and step 1
+     * had already deleted its factures.
+     *
+     * The flag is forced here rather than inherited: drivedesk runs it on and
+     * the acme test fixture has it off, which is precisely why the neighbouring
+     * test could not catch this (CLAUDE.md 10.2.6).
+     */
+    public function test_generate_regenerates_other_businesses_invoices_when_invoicing_on_full_payment(): void
+    {
+        config(['client.features.invoice_on_full_payment' => true]);
+
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->seedCompanySettings($otherOwner->id);
+
+        // Fully paid, so the flag's own rule is satisfied and the only thing that
+        // can skip it is the scope bug.
+        $otherBooking = \App\Models\Booking::factory()->create([
+            'parent_id' => $otherOwner->id,
+            'amount'    => 120.00,
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $otherBooking->id,
+            'parent_id'  => $otherOwner->id,
+            'date'       => '2024-01-15',
+            'amount'     => 120.00,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('tva.generate'), ['month' => '2024-01'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tvas', [
+            'parent_id'  => $otherOwner->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_generate_regenerates_other_businesses_invoices_too(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $this->seedCompanySettings($otherOwner->id);
+
+        // A real driver + profile for the other business, so the regenerated
+        // facture's client address can be asserted (BAN-293).
+        $otherDriverUser = User::factory()->create([
+            'type'      => 'driver',
+            'parent_id' => $otherOwner->id,
+        ]);
+        \App\Models\Driver::factory()->create([
+            // driver_id must be overridden: DriverFactory defaults it to a
+            // 'DR-####' string while the column is an integer, so the factory
+            // cannot be used unmodified.
+            'driver_id' => 1,
+            'user_id'   => $otherDriverUser->id,
+            'parent_id' => $otherOwner->id,
+            'address'   => '12 Rue Autre, Casablanca',
+        ]);
+
+        $otherBooking = \App\Models\Booking::factory()->create([
+            'parent_id' => $otherOwner->id,
+            'driver'    => $otherDriverUser->id,
+        ]);
+        \App\Models\BookingPayment::factory()->create([
+            'booking_id' => $otherBooking->id,
+            'parent_id'  => $otherOwner->id,
+            'date'       => '2024-01-15',
+            'amount'     => 120.00,
+        ]);
+
+        $this->bookingPaymentOn('2024-01-10');   // the acting owner's own
+
+        // Generate twice as a plain owner: the second run exercises the
+        // delete-then-regenerate path against rows that already exist.
+        foreach ([1, 2] as $_) {
+            $this->actingAs($this->owner)
+                ->post(route('tva.generate'), ['month' => '2024-01'])
+                ->assertRedirect()->assertSessionHas('success');
+        }
+
+        // Both businesses still have a live facture for the month.
+        $this->assertDatabaseHas('tvas', ['parent_id' => $this->owner->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('tvas', ['parent_id' => $otherOwner->id, 'deleted_at' => null]);
+
+        // BAN-293: the driver profile is fetched inside the same cross-tenant
+        // loop. Once Driver gained the tenant scope it resolved null for the
+        // other business and the address silently fell back to ''.
+        $this->assertDatabaseHas('tvas', [
+            'parent_id'      => $otherOwner->id,
+            'client_address' => '12 Rue Autre, Casablanca',
+        ]);
     }
 
     public function test_generate_numbers_by_booking_parent_not_generating_user(): void

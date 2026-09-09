@@ -41,18 +41,18 @@ function UsersIndex({ users }) {
                 same row, kept on the right. */}
             <div className="flex items-center justify-between gap-2">
                 <div className="relative w-full max-w-xs">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="pointer-events-none absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('Search users…')}
-                            className="pl-8"
+                            className="ps-8"
                         />
                     </div>
                 {canCreate && (
                     <Button asChild>
                         <Link href={route('users.create')}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('New user')}
+                            <Plus className="me-2 h-4 w-4" /> {t('New user')}
                         </Link>
                     </Button>
                 )}
@@ -67,7 +67,7 @@ function UsersIndex({ users }) {
                                 <TableHead>{t('Type')}</TableHead>
                                 <TableHead>{t('Company')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
-                                <TableHead className="text-right">{t('Actions')}</TableHead>
+                                <TableHead className="text-end">{t('Actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -91,7 +91,7 @@ function UsersIndex({ users }) {
                                             {u.is_active ? t('Active') : t('Inactive')}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right space-x-1">
+                                    <TableCell className="text-end space-x-1 rtl:space-x-reverse">
                                         {canEdit && (
                                             <Button variant="ghost" size="icon" asChild>
                                                 <Link href={route('users.edit', u.id)} aria-label={t('Edit')}>

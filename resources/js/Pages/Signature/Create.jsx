@@ -8,6 +8,8 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { PenLine, Eraser, Save } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import FieldError from '@/components/FieldError';
+import { fieldA11y } from '@/lib/fieldA11y';
 
 function SignatureCreate({ drivers }) {
     const t = useTranslation();
@@ -87,10 +89,9 @@ function SignatureCreate({ drivers }) {
                                 placeholder={t('Select a driver/client')}
                                 searchPlaceholder={t('Search driver…')}
                                 ariaLabel={t('Select Client')}
+                                {...fieldA11y(serverErrors, 'user_id')}
                             />
-                            {serverErrors?.user_id && (
-                                <p className="text-sm text-destructive">{serverErrors.user_id}</p>
-                            )}
+                            <FieldError name="user_id" errors={serverErrors} />
                         </div>
 
                         <div className="space-y-2">
@@ -105,21 +106,20 @@ function SignatureCreate({ drivers }) {
                                     backgroundColor="white"
                                     canvasProps={{
                                         className: 'block w-full h-72 sm:h-96 cursor-crosshair',
+                                        ...fieldA11y(serverErrors, 'signature'),
                                     }}
                                     onEnd={handleEnd}
                                 />
                             </div>
-                            {serverErrors?.signature && (
-                                <p className="text-sm text-destructive">{serverErrors.signature}</p>
-                            )}
+                            <FieldError name="signature" errors={serverErrors} />
                         </div>
 
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" onClick={clear}>
-                                <Eraser className="mr-2 h-4 w-4" /> {t('Clear')}
+                                <Eraser className="me-2 h-4 w-4" /> {t('Clear')}
                             </Button>
                             <Button type="submit" disabled={submitting || isEmpty || !userId}>
-                                <Save className="mr-2 h-4 w-4" /> {t('Save Signature')}
+                                <Save className="me-2 h-4 w-4" /> {t('Save Signature')}
                             </Button>
                         </div>
                     </form>

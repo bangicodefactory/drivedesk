@@ -254,7 +254,8 @@ class NotificationControllerTest extends TestCase
         ], $overrides);
     }
 
-    // NotificationFactory includes enabled_sms which is not in the DB table.
+    // Builds the row explicitly so the module is pinned per test.
+    // (NotificationFactory used to set enabled_sms, not a column; fixed in BAN-297.)
     private function makeNotification(string $module): Notification
     {
         return Notification::create([

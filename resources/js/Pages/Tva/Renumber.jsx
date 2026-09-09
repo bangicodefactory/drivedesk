@@ -98,7 +98,7 @@ function TvaRenumber({ preview: initialPreview, selectedYear: initialYear, years
                             disabled={count === 0 || loading}
                             onClick={openDialog}
                         >
-                            <RefreshCw className="mr-2 h-4 w-4" /> {t('Apply Renumbering')}
+                            <RefreshCw className="me-2 h-4 w-4" /> {t('Apply Renumbering')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -179,7 +179,7 @@ function TvaRenumber({ preview: initialPreview, selectedYear: initialYear, years
                             <strong>{year}</strong>.
                         </p>
                         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-                            <AlertTriangle className="inline h-4 w-4 mr-1" />
+                            <AlertTriangle className="inline h-4 w-4 me-1" />
                             {t('This will overwrite existing facture numbers and')} <strong>{t('cannot be undone')}</strong>.
                         </div>
                         <div className="space-y-1">

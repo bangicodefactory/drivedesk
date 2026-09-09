@@ -44,7 +44,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
 
             <div className="flex justify-end print:hidden">
                 <Button size="sm" variant="outline" onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" /> {t('Print')}
+                    <Printer className="me-2 h-4 w-4" /> {t('Print')}
                 </Button>
             </div>
 
@@ -69,7 +69,7 @@ function RentalAgreementShow({ agreement, settings, terms }) {
                                 <li>{settings?.company_email}</li>
                             </ul>
                         </div>
-                        <ul className="space-y-1 text-sm text-right">
+                        <ul className="space-y-1 text-sm text-end">
                             <li>IF: {settings?.if}</li>
                             <li>RC: {settings?.rc}</li>
                             <li>Patente: {settings?.patente}</li>

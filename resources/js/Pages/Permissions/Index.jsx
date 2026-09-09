@@ -31,7 +31,7 @@ function PermissionsIndex({ permissions }) {
                             <TableRow>
                                 <TableHead>{t('Name')}</TableHead>
                                 <TableHead>{t('Guard')}</TableHead>
-                                <TableHead className="text-right">{t('Actions')}</TableHead>
+                                <TableHead className="text-end">{t('Actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -46,7 +46,7 @@ function PermissionsIndex({ permissions }) {
                                 <TableRow key={p.id}>
                                     <TableCell className="font-medium">{p.name}</TableCell>
                                     <TableCell><Badge variant="outline">{p.guard_name}</Badge></TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-end">
                                         {canDelete && (
                                             <Button
                                                 variant="ghost"

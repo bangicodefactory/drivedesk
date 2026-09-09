@@ -80,7 +80,7 @@ function TrafficViolationShow({
                     {can('edit traffic violation') && (
                         <Button size="sm" variant="outline" asChild>
                             <Link href={route('traffic-violation.edit', violation.id)}>
-                                <Pencil className="mr-2 h-4 w-4" /> {t('Edit')}
+                                <Pencil className="me-2 h-4 w-4" /> {t('Edit')}
                             </Link>
                         </Button>
                     )}
@@ -158,20 +158,20 @@ function TrafficViolationShow({
                         )}
 
                         {canEdit && (
-                            <div className="ml-auto flex flex-wrap gap-2">
+                            <div className="ms-auto flex flex-wrap gap-2">
                                 <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => post('traffic-violation.rematch')}
                                 >
-                                    <RefreshCw className="mr-2 h-4 w-4" /> {t('Re-run match')}
+                                    <RefreshCw className="me-2 h-4 w-4" /> {t('Re-run match')}
                                 </Button>
                                 {violation.booking_id && !violation.confirmed_at && (
                                     <Button
                                         size="sm"
                                         onClick={() => post('traffic-violation.assign', { booking_id: violation.booking_id })}
                                     >
-                                        <Check className="mr-2 h-4 w-4" /> {t('Confirm this renter')}
+                                        <Check className="me-2 h-4 w-4" /> {t('Confirm this renter')}
                                     </Button>
                                 )}
                                 {violation.booking_id && (
@@ -180,7 +180,7 @@ function TrafficViolationShow({
                                         variant="ghost"
                                         onClick={() => post('traffic-violation.assign', { booking_id: null })}
                                     >
-                                        <Link2Off className="mr-2 h-4 w-4" /> {t('Unlink')}
+                                        <Link2Off className="me-2 h-4 w-4" /> {t('Unlink')}
                                     </Button>
                                 )}
                             </div>
@@ -239,7 +239,7 @@ function TrafficViolationShow({
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="font-medium">
                                         {candidate.driver_name ?? t('Unknown renter')}
-                                        <span className="ml-2 text-sm text-muted-foreground">
+                                        <span className="ms-2 text-sm text-muted-foreground">
                                             #{candidate.booking_number ?? candidate.booking_id}
                                         </span>
                                     </div>

@@ -208,6 +208,30 @@ class PlaceControllerTest extends TestCase
             ->assertOk();
     }
 
+    /**
+     * BAN-297: an unresolvable place id used to be priced at 0 and folded into
+     * the quote, so the total came back short with nothing to show for it.
+     */
+    public function test_place_rate_calculation_rejects_another_tenants_place(): void
+    {
+        $otherOwner = User::factory()->create(['type' => 'owner', 'parent_id' => 0]);
+        $foreign    = Place::factory()->create(['parent_id' => $otherOwner->id, 'price' => 50]);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('place.rate.calculation', [
+                'pickup_place' => $foreign->id,
+            ]))
+            ->assertStatus(422)
+            ->assertJsonPath('errors.pickup_place.0', fn ($m) => is_string($m));
+    }
+
+    public function test_place_rate_calculation_allows_an_omitted_place(): void
+    {
+        $this->actingAs($this->owner)
+            ->getJson(route('place.rate.calculation'))
+            ->assertOk();
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private function validPayload(array $overrides = []): array

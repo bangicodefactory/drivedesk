@@ -28,7 +28,7 @@ class DriverController extends Controller
         // for a busy tenant) and move the search server-side so it spans all pages.
         $search = trim((string) $request->get('search', ''));
 
-        $drivers = User::where('parent_id', parentId())
+        $drivers = User::where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->with('drivers')  // Eager load the driver profile (avoids per-row N+1)
             ->when($search !== '', function ($q) use ($search) {
@@ -53,7 +53,7 @@ class DriverController extends Controller
         // Batch-load active blacklists for just this page's drivers (BAN-252).
         $blacklists = DriverBlacklist::activeFor(
             $drivers->getCollection()->pluck('id')->all(),
-            parentId()
+            tenantKey()
         );
 
         $payload = $drivers->through(function ($user) use ($blacklists) {
@@ -172,7 +172,7 @@ class DriverController extends Controller
                     return redirect()->back()->with('error', $errorMessages);
                 }
             }
-            $userRole = Role::where('name', 'driver')->where('parent_id', parentId())->first();
+            $userRole = Role::where('name', 'driver')->where('parent_id', tenantKey())->first();
             $user = new User();
             $user->name = $request->first_name . ' ' . $request->last_name;
             $user->email = !empty($request->email) ? $request->email : null;
@@ -181,7 +181,7 @@ class DriverController extends Controller
             $user->type = $userRole->name;
             $user->profile = 'avatar.png';
             $user->lang = 'english';
-            $user->parent_id = parentId();
+            $user->parent_id = tenantKey();
             $user->save();
             $user->assignRole($userRole);
 
@@ -199,7 +199,7 @@ class DriverController extends Controller
                 $driver->reference = !empty($request->reference) ? $request->reference : null;
                 $driver->notes = !empty($request->notes) ? $request->notes : null;
                 $driver->ICE_company = !empty($request->ICE_company) ? $request->ICE_company : null;
-                $driver->parent_id = parentId();
+                $driver->parent_id = tenantKey();
 // Save id document 
                 if (!empty($request->document)) {
                     $documentFilenameWithExt = $request->file('document')->getClientOriginalName();
@@ -250,7 +250,7 @@ class DriverController extends Controller
 
 
             $module = 'new_driver';
-            $notification = Notification::where('parent_id', parentId())->where('module', $module)->first();
+            $notification = Notification::where('parent_id', tenantKey())->where('module', $module)->first();
             $setting = settings();
             $errorMessage = '';
             if (!empty($notification) && $notification->enabled_email == 1) {
@@ -269,7 +269,7 @@ class DriverController extends Controller
 
             if (isset($request->direct_create)) {
                 if (!empty($driver)) {
-                    $driverList = User::where('type', 'driver')->where('parent_id', parentId())
+                    $driverList = User::where('type', 'driver')->where('parent_id', tenantKey())
                         ->orderBy('created_at', 'desc') // newest driver first (unified across pickers)
                         ->orderBy('id', 'desc')         // tie-break: imported drivers share a created_at
                         ->get()
@@ -296,7 +296,18 @@ class DriverController extends Controller
 
     public function show($id)
     {
-        $user = User::find($id);
+        // BAN-295: this action had no permission check, so any authenticated user
+        // in the tenant — including a driver or client login — could read every
+        // driver's licence number, birth date, address and document filenames.
+        if (!\Auth::user()->can('show driver')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $user = $this->findDriverUser($id);
+        if (!$user) {
+            abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+        }
+
         $name = explode(' ', $user->name);
         $user->first_name = isset($name[0]) ? $name[0] : null;
         $user->last_name = isset($name[1]) ? $name[1] : null;
@@ -311,7 +322,7 @@ class DriverController extends Controller
             $driverPayload['expiration_date_display'] = !empty($driver->expiration_date) ? dateFormat($driver->expiration_date) : null;
         }
         // Blacklist status for the badge + action (BAN-252).
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $user->id)
             ->whereNull('lifted_at')
             ->first();
@@ -338,7 +349,7 @@ class DriverController extends Controller
 
         // Tenant guard: only this tenant's drivers.
         $driverUser = User::where('id', $user)
-            ->where('parent_id', parentId())
+            ->where('parent_id', tenantKey())
             ->where('type', 'driver')
             ->first();
         if (! $driverUser) {
@@ -346,7 +357,7 @@ class DriverController extends Controller
         }
 
         // Idempotent: don't stack active rows for the same driver.
-        $exists = DriverBlacklist::where('parent_id', parentId())
+        $exists = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $driverUser->id)
             ->whereNull('lifted_at')
             ->exists();
@@ -356,7 +367,7 @@ class DriverController extends Controller
 
         DriverBlacklist::create([
             'driver_user_id' => $driverUser->id,
-            'parent_id'      => parentId(),
+            'parent_id'      => tenantKey(),
             'reason'         => $request->reason,
             'blacklisted_by' => \Auth::id(),
         ]);
@@ -373,7 +384,7 @@ class DriverController extends Controller
             return redirect()->back()->with('error', __('Permission Denied.'));
         }
 
-        $blacklist = DriverBlacklist::where('parent_id', parentId())
+        $blacklist = DriverBlacklist::where('parent_id', tenantKey())
             ->where('driver_user_id', $user)
             ->whereNull('lifted_at')
             ->first();
@@ -390,7 +401,16 @@ class DriverController extends Controller
 
     public function edit($id)
     {
-        $user = User::find($id);
+        // BAN-295: as show() — no permission check existed here either.
+        if (!\Auth::user()->can('edit driver')) {
+            return redirect()->back()->with('error', __('Permission Denied.'));
+        }
+
+        $user = $this->findDriverUser($id);
+        if (!$user) {
+            abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+        }
+
         $name = explode(' ', $user->name);
         $user->first_name = isset($name[0]) ? $name[0] : null;
         $user->last_name = isset($name[1]) ? $name[1] : null;
@@ -423,14 +443,26 @@ class DriverController extends Controller
                 return redirect()->back()->with('error', $messages->first());
             }
 
-            $user = User::find($id);
+            $user = $this->findDriverUser($id);
+            if (!$user) {
+                abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+            }
+
             $user->name = $request->first_name . ' ' . $request->last_name;
             $user->email = $request->email;
             $user->phone_number = !empty($request->phone_number) ? $request->phone_number : null;
             $user->save();
 
             if (!empty($user)) {
-                $driver = Driver::where('user_id', $id)->first();
+                // BAN-295: a user can be type=driver with no drivers row — the Users
+                // module creates exactly that — and the tenant scope can also hide a
+                // profile whose parent_id disagrees. Either way this used to fatal
+                // *after* $user->save() above, leaving the user renamed and the
+                // profile untouched. firstOrNew keeps the write whole.
+                $driver = Driver::firstOrNew(
+                    ['user_id' => $id],
+                    ['parent_id' => $user->parent_id, 'driver_id' => $this->driverNumber()]
+                );
                 $driver->gender = $request->gender;
                 $driver->age = !empty($request->age) ? $request->age : 0;
                 $driver->birth_date = !empty($request->birth_date) ? $request->birth_date : null;
@@ -496,7 +528,11 @@ class DriverController extends Controller
     public function destroy($id)
     {
         if (\Auth::user()->can('delete driver')) {
-            $user = User::find($id);
+            $user = $this->findDriverUser($id);
+            if (!$user) {
+                abort(404); // BAN-291: was an unscoped lookup on another tenant's user.
+            }
+
             $user->delete();
             $driver = Driver::where('user_id', $id)->delete();
 
@@ -508,7 +544,34 @@ class DriverController extends Controller
 
     public function driverNumber()
     {
-        $max = Driver::where('parent_id', parentId())->max('driver_id');
+        $max = Driver::where('parent_id', tenantKey())->max('driver_id');
         return ($max ?? 0) + 1;
+    }
+
+    /**
+     * Resolve a driver's user row for this module.
+     *
+     * BAN-293, two corrections to BAN-291's inline guard:
+     *
+     * - **Super admins are not constrained by tenant.** `parentId()` returns a
+     *   super admin's own id, which is never any tenant's `parent_id`, so the
+     *   plain `where('parent_id', parentId())` 404'd them on every driver in the
+     *   system. `BelongsToTenant` already exempts them; this call-site scoping
+     *   has to do the same or the two disagree inside one request.
+     * - **Constrained to `type = 'driver'`**, matching `blacklist()`. Without it
+     *   these endpoints accepted any same-tenant user id — an employee, a client,
+     *   the owner's own account — and `update()`/`destroy()` would rename or
+     *   delete them, then crash on the missing driver profile with the user row
+     *   already written.
+     */
+    private function findDriverUser($id): ?User
+    {
+        $query = User::where('type', 'driver');
+
+        if (\Auth::user()->type !== 'super admin') {
+            $query->where('parent_id', tenantKey());
+        }
+
+        return $query->find($id);
     }
 }

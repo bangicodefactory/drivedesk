@@ -4,15 +4,39 @@ return [
 
     'name'               => 'DriveDesk',
     'default_locale'     => 'en',
-    'supported_locales'  => ['en', 'fr', 'nl', 'ar', 'ary'],
+    // BAN-311: env paths. These are per-*customer* values living in a
+    // per-*variant* file, and neither client config contained a single env()
+    // call, so a customer that differed here needed a committed config of its
+    // own. Defaults reproduce today's values exactly.
+    // `env()` returns '' for a key that is present but empty, not the default,
+    // and an empty list makes Locales::routeConstraint() emit '(?!)' -- every
+    // locale-prefixed public URL 404s and hreflang disappears, silently. So the
+    // default applies to a blank or comma-only value too.
+    'supported_locales'  => array_values(array_filter(array_map(
+        'trim',
+        explode(',', trim((string) env('CLIENT_SUPPORTED_LOCALES', '')) !== ''
+            ? (string) env('CLIENT_SUPPORTED_LOCALES')
+            : 'fr,ar,en')
+    ))) ?: ['fr', 'ar', 'en'],
 
-    // Anonymous/guest visitors (e.g. the marketing landing) default to Moroccan
-    // Arabic (Darija, 'ary'). Logged-in users keep their own saved language.
-    // Read by App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
-    'public_default_locale' => 'ary',
+    // Anonymous/guest visitors (e.g. the marketing landing) default to French.
+    // Logged-in users keep their own saved language. Read by
+    // App\Http\Middleware\SetLocale; unset for other clients → 'fr'.
+    //
+    // Was 'ary' (Moroccan Darija). Two reasons it is not: the copy filed under
+    // ary.json was rewritten into Modern Standard Arabic, so 'ary' and 'ar'
+    // were the same language at two names -- Locales::forPublicUrls() already
+    // excluded it from public URLs for exactly that reason -- and ary.json
+    // carries 63 keys against en.json's 1000+, so a guest landing on the
+    // storefront got an RTL layout wrapped around mostly-French fallback copy.
+    //
+    // SetLocale::SUPPORTED still lists 'ary', deliberately: an account that
+    // already chose it keeps it, and /language/ary still works. What changes is
+    // only what an anonymous visitor gets by default.
+    'public_default_locale' => trim((string) env('CLIENT_PUBLIC_DEFAULT_LOCALE', '')) ?: 'fr',
 
     // Where the public "Book a demo" form is delivered (DemoRequestController).
-    'demo_request_to' => 'admin@bangicode.ma',
+    'demo_request_to' => env('CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'),
 
     /*
      * DriveDesk is the product's own reference/demo client — the base tenant
@@ -23,8 +47,10 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        'subscriptions'   => true,
-        'booking_payment' => true,
+        // Off -- see the note in _default.php. It was true here while nothing
+        // read it; correcting the wizard's prop path (BAN-328) made it visible,
+        // which is what turned a dormant flag into an offer of card payment.
+        'booking_payment' => false,
         'excel_import'    => true,
         'multi_branch'    => true,
         'tva_renumber'    => true,
@@ -33,16 +59,37 @@ return [
         'cash_split'      => true,   // split cash over the ceiling into compliant receipts
         'invoice_on_full_payment' => true,  // emit invoices only once a booking is fully paid
         'traffic_violations' => true,  // BAN-260: part of the full demo surface
-        // DriveDesk sells the platform to rental agencies; its public face is
-        // the B2B demo gateway at /, not a B2C rental storefront. The storefront
-        // pages targeted the opposite audience (and /landing shipped seeded demo
-        // fleet + invented testimonials), so they are off here. BAN-261.
-        'public_storefront' => false,
+        // On since BAN-329. DriveDesk sells the platform to rental agencies and
+        // its public face is still the B2B demo gateway at / -- that is
+        // unchanged, `/` renders DemoGateway and HomeController does not let the
+        // storefront claim it.
+        //
+        // What this opens, in full: /landing, /contact, /search,
+        // /newsletter/subscribe -- and /reserve plus its signed confirmation,
+        // which is the unauthenticated B2C booking wizard. That last pair is
+        // easy to miss and is the larger surface: its sibling
+        // POST /booking_request writes booking_requests rows carrying a guest's
+        // name, email and phone. On this client those land against the demo
+        // tenant.
+        //
+        // BAN-261 turned this off because those pages targeted the opposite
+        // audience and shipped seeded demo fleet data plus invented
+        // testimonials on a live commercial domain. The seeded fleet is the
+        // point of a demo tenant, but the fabricated social proof is not:
+        // /landing still renders four made-up testimonials and a hardcoded
+        // five-star "2 Reviews" badge on every vehicle. Removing those is
+        // tracked separately and should land before anyone treats this page as
+        // a shop window.
+        'public_storefront' => true,
+        // Off even here. Nothing links to /register (the demo funnel runs
+        // through DemoRequestController, which creates a manager under the
+        // existing owner), so the route was reachable by URL alone. BAN-307.
+        'registration' => false,
     ],
 
     /*
      * Public SEO copy (BAN-262). Written in English rather than the guest
-     * default locale (`ary`): the buyer here is a rental-agency owner, the
+     * default locale (French since BAN-330): the buyer here is a rental-agency owner, the
      * product is sold beyond Morocco, and a crawler is served the guest locale
      * regardless of who is searching. Description is 149 chars.
      */
