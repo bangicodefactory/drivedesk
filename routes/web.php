@@ -71,7 +71,9 @@ Route::get('/llms.txt', [\App\Http\Controllers\SeoController::class, 'llms'])->n
 // Public B2C rental storefront: the fleet/booking landing plus the pages its
 // layout partials link to. Guarded by `feature:public_storefront` (BAN-261) so a
 // client whose public face is not a rental storefront 404s the whole family
-// instead of serving pages aimed at the opposite audience.
+// instead of serving pages aimed at the opposite audience. drivedesk had it off
+// for exactly that reason and has it on again since BAN-329, alongside its demo
+// gateway rather than instead of it.
 Route::middleware('feature:public_storefront')->group(function () {
     // Public landing (client) home page using new modular Blade layout
     Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');

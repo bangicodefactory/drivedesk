@@ -1,6 +1,12 @@
 <!-- Header Top Section Start -->
 @php
-    $settings = \App\Models\Setting::pluck('value', 'name')->toArray();
+    // settings(), not a bare pluck: this returns the acting tenant's rows
+    // defaulted from settingsKeys(), so a key the deployment never set is
+    // an empty string rather than a missing index. Unguarded reads of
+    // company_name here 500'd /contact and /search on any deployment whose
+    // branding_seed omits it -- drivedesk's does. The bare pluck was also
+    // unscoped, merging every tenant's settings with the last one winning.
+    $settings = settings();
 @endphp
 <div class="header-top-section">
     <div class="container-fluid">

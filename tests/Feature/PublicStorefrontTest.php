@@ -47,14 +47,27 @@ class PublicStorefrontTest extends TestCase
         parent::tearDown();
     }
 
-    /** Every route in the storefront family, as [method, uri]. */
+    /**
+     * Every route behind `feature:public_storefront`, as [method, uri].
+     *
+     * /reserve belongs here and was missing: it is gated on the same flag and
+     * is the largest thing the flag opens -- the unauthenticated booking
+     * wizard. Without it the flag-off case below could go green while /reserve
+     * had quietly been moved out of the group it is supposed to prove closes.
+     * Its confirmation route is deliberately absent: it needs a signature and a
+     * real row, so it is covered in RequestBookingControllerTest instead.
+     */
     public static function storefrontRoutes(): array
     {
         return [
-            'landing'  => ['get', '/landing'],
-            'contact'  => ['get', '/contact'],
-            'search'   => ['get', '/search'],
-            'newsletter' => ['post', '/newsletter/subscribe'],
+            'landing'    => ['get', '/landing', []],
+            'contact'    => ['get', '/contact', []],
+            'search'     => ['get', '/search', []],
+            'reserve'    => ['get', '/reserve', []],
+            // A payload, because the endpoint validates: without it the route
+            // answers, redirects back with "email is required", and a test that
+            // only looked at the status would call that working.
+            'newsletter' => ['post', '/newsletter/subscribe', ['email' => 'crawler@example.com']],
         ];
     }
 
@@ -64,23 +77,47 @@ class PublicStorefrontTest extends TestCase
      * gate, not about who happens to be using it.
      */
     #[DataProvider('storefrontRoutes')]
-    public function test_the_whole_storefront_family_404s_when_the_flag_is_off(string $method, string $uri): void
+    public function test_the_whole_storefront_family_404s_when_the_flag_is_off(string $method, string $uri, array $payload): void
     {
         $this->asClient('drivedesk');
         config(['client.features.public_storefront' => false]);
 
-        $this->{$method}($uri)->assertNotFound();
+        $this->{$method}($uri, $payload)->assertNotFound();
     }
 
-    /** BAN-329: and it is on for drivedesk, so the family answers there. */
+    /**
+     * With the flag on, every one of them *works* -- not merely "is not a 404".
+     *
+     * assertNotSame(404) was the first version of this and it was worthless:
+     * /contact and /search render the legacy Blade shell, whose partials read
+     * settings keys that drivedesk's branding_seed does not set, so both were
+     * returning 500 and this test was green. Confirmed against a running
+     * instance, not just here.
+     *
+     * The flag is forced rather than read off drivedesk (CLAUDE.md 10.2 rule
+     * 6): what a given client actually resolves belongs in
+     * ClientFeatureMatrixTest, and coupling these four to drivedesk's shipped
+     * value would turn them red the day that value changes, for a reason
+     * unrelated to the gate they exist to test.
+     */
     #[DataProvider('storefrontRoutes')]
-    public function test_the_whole_storefront_family_answers_for_drivedesk(string $method, string $uri): void
+    public function test_the_whole_storefront_family_works_when_the_flag_is_on(string $method, string $uri, array $payload): void
     {
         $this->asClient('drivedesk');
+        config(['client.features.public_storefront' => true]);
 
-        $response = $this->{$method}($uri);
+        $response = $this->{$method}($uri, $payload);
 
-        $this->assertNotSame(404, $response->getStatusCode(), "{$method} {$uri} is still gated off");
+        // Below 400 rather than assertSuccessful(), because the family mixes
+        // pages (200) with a form that redirects on success (302). Paired with
+        // assertSessionHasNoErrors() so a redirect carrying a validation
+        // failure cannot pass as working.
+        $response->assertSessionHasNoErrors();
+        $this->assertLessThan(
+            400,
+            $response->getStatusCode(),
+            "{$method} {$uri} returned {$response->getStatusCode()}"
+        );
     }
 
     public function test_landing_still_serves_clients_that_keep_the_storefront(): void

@@ -48,8 +48,15 @@ return [
         // On since BAN-329. DriveDesk sells the platform to rental agencies and
         // its public face is still the B2B demo gateway at / -- that is
         // unchanged, `/` renders DemoGateway and HomeController does not let the
-        // storefront claim it. What this opens is the storefront family beside
-        // it: /landing, /contact, /search, /newsletter/subscribe.
+        // storefront claim it.
+        //
+        // What this opens, in full: /landing, /contact, /search,
+        // /newsletter/subscribe -- and /reserve plus its signed confirmation,
+        // which is the unauthenticated B2C booking wizard. That last pair is
+        // easy to miss and is the larger surface: its sibling
+        // POST /booking_request writes booking_requests rows carrying a guest's
+        // name, email and phone. On this client those land against the demo
+        // tenant.
         //
         // BAN-261 turned this off because those pages targeted the opposite
         // audience and shipped seeded demo fleet data plus invented

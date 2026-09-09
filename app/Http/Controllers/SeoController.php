@@ -9,8 +9,14 @@ use Illuminate\Http\Request;
  * sitemap.xml and llms.txt (BAN-262).
  *
  * Both are generated rather than static files because which pages exist depends
- * on the client's feature flags — DriveDesk has no B2C storefront, so listing
- * /landing there would point crawlers at a 404.
+ * on the client's feature flags: listing /landing for a client that has the
+ * storefront gated off would point crawlers at a 404. drivedesk was that client
+ * until BAN-329 and is not any more, so /landing is in its sitemap now.
+ *
+ * llms.txt has not kept up: sitemap() branches on public_storefront while
+ * llms() still lists only `/` and its locale variants. With SSR off this file
+ * is the only prose an AI crawler can read, so the newly-indexed storefront is
+ * invisible to exactly the audience it exists for. Its own ticket.
  */
 class SeoController extends Controller
 {
