@@ -100,7 +100,8 @@ describe('CarDetails — the claims it no longer makes', () => {
     /**
      * The page carried two reviews with invented names and lorem-ipsum bodies,
      * plus a five-star rating and "2 Reviews" on the car and on every similar
-     * car. No review feature exists. This URL is in sitemap.xml.
+     * car. No review feature exists, and /landing -- which is in
+     * sitemap.xml -- links straight here.
      */
     it('carries no reviews and no invented ratings', () => {
         const { container } = renderDetails();

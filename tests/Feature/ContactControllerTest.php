@@ -15,8 +15,9 @@ use Tests\TestCase;
  *
  * The page it replaces was `Route::view('/contact', 'client.pages.contact')`,
  * whose entire body was "This is a placeholder contact page. Replace with real
- * content." — on a URL in sitemap.xml, linked from the storefront header, the
- * footer and the booking confirmation.
+ * content." — linked from the storefront header, the footer and the booking
+ * confirmation. (It is not in sitemap.xml; SeoController excludes it, for
+ * reasons this change removes.)
  *
  * The tests that matter most here are the ones about *not* accepting a message
  * it cannot deliver. The sibling POST /newsletter/subscribe still reports

@@ -15,8 +15,10 @@ import { useTranslations } from '@/hooks/useTranslations';
  * /contact (BAN-333).
  *
  * Replaces a Blade view whose entire body was "This is a placeholder contact
- * page. Replace with real content." — served from a URL in sitemap.xml and
- * linked from the header, the footer and the booking confirmation.
+ * page. Replace with real content." — linked from the storefront header, the
+ * footer and the booking confirmation, so it was the answer a visitor got when
+ * a rental went wrong. (SeoController keeps /contact out of sitemap.xml
+ * precisely because it was scaffolding; worth revisiting now that it is not.)
  *
  * Every channel shown here is one the tenant actually filled in (Settings →
  * General, via the `contact` shared prop); a channel with no value is left out

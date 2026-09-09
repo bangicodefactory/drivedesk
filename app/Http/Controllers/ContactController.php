@@ -13,8 +13,13 @@ use Inertia\Inertia;
  *
  * It replaces `Route::view('/contact', 'client.pages.contact')`, whose entire
  * body was the sentence "This is a placeholder contact page. Replace with real
- * content." on a URL that is in sitemap.xml and linked from the storefront
- * header, the footer and the booking confirmation.
+ * content." -- linked from the storefront header, the footer and the booking
+ * confirmation, so it was the answer a visitor got when a rental went wrong.
+ *
+ * SeoController deliberately keeps /contact out of sitemap.xml, giving as the
+ * reason that it renders the legacy Blade shell and had been returning 500.
+ * Neither is true after this change, so that exclusion is worth revisiting --
+ * in its own PR, since it is an SEO decision rather than a page rewrite.
  *
  * The form only exists where it can actually deliver. The tenant's contact
  * address is a Setting an owner fills in (Settings → General), and if it is

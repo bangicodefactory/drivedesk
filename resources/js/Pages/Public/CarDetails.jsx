@@ -16,7 +16,8 @@ import { specLabels } from '@/lib/vehicleSpecs';
 /**
  * Public vehicle detail page (BAN-333).
  *
- * What this page used to carry, on a URL in sitemap.xml:
+ * What this page used to carry, on a page any visitor can reach -- /car/{id}
+ * is not itself in sitemap.xml, but /landing is and links straight to it:
  *   - two reviews with invented names and lorem-ipsum bodies,
  *   - a hardcoded five-star rating and "2 Reviews" on every card,
  *   - a seven-row "Price Table (by day of the week)" printing the same
