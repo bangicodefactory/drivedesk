@@ -23,6 +23,8 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `branding.cssVars` | `Record<string, string>` | CSS custom property overrides applied to `:root` |
 | `branding.layoutMode` | `'lightmode' \| 'darkmode' \| 'systemmode'` | Drives `ThemeProvider` initial theme via `resolveTheme()` in `resources/js/lib/theme.js`; `systemmode` follows `prefers-color-scheme` |
 | `branding.layoutDirection` | `'ltrmode' \| 'rtlmode'` | Drives `<html dir>` |
+| `branding.currency` | `string` | Currency code, from `Setting.CURRENCY` (default `MAD`) |
+| `branding.currencySymbol` | `string` | Currency symbol printed beside prices, from `Setting.CURRENCY_SYMBOL` (default `Dh`). Read it via `useCurrency()` — the storefront prints a price on nearly every screen and must not hardcode one tenant's symbol |
 | `contact.phone` | `string \| null` | Business phone, from `Setting.company_phone` |
 | `contact.whatsapp` | `string \| null` | WhatsApp number, digits only (e.g. `'212500000000'`) — build `wa.me/{whatsapp}` links with it |
 | `contact.email` | `string \| null` | Business email, from `Setting.company_email` |

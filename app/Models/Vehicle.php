@@ -39,6 +39,35 @@ class Vehicle extends Model
         'available_for_rent' => 'boolean',
     ];
 
+    /**
+     * The vehicle's first-registration year.
+     *
+     * The column is spelled with a U+FB01 LATIN SMALL LIGATURE FI --
+     * "year_of_&#xfb01;rst_immatriculation" -- which arrived with the original
+     * schema and cannot be renamed (CLAUDE.md §8: no rename-in-place). Every
+     * caller that spelled it with a plain "fi" therefore read null and showed
+     * "N/A": the car detail page, and the vehicle_details snapshot written onto
+     * every booking request, which has been storing "year": null since it was
+     * added.
+     *
+     * Read through this accessor rather than by attribute name. It is not in
+     * $appends on purpose -- Vehicle is serialised on a lot of screens, and
+     * this only needs to appear where it is asked for (->append(...)).
+     */
+    public function getFirstRegistrationYearAttribute()
+    {
+        $year = $this->attributes["year_of_ﬁrst_immatriculation"] ?? null;
+
+        // The column is a YEAR with ->default(0), and VehicleController writes a
+        // literal 0 when the admin leaves the field empty -- which MySQL hands
+        // back as the string "0000", not null. Truthy, four characters, and
+        // wrong everywhere it lands: a badge reading 0000 over the car photo, a
+        // spec row saying "Année: 0000", and "year": "0000" persisted into a
+        // booking request's snapshot. VehicleController:164 already guards it
+        // this way for the admin screen.
+        return (! empty($year) && $year != 0) ? $year : null;
+    }
+
     public function types()
     {
         return $this->hasOne('App\Models\VehicleType','id','type');

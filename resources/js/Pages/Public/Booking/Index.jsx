@@ -14,6 +14,10 @@ import FieldError from '@/components/FieldError';
 import { fieldA11y } from '@/lib/fieldA11y';
 import PageBanner from '@/components/PageBanner';
 import Stepper from '@/components/booking/Stepper';
+import BookingSummary from '@/components/booking/BookingSummary';
+import { specLabels } from '@/lib/vehicleSpecs';
+import { useCurrency } from '@/hooks/useCurrency';
+import { dayAfter } from '@/lib/dates';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
@@ -56,6 +60,48 @@ function daysBetween(startDate, endDate) {
     return Math.max(1, diff);
 }
 
+function CarCard({ vehicle, selected, onSelect, t }) {
+    const { gearbox, fuel } = specLabels(vehicle, t);
+    const { symbol } = useCurrency();
+
+    return (
+        <div
+            onClick={() => onSelect(vehicle)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(vehicle); }}
+            className={`bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 cursor-pointer border ${
+                selected ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
+            }`}
+        >
+            <div className="relative pt-[56.25%] bg-muted overflow-hidden">
+                <img
+                    src={vehiclePictureUrl(vehicle)}
+                    alt={vehicle.name}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/assets/images/client/default-car.jpg'; }}
+                />
+            </div>
+            <div className="p-6">
+                <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold">{vehicle.name}</h3>
+                    <div className="text-end shrink-0 ms-2">
+                        <div className="text-sm text-muted-foreground">{t('from', 'À partir de')}</div>
+                        <div className="text-lg font-display text-primary">
+                            {Number(vehicle.daily_rate).toFixed(0)} {symbol}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{t('per_day', 'par jour')}</div>
+                    </div>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                    {gearbox} • {vehicle.number_of_seats ?? '—'} {t('seats', 'Sièges')} • {fuel}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 function CarPicker({ vehicles, selectedId, onSelect, t }) {
     if (vehicles.length === 0) {
         return (
@@ -68,39 +114,13 @@ function CarPicker({ vehicles, selectedId, onSelect, t }) {
     return (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {vehicles.map((vehicle) => (
-                <div
+                <CarCard
                     key={vehicle.id}
-                    onClick={() => onSelect(vehicle)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(vehicle); }}
-                    className={`bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 cursor-pointer border ${
-                        String(selectedId) === String(vehicle.id) ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
-                    }`}
-                >
-                    <div className="relative pt-[56.25%] bg-muted overflow-hidden">
-                        <img
-                            src={vehiclePictureUrl(vehicle)}
-                            alt={vehicle.name}
-                            loading="lazy"
-                            className="absolute inset-0 w-full h-full object-cover"
-                            onError={(e) => { e.target.src = '/assets/images/client/default-car.jpg'; }}
-                        />
-                    </div>
-                    <div className="p-6">
-                        <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-xl font-bold">{vehicle.name}</h3>
-                            <div className="text-end shrink-0 ms-2">
-                                <div className="text-sm text-muted-foreground">{t('from', 'À partir de')}</div>
-                                <div className="text-lg font-display text-primary">{Number(vehicle.daily_rate).toFixed(0)} MAD</div>
-                                <div className="text-xs text-muted-foreground">{t('per_day', 'par jour')}</div>
-                            </div>
-                        </div>
-                        <p className="text-muted-foreground text-sm">
-                            {vehicle.gearbox ?? '—'} • {vehicle.number_of_seats ?? '—'} {t('seats', 'Sièges')} • {vehicle.fuel_type ?? '—'}
-                        </p>
-                    </div>
-                </div>
+                    vehicle={vehicle}
+                    selected={String(selectedId) === String(vehicle.id)}
+                    onSelect={onSelect}
+                    t={t}
+                />
             ))}
         </div>
     );
@@ -115,7 +135,7 @@ function IconInput({ icon: Icon, className = '', ...props }) {
     );
 }
 
-function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
+function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefill = {} }) {
     const t = useTranslations();
     const { branding } = usePage().props;
     const today = new Date().toISOString().slice(0, 10);
@@ -138,9 +158,18 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const { form, submit } = useZodForm(schema, {
         defaultValues: {
             vehicle_id: preselected ? String(preselected.id) : '',
-            pickup_address: '', drop_off_address: '',
-            start_date: '', start_time: '09:00',
-            end_date: '', end_time: '18:00',
+            // Carried over from the landing search panel, which asks for the
+            // same three things this step does. The server has already checked
+            // the shape and that `place` names a real one (BAN-333), so an
+            // absent value here means "not supplied", never "supplied badly".
+            // Pick-up doubles as drop-off: one location is the common case,
+            // and the visitor can still change either.
+            pickup_address: prefill.place ?? '',
+            drop_off_address: prefill.place ?? '',
+            start_date: prefill.start_date ?? '',
+            start_time: prefill.start_time ?? '09:00',
+            end_date: prefill.end_date ?? '',
+            end_time: prefill.end_time ?? '18:00',
             name: '', age: 25, nationality: '', driving_experience: 1, passengers: 1,
             phone_number: '', whatsapp: '', email: '', termsAccepted: false,
             payment_preference: undefined,
@@ -176,16 +205,30 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
     const termsAccepted = watch('termsAccepted');
     const paymentPreference = watch('payment_preference');
 
-    const selectedVehicle = useMemo(
-        () => vehicles.find((v) => String(v.id) === String(vehicleId)) ?? null,
-        [vehicles, vehicleId],
-    );
+    // Remembered rather than derived from `vehicles` alone.
+    //
+    // goToCustomerStep() replaces `vehicles` with the list filtered to the
+    // chosen dates. When the car turns out to be taken it is *absent* from that
+    // list -- so a plain find() returned null, `{step === 2 && selectedVehicle
+    // && ...}` unmounted the whole step, and the "no longer available" message
+    // this very check had just triggered went with it, along with the Back
+    // button. The visitor was left with a stepper and nothing else.
+    const [lastChosenVehicle, setLastChosenVehicle] = useState(preselected ?? null);
+
+    const selectedVehicle = useMemo(() => {
+        const found = vehicles.find((v) => String(v.id) === String(vehicleId));
+        if (found) return found;
+
+        // Same car, just filtered out of the current availability list.
+        return String(lastChosenVehicle?.id) === String(vehicleId) ? lastChosenVehicle : null;
+    }, [vehicles, vehicleId, lastChosenVehicle]);
 
     const days = daysBetween(startDate, endDate);
     const total = selectedVehicle ? days * Number(selectedVehicle.daily_rate) : 0;
 
     const selectCar = (vehicle) => {
         setValue('vehicle_id', String(vehicle.id), { shouldValidate: true });
+        setLastChosenVehicle(vehicle);
         setAvailabilityError(false);
         setStep(2);
     };
@@ -236,40 +279,54 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
         setValue('payment_preference', mode === 'cash' ? 'cash' : undefined, { shouldValidate: true });
     };
 
+    // step_1..step_4 keep their existing values for anyone still rendering
+    // them; the stepper reads the shorter step_short_* keys, which fit a phone
+    // without being clipped mid-word (CLAUDE.md §4: keys are added, not
+    // repurposed).
     const stepLabels = [
-        t('step_1', 'Sélectionner une Voiture'),
-        t('step_2', 'Sélectionner les Dates'),
-        t('step_3', 'Vos Informations'),
-        t('step_4', 'Paiement'),
+        t('step_short_1', 'Voiture'),
+        t('step_short_2', 'Dates'),
+        t('step_short_3', 'Vos infos'),
+        t('step_short_4', 'Paiement'),
     ];
+
+    const summary = (
+        <BookingSummary
+            vehicle={selectedVehicle}
+            places={places}
+            pickupId={pickupAddress}
+            dropOffId={dropOffAddress}
+            startDate={startDate}
+            startTime={startTime}
+            endDate={endDate}
+            endTime={endTime}
+            days={days}
+            total={total}
+            t={t}
+        />
+    );
 
     return (
         <>
             <Head title={pageTitle} />
             <PageBanner title={t('booking_title', 'Réservez Votre Voiture')} subtitle={t('booking_banner_subtitle', 'Complétez votre réservation en quelques étapes simples')} />
 
-            <section className="py-12 md:py-16 lg:py-24">
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="mb-10 md:mb-16 text-center">
-                        <h2 className="font-display text-4xl md:text-5xl mb-4">{t('booking_title', 'Réservez Votre Voiture')}</h2>
-                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">{t('booking_section_subtitle', 'Complétez votre réservation en 3 étapes simples')}</p>
-                    </div>
-
+            <section className="py-10 md:py-12">
+                <div className="container mx-auto px-4 max-w-6xl">
                     <Stepper current={step} labels={stepLabels} />
 
                     {step === 1 && (
                         <CarPicker vehicles={vehicles} selectedId={vehicleId} onSelect={selectCar} t={t} />
                     )}
 
+                    {/* Steps 2-4 sit beside the summary; step 1 is the car grid
+                        itself, where there is nothing to summarise yet. */}
+                    <div className={step === 1 ? 'contents' : 'grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_320px]'}>
+                    <div className="space-y-6">
+
                     {step === 2 && selectedVehicle && (
-                        <div className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8">
-                            <div className="flex items-center mb-6">
-                                <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                <div>
-                                    <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                    <p className="text-muted-foreground">{t('from', 'À partir de')} {Number(selectedVehicle.daily_rate).toFixed(0)} MAD {t('per_day', 'par jour')}</p>
-                                </div>
-                            </div>
+                        <div className="rounded-lg border border-border bg-card p-5 md:p-6">
+                            <h2 className="font-display text-2xl uppercase mb-5">{t('step_2', 'Sélectionner les Dates')}</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
@@ -307,7 +364,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                                 <div className="space-y-4">
                                     <div>
                                         <Label htmlFor="end_date">{t('return_date', 'Date de Retour')}</Label>
-                                        <IconInput icon={Calendar} id="end_date" type="date" min={startDate || today}
+                                        <IconInput icon={Calendar} id="end_date" type="date" min={dayAfter(startDate) || today}
                                             disabled={!startDate}
                                             {...register('end_date')} {...fieldA11y(errors, 'end_date')} />
                                         <FieldError name="end_date" errors={errors} />
@@ -360,18 +417,12 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                     )}
 
                     {step === 3 && selectedVehicle && (
-                        <div className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8 space-y-6">
-                            <div className="flex items-center justify-between mb-2 pb-6 border-b">
-                                <div className="flex items-center">
-                                    <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                    <div>
-                                        <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                        <p className="text-muted-foreground text-sm">
-                                            {startDate} - {endDate} ({days} {t('days', 'jours')})
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-display text-primary shrink-0 ms-2">{total.toFixed(0)} MAD</p>
+                        <div className="rounded-lg border border-border bg-card p-5 md:p-6 space-y-6">
+                            <div>
+                                <h2 className="font-display text-2xl uppercase">{t('step_3', 'Vos Informations')}</h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {t('driver_eligibility_note', 'Le conducteur doit avoir 21 ans et le permis depuis 2 ans au moins.')}
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -438,21 +489,10 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                     )}
 
                     {step === 4 && selectedVehicle && (
-                        <form onSubmit={submit('post', route('booking.store_request'))} className="max-w-3xl mx-auto bg-card rounded-xl border border-border/60 shadow-sm p-6 md:p-8 space-y-6">
+                        <form onSubmit={submit('post', route('booking.store_request'))} className="rounded-lg border border-border bg-card p-5 md:p-6 space-y-6">
                             <input type="hidden" {...register('vehicle_id')} />
 
-                            <div className="flex items-center justify-between mb-2 pb-6 border-b">
-                                <div className="flex items-center">
-                                    <img src={vehiclePictureUrl(selectedVehicle)} alt={selectedVehicle.name} className="w-16 h-16 object-cover rounded-md me-4" />
-                                    <div>
-                                        <h3 className="text-lg font-bold">{selectedVehicle.name}</h3>
-                                        <p className="text-muted-foreground text-sm">
-                                            {startDate} - {endDate} ({days} {t('days', 'jours')})
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-display text-primary shrink-0 ms-2">{total.toFixed(0)} MAD</p>
-                            </div>
+                            <h2 className="font-display text-2xl uppercase">{t('step_4', 'Paiement')}</h2>
 
                             <div>
                                 <Label className="mb-2 block">{t('payment_method_label', 'Comment souhaitez-vous payer ?')}</Label>
@@ -521,6 +561,9 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null }) {
                             </div>
                         </form>
                     )}
+                    </div>
+                    {step !== 1 && summary}
+                    </div>
                 </div>
             </section>
         </>

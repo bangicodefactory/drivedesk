@@ -35,12 +35,18 @@ class RequestBookingController extends Controller
         $vehiclesQuery = Vehicle::where('available_for_rent', true)
             ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture');
 
-        $startDate = $request->query('start_date');
-        $endDate   = $request->query('end_date');
+        // is_string() rather than a bare query() read: /reserve?start_date[]=x
+        // hands back an array, which the concatenation below turns into the
+        // literal "Array" and the whereRaw bindings reject outright. Same
+        // public-URL-anyone-can-construct shape as the /search 500 (BAN-329).
+        $startDate = $this->queryDate($request, 'start_date');
+        $endDate   = $this->queryDate($request, 'end_date');
+        $startTime = $this->queryTime($request, 'start_time');
+        $endTime   = $this->queryTime($request, 'end_time');
 
         if ($startDate && $endDate) {
-            $start = $startDate . ' ' . ($request->query('start_time') ?: '00:00') . ':00';
-            $end   = $endDate . ' ' . ($request->query('end_time') ?: '23:59') . ':00';
+            $start = $startDate . ' ' . ($startTime ?: '00:00') . ':00';
+            $end   = $endDate . ' ' . ($endTime ?: '23:59') . ':00';
 
             // Same overlap rule as VehicleController::getAvailableVehicle() (the
             // admin planning screen): two ranges overlap unless one ends before
@@ -58,11 +64,55 @@ class RequestBookingController extends Controller
 
         $places = Place::select('id', 'name', 'city')->get();
 
+        // What the landing's search panel filled in, handed forward so the
+        // wizard opens on the dates the visitor already chose instead of
+        // asking for them a second time (BAN-333). Only values that survive a
+        // shape check are echoed back, and `place` only when it names a place
+        // this storefront actually offers -- an unknown id would set a Select
+        // to a value with no matching option, which renders as blank.
+        $place = $request->query('place');
+        $placeId = is_scalar($place) && ctype_digit((string) $place) ? (int) $place : null;
+
         return Inertia::render('Public/Booking/Index', [
             'vehicles'           => $vehiclesQuery->get(),
             'places'             => $places,
             'preselectedVehicle' => $request->query('vehicle'),
+            'prefill'            => [
+                'place'      => $placeId !== null && $places->contains('id', $placeId) ? (string) $placeId : null,
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
+                'start_time' => $startTime,
+                'end_time'   => $endTime,
+            ],
         ]);
+    }
+
+    /** A Y-m-d query value, or null if absent or not that shape. */
+    private function queryDate(Request $request, string $key): ?string
+    {
+        $value = $request->query($key);
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        $date = DateTime::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
+    }
+
+    /** An H:i query value, or null if absent or not that shape. */
+    private function queryTime(Request $request, string $key): ?string
+    {
+        $value = $request->query($key);
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        $time = DateTime::createFromFormat('!H:i', $value);
+
+        return $time && $time->format('H:i') === $value ? $value : null;
     }
 
     /**
@@ -95,6 +145,11 @@ class RequestBookingController extends Controller
             ->get();
 
         $places = Place::where('parent_id', $car->parent_id)->get(['id', 'name', 'city']);
+
+        // Appended per instance rather than on the model: the detail page shows
+        // the registration year, and the column it comes from is spelled with a
+        // ligature that no JS caller should have to reproduce.
+        $car->append('first_registration_year');
 
         return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
     }
@@ -245,7 +300,10 @@ class RequestBookingController extends Controller
                 'gearbox'       => $vehicle->gearbox,
                 'seats'         => $vehicle->number_of_seats,
                 'license_plate' => $vehicle->license_plate,
-                'year'          => $vehicle->year_of_first_immatriculation,
+                // Plain "fi": the column carries a U+FB01 ligature, so this read
+                // null and every snapshot written so far says "year": null.
+                // Vehicle::getFirstRegistrationYearAttribute() spells it right.
+                'year'          => $vehicle->first_registration_year,
             ]);
             
              $booking->save();

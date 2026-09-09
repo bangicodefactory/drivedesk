@@ -335,8 +335,12 @@ class HomeController extends Controller
         ];
 
         return [
+            // `type` is the VehicleType id, and it is selected so the landing's
+            // fleet filter can group the cards client-side against the
+            // `vehicleTypes` list below. Without it every card carried an
+            // undefined type and the filter matched nothing.
             'vehicles'     => Vehicle::where('available_for_rent', true)
-                ->select('id', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
+                ->select('id', 'type', 'name', 'model', 'daily_rate', 'number_of_seats', 'gearbox', 'fuel_type', 'picture')->get(),
             'vehicleTypes' => VehicleType::select('id', 'type')->get(),
             'places'       => Place::select('id', 'name')->get(),
             'heroImage'    => $heroImage,
