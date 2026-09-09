@@ -146,6 +146,11 @@ class RequestBookingController extends Controller
 
         $places = Place::where('parent_id', $car->parent_id)->get(['id', 'name', 'city']);
 
+        // Appended per instance rather than on the model: the detail page shows
+        // the registration year, and the column it comes from is spelled with a
+        // ligature that no JS caller should have to reproduce.
+        $car->append('first_registration_year');
+
         return Inertia::render('Public/CarDetails', compact('car', 'similarCars', 'places'));
     }
 
@@ -295,7 +300,10 @@ class RequestBookingController extends Controller
                 'gearbox'       => $vehicle->gearbox,
                 'seats'         => $vehicle->number_of_seats,
                 'license_plate' => $vehicle->license_plate,
-                'year'          => $vehicle->year_of_first_immatriculation,
+                // Plain "fi": the column carries a U+FB01 ligature, so this read
+                // null and every snapshot written so far says "year": null.
+                // Vehicle::getFirstRegistrationYearAttribute() spells it right.
+                'year'          => $vehicle->first_registration_year,
             ]);
             
              $booking->save();

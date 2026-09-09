@@ -559,6 +559,59 @@ class RequestBookingControllerTest extends TestCase
      * "similar car" suggestion on another vehicle's page -- that route is the
      * one place a guest could still be offered it.
      */
+    // ── the registration year, and the ligature in its column name ──────
+
+    /**
+     * BAN-333. `vehicles` has a column spelled with a U+FB01 LATIN SMALL
+     * year_of_ﬁrst_immatriculation FI. Every PHP caller that typed a plain "fi" read null, so the
+     * detail page printed "N/A" for the year of a car whose year is right
+     * there in the row.
+     */
+    public function test_car_details_exposes_the_registration_year(): void
+    {
+        $vehicle = Vehicle::factory()->create([
+            'parent_id' => $this->owner->id,
+            'year_of_ﬁrst_immatriculation' => '2019',
+        ]);
+
+        $this->get(route('client.details', $vehicle->id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/CarDetails')
+                ->where('car.first_registration_year', '2019')
+            );
+    }
+
+    /**
+     * The same misspelling in storeBooking()'s vehicle_details snapshot, which
+     * matters more: that JSON is what a booking request keeps about the car it
+     * was made for, and it has been recording "year": null since it was added.
+     */
+    public function test_a_booking_request_snapshot_records_the_registration_year(): void
+    {
+        $vehicle = Vehicle::factory()->create([
+            'parent_id' => $this->owner->id,
+            'year_of_ﬁrst_immatriculation' => '2019',
+        ]);
+
+        $this->post(route('booking.store_request'), [
+            'vehicle_id'       => $vehicle->id,
+            'name'             => 'Yassine Berrada',
+            'email'            => 'yassine@example.com',
+            'phone_number'     => '+212661223344',
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-10-05',
+            'start_time'       => '09:00',
+            'end_date'         => '2026-10-09',
+            'end_time'         => '18:00',
+        ])->assertRedirect();
+
+        $details = json_decode(BookingRequest::latest('id')->first()->vehicle_details, true);
+
+        $this->assertSame('2019', $details['year']);
+    }
+
     // ── /reserve prefill, handed over by the landing search panel ─────────
 
     /**
