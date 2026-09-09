@@ -1,6 +1,12 @@
 # Demo fleet photos
 
-Stock photography for the vehicles `DevDataSeeder` creates. These are **demo
+> Lives in `docs/`, not under `public/`. It was in the docroot at first,
+> which meant `https://drivedesk.ma/images/fleet/CREDITS.md` served this
+> file to anyone who asked -- publishing, on the commercial site, the note
+> that the photo advertised as a Peugeot 208 is a VW Golf.
+
+Stock photography for the vehicles `DevDataSeeder` creates. The files live
+in `database/seeders/fixtures/fleet/`. These are **demo
 fixtures**, not a customer's real fleet — `ensureFleetPhoto()` only fills in a
 picture that is missing, so a real photo uploaded through the admin is never
 overwritten by the nightly `demo:seed --if-demo`.

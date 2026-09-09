@@ -23,6 +23,7 @@ use App\Models\VehicleType;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Seeds realistic test data for every business table, scoped to the owner.
@@ -149,10 +150,10 @@ class DevDataSeeder extends Seeder
         // gear/fuel use the keys from Vehicle::$gearbox and Vehicle::$fuelType
         // (automatic|manual, essence|diesel|petrol|hybrid|electric|gas) so the
         // show page and edit form resolve their labels correctly.
-        // `photo` names a fixture in public/images/fleet/, copied onto the
-        // public disk below. Optional: a vehicle without one keeps the default
-        // placeholder the storefront already falls back to. Three of the seven
-        // have none on purpose -- see public/images/fleet/CREDITS.md.
+        // `photo` names a fixture in database/seeders/fixtures/fleet/, written
+        // onto the public disk below. Optional: a vehicle without one keeps the
+        // default placeholder the storefront already falls back to. Three of
+        // the seven have none on purpose -- see docs/demo-fleet-photos.md.
         $vehicles = [
             ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000, 'photo' => 'toyota-rav4.jpg'],
             ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000],
@@ -200,45 +201,59 @@ class DevDataSeeder extends Seeder
     }
 
     /**
-     * Give a demo vehicle its stock photo, if it does not already have one.
+     * Give a demo vehicle its stock photo.
      *
-     * The fixtures live in public/images/fleet/ and are copied onto the public
-     * disk, because `picture` is a bare filename that the storefront resolves
-     * as /storage/upload/picture/<name> — an uploaded-file path, not an asset
-     * path. Copying is what makes them real uploads without anyone uploading.
+     * Fixtures live in database/seeders/fixtures/fleet/ and are written onto
+     * the public disk, because `picture` is a bare filename the storefront
+     * resolves as /storage/upload/picture/<name> — an uploaded-file path, not
+     * an asset path. Writing them is what makes them behave like uploads
+     * without anyone uploading. They sit outside public/ deliberately: the
+     * docroot serves anything in it, and a fixture directory is not something
+     * to publish.
      *
-     * Two deliberate limits:
+     * Three rules, in order:
      *
-     *  - it never overwrites. A vehicle that already carries a picture keeps
-     *    it, so an admin who uploads a real photo of their real car does not
-     *    lose it to the nightly demo:seed at 03:30.
-     *  - a missing fixture is skipped, not fatal. The seeder's job is demo
-     *    data; it should not take the whole run down because an image did not
-     *    ship.
+     *  - an admin's own upload is untouchable. If `picture` names anything
+     *    other than one of these fixtures, nothing here runs — that is what
+     *    stops the nightly demo:seed at 03:30 replacing a real photo of a
+     *    real car.
+     *  - a fixture already assigned is re-checked against the repo copy and
+     *    rewritten when it differs. Copying by filename alone froze the first,
+     *    wrong version of this fleet onto every environment that had already
+     *    run the seeder: a corrected image could never reach them.
+     *  - a write that fails leaves `picture` alone. Setting it anyway pointed
+     *    the row at a file that does not exist, and the early return meant no
+     *    later run ever retried — a permission problem latched permanently,
+     *    showing a broken image on the admin's vehicle page.
      */
     private function ensureFleetPhoto(Vehicle $vehicle, string $photo): void
     {
-        if (!empty($vehicle->picture)) {
+        // Anything that is not one of ours belongs to the admin.
+        if (!empty($vehicle->picture) && $vehicle->picture !== $photo) {
             return;
         }
 
-        $source = public_path('images/fleet/' . $photo);
+        $source = database_path('seeders/fixtures/fleet/' . $photo);
         if (!is_file($source)) {
             $this->command->warn("  Fleet photo missing, skipped: {$photo}");
             return;
         }
 
-        $target = storage_path('app/public/upload/picture');
-        if (!is_dir($target)) {
-            mkdir($target, 0755, true);
+        $disk   = Storage::disk('public');
+        $path   = 'upload/picture/' . $photo;
+        $wanted = file_get_contents($source);
+
+        if (!$disk->exists($path) || $disk->get($path) !== $wanted) {
+            if (!$disk->put($path, $wanted)) {
+                $this->command->warn("  Could not write fleet photo, skipped: {$photo}");
+                return;
+            }
         }
 
-        if (!is_file($target . DIRECTORY_SEPARATOR . $photo)) {
-            copy($source, $target . DIRECTORY_SEPARATOR . $photo);
+        if ($vehicle->picture !== $photo) {
+            $vehicle->picture = $photo;
+            $vehicle->save();
         }
-
-        $vehicle->picture = $photo;
-        $vehicle->save();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
