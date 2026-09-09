@@ -159,7 +159,12 @@ class DevDataSeeder extends Seeder
             ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000, 'photo' => 'toyota-rav4.jpg'],
             ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000, 'photo' => 'dacia-duster.jpg'],
             ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000, 'photo' => 'renault-clio.jpg'],
-            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000, 'photo' => 'mercedes-gle.jpg'],
+            // No photo. Every Mercedes candidate was either a dealer or press
+            // asset, or -- the one genuine photograph -- a car that fills its
+            // frame vertically, which a ~2.3:1 card crops the roof off. The
+            // neutral placeholder claims nothing about the car; a decapitated
+            // G-Wagen labelled "Mercedes GLE" would claim two wrong things.
+            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000],
             ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000, 'photo' => 'peugeot-208.jpg'],
             ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000, 'photo' => 'volkswagen-t-roc.jpg'],
             ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000, 'photo' => 'ford-transit.jpg'],

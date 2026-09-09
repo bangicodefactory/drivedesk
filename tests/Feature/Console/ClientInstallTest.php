@@ -5,6 +5,7 @@ namespace Tests\Feature\Console;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -12,6 +13,16 @@ class ClientInstallTest extends TestCase
 {
     use RefreshDatabase;
     use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // One test here runs the full DatabaseSeeder, which reaches
+        // DevDataSeeder and writes the demo fleet photos to the public disk.
+        // RefreshDatabase rolls back rows, not files (CLAUDE.md 3.4).
+        Storage::fake('public');
+    }
 
     // These tests exercise the command against a fixed, made-up client. Pin
     // --client so they're deterministic regardless of the CI matrix's ambient

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\WithClient;
 use Tests\TestCase;
 
@@ -18,6 +19,17 @@ class DemoSeedCommandTest extends TestCase
 {
     use RefreshDatabase;
     use WithClient;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // DevDataSeeder writes the demo fleet photos onto the public disk.
+        // Without this every run of these six tests copied ~2MB of JPEGs into
+        // the developer's own storage/ and left them there -- RefreshDatabase
+        // rolls back rows, not files (CLAUDE.md 3.4).
+        Storage::fake('public');
+    }
 
     public function test_it_refuses_on_a_non_demo_client_and_seeds_nothing(): void
     {

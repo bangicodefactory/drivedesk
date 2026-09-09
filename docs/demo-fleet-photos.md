@@ -12,7 +12,7 @@ time. These are **demo fixtures**, not a customer's real fleet:
 uploaded through the admin is never overwritten by the nightly
 `demo:seed --if-demo`.
 
-All seven seeded vehicles now have one.
+Six of the seven seeded vehicles have one. The Mercedes does not — see below.
 
 ## Licence
 
@@ -29,7 +29,6 @@ re-check where a file came from.
 | `renault-clio.jpg` | [`ZRuo9qFprXk`](https://unsplash.com/photos/ZRuo9qFprXk) | current-generation Renault Clio, rooftop car park | **yes** |
 | `dacia-duster.jpg` | [`m3r_pSJSQ6o`](https://unsplash.com/photos/m3r_pSJSQ6o) | orange Dacia Duster in a forest, shot through grass | **yes** |
 | `volkswagen-t-roc.jpg` | [`qLaYm1UZ8sE`](https://unsplash.com/photos/qLaYm1UZ8sE) | white VW T-Roc on an autumn forest road | **yes** |
-| `mercedes-gle.jpg` | [`PtJDCD4fTI4`](https://unsplash.com/photos/PtJDCD4fTI4) | Mercedes-AMG G 63 parked in Cape Town | no — right marque, wrong model |
 | `peugeot-208.jpg` | [`ZhEnFcHO0es`](https://unsplash.com/photos/ZhEnFcHO0es) | black VW Golf GTI at a beach | no — right body style only |
 | `ford-transit.jpg` | [`XDw-MK_Kp6Q`](https://unsplash.com/photos/XDw-MK_Kp6Q) | white passenger van at an airport terminal | no — right body style only |
 
@@ -39,9 +38,15 @@ got three of seven wrong — a police-spec Ford Explorer filed as a RAV4, a rall
 car in racing livery filed as a Clio, both of which reached the storefront.
 **Look at the file; do not trust the caption.**
 
-Three portrait sources (`volkswagen-t-roc`, `mercedes-gle`, `dacia-duster`) were
-cropped to landscape, because the card's image box is `h-52 w-full` — roughly
-2:1 — and `object-cover` on a tall source cuts the car in half.
+Two portrait sources (`volkswagen-t-roc`, `dacia-duster`) were cropped to
+landscape, and this is subtler than it looks. The landing card's box is
+`h-52 w-full` — about **2.3:1** at a three-column desktop grid — and the booking
+wizard's is `pt-[56.25%]`, 1.78:1. `object-cover` scales the image to fill the
+box and throws the overflow away, so a source *taller* than the box loses its
+top and bottom, not its sides. Making a crop taller to "fit more car in"
+therefore does the opposite. Both fixtures here are at least 1.9:1 and lose
+under 10% top and bottom; the car survives whole in each. Check a crop by
+rendering the band the browser will actually show, not by looking at the file.
 
 ## The rule these were chosen by
 
@@ -56,7 +61,24 @@ Three candidates were rejected on that basis before this set settled: a Toyota
 Land Cruiser press shot offered as a Mercedes, a Kia Sorento press shot as a
 T-Roc, a Hyundai Tucson studio render as a Duster.
 
-The Duster is the clearest illustration of the trade-off. A much cleaner
+### The Mercedes has no photo
+
+Every Mercedes candidate was a dealership or press asset — a Land Cruiser press
+shot, a GLE on a black studio backdrop with a dealer plate reading
+"SomMotorCar | Mercedes-Benz" — except one: a genuine amateur photograph of a
+Mercedes-AMG G 63 in Cape Town. That one is unusable for a different reason.
+The car fills its frame vertically, so the ~2.3:1 card crops its roof clean off.
+It was committed before that was checked, and the rendered band showed a
+decapitated car.
+
+A neutral placeholder makes no claim about the vehicle. A roofless G-Wagen
+labelled "Mercedes GLE" would make two wrong ones. So the placeholder stays
+until a landscape photograph of a Mercedes SUV turns up, or the card gets an
+explicit aspect ratio.
+
+### The Duster is the clearest illustration of the trade-off
+
+A much cleaner
 side-profile shot was available — whole car, badge readable, perfect light — but
 it carried a French dummy plate (`DD-000-DD`), which is the advertising
 placeholder format, alongside press-shoot lighting. The scruffier forest photo
@@ -66,6 +88,20 @@ the better-looking one. Provenance beat polish, deliberately.
 **Per-model searches work far better than category ones.**
 `unsplash.com/s/photos/dacia-duster` is how four of these were found;
 `unsplash.com/s/photos/suv` is where all three rejects came from.
+
+## Registration plates are visible
+
+Every one of these photographs shows a legible number plate, some more than
+others. The Unsplash Licence covers copyright; it does not clear a third party's
+personal-data interest in a plate, which is the same reasoning used above to
+reject press assets — a licence cannot grant rights the uploader never held.
+
+They are left as published, because that is how the photographers uploaded them
+and plates are visible throughout stock photography. Blurring them before this
+sits on a commercial site is a reasonable call and a small change; it has not
+been made unilaterally. Note also that plate format cuts both ways as a
+heuristic: a *dummy* plate suggests a press asset, a *real* one suggests
+somebody's own photograph and a real person's vehicle.
 
 ## If you want better
 
