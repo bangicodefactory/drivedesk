@@ -559,6 +559,114 @@ class RequestBookingControllerTest extends TestCase
      * "similar car" suggestion on another vehicle's page -- that route is the
      * one place a guest could still be offered it.
      */
+    // ── /reserve prefill, handed over by the landing search panel ─────────
+
+    /**
+     * BAN-333. The redesigned landing makes the search panel the page's primary
+     * action, and it submits to /reserve. If the wizard did not read those
+     * values back, the visitor would fill in a location and two dates and then
+     * be asked for the same three things again on step 2 -- which is precisely
+     * the friction the redesign exists to remove.
+     *
+     * The flag is forced rather than inherited from acme (CLAUDE.md §10.2
+     * rule 6): this is about the handover, not about which clients ship the
+     * storefront.
+     */
+    public function test_reserve_prefills_from_the_landing_search_panel(): void
+    {
+        config(['client.features.public_storefront' => true]);
+
+        $this->get(route('reserve.create', [
+            'place'      => $this->pickup->id,
+            'start_date' => '2026-10-05',
+            'end_date'   => '2026-10-09',
+            'start_time' => '09:00',
+            'end_time'   => '18:00',
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Public/Booking/Index')
+            ->where('prefill.place', (string) $this->pickup->id)
+            ->where('prefill.start_date', '2026-10-05')
+            ->where('prefill.end_date', '2026-10-09')
+            ->where('prefill.start_time', '09:00')
+            ->where('prefill.end_time', '18:00')
+        );
+    }
+
+    /**
+     * A place id that this storefront does not offer must not be echoed back.
+     * The wizard binds it to a <Select>, and a value with no matching option
+     * renders as an empty control -- the visitor sees a blank "Pick-up
+     * location" that they cannot correct by re-picking the same entry.
+     */
+    public function test_reserve_drops_a_place_it_does_not_offer(): void
+    {
+        config(['client.features.public_storefront' => true]);
+
+        $this->get(route('reserve.create', ['place' => 999999]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('prefill.place', null));
+    }
+
+    /**
+     * Anything that is not a Y-m-d / H:i is dropped rather than passed through.
+     * These values reach a whereRaw() comparison and a date input, and the
+     * query string is public.
+     */
+    public function test_reserve_drops_malformed_dates_and_times(): void
+    {
+        config(['client.features.public_storefront' => true]);
+
+        $this->get(route('reserve.create', [
+            'start_date' => 'not-a-date',
+            'end_date'   => '2026-13-45',
+            'start_time' => '25:00',
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('prefill.start_date', null)
+            ->where('prefill.end_date', null)
+            ->where('prefill.start_time', null)
+        );
+    }
+
+    /**
+     * The /search 500 (BAN-329) again, on a different route: a query array
+     * reaches string concatenation and whereRaw bindings. Anyone can construct
+     * the URL and /reserve is linked from a crawlable page.
+     */
+    public function test_reserve_survives_array_query_parameters(): void
+    {
+        config(['client.features.public_storefront' => true]);
+
+        $this->get('/reserve?start_date[]=x&end_date[]=y&place[]=z&start_time[]=w')
+            ->assertOk();
+    }
+
+    /**
+     * The prefilled range still has to be a real availability query, not just
+     * echoed text: a car already booked across those dates must not come back
+     * in the list the visitor is about to choose from.
+     */
+    public function test_reserve_prefill_dates_still_filter_out_a_booked_car(): void
+    {
+        config(['client.features.public_storefront' => true]);
+
+        Booking::factory()->create([
+            'vehicle'    => $this->vehicle->id,
+            'start_date' => '2026-10-06',
+            'start_time' => '09:00',
+            'end_date'   => '2026-10-08',
+            'end_time'   => '18:00',
+            'status'     => 'confirmed',
+            'parent_id'  => $this->owner->id,
+        ]);
+
+        $this->get(route('reserve.create', [
+            'start_date' => '2026-10-05',
+            'end_date'   => '2026-10-09',
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('vehicles', fn ($vehicles) => collect($vehicles)->pluck('id')->doesntContain($this->vehicle->id))
+        );
+    }
+
     public function test_car_details_excludes_similar_cars_marked_unavailable_for_rent(): void
     {
         $hidden = Vehicle::factory()->create([
