@@ -45,11 +45,21 @@ return [
         'cash_split'      => true,   // split cash over the ceiling into compliant receipts
         'invoice_on_full_payment' => true,  // emit invoices only once a booking is fully paid
         'traffic_violations' => true,  // BAN-260: part of the full demo surface
-        // DriveDesk sells the platform to rental agencies; its public face is
-        // the B2B demo gateway at /, not a B2C rental storefront. The storefront
-        // pages targeted the opposite audience (and /landing shipped seeded demo
-        // fleet + invented testimonials), so they are off here. BAN-261.
-        'public_storefront' => false,
+        // On since BAN-329. DriveDesk sells the platform to rental agencies and
+        // its public face is still the B2B demo gateway at / -- that is
+        // unchanged, `/` renders DemoGateway and HomeController does not let the
+        // storefront claim it. What this opens is the storefront family beside
+        // it: /landing, /contact, /search, /newsletter/subscribe.
+        //
+        // BAN-261 turned this off because those pages targeted the opposite
+        // audience and shipped seeded demo fleet data plus invented
+        // testimonials on a live commercial domain. The seeded fleet is the
+        // point of a demo tenant, but the fabricated social proof is not:
+        // /landing still renders four made-up testimonials and a hardcoded
+        // five-star "2 Reviews" badge on every vehicle. Removing those is
+        // tracked separately and should land before anyone treats this page as
+        // a shop window.
+        'public_storefront' => true,
         // Off even here. Nothing links to /register (the demo funnel runs
         // through DemoRequestController, which creates a manager under the
         // existing owner), so the route was reachable by URL alone. BAN-307.

@@ -93,8 +93,10 @@ class ClientFeatureMatrixTest extends TestCase
         $this->assertTrue(feature('invoice_on_full_payment'));
         $this->assertTrue(feature('demo_gateway'));
         $this->assertTrue(feature('traffic_violations'));
-        // The B2C storefront stays off — DriveDesk sells the platform (BAN-261).
-        $this->assertFalse(feature('public_storefront'));
+        // BAN-329: the storefront family is on. `/` is untouched -- it still
+        // serves the B2B demo gateway, asserted in DemoGatewayTest -- so this
+        // opens /landing and its siblings beside the gateway, not instead of it.
+        $this->assertTrue(feature('public_storefront'));
         // BAN-307: public self-registration creates a `type = 'owner'` account.
         // RegistrationTest forces this flag on to test the route's behaviour, so
         // this is the only assertion holding the live value down. If it goes
