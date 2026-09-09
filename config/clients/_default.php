@@ -10,7 +10,12 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        'booking_payment' => true,
+        // Off. Nothing in this codebase can charge a card -- no SDK, no route,
+        // no callback -- and this flag now drives a real UI: the booking
+        // wizard's online-payment tile. Left true, every deployment that
+        // inherits these defaults offers a card payment it cannot take.
+        // It turns on when CMI's callback exists, not before.
+        'booking_payment' => false,
         'excel_import'    => true,
         'multi_branch'    => false,
         'tva_renumber'    => true,

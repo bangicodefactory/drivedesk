@@ -36,7 +36,10 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        'booking_payment' => true,
+        // Off -- see the note in _default.php. It was true here while nothing
+        // read it; correcting the wizard's prop path (BAN-328) made it visible,
+        // which is what turned a dormant flag into an offer of card payment.
+        'booking_payment' => false,
         'excel_import'    => true,
         'multi_branch'    => true,
         'tva_renumber'    => true,
