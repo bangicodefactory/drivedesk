@@ -2,7 +2,12 @@
 /.idea
 /.vscode
 storage/installed
-public/images/  # Replace with the path to your images folder
+# git has no inline comments -- the trailing text was part of the pattern,
+# so this rule matched nothing at all. Kept as an ignore because uploads
+# do not belong in the repo; hero-login.jpg stays tracked because it
+# already is. Seeder fixtures live in database/seeders/fixtures/ instead,
+# outside the docroot.
+public/images/
 *.log           # Example for log files
 .env
 # any env variant (backups, per-client) — never commit; keep only *.example
