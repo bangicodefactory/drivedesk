@@ -99,27 +99,37 @@ class DemoFleetPhotoTest extends TestCase
     }
 
     /**
-     * Not every seeded vehicle has a fixture — three ship without one on
-     * purpose. Those keep a null picture and the storefront's own placeholder,
-     * and the run does not fall over.
+     * Every seeded vehicle gets a photo, and every declared fixture lands.
+     *
+     * A vehicle may still legitimately have no `photo` key — the seeder treats
+     * it as optional and the storefront falls back to its own placeholder — but
+     * none does today, so this asserts the whole fleet rather than a subset.
+     * A fixture that stops shipping shows up here as a missing file rather than
+     * as a quietly blank card.
      */
-    public function test_a_vehicle_without_a_fixture_keeps_the_default_placeholder(): void
+    public function test_every_seeded_vehicle_gets_its_fixture(): void
     {
         $this->seed(DevDataSeeder::class);
 
-        $this->assertNull(Vehicle::where('name', 'Dacia Duster')->firstOrFail()->picture);
-        $this->assertNull(Vehicle::where('name', 'Mercedes GLE')->firstOrFail()->picture);
-        $this->assertNull(Vehicle::where('name', 'Volkswagen T-Roc')->firstOrFail()->picture);
-    }
+        $expected = [
+            'Toyota RAV4'      => 'toyota-rav4.jpg',
+            'Dacia Duster'     => 'dacia-duster.jpg',
+            'Renault Clio'     => 'renault-clio.jpg',
+            'Mercedes GLE'     => 'mercedes-gle.jpg',
+            'Peugeot 208'      => 'peugeot-208.jpg',
+            'Volkswagen T-Roc' => 'volkswagen-t-roc.jpg',
+            'Ford Transit'     => 'ford-transit.jpg',
+        ];
 
-    /** And the ones that do have a fixture all actually land. */
-    public function test_every_declared_fixture_reaches_the_disk(): void
-    {
-        $this->seed(DevDataSeeder::class);
-
-        foreach (['toyota-rav4.jpg', 'renault-clio.jpg', 'peugeot-208.jpg', 'ford-transit.jpg'] as $photo) {
+        foreach ($expected as $name => $photo) {
+            $this->assertSame(
+                $photo,
+                Vehicle::where('name', $name)->firstOrFail()->picture,
+                "{$name} did not get its fixture"
+            );
             Storage::disk('public')->assertExists('upload/picture/' . $photo);
-            $this->assertDatabaseHas('vehicles', ['picture' => $photo]);
         }
+
+        $this->assertSame(0, Vehicle::whereNull('picture')->count(), 'a seeded vehicle was left without a picture');
     }
 }

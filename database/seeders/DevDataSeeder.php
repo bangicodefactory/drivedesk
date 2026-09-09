@@ -151,16 +151,17 @@ class DevDataSeeder extends Seeder
         // (automatic|manual, essence|diesel|petrol|hybrid|electric|gas) so the
         // show page and edit form resolve their labels correctly.
         // `photo` names a fixture in database/seeders/fixtures/fleet/, written
-        // onto the public disk below. Optional: a vehicle without one keeps the
-        // default placeholder the storefront already falls back to. Three of
-        // the seven have none on purpose -- see docs/demo-fleet-photos.md.
+        // onto the public disk below. Optional by design -- a vehicle without
+        // one keeps the placeholder the storefront already falls back to -- but
+        // all seven have one now. See docs/demo-fleet-photos.md for what each
+        // photo actually shows and which match their model.
         $vehicles = [
             ['name' => 'Toyota RAV4',    'model' => '2023', 'type' => 0, 'engine' => 'Hybrid',  'plate' => 'A-1234-B', 'daily' => 350, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'hybrid', 'km' => 12000, 'photo' => 'toyota-rav4.jpg'],
-            ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000],
+            ['name' => 'Dacia Duster',   'model' => '2022', 'type' => 0, 'engine' => '1.5 dCi', 'plate' => 'B-5678-C', 'daily' => 220, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 45000, 'photo' => 'dacia-duster.jpg'],
             ['name' => 'Renault Clio',   'model' => '2023', 'type' => 2, 'engine' => '1.0 TCe', 'plate' => 'C-9012-D', 'daily' => 180, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 8000, 'photo' => 'renault-clio.jpg'],
-            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000],
+            ['name' => 'Mercedes GLE',   'model' => '2024', 'type' => 0, 'engine' => '3.0 V6',  'plate' => 'D-3456-E', 'daily' => 700, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'diesel', 'km' => 5000, 'photo' => 'mercedes-gle.jpg'],
             ['name' => 'Peugeot 208',    'model' => '2022', 'type' => 2, 'engine' => '1.2 PureTech', 'plate' => 'E-7890-F', 'daily' => 160, 'seats' => 5, 'gear' => 'manual',    'fuel' => 'petrol', 'km' => 30000, 'photo' => 'peugeot-208.jpg'],
-            ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000],
+            ['name' => 'Volkswagen T-Roc','model' => '2023', 'type' => 0, 'engine' => '1.5 TSI','plate' => 'F-2345-G', 'daily' => 380, 'seats' => 5, 'gear' => 'automatic', 'fuel' => 'petrol', 'km' => 18000, 'photo' => 'volkswagen-t-roc.jpg'],
             ['name' => 'Ford Transit',   'model' => '2021', 'type' => 3, 'engine' => '2.0 EcoBlue', 'plate' => 'G-6789-H', 'daily' => 450, 'seats' => 9, 'gear' => 'manual',    'fuel' => 'diesel', 'km' => 60000, 'photo' => 'ford-transit.jpg'],
         ];
 
