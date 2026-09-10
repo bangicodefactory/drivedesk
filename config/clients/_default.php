@@ -14,7 +14,16 @@ return [
         // no callback -- and this flag now drives a real UI: the booking
         // wizard's online-payment tile. Left true, every deployment that
         // inherits these defaults offers a card payment it cannot take.
-        // It turns on when CMI's callback exists, not before.
+        // Off is still the right *default*: a deployment that inherits these
+        // values should not offer a payment method its business cannot take.
+        //
+        // It is no longer "on only when CMI's callback exists", which is what
+        // this note used to say -- drivedesk turns it on deliberately (BAN-334)
+        // to collect a stated card preference that staff follow up on, with no
+        // callback and nothing charged. Read that as the exception it is: if
+        // you are enabling this for a customer, they need a process for ringing
+        // people back, and RouteIntegrityTest still forbids a route behind the
+        // flag until a verified callback exists.
         'booking_payment' => false,
         'excel_import'    => true,
         'multi_branch'    => false,

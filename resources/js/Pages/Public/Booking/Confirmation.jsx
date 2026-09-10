@@ -41,7 +41,12 @@ function Confirmation({
 
     // No CMI charge actually happens yet — staff follow up by phone/WhatsApp to
     // collect it, so the copy must not imply payment is done.
-    const isOnlinePayment = paymentPreference === 'paypal' || paymentPreference === 'cmi';
+    //
+    // 'cmi' only. The 'paypal' half of this was unreachable: storeBooking()
+    // validates payment_preference as in:cash,cmi and PayPal was dropped as an
+    // intent because it is not a method a Moroccan agency's customers reach for.
+    // Leaving the branch in read as though PayPal were still supported.
+    const isOnlinePayment = paymentPreference === 'cmi';
     const confirmationBody = isOnlinePayment
         ? t('confirmation_body_online', 'Nous vous contacterons rapidement pour finaliser votre paiement en ligne et confirmer votre réservation.')
         : t('confirmation_body', 'Nous vous contacterons rapidement pour confirmer votre réservation.');

@@ -261,8 +261,18 @@ class RequestBookingControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * The flag is forced, not inherited. This test is about the value being
+     * persisted, so it must supply the precondition it depends on rather than
+     * borrowing acme's -- CLAUDE.md §10.2 rule 6, and the reason this went red
+     * when BAN-334 made the accepted set follow feature('booking_payment'):
+     * a test that inherits a client's flag changes meaning the day that
+     * client's config does, for a reason unrelated to what it asserts.
+     */
     public function test_store_booking_persists_the_chosen_payment_preference(): void
     {
+        config(['client.features.booking_payment' => true]);
+
         $this->post(route('booking.store_request'), [
             'vehicle_id'         => $this->vehicle->id,
             'name'               => 'Karim B',
@@ -554,6 +564,123 @@ class RequestBookingControllerTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('booking_requests.show'));
     }
 
+    /**
+     * BAN-334. The flag has to gate what the server accepts, not only what the
+     * wizard draws. It was a fixed in:cash,cmi, so a deployment that had
+     * deliberately turned card payment off still accepted a hand-crafted POST
+     * carrying payment_preference=cmi -- and the guest's confirmation then
+     * promised a follow-up about an online payment that business had switched
+     * off. Forced rather than inherited (§10.2 rule 6).
+     */
+    public function test_a_card_preference_is_refused_where_card_payment_is_off(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasErrors('payment_preference');
+
+        $this->assertDatabaseMissing('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    public function test_a_card_preference_is_accepted_where_card_payment_is_on(): void
+    {
+        config(['client.features.booking_payment' => true]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cmi']);
+    }
+
+    /** Cash is always accepted -- it is what the flag being off leaves. */
+    public function test_cash_is_accepted_either_way(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cash']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cash']);
+    }
+
+    /**
+     * A rejected storefront request must say so out loud. The redirect is a
+     * 302, so Inertia re-renders /reserve from scratch and the four-step form
+     * remounts at step 1 -- every field error goes with it, including ones
+     * bound to a <FieldError> living inside a later step. Without a flash the
+     * visitor gets an emptied form and no explanation.
+     */
+    public function test_a_rejected_request_flashes_something_the_visitor_can_see(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasErrors('payment_preference')
+            ->assertSessionHas('error');
+    }
+
+    /** And an ordinary missing field, which reaches the same branch. */
+    public function test_a_missing_field_also_flashes(): void
+    {
+        $payload = $this->bookingPayload();
+        unset($payload['email']);
+
+        $this->post(route('booking.store_request'), $payload)
+            ->assertSessionHasErrors('email')
+            ->assertSessionHas('error');
+    }
+
+    /** A complete, valid storefront booking request, overridable per test. */
+    private function bookingPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'vehicle_id'       => $this->vehicle->id,
+            'name'             => 'Yassine Berrada',
+            'email'            => 'yassine@example.com',
+            'phone_number'     => '+212661223344',
+            'pickup_address'   => $this->pickup->id,
+            'drop_off_address' => $this->dropOff->id,
+            'start_date'       => '2026-10-05',
+            'start_time'       => '09:00',
+            'end_date'         => '2026-10-09',
+            'end_time'         => '18:00',
+        ], $overrides);
+    }
+
+    // ── the flag the wizard's payment tile reads ─────────────────────────
+
+    /**
+     * BAN-334. The wizard shows its online-payment tile from
+     * `client.features.booking_payment`, and that exact path is where BAN-328
+     * went wrong: the page read `props.features`, which the app has never
+     * shared, so the tile could not have appeared whatever the flag said -- and
+     * the component test's mock had invented the missing prop, so it agreed
+     * with the bug.
+     *
+     * Now that the flag is on for a real client, pin the path end to end rather
+     * than trusting a mock. Forced rather than inherited (§10.2 rule 6): what a
+     * given client resolves is ClientFeatureMatrixTest's job.
+     */
+    public function test_the_wizard_receives_the_payment_flag_where_it_looks_for_it(): void
+    {
+        config(['client.features.public_storefront' => true]);
+        config(['client.features.booking_payment' => true]);
+
+        $this->get(route('reserve.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('client.features.booking_payment', true));
+    }
+
+    public function test_the_wizard_sees_the_payment_flag_turned_off(): void
+    {
+        config(['client.features.public_storefront' => true]);
+        config(['client.features.booking_payment' => false]);
+
+        $this->get(route('reserve.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('client.features.booking_payment', false));
+    }
+
     // ── the registration year, and the ligature in its column name ──────
 
     /**
@@ -626,6 +753,27 @@ class RequestBookingControllerTest extends TestCase
         $details = json_decode(BookingRequest::latest('id')->first()->vehicle_details, true);
 
         $this->assertSame('2019', $details['year']);
+    }
+
+    /**
+     * BAN-334. The flag's whole justification is that staff ring the customer
+     * about card payment -- the storefront promises exactly that on the
+     * confirmation screen. Nothing sends that message: storeBooking()
+     * dispatches no mail and no notification. The only mechanism is a person
+     * seeing the preference, and it was on the detail page alone, so triage
+     * meant opening every request to find out which ones were waiting.
+     */
+    public function test_the_requests_list_shows_which_ones_are_waiting_on_a_call(): void
+    {
+        config(['client.features.booking_payment' => true]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']));
+
+        $this->actingAs($this->owner)
+            ->get(route('booking_requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('bookingRequests.0.payment_preference', 'cmi'));
     }
 
     // ── /reserve prefill, handed over by the landing search panel ─────────

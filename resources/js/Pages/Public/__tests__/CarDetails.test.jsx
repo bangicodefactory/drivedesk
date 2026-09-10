@@ -178,3 +178,30 @@ describe('CarDetails — booking card', () => {
         expect(screen.getByText(/aucun paiement en ligne/i)).toBeInTheDocument();
     });
 });
+
+describe('CarDetails — price note follows the flag', () => {
+    it('says cash-only while card payment is off', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: false } } },
+        });
+        renderDetails();
+
+        expect(screen.getByText(/aucun paiement en ligne/i)).toBeInTheDocument();
+    });
+
+    it('stops denying online payment once card payment is offered', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: true } } },
+        });
+        renderDetails();
+
+        expect(screen.queryByText(/aucun paiement en ligne/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/rien n'est prélevé au moment de la demande/i)).toBeInTheDocument();
+    });
+
+    it('never names PayPal', () => {
+        const { container } = renderDetails();
+
+        expect(container.textContent).not.toMatch(/paypal/i);
+    });
+});

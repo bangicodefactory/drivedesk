@@ -47,10 +47,27 @@ return [
     'features' => [
         'paypal'          => true,
         'stripe'          => true,
-        // Off -- see the note in _default.php. It was true here while nothing
-        // read it; correcting the wizard's prop path (BAN-328) made it visible,
-        // which is what turned a dormant flag into an offer of card payment.
-        'booking_payment' => false,
+        // On, deliberately and with a caveat (BAN-334). This is the documented
+        // exception to the note in _default.php, which keeps it off by default.
+        //
+        // What this actually switches on is one tile in the /reserve wizard's
+        // payment step. It gates no route, and nothing in this codebase can
+        // charge a card: there is no CMI package in composer.json, no hosted-
+        // page redirect, no callback controller, no webhook. What the visitor
+        // picks is recorded as `booking_requests.payment_preference` -- a
+        // stated intent, so staff know to ring them about card payment rather
+        // than expecting cash at the desk.
+        //
+        // The copy on that tile has to keep saying so. RequestBookingController
+        // validates payment_preference as in:cash,cmi and nothing downstream
+        // treats 'cmi' as paid, so no money flow depends on this being right --
+        // but a visitor's expectation does.
+        //
+        // The thing to watch: with this true, the day someone registers a route
+        // behind feature:booking_payment it is live in production the moment it
+        // merges. RouteIntegrityTest holds that line until a real callback
+        // exists.
+        'booking_payment' => true,
         'excel_import'    => true,
         'multi_branch'    => true,
         'tva_renumber'    => true,
