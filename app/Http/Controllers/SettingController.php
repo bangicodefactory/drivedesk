@@ -141,11 +141,14 @@ class SettingController extends Controller
     public function general()
     {
         $loginUser = \Auth::user();
-        $settings  = settings();
 
         return Inertia::render('Settings/General', [
             'loginUser' => ['type' => $loginUser->type],
-            'settings'  => $settings,
+            'settings'  => $this->settingsSubset([
+                'app_name', 'admin_signature',
+                // Home-banner filenames, rendered as previews.
+                'image_home_1', 'image_home_1_desktop', 'image_home_1_mobile',
+            ]),
         ]);
     }
 
@@ -313,7 +316,10 @@ class SettingController extends Controller
     public function smtp()
     {
         return Inertia::render('Settings/Smtp', [
-            'settings' => settings(),
+            'settings' => $this->settingsSubset([
+                'SERVER_DRIVER', 'SERVER_HOST', 'SERVER_PORT', 'SERVER_USERNAME',
+                'SERVER_PASSWORD', 'SERVER_ENCRYPTION', 'FROM_EMAIL', 'FROM_NAME',
+            ]),
         ]);
     }
 
@@ -402,12 +408,63 @@ class SettingController extends Controller
         return redirect()->back()->with('error', __('Invalid user.'));
     }
 
+    /**
+     * The settings a page is allowed to receive, and nothing else.
+     *
+     * Inertia serialises props into the page's HTML, so `'settings' => settings()`
+     * ships every row this tenant has to every settings screen -- including
+     * credentials belonging to a different screen entirely. settingsFor() merges
+     * DB rows over the defaults, so trimming settingsKeys() does not help: a row
+     * saved before the default was removed survives it.
+     *
+     * Each page therefore declares what it reads. Missing keys come back null,
+     * which is what the JSX already defaults for (`settings?.X ?? ''`).
+     *
+     * Note the two screens whose own subject is a secret -- SMTP and reCAPTCHA.
+     * The allow-list stops them carrying *other* screens' credentials; it does
+     * not stop them round-tripping their own, which is what an editable
+     * credential field does by construction. Masking those is a separate change.
+     */
+    private function settingsSubset(array $allowed): array
+    {
+        $s = settings();
+
+        return collect($allowed)
+            ->mapWithKeys(fn ($key) => [$key => $s[$key] ?? null])
+            ->all();
+    }
+
     //    ---------------------- Payment --------------------------------------------------------
 
     public function payment()
     {
+        // An explicit allow-list, not settings() wholesale.
+        //
+        // settingsFor() merges DB rows *over* the defaults, so any deployment
+        // that ever saved a gateway credential still has a `settings` row named
+        // STRIPE_SECRET / paypal_secret_key / flutterwave_secret_key -- and
+        // sharing the whole array serialised those secrets into the HTML of
+        // this page, readable by anyone who could open it or by anything that
+        // cached the response. Removing the keys from settingsKeys() does not
+        // fix that on its own, which is why this lands first and separately.
+        //
+        // Deliberately not gated on a `manage payment settings` permission:
+        // that permission is granted to the super-admin role only
+        // (DefaultDataUsersTableSeeder), so adding a check here would lock every
+        // owner out of their own currency and bank-transfer settings. Doing it
+        // properly needs a permission backfill and touches the permissions
+        // matrix, which CLAUDE.md §4 calls sacred -- its own ticket.
         return Inertia::render('Settings/Payment', [
-            'settings' => settings(),
+            'settings' => $this->settingsSubset([
+                'CURRENCY',
+                'CURRENCY_SYMBOL',
+                'bank_transfer_payment',
+                'bank_name',
+                'bank_holder_name',
+                'bank_account_number',
+                'bank_ifsc_code',
+                'bank_other_details',
+            ]),
         ]);
     }
 
@@ -429,9 +486,15 @@ class SettingController extends Controller
         $currencyArray = [
             'CURRENCY' => $request->CURRENCY,
             'CURRENCY_SYMBOL' => $request->CURRENCY_SYMBOL,
-            'bank_transfer_payment' => $request->bank_transfer_payment ?? 'off',
-            'STRIPE_PAYMENT' => $request->stripe_payment ?? 'off',
-            'paypal_payment' => $request->paypal_payment ?? 'off',
+            // bank_transfer_payment is written by the bank block below, not
+            // here. It used to be `?? 'off'`, so any save that did not carry the
+            // field -- which was every save, since the page never registered it
+            // -- silently switched bank transfer off.
+            // The STRIPE_PAYMENT / paypal_payment master toggles went with their
+            // blocks (BAN-335). They were written on every save regardless of
+            // whether the form carried them, so a save from the trimmed page
+            // would have quietly flipped both to 'off' -- writing rows nothing
+            // reads, which is how they got here in the first place.
         ];
         foreach ($currencyArray as $key => $val) {
             \DB::insert(
@@ -446,29 +509,49 @@ class SettingController extends Controller
         }
 
         //        For Bank Transfer Settings
-        if (isset($request->bank_transfer_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'bank_name' => 'required',
-                    'bank_holder_name' => 'required',
-                    'bank_account_number' => 'required',
-                    'bank_ifsc_code' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
+        //
+        // Required only when the method is actually switched on. It used to be
+        // required whenever the field was present at all, which is why the page
+        // could not afford to send it -- and not sending it is what made every
+        // bank edit vanish while the screen said "Payment successfully saved."
+        if ($request->has('bank_transfer_payment')) {
+            if ($request->input('bank_transfer_payment') === 'on') {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'bank_name' => 'required',
+                        'bank_holder_name' => 'required',
+                        'bank_account_number' => 'required',
+                        'bank_ifsc_code' => 'required',
+                    ]
+                );
+                if ($validator->fails()) {
+                    $messages = $validator->getMessageBag();
+                    return redirect()->back()->with('error', $messages->first());
+                }
             }
 
-            $bankArray = [
-                'bank_transfer_payment' => $request->bank_transfer_payment ?? 'off',
-                'bank_name' => $request->bank_name,
-                'bank_holder_name' => $request->bank_holder_name,
-                'bank_account_number' => $request->bank_account_number,
-                'bank_ifsc_code' => $request->bank_ifsc_code,
-                'bank_other_details' => !empty($request->bank_other_details) ? $request->bank_other_details : '',
-            ];
+            $bankArray = ['bank_transfer_payment' => $request->input('bank_transfer_payment')];
+
+            // Only the detail fields the request actually carried.
+            //
+            // settings.value is NOT NULL, and these were read straight off the
+            // request -- fine while the required-validation above ran on every
+            // save, since it guaranteed they were present. Once turning the
+            // method *off* stopped requiring them, a toggle-only save passed
+            // null straight into the insert and produced a 500. A request that
+            // omits a field is not asking to blank it either.
+            foreach ([
+                'bank_name',
+                'bank_holder_name',
+                'bank_account_number',
+                'bank_ifsc_code',
+                'bank_other_details',
+            ] as $field) {
+                if ($request->has($field)) {
+                    $bankArray[$field] = (string) $request->input($field, '');
+                }
+            }
 
             foreach ($bankArray as $key => $val) {
                 \DB::insert(
@@ -483,109 +566,15 @@ class SettingController extends Controller
             }
         }
 
-        //        For Strip Settings
-        if (isset($request->stripe_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'stripe_key' => 'required',
-                    'stripe_secret' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $stripeArray = [
-                'STRIPE_PAYMENT' => $request->stripe_payment ?? 'off',
-                'STRIPE_KEY' => $request->stripe_key,
-                'STRIPE_SECRET' => $request->stripe_secret,
-            ];
-
-            foreach ($stripeArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
-
-
-        //        For Paypal Settings
-
-        if (isset($request->paypal_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'paypal_mode' => 'required',
-                    'paypal_client_id' => 'required',
-                    'paypal_secret_key' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $paypalArray = [
-                'paypal_payment' => $request->paypal_payment ?? 'off',
-                'paypal_mode' => $request->paypal_mode,
-                'paypal_client_id' => $request->paypal_client_id,
-                'paypal_secret_key' => $request->paypal_secret_key,
-            ];
-
-            foreach ($paypalArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
-
-        //  For Flutterwave Settings
-
-        if (isset($request->flutterwave_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'flutterwave_public_key' => 'required',
-                    'flutterwave_secret_key' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $flutterwaveArray = [
-                'flutterwave_payment' => $request->flutterwave_payment ?? 'off',
-                'flutterwave_public_key' => $request->flutterwave_public_key,
-                'flutterwave_secret_key' => $request->flutterwave_secret_key,
-            ];
-
-            foreach ($flutterwaveArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
+        // Stripe, PayPal and Flutterwave blocks removed (BAN-335). None of
+        // the three was ever wired to anything: no SDK in composer.json, no
+        // route, no controller, no webhook. What was here was a credential
+        // form that wrote ten settings rows nothing ever read.
+        //
+        // The rows themselves are not deleted. A down() that cannot restore a
+        // secret is not a real down(), and dropping a populated row in
+        // production is what CLAUDE.md §8 forbids -- if a deployment saved a
+        // live key, rotate it at the provider and remove it out of band.
 
         flushSettingsCache();
         return redirect()->back()->with('success', __('Payment successfully saved.'));
@@ -595,11 +584,18 @@ class SettingController extends Controller
 
     public function company()
     {
-        $settings = settings();
         $timezones = config('timezones');
 
         return Inertia::render('Settings/Company', [
-            'settings'  => $settings,
+            'settings'  => $this->settingsSubset([
+                'company_name', 'company_email', 'company_phone', 'company_address',
+                'company_date_format', 'company_time_format', 'timezone',
+                'CURRENCY', 'CURRENCY_SYMBOL',
+                'booking_number_prefix', 'client_number_prefix',
+                'driver_number_prefix', 'vehicle_number_prefix',
+                'rental_agreement_number_prefix', 'rental_agreement_terms',
+                'rc', 'ice', 'patente', 'if',
+            ]),
             'timezones' => $timezones ?? [],
         ]);
     }
@@ -717,9 +713,10 @@ class SettingController extends Controller
 
     public function siteSEO()
     {
-        $settings = settings();
         return Inertia::render('Settings/SiteSeo', [
-            'settings' => $settings,
+            'settings' => $this->settingsSubset([
+                'meta_seo_title', 'meta_seo_description', 'meta_seo_keyword', 'meta_seo_image',
+            ]),
         ]);
     }
 
@@ -782,9 +779,10 @@ class SettingController extends Controller
 
     public function googleRecaptcha()
     {
-        $settings = settings();
         return Inertia::render('Settings/Recaptcha', [
-            'settings' => $settings,
+            'settings' => $this->settingsSubset([
+                'google_recaptcha', 'recaptcha_key', 'recaptcha_secret',
+            ]),
         ]);
     }
 
@@ -946,7 +944,9 @@ class SettingController extends Controller
         }
 
         return Inertia::render('Settings/Branding', [
-            'settings' => settings(),
+            'settings' => $this->settingsSubset([
+                'brand_color', 'accent_color', 'brand_neutral', 'layout_mode',
+            ]),
         ]);
     }
 
