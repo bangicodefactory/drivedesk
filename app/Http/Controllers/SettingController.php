@@ -406,8 +406,39 @@ class SettingController extends Controller
 
     public function payment()
     {
+        $s = settings();
+
+        // An explicit allow-list, not settings() wholesale.
+        //
+        // settingsFor() merges DB rows *over* the defaults, so any deployment
+        // that ever saved a gateway credential still has a `settings` row named
+        // STRIPE_SECRET / paypal_secret_key / flutterwave_secret_key -- and
+        // sharing the whole array serialised those secrets into the HTML of
+        // this page, readable by anyone who could open it or by anything that
+        // cached the response. Removing the keys from settingsKeys() does not
+        // fix that on its own, which is why this lands first and separately.
+        //
+        // Deliberately not gated on a `manage payment settings` permission:
+        // that permission is granted to the super-admin role only
+        // (DefaultDataUsersTableSeeder), so adding a check here would lock every
+        // owner out of their own currency and bank-transfer settings. Doing it
+        // properly needs a permission backfill and touches the permissions
+        // matrix, which CLAUDE.md §4 calls sacred -- its own ticket.
+        $allowed = [
+            'CURRENCY',
+            'CURRENCY_SYMBOL',
+            'bank_transfer_payment',
+            'bank_name',
+            'bank_holder_name',
+            'bank_account_number',
+            'bank_ifsc_code',
+            'bank_other_details',
+        ];
+
         return Inertia::render('Settings/Payment', [
-            'settings' => settings(),
+            'settings' => collect($allowed)
+                ->mapWithKeys(fn ($key) => [$key => $s[$key] ?? null])
+                ->all(),
         ]);
     }
 

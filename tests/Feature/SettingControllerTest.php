@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -780,6 +781,66 @@ class SettingControllerTest extends TestCase
             ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
                 ->component('Settings/Payment')
                 ->has('settings')
+            );
+    }
+
+    /**
+     * BAN-335. payment() shared settings() wholesale, and settingsFor() merges
+     * DB rows over the defaults -- so a deployment that had ever saved a
+     * gateway credential served the plaintext inside the HTML of this page.
+     *
+     * The keys are gone from settingsKeys() in the same branch, which does not
+     * help on its own: the rows survive their removal. The allow-list is what
+     * closes it.
+     */
+    public function test_the_payment_page_does_not_serialise_gateway_secrets(): void
+    {
+        $sentinels = [
+            'STRIPE_SECRET'          => 'sk_live_SENTINEL_STRIPE',
+            'STRIPE_KEY'             => 'pk_live_SENTINEL_STRIPE',
+            'paypal_secret_key'      => 'SENTINEL_PAYPAL_SECRET',
+            'paypal_client_id'       => 'SENTINEL_PAYPAL_CLIENT',
+            'flutterwave_secret_key' => 'SENTINEL_FLW_SECRET',
+        ];
+
+        foreach ($sentinels as $name => $value) {
+            Setting::create(['name' => $name, 'value' => $value, 'parent_id' => $this->owner->id]);
+        }
+        flushSettingsCache($this->owner->id);
+
+        $response = $this->actingAs($this->owner)->get(route('setting.payment'))->assertOk();
+
+        foreach ($sentinels as $name => $value) {
+            $response->assertDontSee($value);
+        }
+
+        $response->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->missing('settings.STRIPE_SECRET')
+            ->missing('settings.STRIPE_KEY')
+            ->missing('settings.paypal_secret_key')
+            ->missing('settings.paypal_client_id')
+            ->missing('settings.flutterwave_secret_key')
+        );
+    }
+
+    /** The keys the page genuinely needs still arrive. */
+    public function test_the_payment_page_still_receives_what_it_renders(): void
+    {
+        Setting::create(['name' => 'bank_name', 'value' => 'Attijariwafa', 'parent_id' => $this->owner->id]);
+        flushSettingsCache($this->owner->id);
+
+        $this->actingAs($this->owner)
+            ->get(route('setting.payment'))
+            ->assertOk()
+            ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->has('settings.CURRENCY')
+                ->has('settings.CURRENCY_SYMBOL')
+                ->has('settings.bank_transfer_payment')
+                ->where('settings.bank_name', 'Attijariwafa')
+                ->has('settings.bank_holder_name')
+                ->has('settings.bank_account_number')
+                ->has('settings.bank_ifsc_code')
+                ->has('settings.bank_other_details')
             );
     }
 
