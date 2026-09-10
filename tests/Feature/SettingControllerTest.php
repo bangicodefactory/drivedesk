@@ -785,14 +785,59 @@ class SettingControllerTest extends TestCase
     }
 
     /**
-     * BAN-335. payment() shared settings() wholesale, and settingsFor() merges
-     * DB rows over the defaults -- so a deployment that had ever saved a
-     * gateway credential served the plaintext inside the HTML of this page.
+     * BAN-335. Every settings page shared settings() wholesale, and
+     * settingsFor() merges DB rows over the defaults -- so a deployment that
+     * had ever saved a gateway credential served the plaintext inside the HTML
+     * of *all* of them. The keys are gone from settingsKeys() in the same
+     * branch, which does not help on its own: the rows survive their removal.
      *
-     * The keys are gone from settingsKeys() in the same branch, which does not
-     * help on its own: the rows survive their removal. The allow-list is what
-     * closes it.
+     * The first version of this test covered /settings/payment alone, which
+     * passed while the same secret sat one click away on /settings/smtp. Every
+     * page that renders settings is checked here, and a new one that forgets
+     * the allow-list will fail as soon as its route is added below.
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('settingsPages')]
+    public function test_no_settings_page_serialises_another_pages_credentials(string $routeName): void
+    {
+        $sentinels = [
+            'STRIPE_SECRET'          => 'sk_live_SENTINEL_STRIPE',
+            'paypal_secret_key'      => 'SENTINEL_PAYPAL_SECRET',
+            'flutterwave_secret_key' => 'SENTINEL_FLW_SECRET',
+            // Not a dead gateway key -- the live SMTP password. It belongs to
+            // /settings/smtp and had no business on the other six.
+            'SERVER_PASSWORD'        => 'SENTINEL_SMTP_PASSWORD',
+        ];
+
+        foreach ($sentinels as $name => $value) {
+            Setting::create(['name' => $name, 'value' => $value, 'parent_id' => $this->owner->id]);
+        }
+        flushSettingsCache($this->owner->id);
+
+        $response = $this->actingAs($this->owner)->get(route($routeName))->assertOk();
+
+        foreach ($sentinels as $name => $value) {
+            // SMTP is allowed its own password; it is the field that screen edits.
+            if ($routeName === 'setting.smtp' && $name === 'SERVER_PASSWORD') {
+                continue;
+            }
+
+            $response->assertDontSee($value);
+        }
+    }
+
+    public static function settingsPages(): array
+    {
+        return [
+            'payment'   => ['setting.payment'],
+            'smtp'      => ['setting.smtp'],
+            'general'   => ['setting.general'],
+            'company'   => ['setting.company'],
+            'seo'       => ['setting.site.seo'],
+            'recaptcha' => ['setting.google.recaptcha'],
+            'branding'  => ['setting.branding'],
+        ];
+    }
+
     public function test_the_payment_page_does_not_serialise_gateway_secrets(): void
     {
         $sentinels = [
@@ -994,6 +1039,76 @@ class SettingControllerTest extends TestCase
                 'parent_id' => $this->owner->id,
             ]);
         }
+    }
+
+    /**
+     * BAN-335. The page never registered bank_transfer_payment, so an ordinary
+     * save -- edit a bank field, press Save -- went without it. paymentData
+     * then wrote 'off' from a `?? 'off'` default and skipped the whole bank
+     * block, discarding the edit while flashing "Payment successfully saved."
+     */
+    public function test_saving_currency_alone_does_not_switch_bank_transfer_off(): void
+    {
+        Setting::create(['name' => 'bank_transfer_payment', 'value' => 'on', 'parent_id' => $this->owner->id]);
+        flushSettingsCache($this->owner->id);
+
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), ['CURRENCY' => 'MAD', 'CURRENCY_SYMBOL' => 'Dh'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'bank_transfer_payment',
+            'value'     => 'on',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    /** And an edit to a bank field is kept rather than silently dropped. */
+    public function test_a_bank_detail_edit_is_persisted(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'              => 'MAD',
+                'CURRENCY_SYMBOL'       => 'Dh',
+                'bank_transfer_payment' => 'on',
+                'bank_name'             => 'Bank of Africa',
+                'bank_holder_name'      => 'DriveDesk SARL',
+                'bank_account_number'   => '011780000123456789012345',
+                'bank_ifsc_code'        => 'BMCEMAMC',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'bank_name',
+            'value'     => 'Bank of Africa',
+            'parent_id' => $this->owner->id,
+        ]);
+    }
+
+    /**
+     * Turning bank transfer off must not demand the details it is switching
+     * away from. They used to be required whenever the field was present at
+     * all, which is the reason the page could not afford to send it.
+     */
+    public function test_switching_bank_transfer_off_does_not_require_the_details(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('setting.payment'), [
+                'CURRENCY'              => 'MAD',
+                'CURRENCY_SYMBOL'       => 'Dh',
+                'bank_transfer_payment' => 'off',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success')
+            ->assertSessionMissing('error');
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'bank_transfer_payment',
+            'value'     => 'off',
+            'parent_id' => $this->owner->id,
+        ]);
     }
 
     /** The half of this screen that is real still saves. */

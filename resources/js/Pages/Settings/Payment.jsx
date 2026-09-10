@@ -37,6 +37,12 @@ function Payment({ settings }) {
         defaultValues: {
             CURRENCY_SYMBOL:        settings?.CURRENCY_SYMBOL        ?? '',
             CURRENCY:               settings?.CURRENCY               ?? '',
+            // Was absent: in the schema, but with no default and never
+            // registered, so it only entered the payload when the switch was
+            // clicked. Every ordinary save (edit a bank field, press Save) went
+            // without it, which made paymentData write 'off' and skip the bank
+            // block entirely -- the edit was discarded under a success message.
+            bank_transfer_payment:  settings?.bank_transfer_payment  ?? 'off',
             bank_name:              settings?.bank_name              ?? '',
             bank_holder_name:       settings?.bank_holder_name       ?? '',
             bank_account_number:    settings?.bank_account_number    ?? '',
@@ -81,7 +87,14 @@ function Payment({ settings }) {
                         <div className="space-y-3">
                             <ToggleRow
                                 label={t('Bank Transfer Payment')}
-                                checked={settings?.bank_transfer_payment === 'on' ? !bankOn : bankOn}
+                                // Just bankOn. The old expression inverted
+                                // itself whenever the stored value was 'on':
+                                // clicking off set the form value to 'off', so
+                                // bankOn went false, so `!bankOn` evaluated true
+                                // and the switch snapped straight back on. Three
+                                // sibling copies of the same idiom went with the
+                                // gateway blocks; this was the fourth.
+                                checked={bankOn}
                                 onChange={(v) => setValue('bank_transfer_payment', v ? 'on' : 'off')}
                             />
                             <div className="grid grid-cols-2 gap-4">
