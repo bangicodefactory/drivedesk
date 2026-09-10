@@ -20,8 +20,6 @@ return [
     'supported_locales' => ['nl', 'fr', 'en', 'ar'],
 
     'features' => [
-        'paypal'                  => false,
-        'stripe'                  => false,
         'booking_payment'         => false,
         'excel_import'            => true,
         'multi_branch'            => false,

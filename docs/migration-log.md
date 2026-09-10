@@ -13,26 +13,31 @@ Required fields per entry: date, commit hash, tester, outcome, notes.
 |------|--------|----------------------------------|--------|
 | —    | —      | Pending CI run                   | —      |
 
-### Stripe sandbox smoke tests
+### Gateway sandbox smoke tests — nothing to run
 
-> Run against Stripe test-mode keys. Card: `4242 4242 4242 4242`, any future expiry, any CVC.
+CLAUDE.md §4 requires money flows to be smoke-tested in a sandbox at each phase
+boundary. **This repository has no money flow to test**, and the checklists that
+stood here — Stripe and PayPal sandbox runs, every row "Pending" — described
+integrations that never existed:
 
-| Date | Commit | Tester | Flow | Outcome | Notes |
-|------|--------|--------|------|---------|-------|
-| —    | —      | —      | Subscription checkout (new owner) | Pending | — |
-| —    | —      | —      | Subscription upgrade | Pending | — |
-| —    | —      | —      | Payment refund via Stripe dashboard | Pending | — |
-| —    | —      | —      | Booking payment (card) | Pending | — |
+- no `stripe-php`, `srmklive/paypal` or Flutterwave package in `composer.json`;
+- no checkout route, controller, callback or webhook;
+- the credential forms that implied otherwise were removed in BAN-335, and the
+  `paypal` / `stripe` feature flags in BAN-336 (declared `true`, read by
+  nothing);
+- half those rows tested `subscriptions`, a capability deleted in BAN-199.
 
-### PayPal sandbox smoke tests
+Do not treat their absence as an outstanding gate. What *is* real is the cash
+path — recording a payment, the 5 000 MAD split and the factures it emits —
+covered automatically by `tests/Unit/Services/CashPaymentSplitterTest.php`,
+`ClientFeatureMatrixTest::test_a_cash_payment_over_the_ceiling_splits_for_drivedesk`
+and the payment tests in `BookingControllerTest`. Verify it by hand at a phase
+boundary the same way, over the ceiling, and record the run here.
 
-> Run against PayPal sandbox credentials (`paypal_mode=sandbox`).
-
-| Date | Commit | Tester | Flow | Outcome | Notes |
-|------|--------|--------|------|---------|-------|
-| —    | —      | —      | Subscription checkout via PayPal | Pending | — |
-| —    | —      | —      | PayPal cancel/return flow | Pending | — |
-| —    | —      | —      | Booking payment (PayPal) | Pending | — |
+When a gateway is genuinely integrated (CMI is the candidate; see
+`booking_payment` in `docs/inertia-shared-props.md`), its sandbox checklist
+belongs here, written against that integration rather than inherited from this
+one.
 
 ---
 
@@ -46,27 +51,19 @@ Required fields per entry: date, commit hash, tester, outcome, notes.
 
 Phase 2 changes shipped: `laravelcollective/html` removed (BAN-37), Laravel framework `^11.0` + PHPUnit `^11.0` + all compatible deps (BAN-37), `$routeMiddleware` → `$middlewareAliases` + `$dates` removal (BAN-39).
 
-### Stripe sandbox smoke tests
+### Manual smoke tests
 
-> Run against Stripe test-mode keys. Card: `4242 4242 4242 4242`, any future expiry, any CVC.
+> The gateway sandbox tables that stood here are gone — see Phase 1 for why.
+> Three of their rows had nothing to do with a gateway: they were filed under a
+> "Stripe" heading because that heading happened to exist. Those are real and
+> still pending, so they are kept, correctly named.
 
 | Date | Commit | Tester | Flow | Outcome | Notes |
 |------|--------|--------|------|---------|-------|
-| — | — | — | Login → create booking → Stripe card payment | Pending | — |
+| — | — | — | Login → create booking | Pending | — |
 | — | — | — | Generate rental-agreement PDF | Pending | — |
 | — | — | — | Sign rental agreement (signature pad) | Pending | — |
 | — | — | — | Re-download signed PDF | Pending | — |
-| — | — | — | Subscription checkout (new owner) | Pending | — |
-
-### PayPal sandbox smoke tests
-
-> Run against PayPal sandbox credentials (`PAYPAL_MODE=sandbox`).
-
-| Date | Commit | Tester | Flow | Outcome | Notes |
-|------|--------|--------|------|---------|-------|
-| — | — | — | Login → create booking → PayPal payment | Pending | — |
-| — | — | — | PayPal cancel/return flow | Pending | — |
-| — | — | — | Subscription checkout via PayPal | Pending | — |
 
 ---
 

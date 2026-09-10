@@ -45,8 +45,6 @@ return [
      * the demo shows the full product surface.
      */
     'features' => [
-        'paypal'          => true,
-        'stripe'          => true,
         // On, deliberately and with a caveat (BAN-334). This is the documented
         // exception to the note in _default.php, which keeps it off by default.
         //

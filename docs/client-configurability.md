@@ -126,8 +126,6 @@ return [
     'supported_locales' => ['nl', 'fr', 'en', 'ar'],
 
     'features' => [
-        'paypal'        => true,
-        'stripe'        => true,
         'excel_import'  => true,
         'multi_branch'  => false,
         'tva_renumber'  => true,
@@ -156,8 +154,6 @@ And a baseline that everyone inherits (so we don't repeat ourselves):
 // config/clients/_default.php
 return [
     'features' => [
-        'paypal'        => true,
-        'stripe'        => true,
         'excel_import'  => true,
         'multi_branch'  => false,
         'tva_renumber'  => true,
@@ -221,7 +217,7 @@ After this, anywhere in the app:
 ```php
 config('client.name');                      // 'DriveDesk'
 config('client.default_locale');            // 'nl'
-config('client.features.paypal');           // true
+config('client.features.multi_branch');     // true
 
 $pricing = app(\App\Contracts\PricingServiceContract::class);
 // resolved to App\Clients\DriveDesk\Services\DriveDeskPricingService
@@ -231,13 +227,15 @@ $pricing = app(\App\Contracts\PricingServiceContract::class);
 
 ## 6. Feature flags
 
+> The examples below deliberately use flags this codebase really has. They
+> used to use `paypal`/`stripe`, which were retired in BAN-336: both were
+> declared, both read `true`, and nothing anywhere consulted either one.
+
 Defaults live in `config/features.php`:
 
 ```php
 // config/features.php
 return [
-    'paypal'        => env('FEATURE_PAYPAL', null),
-    'stripe'        => env('FEATURE_STRIPE', null),
     'excel_import'  => env('FEATURE_EXCEL_IMPORT', null),
     'multi_branch'  => env('FEATURE_MULTI_BRANCH', null),
     'tva_renumber'  => env('FEATURE_TVA_RENUMBER', null),
@@ -274,14 +272,14 @@ if (!function_exists('feature')) {
 Usage:
 
 ```php
-if (feature('paypal')) { /* ... */ }
+if (feature('traffic_violations')) { /* ... */ }
 ```
 
 In Blade (still relevant during the migration):
 
 ```blade
-@if (feature('paypal'))
-    <a href="{{ route('paypal.checkout') }}">Pay with PayPal</a>
+@if (feature('traffic_violations'))
+    <a href="{{ route('traffic_violations.index') }}">Traffic violations</a>
 @endif
 ```
 
@@ -291,7 +289,7 @@ In Inertia + React (post-Phase 5): pass `features` as a shared prop
 ```jsx
 import { usePage } from '@inertiajs/react';
 const { features } = usePage().props;
-{features.paypal && <PayPalButton />}
+{features.booking_payment && <CardPaymentTile />}
 ```
 
 For routes:
@@ -308,8 +306,8 @@ class RequireFeature
 }
 
 // routes/web.php
-Route::middleware('feature:paypal')->group(function () {
-    Route::post('/checkout/paypal', [PaymentController::class, 'paypal']);
+Route::middleware('feature:public_storefront')->group(function () {
+    Route::get('/landing', [HomeController::class, 'landing'])->name('client.home');
 });
 ```
 
@@ -398,7 +396,7 @@ When adding a new client, do everything in **one PR**:
    — empty stub. Real bindings show up later.
 3. Add `<new>` to the CI matrix.
 4. Add `.env.<new>.example` with placeholders for the keys that
-   client will need (Stripe pubkey/secret naming, PayPal, mail).
+   client will need (mail credentials, DB, any gateway they actually use).
 5. Create a GitHub Environment `production-<new>` and `staging-<new>`
    with the actual secrets and required reviewers.
 6. Add a GitHub Actions deploy workflow (or a matrix entry on the
@@ -437,8 +435,10 @@ For each client, the repo has:
 
 Each environment holds:
 
-- **Secrets**: `DB_HOST`, `DB_PASSWORD`, `STRIPE_SECRET`, `PAYPAL_*`,
-  `MAIL_PASSWORD`, `APP_KEY`, etc.
+- **Secrets**: `DB_HOST`, `DB_PASSWORD`, `MAIL_PASSWORD`, `APP_KEY`, and any
+  gateway credentials the client actually uses. (`STRIPE_SECRET` / `PAYPAL_*`
+  used to be listed here; no gateway is integrated in this codebase today --
+  BAN-335.)
 - **Required reviewers**: at least one human approves the deploy.
 - **Deployment branches/tags**: only tags from `main` may deploy to
   `production-<client>`.
