@@ -77,8 +77,17 @@ class ClientFeatureMatrixTest extends TestCase
         // and keeps the whole surface on except the B2C storefront.
         $this->asClient('drivedesk');
 
-        $this->assertTrue(feature('paypal'));
-        $this->assertTrue(feature('stripe'));
+        // BAN-336: retired. Both were true here and read by nothing -- no
+        // feature() call, no feature: middleware, no JSX -- so they were
+        // switches wired to nothing while reading as shipped capabilities.
+        // Asserted as absent *keys* rather than false values, the same way
+        // `subscriptions` is below: a false flag invites someone to flip it,
+        // and there is nothing behind these to turn on.
+        foreach (['paypal', 'stripe'] as $retired) {
+            $this->assertArrayNotHasKey($retired, config('client.features', []));
+            $this->assertArrayNotHasKey($retired, config('features', []));
+            $this->assertFalse(feature($retired));
+        }
         // BAN-334: on, by an explicit product decision, having been off since
         // BAN-328. It renders the booking wizard's online-payment tile and
         // nothing else -- it gates no route, and no gateway is integrated, so

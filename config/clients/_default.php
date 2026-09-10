@@ -8,8 +8,6 @@ return [
      * Set to today's behavior so existing deploys are unchanged.
      */
     'features' => [
-        'paypal'          => true,
-        'stripe'          => true,
         // Off. Nothing in this codebase can charge a card -- no SDK, no route,
         // no callback -- and this flag now drives a real UI: the booking
         // wizard's online-payment tile. Left true, every deployment that
