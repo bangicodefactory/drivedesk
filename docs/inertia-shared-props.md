@@ -47,8 +47,6 @@ overrides live in `config/clients/<client>.php`.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `paypal` | `true` | PayPal checkout |
-| `stripe` | `true` | Stripe checkout |
 | `booking_payment` | `false` | Whether the booking wizard offers card payment alongside cash. It gates that tile and the `payment_preference` values the server accepts — nothing else, and no route. No gateway is integrated, so "card" is a stated intent staff follow up on. `drivedesk` turns it on (BAN-334); read it via `useOnlinePayment()`, never off `props.features` (BAN-328) |
 | `excel_import` | `true` | Excel bulk-import |
 | `multi_branch` | `false` | Multi-branch fleet management |
@@ -66,7 +64,7 @@ export default function SomePage() {
     const { auth, branding, client, flash, translations } = usePage().props;
 
     // Guard a feature-gated section
-    if (!client.features.paypal) return null;
+    if (!client.features.traffic_violations) return null;
 
     // Show a flash message
     if (flash.success) return <p>{flash.success}</p>;

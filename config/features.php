@@ -12,8 +12,10 @@
  * Use feature('name') anywhere; never read this file directly.
  */
 return [
-    'paypal'           => env('FEATURE_PAYPAL', null),
-    'stripe'           => env('FEATURE_STRIPE', null),
+    // 'paypal' and 'stripe' retired (BAN-336). Neither was read anywhere:
+    // no feature() call, no feature: middleware, no JSX. They gated nothing,
+    // and the credential forms they nominally belonged to were removed in
+    // BAN-335 along with the last trace of either integration.
     'booking_payment'  => env('FEATURE_BOOKING_PAYMENT', null),
     'excel_import'     => env('FEATURE_EXCEL_IMPORT', null),
     'multi_branch'     => env('FEATURE_MULTI_BRANCH', null),
