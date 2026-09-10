@@ -1507,7 +1507,7 @@
     "payment_cash": "الدفع عند الاستلام",
     "payment_cash_desc": "ادفعوا نقدًا في المكتب",
     "payment_online": "الدفع عبر الإنترنت",
-    "payment_online_desc": "PayPal أو CMI",
+    "payment_online_desc": "بطاقة بنكية (CMI)",
     "payment_choose_gateway": "اختاروا وسيلة الدفع عبر الإنترنت",
     "payment_online_note": "سنتواصل معكم لإتمام الدفع عبر الإنترنت بعد طلبكم.",
     "confirmation_body_online": "سنتواصل معكم قريبًا لإتمام الدفع عبر الإنترنت وتأكيد حجزكم.",
@@ -1613,5 +1613,13 @@
     "New message from the website": "رسالة جديدة من الموقع",
     "Booking reference": "مرجع الحجز",
     "Message": "الرسالة",
-    "Reply to :name": "الرد على :name"
+    "Reply to :name": "الرد على :name",
+    "reassurance_1_title_card": "الدفع في الوكالة أو بالبطاقة",
+    "reassurance_1_desc_card": "لا يُخصم أي مبلغ عند تقديم الطلب. تدفع عند الاستلام، أو تتصل بك الوكالة لترتيب الدفع بالبطاقة.",
+    "summary_payment_note_card": "لا يُخصم أي مبلغ الآن. تدفع في الوكالة، أو بالبطاقة بعد التأكيد.",
+    "detail_price_note_card": "لا يُخصم أي مبلغ عند تقديم الطلب. تؤكد الوكالة المبلغ النهائي قبل الاستلام.",
+    "hero_subtitle_card": "التأمين مشمول. لا يُخصم أي مبلغ عند تقديم الطلب.",
+    "how_3_body_card": "تؤكد الوكالة التوفر، ثم تدفع عند الاستلام — أو بالبطاقة إذا طلبت ذلك.",
+    "Card — call the customer": "بطاقة — اتصل بالزبون",
+    "Cash": "نقدًا"
 }

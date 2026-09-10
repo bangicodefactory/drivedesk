@@ -176,3 +176,77 @@ describe('Landing — search panel', () => {
         expect(end.value).toBe('');
     });
 });
+
+describe('Landing — payment reassurance follows the flag', () => {
+    /**
+     * BAN-334. Turning booking_payment on made this card lie: it promised
+     * "aucun prélèvement en ligne" while the wizard, two steps later, offered a
+     * tile headed "Paiement en Ligne". Exactly the stale-copy failure that PR
+     * fixed elsewhere, introduced by the same PR here.
+     */
+    it('promises cash-only while card payment is off', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: false } } },
+        });
+        renderLanding();
+
+        expect(screen.getByText(/aucun prélèvement en ligne/i)).toBeInTheDocument();
+    });
+
+    it('stops promising cash-only once card payment is offered', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: true } } },
+        });
+        renderLanding();
+
+        expect(screen.queryByText(/aucun prélèvement en ligne/i)).not.toBeInTheDocument();
+        const card = screen.getByText(/paiement à l'agence ou par carte/i).closest('div');
+        // Still true in both modes, and the part that actually reassures.
+        // Scoped: the hero subtitle now carries the same sentence, so an
+        // unscoped query matches twice.
+        expect(within(card).getByText(/rien n'est prélevé au moment de la demande/i)).toBeInTheDocument();
+    });
+
+    /** Whatever the flag says, PayPal is not a method this app offers. */
+    it('never names PayPal', () => {
+        for (const booking_payment of [true, false]) {
+            vi.mocked(usePage).mockReturnValue({
+                props: { translations: {}, client: { features: { booking_payment } } },
+            });
+            const { container, unmount } = renderLanding();
+
+            expect(container.textContent).not.toMatch(/paypal/i);
+            unmount();
+        }
+    });
+});
+
+describe('Landing — every payment claim follows the flag', () => {
+    /**
+     * The first pass branched the reassurance card and left two other
+     * statements asserting branch payment unconditionally: the hero subtitle,
+     * which is the most prominent copy on the storefront, and step 03 of "How
+     * it works". A visitor offered the card tile was told twice on the same
+     * page that they pay at pick-up.
+     */
+    it('makes no unconditional pay-at-the-branch claim once card is offered', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: true } } },
+        });
+        const { container } = renderLanding();
+
+        expect(container.textContent).not.toMatch(/paiement à l'agence au retrait/i);
+        expect(container.textContent).not.toMatch(/vous réglez au retrait du véhicule/i);
+    });
+
+    it('keeps the flat cash-only wording while card is off', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { translations: {}, client: { features: { booking_payment: false } } },
+        });
+        const { container } = renderLanding();
+
+        expect(container.textContent).toMatch(/paiement à l'agence au retrait/i);
+        expect(container.textContent).toMatch(/vous réglez au retrait du véhicule/i);
+    });
+});
+

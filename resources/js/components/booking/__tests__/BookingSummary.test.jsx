@@ -125,3 +125,28 @@ describe('BookingSummary', () => {
         expect(screen.getByText(/aucun paiement en ligne/i)).toBeInTheDocument();
     });
 });
+
+describe('BookingSummary — payment note follows the flag', () => {
+    it('says cash-only while card payment is off', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { branding: { currencySymbol: 'Dh' }, client: { features: { booking_payment: false } } },
+        });
+        renderSummary();
+
+        expect(screen.getByText(/aucun paiement en ligne/i)).toBeInTheDocument();
+    });
+
+    /**
+     * The rail sits beside step 4, where the card tile is. Denying that the
+     * option exists, right next to the option, is worse than saying nothing.
+     */
+    it('stops denying online payment once the card tile exists', () => {
+        vi.mocked(usePage).mockReturnValue({
+            props: { branding: { currencySymbol: 'Dh' }, client: { features: { booking_payment: true } } },
+        });
+        renderSummary();
+
+        expect(screen.queryByText(/aucun paiement en ligne/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/rien n'est prélevé maintenant/i)).toBeInTheDocument();
+    });
+});
