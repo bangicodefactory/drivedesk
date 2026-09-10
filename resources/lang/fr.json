@@ -1627,5 +1627,9 @@
   "reassurance_1_title_card": "Paiement à l'agence ou par carte",
   "reassurance_1_desc_card": "Rien n'est prélevé au moment de la demande. Vous réglez au retrait, ou l'agence vous rappelle pour la carte.",
   "summary_payment_note_card": "Rien n'est prélevé maintenant. Vous réglez à l'agence, ou par carte après confirmation.",
-  "detail_price_note_card": "Rien n'est prélevé au moment de la demande. Le montant définitif est confirmé par l'agence avant le retrait."
+  "detail_price_note_card": "Rien n'est prélevé au moment de la demande. Le montant définitif est confirmé par l'agence avant le retrait.",
+  "hero_subtitle_card": "Assurance comprise. Rien n'est prélevé au moment de la demande.",
+  "how_3_body_card": "L'agence confirme la disponibilité, puis vous réglez au retrait — ou par carte si vous l'avez demandé.",
+  "Card — call the customer": "Carte — rappeler le client",
+  "Cash": "Espèces"
 }

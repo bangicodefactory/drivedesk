@@ -603,6 +603,33 @@ class RequestBookingControllerTest extends TestCase
         $this->assertDatabaseHas('booking_requests', ['payment_preference' => 'cash']);
     }
 
+    /**
+     * A rejected storefront request must say so out loud. The redirect is a
+     * 302, so Inertia re-renders /reserve from scratch and the four-step form
+     * remounts at step 1 -- every field error goes with it, including ones
+     * bound to a <FieldError> living inside a later step. Without a flash the
+     * visitor gets an emptied form and no explanation.
+     */
+    public function test_a_rejected_request_flashes_something_the_visitor_can_see(): void
+    {
+        config(['client.features.booking_payment' => false]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']))
+            ->assertSessionHasErrors('payment_preference')
+            ->assertSessionHas('error');
+    }
+
+    /** And an ordinary missing field, which reaches the same branch. */
+    public function test_a_missing_field_also_flashes(): void
+    {
+        $payload = $this->bookingPayload();
+        unset($payload['email']);
+
+        $this->post(route('booking.store_request'), $payload)
+            ->assertSessionHasErrors('email')
+            ->assertSessionHas('error');
+    }
+
     /** A complete, valid storefront booking request, overridable per test. */
     private function bookingPayload(array $overrides = []): array
     {
@@ -726,6 +753,27 @@ class RequestBookingControllerTest extends TestCase
         $details = json_decode(BookingRequest::latest('id')->first()->vehicle_details, true);
 
         $this->assertSame('2019', $details['year']);
+    }
+
+    /**
+     * BAN-334. The flag's whole justification is that staff ring the customer
+     * about card payment -- the storefront promises exactly that on the
+     * confirmation screen. Nothing sends that message: storeBooking()
+     * dispatches no mail and no notification. The only mechanism is a person
+     * seeing the preference, and it was on the detail page alone, so triage
+     * meant opening every request to find out which ones were waiting.
+     */
+    public function test_the_requests_list_shows_which_ones_are_waiting_on_a_call(): void
+    {
+        config(['client.features.booking_payment' => true]);
+
+        $this->post(route('booking.store_request'), $this->bookingPayload(['payment_preference' => 'cmi']));
+
+        $this->actingAs($this->owner)
+            ->get(route('booking_requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('bookingRequests.0.payment_preference', 'cmi'));
     }
 
     // ── /reserve prefill, handed over by the landing search panel ─────────

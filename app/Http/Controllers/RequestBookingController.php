@@ -235,9 +235,29 @@ class RequestBookingController extends Controller
          ]);
 
          if ($validator->fails()) {
+             // Flash a visible message alongside the field errors.
+             //
+             // This is a 302, not a 422, so Inertia treats it as an ordinary
+             // visit: /reserve re-renders from scratch, the four-step React
+             // form remounts at step 1, and every react-hook-form error is
+             // gone with it -- including any bound to a <FieldError> that only
+             // exists inside the step it belongs to. The visitor got an emptied
+             // form and no explanation.
+             //
+             // Pre-existing for every field, and BAN-334 widened the set of
+             // ways to reach it: payment_preference now depends on
+             // feature('booking_payment'), which can disagree between render
+             // and submit (a redeploy mid-session, a resubmitted cached page,
+             // or FEATURE_BOOKING_PAYMENT left blank in an .env -- env()
+             // returns '' rather than null for a present-but-empty key).
+             //
+             // StorefrontLayout toasts flash.error, so this at least tells them
+             // something happened. Surfacing the errors on the right step is a
+             // bigger change than this PR should carry.
              return redirect()->back()
                  ->withErrors($validator)
-                 ->withInput();
+                 ->withInput()
+                 ->with('error', $validator->errors()->first());
          }
 
          try {
@@ -386,6 +406,15 @@ class RequestBookingController extends Controller
                 'start_date'   => $br->start_date,
                 'end_date'     => $br->end_date,
                 'status'       => $br->status ?? 'pending',
+                // BAN-334. The storefront tells a guest who picks card that
+                // "nous vous contacterons rapidement pour finaliser votre
+                // paiement en ligne". Nothing in this codebase sends that
+                // message -- storeBooking() dispatches no mail and no
+                // notification -- so the only thing that can keep the promise
+                // is a person seeing it here. It was visible on the detail page
+                // alone, which meant opening every request one by one to find
+                // out which ones were waiting on a phone call.
+                'payment_preference' => $br->payment_preference,
             ]),
         ]);
     }

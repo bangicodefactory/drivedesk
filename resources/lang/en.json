@@ -1130,5 +1130,9 @@
     "reassurance_1_title_card": "Pay at the branch, or by card",
     "reassurance_1_desc_card": "Nothing is charged when you make the request. You pay on pick-up, or the branch calls you to arrange card payment.",
     "summary_payment_note_card": "Nothing is charged now. You pay at the branch, or by card once confirmed.",
-    "detail_price_note_card": "Nothing is charged when you make the request. The final amount is confirmed by the branch before pick-up."
+    "detail_price_note_card": "Nothing is charged when you make the request. The final amount is confirmed by the branch before pick-up.",
+    "hero_subtitle_card": "Insurance included. Nothing is charged when you make the request.",
+    "how_3_body_card": "The branch confirms availability, then you pay on pick-up — or by card if you asked for it.",
+    "Card — call the customer": "Card — call the customer",
+    "Cash": "Cash"
 }

@@ -68,6 +68,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                 <TableHead>{t('Vehicle')}</TableHead>
                                 <TableHead>{t('Start')}</TableHead>
                                 <TableHead>{t('End')}</TableHead>
+                                <TableHead>{t('Payment')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
                                 <TableHead className="text-end">{t('Action')}</TableHead>
                             </TableRow>
@@ -75,7 +76,7 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                         <TableBody>
                             {filtered.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                         {bookingRequests.length === 0 ? t('No booking requests yet') : t('No booking requests match your search')}
                                     </TableCell>
                                 </TableRow>
@@ -86,6 +87,20 @@ function BookingRequestIndex({ bookingRequests = [] }) {
                                     <TableCell>{br.car_name ?? '—'}</TableCell>
                                     <TableCell>{br.start_date}</TableCell>
                                     <TableCell>{br.end_date}</TableCell>
+                                    {/* BAN-334: a request whose guest chose card is
+                                        waiting on a phone call -- the storefront
+                                        promised one and nothing else sends it.
+                                        Highlighted so triage does not mean opening
+                                        every row to find out. */}
+                                    <TableCell>
+                                        {br.payment_preference === 'cmi' ? (
+                                            <Badge variant="default">{t('Card — call the customer')}</Badge>
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                {br.payment_preference === 'cash' ? t('Cash') : '—'}
+                                            </span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[br.status] ?? 'secondary'} className="capitalize">
                                             {t(br.status)}

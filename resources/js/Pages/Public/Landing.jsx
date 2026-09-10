@@ -55,6 +55,7 @@ function Eyebrow({ children, className = '' }) {
  */
 function Hero({ heroImage }) {
     const t = useTranslations();
+    const onlinePayment = useOnlinePayment();
     const image = heroImage?.desktop || heroImage?.mobile ? heroImage : null;
 
     return (
@@ -92,7 +93,9 @@ function Hero({ heroImage }) {
                         {t('hero_title', 'Louez une voiture, sans mauvaise surprise')}
                     </h1>
                     <p className="text-base md:text-lg leading-relaxed text-background/70 max-w-xl">
-                        {t('hero_subtitle', "Assurance comprise, paiement à l'agence au retrait.")}
+                        {onlinePayment
+                            ? t('hero_subtitle_card', "Assurance comprise. Rien n'est prélevé au moment de la demande.")
+                            : t('hero_subtitle', "Assurance comprise, paiement à l'agence au retrait.")}
                     </p>
                 </div>
             </div>
@@ -392,10 +395,17 @@ function Fleet({ vehicles, vehicleTypes }) {
  *  approval, pick-up and pay. No step promises an instant confirmation. */
 function HowItWorks() {
     const t = useTranslations();
+    const onlinePayment = useOnlinePayment();
     const steps = [
         { n: '01', title: t('how_1_title', 'Choisissez vos dates'), body: t('how_1_body', 'Indiquez le lieu et les dates : seules les voitures libres sur cette période vous sont proposées.') },
         { n: '02', title: t('how_2_title', 'Envoyez votre demande'), body: t('how_2_body', "Quelques informations sur le conducteur suffisent. Aucun paiement n'est demandé à cette étape.") },
-        { n: '03', title: t('how_3_title', "Retirez à l'agence"), body: t('how_3_body', "L'agence confirme la disponibilité, puis vous réglez au retrait du véhicule.") },
+        {
+            n: '03',
+            title: t('how_3_title', "Retirez à l'agence"),
+            body: onlinePayment
+                ? t('how_3_body_card', "L'agence confirme la disponibilité, puis vous réglez au retrait — ou par carte si vous l'avez demandé.")
+                : t('how_3_body', "L'agence confirme la disponibilité, puis vous réglez au retrait du véhicule."),
+        },
     ];
 
     return (
