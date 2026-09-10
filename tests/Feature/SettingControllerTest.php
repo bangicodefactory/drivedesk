@@ -952,115 +952,81 @@ class SettingControllerTest extends TestCase
             ->assertSessionHas('error');
     }
 
-    // ── SettingController::paymentData — stripe branch ────────────────────────
+    // ── SettingController::paymentData — the gateways that were never real ──
 
-    public function test_payment_data_with_stripe_persists_stripe_settings(): void
+    /**
+     * BAN-335. Stripe, PayPal and Flutterwave had a credential form here and
+     * nothing behind it: no SDK in composer.json, no route, no controller, no
+     * webhook. The six tests this replaces asserted that posting those fields
+     * wrote settings rows, which was true and was the problem.
+     *
+     * Now the opposite: posting them writes nothing. A stale client, a
+     * bookmarked form or a replayed request must not resurrect ten write-only
+     * keys -- especially the two that hold secrets.
+     */
+    public function test_posting_gateway_credentials_writes_nothing(): void
     {
         $this->actingAs($this->owner)
             ->post(route('setting.payment'), [
-                'CURRENCY'        => 'EUR',
-                'CURRENCY_SYMBOL' => '€',
-                'stripe_payment'  => 'on',
-                'stripe_key'      => 'pk_test_abc',
-                'stripe_secret'   => 'sk_test_xyz',
+                'CURRENCY'               => 'MAD',
+                'CURRENCY_SYMBOL'        => 'Dh',
+                'stripe_payment'         => 'on',
+                'stripe_key'             => 'pk_live_SHOULD_NOT_PERSIST',
+                'stripe_secret'          => 'sk_live_SHOULD_NOT_PERSIST',
+                'paypal_payment'         => 'on',
+                'paypal_mode'            => 'live',
+                'paypal_client_id'       => 'SHOULD_NOT_PERSIST',
+                'paypal_secret_key'      => 'SHOULD_NOT_PERSIST',
+                'flutterwave_payment'    => 'on',
+                'flutterwave_public_key' => 'SHOULD_NOT_PERSIST',
+                'flutterwave_secret_key' => 'SHOULD_NOT_PERSIST',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        $this->assertDatabaseHas('settings', [
-            'name'  => 'STRIPE_KEY',
-            'value' => 'pk_test_abc',
-            'type'  => 'payment',
-        ]);
+        foreach ([
+            'STRIPE_PAYMENT', 'STRIPE_KEY', 'STRIPE_SECRET',
+            'paypal_payment', 'paypal_mode', 'paypal_client_id', 'paypal_secret_key',
+            'flutterwave_payment', 'flutterwave_public_key', 'flutterwave_secret_key',
+        ] as $name) {
+            $this->assertDatabaseMissing('settings', [
+                'name'      => $name,
+                'parent_id' => $this->owner->id,
+            ]);
+        }
     }
 
-    public function test_payment_data_stripe_flashes_error_on_missing_stripe_key(): void
+    /** The half of this screen that is real still saves. */
+    public function test_currency_and_bank_transfer_still_save(): void
     {
         $this->actingAs($this->owner)
             ->post(route('setting.payment'), [
-                'CURRENCY'        => 'EUR',
-                'CURRENCY_SYMBOL' => '€',
-                'stripe_payment'  => 'on',
-                // stripe_key missing
-                'stripe_secret'   => 'sk_test_xyz',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('error');
-    }
-
-    // ── SettingController::paymentData — paypal branch ────────────────────────
-
-    public function test_payment_data_with_paypal_persists_paypal_settings(): void
-    {
-        $this->actingAs($this->owner)
-            ->post(route('setting.payment'), [
-                'CURRENCY'          => 'USD',
-                'CURRENCY_SYMBOL'   => '$',
-                'paypal_payment'    => 'on',
-                'paypal_mode'       => 'sandbox',
-                'paypal_client_id'  => 'client-id-abc',
-                'paypal_secret_key' => 'secret-key-xyz',
+                'CURRENCY'              => 'MAD',
+                'CURRENCY_SYMBOL'       => 'Dh',
+                'bank_transfer_payment' => 'on',
+                'bank_name'             => 'Attijariwafa',
+                'bank_holder_name'      => 'DriveDesk SARL',
+                'bank_account_number'   => '007780000123456789012345',
+                'bank_ifsc_code'        => 'BCMAMAMC',
+                'bank_other_details'    => 'RIB on request',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        $this->assertDatabaseHas('settings', [
-            'name'  => 'paypal_client_id',
-            'value' => 'client-id-abc',
-            'type'  => 'payment',
-        ]);
+        foreach ([
+            'CURRENCY'              => 'MAD',
+            'CURRENCY_SYMBOL'       => 'Dh',
+            'bank_transfer_payment' => 'on',
+            'bank_name'             => 'Attijariwafa',
+        ] as $name => $value) {
+            $this->assertDatabaseHas('settings', [
+                'name'      => $name,
+                'value'     => $value,
+                'parent_id' => $this->owner->id,
+            ]);
+        }
     }
 
-    public function test_payment_data_paypal_flashes_error_on_missing_paypal_mode(): void
-    {
-        $this->actingAs($this->owner)
-            ->post(route('setting.payment'), [
-                'CURRENCY'          => 'USD',
-                'CURRENCY_SYMBOL'   => '$',
-                'paypal_payment'    => 'on',
-                // paypal_mode missing
-                'paypal_client_id'  => 'client-id',
-                'paypal_secret_key' => 'secret',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('error');
-    }
-
-    // ── SettingController::paymentData — flutterwave branch ───────────────────
-
-    public function test_payment_data_with_flutterwave_persists_flutterwave_settings(): void
-    {
-        $this->actingAs($this->owner)
-            ->post(route('setting.payment'), [
-                'CURRENCY'                => 'NGN',
-                'CURRENCY_SYMBOL'         => '₦',
-                'flutterwave_payment'     => 'on',
-                'flutterwave_public_key'  => 'FLWPUBK_test_abc',
-                'flutterwave_secret_key'  => 'FLWSECK_test_xyz',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
-
-        $this->assertDatabaseHas('settings', [
-            'name'  => 'flutterwave_public_key',
-            'value' => 'FLWPUBK_test_abc',
-            'type'  => 'payment',
-        ]);
-    }
-
-    public function test_payment_data_flutterwave_flashes_error_on_missing_public_key(): void
-    {
-        $this->actingAs($this->owner)
-            ->post(route('setting.payment'), [
-                'CURRENCY'                => 'NGN',
-                'CURRENCY_SYMBOL'         => '₦',
-                'flutterwave_payment'     => 'on',
-                // flutterwave_public_key missing
-                'flutterwave_secret_key'  => 'FLWSECK_test_xyz',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('error');
-    }
 
     // ── SettingController::generalData — super admin path ────────────────────
 

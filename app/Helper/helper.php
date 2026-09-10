@@ -71,13 +71,13 @@ if (!function_exists('settingsKeys')) {
             "rental_agreement_number_prefix" => "#RAG-000",
             'CURRENCY' => "MAD",
             'CURRENCY_SYMBOL' => "Dh",
-            'STRIPE_PAYMENT' => "off",
-            'STRIPE_KEY' => "",
-            'STRIPE_SECRET' => "",
-            "paypal_payment" => "off",
-            "paypal_mode" => "",
-            "paypal_client_id" => "",
-            "paypal_secret_key" => "",
+            // Stripe / PayPal / Flutterwave defaults removed (BAN-335). Ten
+            // write-only keys: the settings form wrote them, nothing ever read
+            // them, and no SDK, route or webhook existed to make them mean
+            // anything. Removing the defaults does not remove rows a deployment
+            // already saved -- settingsFor() merges DB over defaults -- which is
+            // why the page's allow-list, not this, is what stops them being
+            // served.
             "bank_transfer_payment" => "on",
             "bank_name" => "Test Bank",
             "bank_holder_name" => "Bank Holder Name",
@@ -86,9 +86,6 @@ if (!function_exists('settingsKeys')) {
             "bank_other_details" => "",
             "timezone" => "Pacific/Tahiti",
             // "TAHITI_NUMBER" => "",
-            "flutterwave_payment" => "off",
-            "flutterwave_public_key" => "",
-            "flutterwave_secret_key" => "",
         ];
     }
 }

@@ -461,8 +461,11 @@ class SettingController extends Controller
             'CURRENCY' => $request->CURRENCY,
             'CURRENCY_SYMBOL' => $request->CURRENCY_SYMBOL,
             'bank_transfer_payment' => $request->bank_transfer_payment ?? 'off',
-            'STRIPE_PAYMENT' => $request->stripe_payment ?? 'off',
-            'paypal_payment' => $request->paypal_payment ?? 'off',
+            // The STRIPE_PAYMENT / paypal_payment master toggles went with their
+            // blocks (BAN-335). They were written on every save regardless of
+            // whether the form carried them, so a save from the trimmed page
+            // would have quietly flipped both to 'off' -- writing rows nothing
+            // reads, which is how they got here in the first place.
         ];
         foreach ($currencyArray as $key => $val) {
             \DB::insert(
@@ -514,109 +517,15 @@ class SettingController extends Controller
             }
         }
 
-        //        For Strip Settings
-        if (isset($request->stripe_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'stripe_key' => 'required',
-                    'stripe_secret' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $stripeArray = [
-                'STRIPE_PAYMENT' => $request->stripe_payment ?? 'off',
-                'STRIPE_KEY' => $request->stripe_key,
-                'STRIPE_SECRET' => $request->stripe_secret,
-            ];
-
-            foreach ($stripeArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
-
-
-        //        For Paypal Settings
-
-        if (isset($request->paypal_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'paypal_mode' => 'required',
-                    'paypal_client_id' => 'required',
-                    'paypal_secret_key' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $paypalArray = [
-                'paypal_payment' => $request->paypal_payment ?? 'off',
-                'paypal_mode' => $request->paypal_mode,
-                'paypal_client_id' => $request->paypal_client_id,
-                'paypal_secret_key' => $request->paypal_secret_key,
-            ];
-
-            foreach ($paypalArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
-
-        //  For Flutterwave Settings
-
-        if (isset($request->flutterwave_payment)) {
-            $validator = \Validator::make(
-                $request->all(),
-                [
-                    'flutterwave_public_key' => 'required',
-                    'flutterwave_secret_key' => 'required',
-                ]
-            );
-            if ($validator->fails()) {
-                $messages = $validator->getMessageBag();
-                return redirect()->back()->with('error', $messages->first());
-            }
-
-            $flutterwaveArray = [
-                'flutterwave_payment' => $request->flutterwave_payment ?? 'off',
-                'flutterwave_public_key' => $request->flutterwave_public_key,
-                'flutterwave_secret_key' => $request->flutterwave_secret_key,
-            ];
-
-            foreach ($flutterwaveArray as $key => $val) {
-                \DB::insert(
-                    'insert into settings (`value`, `name`, `type`,`parent_id`) values (?, ?, ?,?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ',
-                    [
-                        $val,
-                        $key,
-                        'payment',
-                        parentId(),
-                    ]
-                );
-            }
-        }
+        // Stripe, PayPal and Flutterwave blocks removed (BAN-335). None of
+        // the three was ever wired to anything: no SDK in composer.json, no
+        // route, no controller, no webhook. What was here was a credential
+        // form that wrote ten settings rows nothing ever read.
+        //
+        // The rows themselves are not deleted. A down() that cannot restore a
+        // secret is not a real down(), and dropping a populated row in
+        // production is what CLAUDE.md §8 forbids -- if a deployment saved a
+        // live key, rotate it at the provider and remove it out of band.
 
         flushSettingsCache();
         return redirect()->back()->with('success', __('Payment successfully saved.'));
