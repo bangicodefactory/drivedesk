@@ -1,6 +1,11 @@
 # DriveDesk — Product roadmap (market research + app audit)
 
 Date: 2026-08-29 · Owner: Ahmed · Status: proposed
+Last reconciled against the code: **2026-09-11**, after BAN-333 (storefront
+redesign foundation, PR #49), BAN-334 (`booking_payment` on, PR #51), BAN-335
+(gateway credential forms removed, PR #53) and BAN-336 (`stripe` / `paypal`
+flags retired, PR #55). Reconciled: §1's gateway and flag rows, the Blade-tail
+count, §4's storefront row, §5 finding 11, items 2.6 / 3.1, Cleanup, and §7.1.
 
 This document is the outcome of three investigations run on 2026-08-29:
 
@@ -43,7 +48,8 @@ engineering view of the same question, reconciled with the code.
 | Demo gateway + demo-request approval | **Real** (flag `demo_gateway`) | `Pages/Public/DemoGateway.jsx`, `DemoApprovalController` |
 | SEO: sitemap, `llms.txt`, hreflang, locale-prefixed public URLs | **Real** | `SeoController`, `app/Support/{Seo,Locales}.php` |
 | Locales en / fr / ar / ary with true RTL | **Real** | `app/Http/Middleware/SetLocale.php`, `resources/js/app.jsx` |
-| Stripe / PayPal / Flutterwave | **Settings-only** — credential fields, no SDK, no checkout, no webhook | `Pages/Settings/Payment.jsx` |
+| Stripe / PayPal / Flutterwave | **Absent.** Was "settings-only" — credential fields with no SDK, no checkout, no webhook. The forms were removed in BAN-335 (they also serialised the stored secrets to the browser on seven settings pages) and the `stripe` / `paypal` flags retired in BAN-336. `Pages/Settings/Payment.jsx` survives, holding only currency and bank-transfer details | `Pages/Settings/Payment.jsx` |
+| Card payment intent on the public wizard | **Partial** (flag `booking_payment`, on for drivedesk since BAN-334) — one tile in the `/reserve` payment step, recorded as `booking_requests.payment_preference`. Nothing can charge a card: no gateway package, no redirect, no callback, no webhook. Staff ring the visitor back. See 2.6 | `RequestBookingController.php:234`, `hooks/useOnlinePayment.js` |
 | Subscriptions, packages | **Schema-only** — tables, no model/controller/route | `database/migrations/*subscriptions*`, `*package_transactions*` |
 | Coupons | **Schema-only** | `*create_coupons_table*`, ~10 orphan keys in `resources/lang/en.json` |
 | Multi-branch | **Flag-only** — `multi_branch` has no enforcement point; Places are pick-up points with a surcharge, not branches | `config/features.php` |
@@ -60,9 +66,16 @@ engineering view of the same question, reconciled with the code.
 
 ### Hygiene debt found on the way
 
-- 7 of 13 feature flags have **no enforcement point**: `paypal`, `stripe`,
-  `booking_payment`, `excel_import`, `multi_branch`, `tva_renumber`,
-  `signatures`. Flipping them changes nothing.
+- **3 of 11** feature flags have **no enforcement point**: `excel_import`,
+  `multi_branch`, `signatures`. Flipping them changes nothing.
+  *(Updated 2026-09-11. Was "7 of 13": `paypal` and `stripe`, which gated
+  nothing anywhere, were retired in BAN-336, taking the total to 11;
+  `tva_renumber` gained `feature:tva_renumber` middleware on its routes in
+  BAN-304 (`routes/web.php:533`); and `booking_payment` gained one in BAN-334 —
+  `RequestBookingController` narrows the accepted `payment_preference` values
+  to `cash` alone when it is off, and four public pages branch on it through
+  `useOnlinePayment()`. It still gates no route, and the flag being on does not
+  mean a card can be charged — see 2.6.)*
   *(Updated BAN-318: `subscriptions` used to be the exception — seven
   `feature('subscriptions')` branches in still-shipped Blade, one of which hid
   the Logged History menu entry. One of those branches called a model BAN-199
@@ -86,15 +99,32 @@ engineering view of the same question, reconciled with the code.
 - `docs/phase6-execution-plan.md` reports ~13 % of the Blade port done; the
   `resources/js/Pages/` tree shows it is essentially complete. The Phase 6 exit
   gate ("`resources/views/` only holds `app.blade.php` + email/PDF") is still not
-  met. Still Blade and still routed: `tva/create`, `booking/payment`,
-  `booking_requests/*`, `logged_history/*`, `user_permission/*`,
-  `settings/testmail`, `reminder/days_remaining` (returned by
-  `ReminderController.php:297`), `auth/confirm-password`, and the whole
-  `client/**` storefront — plus the scaffolding they extend:
-  `layouts/{app,auth,guest,landing}`, `admin/{menu,content,header,footer,head}`,
-  `dashboard/{index,super_admin}`, `driver/new_create`,
-  `reminder/_date_modal`, `tva/{days_remaining,_date_modal}`, `partials/alerts`.
-  Roughly 30 files, not 7.
+  met. **Re-derived from `return view(` / `Route::view(` on 2026-09-11**, eight
+  Blade pages are still routed: `tva/create` (`TvaController.php:117`),
+  `booking/payment` (`BookingController.php:1521`), `logged_history/index`
+  (`UserController.php:331`), `user_permission/create`
+  (`PermissionController.php:30`), `settings/testmail`
+  (`SettingController.php:380`), `reminder/days_remaining`
+  (`ReminderController.php:297`), `auth/confirm-password`
+  (`ConfirmablePasswordController.php:22`) and `client/pages/search` (the
+  `/search` closure, `routes/web.php:106`) — plus the 15 `ui-test/*` previews
+  (`client/tests/*` and `client/home`), already marked for deletion. Add the
+  scaffolding those extend: `layouts/{app,auth,guest,landing}`,
+  `admin/{menu,content,header,footer,head}`, `dashboard/{index,super_admin}`,
+  `driver/new_create`, `reminder/_date_modal`,
+  `tva/{days_remaining,_date_modal}`, `partials/alerts`.
+  `resources/views/` holds 112 `.blade.php` files, of which 21 are
+  `vendor/`, 10 `errors/`, 9 `email/`, 1 `pdf/` and 1 `seo/`.
+  *(Two corrections to the earlier version of this list. `booking_requests/*`
+  was never a Blade page — those routes are the POST approve/refuse actions.
+  `booking/planning` reads as Blade only because
+  `BookingController.php:1744` keeps the old `view('booking.planning')` call
+  commented above the live `Inertia::render`. And the whole `client/**`
+  storefront used to be listed: `/landing` and `/contact` are Inertia as of
+  BAN-329 / BAN-333 (`HomeController@landing` → `Public/Landing`,
+  `ContactController` → `Public/Contact`), though the Blade files they replaced
+  are still on disk, kept deliberately per CLAUDE.md §8 until the React
+  versions are verified in the running app.)*
 - Two vitest conventions coexist (`Pages/**/__tests__/` and
   `resources/js/tests/`), duplicating e.g. the Login test; no coverage threshold.
 
@@ -186,9 +216,9 @@ international benchmarks ship it.
 | Maintenance / vidange scheduling | ✅ | ✅ | Med-High | ✅ via Reminders | — |
 | Reports export (Excel/PDF), 10+ reports | ✅ | ✅ | High | TVA report + bulk PDF only | M |
 | Multi-agency / multi-branch | ✅ | ✅ | High | Flag-only | L |
-| Included storefront / embeddable booking widget | ✅ | ✅ | High | Blade storefront, off for drivedesk | M |
+| Included storefront / embeddable booking widget | ✅ | ✅ | High | ✅ storefront (React, on for drivedesk since BAN-329, rebuilt in BAN-333); no embeddable widget, not per-agency | M |
 | OTA / marketplace connectivity (Karvyx, LocalRent, Booking) | 🟡 | ✅ | High | Absent | L |
-| Online deposit prepay (YouCan Pay / CMI) | 🟡 | ✅ | Med | Absent | M |
+| Online deposit prepay (YouCan Pay / CMI) | 🟡 | ✅ | Med | Absent — the wizard collects a card *intent* (BAN-334), nothing charges | M |
 | Field-agent mobile app / PWA | ✅ | ✅ | High | Responsive web only, weak on phones | M–L |
 | GPS / telematics | 🟡 | ✅ | Med | Absent | L |
 | Customer portal / self-service | ❌ | ✅ | Low-Med | Absent | L |
@@ -251,9 +281,13 @@ CSS-first config) does not apply until that upgrade lands.
 10. `Pages/Booking/Planning.jsx` injects the FullCalendar script with no loading
     or error state, hardcoded `rgba(33,150,243,…)` colours (unreadable in dark
     mode), and uses **Premium** `resourceTimeline*` views — licence risk.
-11. `Pages/Public/Landing.jsx` auto-advances a carousel every 5 s with no pause
-    (WCAG 2.2.2) and unlabeled arrows; `Pages/Public/DemoGateway.jsx` bypasses
-    tokens with 56 inline styles and labels without `htmlFor`.
+11. ~~`Pages/Public/Landing.jsx` auto-advances a carousel every 5 s with no
+    pause (WCAG 2.2.2) and unlabeled arrows~~ — **fixed by BAN-333's rewrite**,
+    which replaced the carousel with a single hero banner
+    (`HomeController::landingProps()` reads only `image_home_1`), so there is
+    nothing left to auto-advance. `Pages/Public/DemoGateway.jsx` still bypasses
+    tokens with 56 inline styles and has no `htmlFor` on any label (verified
+    2026-09-11).
 12. Two form conventions: 45 pages on `useZodForm`, 9 on raw Inertia `useForm` —
     and those 9 are the most complex forms (`Booking/{Create,Edit}`,
     `RentalAgreement/{Create,Edit}`, `Credit/*`, `Notification/*`, `Tva/Edit`),
@@ -646,7 +680,7 @@ with zero client-side fallback today.
 | 2.3 | DGI e-invoicing: UBL 2.1 export per `tvas` row, ICE/IF validation, then a clearance adapter when the DGI API is published | `e_invoicing` | M–L |
 | 2.4 | PV: resident / non-resident routing, advance + re-invoice line with processing fee | `traffic_violations` (existing) | S |
 | 2.5 | Cahier des charges compliance file (fleet count vs 7, CNSS, licence, bonds, expiries) | `compliance_file` (new) | S–M |
-| 2.6 | Online deposit prepay via YouCan Pay / CMI, replacing the dead Stripe/PayPal settings. Becomes the enforcement point of the **existing** `booking_payment` flag (no new key); `stripe` / `paypal` are retired in the same PR | `booking_payment` (existing) | M |
+| 2.6 | Online deposit prepay via YouCan Pay / CMI: gateway package, hosted-page redirect, callback controller, webhook, and a booking that is actually marked paid. Becomes the *route-level* enforcement point of the **existing** `booking_payment` flag (no new key). **Groundwork shipped:** the dead Stripe/PayPal/Flutterwave settings are gone (BAN-335), `stripe` / `paypal` are retired (BAN-336), and the flag is on for drivedesk gating the wizard's card tile and `payment_preference` (BAN-334) — so what remains is the gateway itself. Money flow: CLAUDE.md §4/§9 apply (tests first, sandbox smoke test at the boundary), and `RouteIntegrityTest` holds the line until a real callback exists | `booking_payment` (existing) | M |
 | 2.7 | Shared `DataTable` (server pagination, sort, per-page, bulk) extracted from `Booking/Index.jsx`, adopted on the 16 client-filtered lists | — | M |
 | 2.8 | Mobile: table → card fallback, `md:grid-cols-2` forms, responsive Settings/Auth | — | M |
 | 2.9 | Contract creation wizard with CIN/permis capture | — | M |
@@ -657,7 +691,7 @@ with zero client-side fallback today.
 
 | # | Item | Flag | Effort |
 | --- | --- | --- | :-: |
-| 3.1 | Per-agency storefront / embeddable booking widget (port the Blade storefront) | `public_storefront` (existing) | M |
+| 3.1 | Per-agency storefront / embeddable booking widget. **The port is done** — the storefront is React and on for drivedesk (BAN-329), rebuilt booking-first in BAN-333 (landing, vehicle detail, wizard summary, confirmation, a `/contact` that delivers). What remains: the embeddable widget, the per-agency dimension, and the two public endpoints still scaffolding — `/search` (the last routed storefront Blade) and `POST /newsletter/subscribe`, which tells a visitor they subscribed and discards the address (`routes/web.php:112`) | `public_storefront` (existing) | M |
 | 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` (new) | L |
 | 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` (new) | L |
 | 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` (new, shared with 1.4) | M |
@@ -676,11 +710,14 @@ imports; delete `ui-test/*` and `/hello`; finish or remove
 `/newsletter/subscribe`; remove `composer.lock.backup`; rename `rentcar` →
 DriveDesk in `package.json`, `.env.example`, `CLAUDE.md`; correct
 `docs/phase6-execution-plan.md`; merge the two vitest trees; remove the
-unservable `nl` entry from `supported_locales`; for each of the seven no-op
-flags either add its enforcement point (2.6, 3.6) or delete the key with a
-matching edit to every `config/clients/*.php`.
+unservable `nl` entry from `supported_locales`; for each of the three
+remaining no-op flags (`excel_import`, `multi_branch`, `signatures`) either
+add its enforcement point (3.6 covers `multi_branch`) or delete the key with a
+matching edit to every `config/clients/*.php` — the precedent is BAN-336,
+which retired `paypal` and `stripe` exactly that way.
 
-*Phase 6 exit gate:* finish the Blade tail (~30 files, list in §1).
+*Phase 6 exit gate:* finish the Blade tail (eight routed pages plus the
+`ui-test/*` previews and the scaffolding they extend; list in §1).
 *(The `feature('subscriptions')` branches that used to gate this are gone —
 BAN-317 removed the reachable one in `admin/menu.blade.php`, BAN-318 the rest
 and the flag itself, so retiring the Blade tail no longer waits on it.)*
@@ -703,11 +740,60 @@ e-mails / SMS* → 1.8 (e-mail half only — SMS stays a no); *daily rates only*
 1.5; *online payment* → 2.6; *photo damage capture* → 2.1; *multi-branch* →
 3.6; *accounting integration* → 3.5; *mobile app* → 3.3.
 
+**BAN-334 does not clear the *online payment* line.** The flag being on means
+the wizard collects a stated preference, not that anything can be charged. That
+line may only be rewritten when 2.6's gateway, callback and webhook are merged
+and verified in the running app. Until then the handbook §9 wording stands, and
+the tile's own copy — "Carte bancaire (CMI)", with the confirmation screen
+promising a call-back rather than implying a payment went through — is what
+keeps the product honest about it.
+
 ### 7.1 Deliberate behaviour changes (not "same functionality")
 
 Most work here preserves observable behaviour per `CLAUDE.md` §4. Where it does
 not, the change and its cost are recorded here so nobody has to reconstruct the
 reasoning from a diff.
+
+**The `/reserve` wizard now offers a card tile (BAN-334).**
+
+- *What changed.* `booking_payment` is `true` for `drivedesk`, so the payment
+  step shows an online-payment tile beside cash and `storeBooking()` accepts
+  `payment_preference=cmi`. `payment_online_desc` was corrected in all three
+  locales from "PayPal ou CMI" to "Carte bancaire (CMI)" — PayPal had been
+  dropped as an intent, and the server already rejected it, so the tile was
+  advertising a method that would have failed validation the moment the flag
+  went on.
+- *Why it is justified.* Every Moroccan competitor takes a card intent at
+  booking time, and the alternative — a visitor who wants to pay by card
+  finding only "cash at the desk" — loses the booking silently. Recording the
+  preference costs nothing and tells staff who to ring.
+- *What it costs.* A visitor can now express an intent the product cannot
+  fulfil automatically, so the follow-up is manual and the copy carries the
+  whole weight of not over-promising. `RouteIntegrityTest` enforces the other
+  half: no route may hide behind `feature:booking_payment` until a real
+  callback exists, because with the flag on such a route ships live rather than
+  404ing.
+
+**The Stripe / PayPal / Flutterwave settings forms are gone (BAN-335, BAN-336).**
+
+- *What changed.* Three credential blocks disappeared from
+  `Settings/Payment.jsx`, along with their writes in
+  `SettingController::paymentData`, their ten `settingsKeys()` defaults and the
+  orphan `STRIPE_*` / `PAYPAL_*` vars in `.env.example`. The `stripe` and
+  `paypal` flags were retired. An admin who used to see "payment gateway
+  configuration" now sees currency and bank transfer only.
+- *Why it is justified.* None of the three was connected to anything — no
+  package, route, controller, webhook, or reader of any credential key — so the
+  forms were an invitation to paste a live secret into a field that led
+  nowhere. `/settings/payment` was also serialising the stored values back to
+  the browser, so anyone who reached the page could read them; that leak was
+  closed first (BAN-335, plus six sibling pages).
+- *What it costs.* Removed admin UI is an observable change, and a deployment
+  that saved keys still holds those rows: they are deliberately **not** dropped
+  (a `down()` cannot restore a secret, and §8 forbids dropping populated rows),
+  so rotate at the provider and delete out of band. The ~10 gateway translation
+  keys across 14 locale files stay too, per §4 — harmless once nothing renders
+  them, and a follow-up ticket's job to remove.
 
 **Blacklist gate now fires on booking *edit*, not only create (BAN-287).**
 

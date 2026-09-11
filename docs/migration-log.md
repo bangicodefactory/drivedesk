@@ -77,9 +77,21 @@ Phase 2 changes shipped: `laravelcollective/html` removed (BAN-37), Laravel fram
 
 Phase 3 changes shipped: Laravel `^12.0` + PHPUnit `^11.0` + all compatible deps (BAN-42), `previous_keys` + env-driven `maintenance` config (BAN-43). Suite green with no failures to bisect (BAN-44).
 
-### Stripe sandbox smoke tests
+### Gateway sandbox smoke tests — the premise was wrong (kept as a record)
 
-> Stripe/PayPal checkout is gated behind `feature('subscriptions')`, which is **disabled** for `directonderweg` (BAN-NEW-2). All subscription payment routes return 404 for this deployment — N/A for this client.
+> **Corrected 2026-09-11.** The note that stood here said Stripe/PayPal
+> checkout was "gated behind `feature('subscriptions')`, disabled for
+> `directonderweg`", so the rows below were filed N/A. The gate was not the
+> reason: there was no checkout to gate. No `stripe-php`, `srmklive/paypal` or
+> Flutterwave package, no checkout route, controller, callback or webhook ever
+> existed — see Phase 1 for the full accounting. `subscriptions` itself was
+> retired in BAN-318, and `directonderweg` moved to its own repo
+> (`bangicodefactory/rentcar`) in the 2026-08-28 split, so neither half of the
+> sentence still refers to anything in this repository.
+>
+> The two dated rows are kept rather than deleted: the outcome (nothing to run)
+> was right, and they are an attributed record of a run at a phase boundary.
+> Read them as "N/A — no integration existed", not as "N/A — a flag was off".
 
 | Date | Commit | Tester | Flow | Outcome | Notes |
 |------|--------|--------|------|---------|-------|
@@ -120,9 +132,61 @@ Build: `npm run build` → `public/build/assets/app-NHXksaQF.css` (19.35 kB), `a
 
 ---
 
-## Phase 5 — Inertia + React port
+## Phase 5 — Introduce Inertia.js + React shell
 
-*(To be filled after Phase 5 work completes.)*
+**Shipped. No manual gate run is recorded here** — the shell landed page by
+page rather than at a single boundary, and nobody logged a run. What can be
+stated from the code (checked 2026-09-11): the shell is in place
+(`resources/js/app.jsx`, `AdminLayout`, `resources/js/Pages/**`), and the
+suites that cover it run in CI per client.
+
+This section used to read "*(To be filled after Phase 5 work completes.)*",
+which implied a pending run. Nothing is pending: the entry is simply absent. If
+a Phase 5 boundary check is still wanted, it has to be run now, against current
+`dev`, and recorded here.
+
+---
+
+## Phase 6 — Port pages to Inertia/React
+
+**Substantially shipped; the exit gate as written is not met.** The gate is
+"`resources/views/` only holds `app.blade.php` + email/PDF". Re-derived from
+`return view(` / `Route::view(` on 2026-09-11:
+
+| Measure | Value |
+|------|--------|
+| Blade pages still routed | 8 — `tva/create`, `booking/payment`, `logged_history/index`, `user_permission/create`, `settings/testmail`, `reminder/days_remaining`, `auth/confirm-password`, `client/pages/search` |
+| Unauthenticated Blade previews | 15 — the `ui-test/*` group, marked for deletion |
+| `.blade.php` files under `resources/views/` | 112 (21 `vendor/`, 10 `errors/`, 9 `email/`, 1 `pdf/`, 1 `seo/`) |
+
+The per-page list, the scaffolding those extend, and two corrections to an
+earlier version of it (`booking_requests/*` was never a Blade page;
+`booking/planning` is Inertia) are in `docs/product-roadmap.md` §1.
+
+Product work has continued on top of the migration since — `dev` was promoted
+to `main` on 2026-09-10 (PR #56) — so this gate is now a cleanup debt tracked
+in the roadmap's Cleanup section, not a blocker on further phases.
+
+### Cash path — the money flow that is real
+
+Phase 1 explains why there is no gateway checklist to run. The cash path is the
+money flow this product actually has, and CLAUDE.md §4 wants it verified by
+hand at a phase boundary, over the 5 000 MAD ceiling. **No run is recorded
+yet.** When one happens, record it here.
+
+| Date | Commit | Tester | Flow | Outcome | Notes |
+|------|--------|--------|------|---------|-------|
+| — | — | — | Record a payment over the 5 000 MAD ceiling → factures emitted | — | Not yet run |
+
+### A note on `booking_payment`
+
+The flag is on for `drivedesk` since BAN-334, which can read as "card payments
+are live". It is not a money flow: it shows one tile in the `/reserve` wizard
+and records `booking_requests.payment_preference`. Nothing charges a card, and
+`RouteIntegrityTest` fails any route placed behind `feature:booking_payment`
+until a real callback exists. There is nothing here to smoke-test until
+roadmap item 2.6 ships a gateway — at which point its checklist belongs in this
+log, written against that integration.
 
 ---
 
