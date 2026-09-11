@@ -13,19 +13,52 @@ Required fields per entry: date, commit hash, tester, outcome, notes.
 |------|--------|----------------------------------|--------|
 | —    | —      | Pending CI run                   | —      |
 
-### Gateway sandbox smoke tests — nothing to run
+### Gateway sandbox smoke tests — nothing to run *today*
 
 CLAUDE.md §4 requires money flows to be smoke-tested in a sandbox at each phase
-boundary. **This repository has no money flow to test**, and the checklists that
-stood here — Stripe and PayPal sandbox runs, every row "Pending" — described
-integrations that never existed:
+boundary. **This repository has no gateway money flow to test**, because the one
+it had was deleted — not because it never existed.
 
-- no `stripe-php`, `srmklive/paypal` or Flutterwave package in `composer.json`;
-- no checkout route, controller, callback or webhook;
-- the credential forms that implied otherwise were removed in BAN-335, and the
-  `paypal` / `stripe` feature flags in BAN-336 (declared `true`, read by
-  nothing);
-- half those rows tested `subscriptions`, a capability deleted in BAN-199.
+*(Corrected 2026-09-11, twice over. This section first said the checklists
+"described integrations that never existed", and a first pass at correcting the
+Phase 3 copy below repeated that. Git says otherwise, and a reviewer caught
+it.)*
+
+What existed, until June 2026:
+
+- `stripe/stripe-php` `^16.0` and `srmklive/paypal` `~3.0.0` in
+  `composer.json`, from the first commit until `4d9144ef`
+  (*chore(BAN-199): remove billing Composer packages*, **2026-06-02**);
+- `PaymentController`, `SubscriptionController`, `config/paypal.php`, five
+  subscription Blade views and the `subscriptionPaymentSettings()` helper,
+  until `135ea514` (*chore: remove Stripe/PayPal subscription billing flow*,
+  **2026-06-01**);
+- real checkout routes **with callbacks** — `POST subscription/{id}/stripe/payment`,
+  `POST subscription/{id}/paypal` + `GET subscription/{id}/paypal/{status}`,
+  `POST subscription/{id}/flutterwave` + `GET subscription/flutterwave/{id}/{txref}`
+  — all three groups behind `feature:subscriptions`;
+- credentials read from the `Setting` rows: `subscriptionPaymentSettings()`
+  fed `paypal_client_id` / `paypal_secret_key` into `config('paypal.*')` at
+  request time. So the forms removed in BAN-335 were that flow's real
+  credential store, not decorative — BAN-335's "no reader of any credential
+  key" was true *as of BAN-335*, the reader having been deleted three months
+  earlier.
+
+Two things follow, and both matter when reading the tables in later phases:
+
+1. **It was never a rental money flow.** It billed the agency for its own
+   DriveDesk subscription — packages, coupons, subscription plans. A customer
+   paying for a car never touched it. The `coupons`, `coupon_histories`,
+   `subscriptions` and `package_transactions` tables the roadmap lists as
+   "schema-only" are this flow's residue.
+2. **The "Pending" / N/A rows were accurate when written.** `subscriptions`
+   was off for `directonderweg`, so the routes 404'd for that deployment —
+   exactly as `docs/migration-plan.md:157` records. They are not evidence of a
+   checklist invented against a phantom.
+
+What is gone, and when: the flow (`135ea514`, 2026-06-01), its packages
+(`4d9144ef` / BAN-199, 2026-06-02), the orphaned credential forms (BAN-335) and
+the `paypal` / `stripe` flags that by then read nothing (BAN-336).
 
 Do not treat their absence as an outstanding gate. What *is* real is the cash
 path — recording a payment, the 5 000 MAD split and the factures it emits —
@@ -77,21 +110,27 @@ Phase 2 changes shipped: `laravelcollective/html` removed (BAN-37), Laravel fram
 
 Phase 3 changes shipped: Laravel `^12.0` + PHPUnit `^11.0` + all compatible deps (BAN-42), `previous_keys` + env-driven `maintenance` config (BAN-43). Suite green with no failures to bisect (BAN-44).
 
-### Gateway sandbox smoke tests — the premise was wrong (kept as a record)
+### Subscription-billing sandbox smoke tests — accurate then, moot now
 
-> **Corrected 2026-09-11.** The note that stood here said Stripe/PayPal
-> checkout was "gated behind `feature('subscriptions')`, disabled for
-> `directonderweg`", so the rows below were filed N/A. The gate was not the
-> reason: there was no checkout to gate. No `stripe-php`, `srmklive/paypal` or
-> Flutterwave package, no checkout route, controller, callback or webhook ever
-> existed — see Phase 1 for the full accounting. `subscriptions` itself was
-> retired in BAN-318, and `directonderweg` moved to its own repo
-> (`bangicodefactory/rentcar`) in the 2026-08-28 split, so neither half of the
-> sentence still refers to anything in this repository.
+> Stripe/PayPal checkout is gated behind `feature('subscriptions')`, which is
+> **disabled** for `directonderweg` (BAN-NEW-2). All subscription payment routes
+> return 404 for this deployment — N/A for this client.
 >
-> The two dated rows are kept rather than deleted: the outcome (nothing to run)
-> was right, and they are an attributed record of a run at a phase boundary.
-> Read them as "N/A — no integration existed", not as "N/A — a flag was off".
+> **Still-true note added 2026-09-11.** The sentence above was correct on
+> 2026-05-26 and is kept verbatim: the routes existed and the flag really was
+> off for that deployment (`docs/migration-plan.md:157` records the same 404
+> check). What has changed is everything around it. The flow was deleted on
+> 2026-06-01 (`135ea514`) and its packages on 2026-06-02 (`4d9144ef`, BAN-199);
+> `subscriptions` itself was retired in BAN-318; and `directonderweg` moved to
+> its own repo (`bangicodefactory/rentcar`) in the 2026-08-28 split. So the rows
+> below are a valid record of a check against code this repository no longer
+> contains — see Phase 1 for the full accounting, and note that this was SaaS
+> billing (the agency paying for DriveDesk), never a customer paying for a car.
+>
+> *An earlier revision of this note claimed the premise was false — that no
+> checkout had ever existed to gate. That was wrong, and git disproves it in
+> one command (`git log -S 'stripe/stripe-php' -- composer.json`). Corrected
+> before merge.*
 
 | Date | Commit | Tester | Flow | Outcome | Notes |
 |------|--------|--------|------|---------|-------|
@@ -149,9 +188,18 @@ a Phase 5 boundary check is still wanted, it has to be run now, against current
 
 ## Phase 6 — Port pages to Inertia/React
 
-**Substantially shipped; the exit gate as written is not met.** The gate is
-"`resources/views/` only holds `app.blade.php` + email/PDF". Re-derived from
-`return view(` / `Route::view(` on 2026-09-11:
+**Substantially shipped; two of the gate's three conditions are met.**
+`docs/migration-plan.md:304-308` sets all three — and an earlier revision of
+this section quoted only the first, which both understated progress and left
+the jQuery/Alpine condition unrecorded:
+
+| Exit-gate condition | Status (2026-09-11) |
+|------|--------|
+| `resources/views/` only holds `app.blade.php` + email/PDF | **Not met** — measured below |
+| `resources/js/` no longer imports jQuery or Alpine | **Met** — `grep -rn "jquery\|jQuery\|alpinejs\|Alpine" resources/js/` returns nothing, and neither appears in `package.json`. This is CLAUDE.md §5's central frontend constraint, so it is worth recording as checked rather than assumed |
+| Feature tests green; Vitest green | **Met** — 1436 passed / 6047 assertions locally, and the CI matrix runs per client |
+
+The unmet one, re-derived from `return view(` / `Route::view(`:
 
 | Measure | Value |
 |------|--------|

@@ -50,7 +50,7 @@ engineering view of the same question, reconciled with the code.
 | Locales en / fr / ar / ary with true RTL | **Real** | `app/Http/Middleware/SetLocale.php`, `resources/js/app.jsx` |
 | Stripe / PayPal / Flutterwave | **Absent.** Was "settings-only" — credential fields with no SDK, no checkout, no webhook. The forms were removed in BAN-335 (they also serialised the stored secrets to the browser on seven settings pages) and the `stripe` / `paypal` flags retired in BAN-336. `Pages/Settings/Payment.jsx` survives, holding only currency and bank-transfer details | `Pages/Settings/Payment.jsx` |
 | Card payment intent on the public wizard | **Partial** (flag `booking_payment`, on for drivedesk since BAN-334) — one tile in the `/reserve` payment step, recorded as `booking_requests.payment_preference`. Nothing can charge a card: no gateway package, no redirect, no callback, no webhook. Staff ring the visitor back. See 2.6 | `RequestBookingController.php:234`, `hooks/useOnlinePayment.js` |
-| Subscriptions, packages | **Schema-only** — tables, no model/controller/route | `database/migrations/*subscriptions*`, `*package_transactions*` |
+| Subscriptions, packages | **Schema-only** — tables, no model/controller/route. These are the residue of a real SaaS-billing flow (the agency paying for DriveDesk, never a customer paying for a car) deleted on 2026-06-01 in `135ea514`, with its `stripe-php` / `srmklive/paypal` packages following in BAN-199 — see `docs/migration-log.md` Phase 1 | `database/migrations/*subscriptions*`, `*package_transactions*` |
 | Coupons | **Schema-only** | `*create_coupons_table*`, ~10 orphan keys in `resources/lang/en.json` |
 | Multi-branch | **Flag-only** — `multi_branch` has no enforcement point; Places are pick-up points with a surcharge, not branches | `config/features.php` |
 | SMS, WhatsApp | **Absent** (`ReminderController` has a commented `sendSMSNotification`) | — |
@@ -73,9 +73,14 @@ engineering view of the same question, reconciled with the code.
   `tva_renumber` gained `feature:tva_renumber` middleware on its routes in
   BAN-304 (`routes/web.php:533`); and `booking_payment` gained one in BAN-334 —
   `RequestBookingController` narrows the accepted `payment_preference` values
-  to `cash` alone when it is off, and four public pages branch on it through
-  `useOnlinePayment()`. It still gates no route, and the flag being on does not
-  mean a card can be charged — see 2.6.)*
+  to `cash` alone when it is off, and three public pages branch on it through
+  `useOnlinePayment()` (`Public/Landing.jsx` at three call sites,
+  `Public/CarDetails.jsx`, `Public/Booking/Index.jsx`) plus the shared
+  `components/booking/BookingSummary.jsx`. A fourth page,
+  `Public/Booking/Confirmation.jsx:49`, branches on the same decision through
+  the server-sent `paymentPreference` prop rather than the hook. It still gates
+  no route, and the flag being on does not mean a card can be charged — see
+  2.6.)*
   *(Updated BAN-318: `subscriptions` used to be the exception — seven
   `feature('subscriptions')` branches in still-shipped Blade, one of which hid
   the Logged History menu entry. One of those branches called a model BAN-199
@@ -691,7 +696,9 @@ with zero client-side fallback today.
 
 | # | Item | Flag | Effort |
 | --- | --- | --- | :-: |
-| 3.1 | Per-agency storefront / embeddable booking widget. **The port is done** — the storefront is React and on for drivedesk (BAN-329), rebuilt booking-first in BAN-333 (landing, vehicle detail, wizard summary, confirmation, a `/contact` that delivers). What remains: the embeddable widget, the per-agency dimension, and the two public endpoints still scaffolding — `/search` (the last routed storefront Blade) and `POST /newsletter/subscribe`, which tells a visitor they subscribed and discards the address (`routes/web.php:112`) | `public_storefront` (existing) | M |
+| 3.1 | Per-agency storefront / embeddable booking widget. **The port is done** — the storefront is React and on for drivedesk (BAN-329), rebuilt booking-first in BAN-333 (landing, vehicle detail, wizard summary, confirmation, a `/contact` that delivers). What remains: the embeddable widget, the per-agency dimension, and the two public endpoints still scaffolding — `/search` (the last routed storefront Blade outside the `ui-test/*`
+previews, which still render `client/tests/*` and `client/home`) and
+`POST /newsletter/subscribe`, which tells a visitor they subscribed and discards the address (`routes/web.php:112`) | `public_storefront` (existing) | M |
 | 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` (new) | L |
 | 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` (new) | L |
 | 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` (new, shared with 1.4) | M |
@@ -710,7 +717,12 @@ imports; delete `ui-test/*` and `/hello`; finish or remove
 `/newsletter/subscribe`; remove `composer.lock.backup`; rename `rentcar` →
 DriveDesk in `package.json`, `.env.example`, `CLAUDE.md`; correct
 `docs/phase6-execution-plan.md`; merge the two vitest trees; remove the
-unservable `nl` entry from `supported_locales`; for each of the three
+~~remove the unservable `nl` entry from `supported_locales`~~ (**done by the
+repo split, not by us**: no `config/clients/*.php` here lists `nl` —
+`drivedesk.php` defaults to `fr,ar,en` and `_default.php` to `en,fr`. The
+comment naming it at `app/Support/Locales.php:25` describes
+`directonderweg`, which moved to `bangicodefactory/rentcar` on 2026-08-28);
+for each of the three
 remaining no-op flags (`excel_import`, `multi_branch`, `signatures`) either
 add its enforcement point (3.6 covers `multi_branch`) or delete the key with a
 matching edit to every `config/clients/*.php` — the precedent is BAN-336,
@@ -792,8 +804,10 @@ reasoning from a diff.
   that saved keys still holds those rows: they are deliberately **not** dropped
   (a `down()` cannot restore a secret, and §8 forbids dropping populated rows),
   so rotate at the provider and delete out of band. The ~10 gateway translation
-  keys across 14 locale files stay too, per §4 — harmless once nothing renders
-  them, and a follow-up ticket's job to remove.
+  keys stay too, per §4 — harmless once nothing renders them, and a follow-up
+  ticket's job to remove. They sit in 12 of the 13 `resources/lang/*.json`
+  bundles (all but `ary.json`); "across 14 locale files" was §4's figure for the
+  locale set, carried over rather than counted.
 
 **Blacklist gate now fires on booking *edit*, not only create (BAN-287).**
 
