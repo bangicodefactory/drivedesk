@@ -189,7 +189,7 @@ a Phase 5 boundary check is still wanted, it has to be run now, against current
 ## Phase 6 — Port pages to Inertia/React
 
 **Substantially shipped; two of the gate's three conditions are met.**
-`docs/migration-plan.md:304-308` sets all three — and an earlier revision of
+`docs/migration-plan.md:302-305` sets all three — and an earlier revision of
 this section quoted only the first, which both understated progress and left
 the jQuery/Alpine condition unrecorded:
 

@@ -113,11 +113,33 @@ engineering view of the same question, reconciled with the code.
   (`ReminderController.php:297`), `auth/confirm-password`
   (`ConfirmablePasswordController.php:22`) and `client/pages/search` (the
   `/search` closure, `routes/web.php:106`) — plus the 15 `ui-test/*` previews
-  (`client/tests/*` and `client/home`), already marked for deletion. Add the
-  scaffolding those extend: `layouts/{app,auth,guest,landing}`,
-  `admin/{menu,content,header,footer,head}`, `dashboard/{index,super_admin}`,
-  `driver/new_create`, `reminder/_date_modal`,
-  `tva/{days_remaining,_date_modal}`, `partials/alerts`.
+  (`client/tests/*` and `client/home`), already marked for deletion.
+  **Five of those eight are modal-body fragments, not pages**: `tva/create`,
+  `booking/payment`, `user_permission/create`, `settings/testmail` and
+  `reminder/days_remaining` extend no layout and are injected into a modal,
+  which is how they outlived the port.
+
+  Scaffolding actually reachable from that set (`@extends` / `@include`,
+  followed transitively):
+  - `layouts/app` ← `logged_history/index`, which in turn includes
+    `admin/{content,footer,head,header,menu}` and `partials/alerts`;
+  - `layouts/auth` ← `auth/confirm-password`;
+  - `client/layouts/**` — **9 files** (`app.blade.php` plus 8 partials), which
+    all 16 `client/**` views extend. An earlier revision of this bullet
+    dropped them when it narrowed "the whole `client/**` storefront" to
+    `client/pages/search`; `search.blade.php` among those partials is included
+    by nothing;
+  - `client/pages/home/*` — 13 partials, included by `client/home`.
+
+  Orphans, reachable from nothing at all — delete rather than port:
+  `layouts/landing`, `layouts/guest` (returned only by
+  `app/View/Components/GuestLayout.php`, and no view uses `<x-guest-layout>`),
+  `dashboard/{index,super_admin}` (`HomeController` returns
+  `Inertia::render('Dashboard')`), `driver/new_create`, `reminder/_date_modal`
+  and `tva/{days_remaining,_date_modal}`. *The earlier revision listed these
+  as "scaffolding they extend" under a "re-derived" label they had not
+  actually been checked against.*
+
   `resources/views/` holds 112 `.blade.php` files, of which 21 are
   `vendor/`, 10 `errors/`, 9 `email/`, 1 `pdf/` and 1 `seo/`.
   *(Two corrections to the earlier version of this list. `booking_requests/*`
@@ -291,8 +313,11 @@ CSS-first config) does not apply until that upgrade lands.
     which replaced the carousel with a single hero banner
     (`HomeController::landingProps()` reads only `image_home_1`), so there is
     nothing left to auto-advance. `Pages/Public/DemoGateway.jsx` still bypasses
-    tokens with 56 inline styles and has no `htmlFor` on any label (verified
-    2026-09-11).
+    tokens with **58** `style={{` literals (73 `style={` props in all) and has
+    no `htmlFor` on any of its 5 `<label>`s. *The "56" that stood here, and a
+    2026-09-11 re-check that "confirmed" it, both came from `grep -c`, which
+    counts matching lines rather than occurrences — two of these sit on shared
+    lines.*
 12. Two form conventions: 45 pages on `useZodForm`, 9 on raw Inertia `useForm` —
     and those 9 are the most complex forms (`Booking/{Create,Edit}`,
     `RentalAgreement/{Create,Edit}`, `Credit/*`, `Notification/*`, `Tva/Edit`),
@@ -696,9 +721,7 @@ with zero client-side fallback today.
 
 | # | Item | Flag | Effort |
 | --- | --- | --- | :-: |
-| 3.1 | Per-agency storefront / embeddable booking widget. **The port is done** — the storefront is React and on for drivedesk (BAN-329), rebuilt booking-first in BAN-333 (landing, vehicle detail, wizard summary, confirmation, a `/contact` that delivers). What remains: the embeddable widget, the per-agency dimension, and the two public endpoints still scaffolding — `/search` (the last routed storefront Blade outside the `ui-test/*`
-previews, which still render `client/tests/*` and `client/home`) and
-`POST /newsletter/subscribe`, which tells a visitor they subscribed and discards the address (`routes/web.php:112`) | `public_storefront` (existing) | M |
+| 3.1 | Per-agency storefront / embeddable booking widget. **The port is done** — the storefront is React and on for drivedesk (BAN-329), rebuilt booking-first in BAN-333 (landing, vehicle detail, wizard summary, confirmation, a `/contact` that delivers). What remains: the embeddable widget, the per-agency dimension, and the two public endpoints still scaffolding — `/search` (the last routed storefront Blade outside the `ui-test/*` previews, which still render `client/tests/*` and `client/home`) and `POST /newsletter/subscribe`, which tells a visitor they subscribed and discards the address (`routes/web.php:112`) | `public_storefront` (existing) | M |
 | 3.2 | Marketplace / OTA feeds (Karvyx, LocalRent, OneClickDrive) | `channels` (new) | L |
 | 3.3 | REST API with Sanctum tokens; PWA field app for the état des lieux | `api` (new) | L |
 | 3.4 | In-app notification centre; WhatsApp Business API | `whatsapp` (new, shared with 1.4) | M |
@@ -716,7 +739,7 @@ applies here too.
 imports; delete `ui-test/*` and `/hello`; finish or remove
 `/newsletter/subscribe`; remove `composer.lock.backup`; rename `rentcar` →
 DriveDesk in `package.json`, `.env.example`, `CLAUDE.md`; correct
-`docs/phase6-execution-plan.md`; merge the two vitest trees; remove the
+`docs/phase6-execution-plan.md`; merge the two vitest trees;
 ~~remove the unservable `nl` entry from `supported_locales`~~ (**done by the
 repo split, not by us**: no `config/clients/*.php` here lists `nl` —
 `drivedesk.php` defaults to `fr,ar,en` and `_default.php` to `en,fr`. The
