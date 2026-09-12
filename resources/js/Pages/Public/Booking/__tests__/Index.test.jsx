@@ -233,18 +233,58 @@ describe('Public/Booking/Index', () => {
             expect(cash).toHaveAttribute('tabindex', '-1');
         });
 
-        it('moves between payment methods with the arrow keys', async () => {
+        it('moves focus between payment methods with the arrow keys', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const [cash] = screen.getAllByRole('radio');
+            cash.focus();
+
+            fireEvent.keyDown(cash, { key: 'ArrowRight' });
+
+            const online = screen.getAllByRole('radio')[1];
+            expect(online).toHaveFocus();
+            // Manual selection: arrows move, Space/Enter commits.
+            expect(online).toHaveAttribute('aria-checked', 'false');
+
+            fireEvent.keyDown(online, { key: ' ' });
+            expect(online).toHaveAttribute('aria-checked', 'true');
+        });
+
+        it('does not discard a finished choice when the arrows pass over it', async () => {
             withOnlinePayment();
             await reachPaymentStep();
 
             const [cash] = screen.getAllByRole('radio');
             fireEvent.click(cash);
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
 
+            // Selection used to follow focus, and choosePaymentMode('online')
+            // clears payment_preference with shouldValidate -- so one
+            // exploratory keypress wiped a valid answer and raised a validation
+            // error against a visitor who had done nothing wrong.
             fireEvent.keyDown(cash, { key: 'ArrowRight' });
 
-            const online = screen.getAllByRole('radio')[1];
-            expect(online).toHaveAttribute('aria-checked', 'true');
-            expect(online).toHaveFocus();
+            expect(cash).toHaveAttribute('aria-checked', 'true');
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+            expect(screen.queryByText('Veuillez choisir un mode de paiement.')).toBeNull();
+        });
+
+        it('keeps a picked CMI when the arrows pass back over the group', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+            const cmi = screen.getByRole('radio', { name: 'CMI' });
+            fireEvent.click(cmi);
+            expect(cmi).toHaveAttribute('aria-checked', 'true');
+
+            const [, online] = screen.getAllByRole('radio');
+            fireEvent.keyDown(online, { key: 'ArrowLeft' });
+            fireEvent.keyDown(screen.getAllByRole('radio')[0], { key: 'ArrowRight' });
+
+            expect(screen.getByRole('radio', { name: 'CMI' })).toHaveAttribute('aria-checked', 'true');
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
         });
 
         it('selects on Space without also scrolling the page', async () => {

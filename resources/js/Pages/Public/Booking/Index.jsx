@@ -277,9 +277,19 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
     };
 
     // The payment tiles are a radio group, so they owe the radio keyboard
-    // contract: Enter/Space select, arrows move between options and select as
-    // they go, and only one option is in the tab order (roving tabindex).
-    // Space must preventDefault or it selects *and* scrolls the page.
+    // contract: arrows move between options, Enter/Space commits, and only one
+    // option is in the tab order (roving tabindex). Space must preventDefault
+    // or it selects *and* scrolls the page.
+    //
+    // Deliberately the *manual selection* variant of the pattern: arrows move
+    // focus only. The usual "selection follows focus" variant is destructive
+    // here, because picking `online` is not a complete answer --
+    // choosePaymentMode('online') clears payment_preference and revalidates --
+    // so arrowing across the group to look at the other option would wipe a
+    // finished choice and raise "Veuillez choisir un mode de paiement" against
+    // a visitor who did nothing wrong. Worse from `online` + CMI already
+    // picked: one exploratory keypress discarded it. APG allows either
+    // variant; it wants manual selection exactly when selecting has a cost.
     const paymentModes = onlinePaymentEnabled ? ['cash', 'online'] : ['cash'];
 
     const paymentModeKeyDown = (mode) => (event) => {
@@ -301,7 +311,8 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
         const next = paymentModes[
             (paymentModes.indexOf(mode) + step + paymentModes.length) % paymentModes.length
         ];
-        choosePaymentMode(next);
+        // Focus only. The target carries tabIndex -1 while unselected, which
+        // does not block programmatic focus, and Tab still leaves the group.
         document.getElementById(`payment-mode-${next}`)?.focus();
     };
 
@@ -580,18 +591,26 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCmi(); } }}
                                                 className={`relative w-full max-w-xs overflow-hidden rounded-2xl p-5 cursor-pointer bg-primary text-primary-foreground transition-all ${
                                                     paymentPreference === 'cmi'
-                                                        ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-background shadow-lg'
+                                                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg'
                                                         : 'opacity-90 shadow-md hover:opacity-100'
                                                 }`}
                                             >
-                                                {/* Darkens the card toward the bottom-end corner so every label on it
-                                                    clears WCAG AA. White on bare `primary` is only 3.49:1, and the
-                                                    translucent gradient this replaces fell to 2.46:1 at its lightest
-                                                    corner — which is exactly where the right-hand label sits. This
-                                                    ramp measures 4.65:1 at the top-start and 6.33:1 at the bottom-end. */}
-                                                <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/15 to-black/30" />
+                                                {/* Order matters: the circles come first so the ramp below darkens
+                                                    them too. Stacked the other way, a label crossing a `bg-white/10`
+                                                    circle measured 3.96:1 — under AA, and under the figure a comment
+                                                    here used to claim.
+
+                                                    The ramp is vertical on purpose. `to-br` is physical while every
+                                                    element on this card is logical, so under `ar` the content
+                                                    mirrored onto the ramp's lightest end while the ramp stayed put —
+                                                    putting "CMI" at 3.96:1 in the one locale this was meant to help.
+                                                    Top to bottom mirrors correctly because it has no side.
+
+                                                    Measured against #E5601E: 4.62:1 at the top where a circle
+                                                    overlaps, 5.14:1 clear of one, 6.33:1 at the bottom. */}
                                                 <div aria-hidden className="pointer-events-none absolute -end-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
                                                 <div aria-hidden className="pointer-events-none absolute -bottom-10 -start-6 h-28 w-28 rounded-full bg-white/10" />
+                                                <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 to-black/30" />
 
                                                 <div className="relative flex items-center justify-between">
                                                     <Wifi className="h-5 w-5 rotate-90 text-primary-foreground" strokeWidth={1.5} />
@@ -612,7 +631,12 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                     <span>••••</span><span>••••</span><span>••••</span><span>••••</span>
                                                 </div>
 
-                                                <div className="relative mt-4 flex items-center justify-between text-xs uppercase tracking-wide text-primary-foreground">
+                                                {/* 11px, not `text-xs`: measured in Chrome with Nunito loaded, 12px
+                                                    wraps this row onto two lines in `fr` (children 280px of 280px
+                                                    available, row 32px against a 16px line-height). The arbitrary
+                                                    value is doing work. Contrast comes from the ramp above, not from
+                                                    the size, so shrinking it costs nothing. */}
+                                                <div className="relative mt-4 flex items-center justify-between text-[11px] uppercase tracking-wide text-primary-foreground">
                                                     <span>{t('payment_cardholder', 'Titulaire de la carte')}</span>
                                                     <span className="flex items-center gap-1">
                                                         <CreditCard className="h-4 w-4" strokeWidth={1.5} />
