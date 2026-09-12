@@ -172,7 +172,11 @@ function Footer({ contact }) {
 
     return (
         <footer className="bg-foreground text-background pt-20 pb-8">
-            <div className="container mx-auto px-4 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+            {/* Column count follows the number of columns actually rendered:
+                with the contact block gated, a fixed lg:grid-cols-4 left the
+                footer's right quarter blank on exactly the tenant that fix
+                targets. */}
+            <div className={`container mx-auto px-4 grid grid-cols-1 gap-10 md:grid-cols-2 ${hasContactDetails ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
                 <div className="space-y-4">
                     <div className="flex items-center gap-2.5">
                         {branding?.logoUrl && <img src={branding.logoUrl} alt={branding?.appName} className="h-8 w-auto object-contain brightness-0 invert" />}

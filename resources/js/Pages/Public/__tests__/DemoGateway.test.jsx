@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { usePage } from '@inertiajs/react';
 import DemoGateway from '@/Pages/Public/DemoGateway';
 
 // Inertia: stub usePage/Head, and make router.post "succeed" so the booking
@@ -10,7 +11,7 @@ const post = vi.fn((url, data, opts) => {
 });
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: vi.fn(() => ({ props: { flash: {} } })),
+    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma' } } })),
     Head: ({ children }) => <>{children}</>,
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
     router: { post: (...args) => post(...args) },
@@ -56,6 +57,20 @@ describe('DemoGateway — login affordances (#BAN-246)', () => {
 });
 
 describe('DemoGateway — reaching the vendor (BAN-341)', () => {
+    // This page calls usePage() several times per render (useDisplay for the
+    // locale, the modal for flash, the footer for the client props), so a
+    // ...Once override lands on whichever runs first -- useDisplay's, not the
+    // call under test. Override every call, then put the default back.
+    function withClient(client) {
+        vi.mocked(usePage).mockReturnValue({ props: { flash: {}, client } });
+    }
+
+    afterEach(() => {
+        vi.mocked(usePage).mockImplementation(() => ({
+            props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma' } },
+        }));
+    });
+
     it('offers an email address a prospect can actually write to', () => {
         render(<DemoGateway />);
 
@@ -63,6 +78,28 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
         // link -- neither any use to someone who just wants to ask a question.
         const email = screen.getByRole('link', { name: /admin@bangicode\.ma/i });
         expect(email).toHaveAttribute('href', 'mailto:admin@bangicode.ma');
+    });
+
+    it('advertises whatever inbox the deployment actually posts demos to', () => {
+        // `demo_request_to` carries a CLIENT_DEMO_REQUEST_TO override, so the
+        // page has to render the resolved value. A hard-coded literal here
+        // would keep advertising a dead address after a redirect.
+        withClient({ contactEmail: 'sales@bangicode.ma' });
+
+        render(<DemoGateway />);
+
+        expect(screen.getByRole('link', { name: /sales@bangicode\.ma/i }))
+            .toHaveAttribute('href', 'mailto:sales@bangicode.ma');
+    });
+
+    it('shows no address at all when the client has no inbox configured', () => {
+        withClient({ contactEmail: null });
+
+        render(<DemoGateway />);
+
+        expect(screen.queryByText(/questions before booking/i)).toBeNull();
+        // The vendor link is unconditional, so the footer still names us.
+        expect(screen.getByRole('link', { name: 'By Bangicode' })).toBeInTheDocument();
     });
 
     it('names the company behind the product, and opens it safely', () => {

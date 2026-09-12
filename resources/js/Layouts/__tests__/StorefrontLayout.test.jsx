@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { usePage } from '@inertiajs/react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
@@ -84,13 +84,24 @@ describe('StorefrontLayout', () => {
 });
 
 describe('StorefrontLayout footer — the contact column (BAN-341)', () => {
+    // StorefrontLayout, Header and Footer each call usePage() — three calls per
+    // render. mockReturnValueOnce would override only the first, so these tests
+    // would pass by the accident of the default export happening to be the
+    // caller that reads `contact`; the day Footer read it from usePage() instead
+    // of props they would silently fall back to the fully-populated fixture and
+    // go green with the bug present. mockReturnValue covers every call, and the
+    // afterEach puts the shared default back for the suite above.
+    afterEach(() => {
+        vi.mocked(usePage).mockImplementation(() => ({ props: mockProps, url: '/' }));
+    });
+
     /**
      * Shaped like HandleInertiaRequests::buildContact(), which always returns
      * every key and nulls the ones the tenant has not set. Omitting the keys
      * would pass for the wrong reason, since `undefined` is falsy too.
      */
     function withContact(contact) {
-        vi.mocked(usePage).mockReturnValueOnce({
+        vi.mocked(usePage).mockReturnValue({
             props: {
                 ...mockProps,
                 contact: {
