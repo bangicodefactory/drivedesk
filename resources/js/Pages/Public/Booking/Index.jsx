@@ -22,7 +22,7 @@ import { dayAfter } from '@/lib/dates';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
-    Banknote, CreditCard, Wifi,
+    Banknote, CreditCard, Wifi, Check,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -276,6 +276,37 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
         setValue('payment_preference', mode === 'cash' ? 'cash' : undefined, { shouldValidate: true });
     };
 
+    // The payment tiles are a radio group, so they owe the radio keyboard
+    // contract: Enter/Space select, arrows move between options and select as
+    // they go, and only one option is in the tab order (roving tabindex).
+    // Space must preventDefault or it selects *and* scrolls the page.
+    const paymentModes = onlinePaymentEnabled ? ['cash', 'online'] : ['cash'];
+
+    const paymentModeKeyDown = (mode) => (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            choosePaymentMode(mode);
+            return;
+        }
+
+        // Horizontal arrows follow the reading direction, so they invert under
+        // RTL (`ar`); vertical ones never do.
+        const rtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
+        const forward = event.key === 'ArrowDown' || event.key === (rtl ? 'ArrowLeft' : 'ArrowRight');
+        const back = event.key === 'ArrowUp' || event.key === (rtl ? 'ArrowRight' : 'ArrowLeft');
+        if ((!forward && !back) || paymentModes.length < 2) return;
+
+        event.preventDefault();
+        const step = forward ? 1 : -1;
+        const next = paymentModes[
+            (paymentModes.indexOf(mode) + step + paymentModes.length) % paymentModes.length
+        ];
+        choosePaymentMode(next);
+        document.getElementById(`payment-mode-${next}`)?.focus();
+    };
+
+    const selectCmi = () => setValue('payment_preference', 'cmi', { shouldValidate: true });
+
     // step_1..step_4 keep their existing values for anyone still rendering
     // them; the stepper reads the shorter step_short_* keys, which fit a phone
     // without being clipped mid-word (CLAUDE.md §4: keys are added, not
@@ -492,12 +523,15 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                             <h2 className="font-display text-2xl uppercase">{t('step_4', 'Paiement')}</h2>
 
                             <div>
-                                <Label className="mb-2 block">{t('payment_method_label', 'Comment souhaitez-vous payer ?')}</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Label id="payment-method-label" className="mb-2 block">{t('payment_method_label', 'Comment souhaitez-vous payer ?')}</Label>
+                                <div role="radiogroup" aria-labelledby="payment-method-label" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div
+                                        id="payment-mode-cash"
                                         onClick={() => choosePaymentMode('cash')}
-                                        role="button" tabIndex={0}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') choosePaymentMode('cash'); }}
+                                        role="radio"
+                                        aria-checked={paymentMode === 'cash'}
+                                        tabIndex={paymentMode === null || paymentMode === 'cash' ? 0 : -1}
+                                        onKeyDown={paymentModeKeyDown('cash')}
                                         className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
                                             paymentMode === 'cash' ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20 hover:bg-muted/40'
                                         }`}
@@ -510,9 +544,12 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                     </div>
                                     {onlinePaymentEnabled && (
                                     <div
+                                        id="payment-mode-online"
                                         onClick={() => choosePaymentMode('online')}
-                                        role="button" tabIndex={0}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') choosePaymentMode('online'); }}
+                                        role="radio"
+                                        aria-checked={paymentMode === 'online'}
+                                        tabIndex={paymentMode === 'online' ? 0 : -1}
+                                        onKeyDown={paymentModeKeyDown('online')}
                                         className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
                                             paymentMode === 'online' ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20 hover:bg-muted/40'
                                         }`}
@@ -528,23 +565,45 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
 
                                 {onlinePaymentEnabled && paymentMode === 'online' && (
                                     <div className="mt-4 p-4 rounded-xl bg-muted/40 border border-border/60 space-y-3">
-                                        <p className="text-sm font-medium">{t('payment_choose_gateway', 'Choisissez votre moyen de paiement en ligne')}</p>
-                                        <div className="grid grid-cols-1 gap-3">
+                                        <p id="payment-gateway-label" className="text-sm font-medium">{t('payment_choose_gateway', 'Choisissez votre moyen de paiement en ligne')}</p>
+                                        <div role="radiogroup" aria-labelledby="payment-gateway-label" className="grid grid-cols-1 gap-3">
                                             <div
-                                                onClick={() => setValue('payment_preference', 'cmi', { shouldValidate: true })}
-                                                role="button" tabIndex={0}
-                                                aria-pressed={paymentPreference === 'cmi'}
-                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setValue('payment_preference', 'cmi', { shouldValidate: true }); }}
-                                                className={`relative w-full max-w-xs overflow-hidden rounded-2xl p-5 cursor-pointer bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground shadow-md transition-all ${
-                                                    paymentPreference === 'cmi' ? 'ring-2 ring-primary' : 'opacity-90 hover:opacity-100'
+                                                id="payment-gateway-cmi"
+                                                onClick={selectCmi}
+                                                role="radio"
+                                                aria-checked={paymentPreference === 'cmi'}
+                                                // Named explicitly: the card chrome (cardholder line, the printed
+                                                // "paiement en ligne", the masked digits) would otherwise be read
+                                                // out as part of this option's name.
+                                                aria-label="CMI"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCmi(); } }}
+                                                className={`relative w-full max-w-xs overflow-hidden rounded-2xl p-5 cursor-pointer bg-primary text-primary-foreground transition-all ${
+                                                    paymentPreference === 'cmi'
+                                                        ? 'ring-2 ring-primary-foreground ring-offset-2 ring-offset-background shadow-lg'
+                                                        : 'opacity-90 shadow-md hover:opacity-100'
                                                 }`}
                                             >
+                                                {/* Darkens the card toward the bottom-end corner so every label on it
+                                                    clears WCAG AA. White on bare `primary` is only 3.49:1, and the
+                                                    translucent gradient this replaces fell to 2.46:1 at its lightest
+                                                    corner — which is exactly where the right-hand label sits. This
+                                                    ramp measures 4.65:1 at the top-start and 6.33:1 at the bottom-end. */}
+                                                <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/15 to-black/30" />
                                                 <div aria-hidden className="pointer-events-none absolute -end-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
                                                 <div aria-hidden className="pointer-events-none absolute -bottom-10 -start-6 h-28 w-28 rounded-full bg-white/10" />
 
                                                 <div className="relative flex items-center justify-between">
-                                                    <Wifi className="h-5 w-5 rotate-90 text-primary-foreground/80" strokeWidth={1.5} />
-                                                    <span className="text-sm font-bold tracking-wide">CMI</span>
+                                                    <Wifi className="h-5 w-5 rotate-90 text-primary-foreground" strokeWidth={1.5} />
+                                                    <span className="flex items-center gap-1.5 text-sm font-bold tracking-wide">
+                                                        {/* A shape, not just the ring colour: `ring-primary` used to be
+                                                            drawn on `bg-primary` (identical token), so "selected" was
+                                                            invisible — and clicking this card is what enables Continue. */}
+                                                        {paymentPreference === 'cmi' && (
+                                                            <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+                                                        )}
+                                                        CMI
+                                                    </span>
                                                 </div>
 
                                                 <div aria-hidden className="relative mt-6 h-6 w-9 rounded-md bg-white/25" />
@@ -553,7 +612,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                     <span>••••</span><span>••••</span><span>••••</span><span>••••</span>
                                                 </div>
 
-                                                <div className="relative mt-4 flex items-center justify-between text-[11px] uppercase tracking-wide text-primary-foreground/80">
+                                                <div className="relative mt-4 flex items-center justify-between text-xs uppercase tracking-wide text-primary-foreground">
                                                     <span>{t('payment_cardholder', 'Titulaire de la carte')}</span>
                                                     <span className="flex items-center gap-1">
                                                         <CreditCard className="h-4 w-4" strokeWidth={1.5} />
