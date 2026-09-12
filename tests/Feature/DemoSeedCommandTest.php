@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -146,4 +147,61 @@ class DemoSeedCommandTest extends TestCase
             Carbon::setTestNow();
         }
     }
+
+    /**
+     * BAN-341. The storefront footer, /contact and the booking confirmation all
+     * read these from settings under parent_id = 1 (the bucket settings() falls
+     * back to for a guest).
+     */
+    public function test_it_seeds_the_showcase_agency_contact_details(): void
+    {
+        $this->asClient('drivedesk');
+
+        $this->artisan('demo:seed')->assertSuccessful();
+
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'company_email',
+            'parent_id' => 1,
+            'value'     => config('client.demo_contact_email'),
+        ]);
+        $this->assertDatabaseHas('settings', ['name' => 'hours_weekday', 'parent_id' => 1]);
+    }
+
+    /**
+     * The reason this seeding lives in demo:seed and not in `branding_seed`:
+     * company_email is the ContactController recipient, is printed on invoice
+     * PDFs and is interpolated into driver-facing mail, so a real customer must
+     * never inherit the vendor's address. client:install applies branding_seed on
+     * every deployment of this variant; this command refuses on a real client.
+     */
+    public function test_a_real_client_never_inherits_the_vendor_contact_details(): void
+    {
+        $this->asClient('acme'); // demo_gateway off
+
+        $this->artisan('demo:seed --if-demo')->assertSuccessful();
+
+        $this->assertDatabaseMissing('settings', ['name' => 'company_email', 'parent_id' => 1]);
+        $this->assertDatabaseMissing('settings', ['name' => 'hours_weekday', 'parent_id' => 1]);
+    }
+
+    public function test_it_does_not_overwrite_a_contact_address_an_owner_has_set(): void
+    {
+        $this->asClient('drivedesk');
+
+        Setting::create([
+            'name'      => 'company_email',
+            'parent_id' => 1,
+            'value'     => 'owner@their-agency.ma',
+        ]);
+
+        $this->artisan('demo:seed')->assertSuccessful();
+
+        // firstOrCreate: fills a missing key, never rewrites a set one.
+        $this->assertDatabaseHas('settings', [
+            'name'      => 'company_email',
+            'parent_id' => 1,
+            'value'     => 'owner@their-agency.ma',
+        ]);
+    }
+
 }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\AllReminderPermissionsSeeder;
 use Database\Seeders\DefaultDataUsersTableSeeder;
@@ -109,6 +110,56 @@ class DemoSeed extends Command
 
         // 3. Reseed the showcase business data with fresh, today-relative dates.
         $this->call('db:seed', ['--class' => DevDataSeeder::class, '--force' => true]);
+
+        // 4. Contact details for the showcase agency (BAN-341).
+        //
+        //    This belongs HERE and not in `branding_seed`, which was the first
+        //    attempt. `branding_seed` is the *variant* default: client:install
+        //    applies it on every deploy of every deployment running
+        //    APP_CLIENT=drivedesk, which is all of them. And `company_email` is
+        //    not the footer row it looks like -- ContactController::recipient()
+        //    delivers the public contact form to it, invoice1.blade.php prints it
+        //    on invoice PDFs (:524, :653), and helper.php interpolates
+        //    {company_email} into driver-facing mail. Seeding it there would have
+        //    pointed a real customer's renters at the vendor's inbox and put the
+        //    vendor's address on their invoices.
+        //
+        //    This command is gated on feature('demo_gateway') and no-ops on a
+        //    real client, so what it writes reaches demo deployments only.
+        //
+        //    parent_id = 1 is the bucket a guest reads: settings() falls back to
+        //    it for unauthenticated requests (helper.php:140), which is what the
+        //    storefront footer, /contact and the booking confirmation render from.
+        $demoContact = [
+            // The public-facing address, not the demo-form delivery inbox: this
+            // one is printed on the demo's invoices and is where its /contact
+            // form delivers, so it should be the mailbox we publish. Falls back
+            // the same way the gateway prop does.
+            'company_email'  => config('client.demo_contact_email')
+                ?: config('client.demo_request_to'),
+            // Numeric ranges only. A word like "Closed" would be stored as data
+            // and render untranslated on the French and Arabic storefronts, and
+            // there is no settings form for these keys to correct it from.
+            'hours_weekday'  => '09:00 - 19:00',
+            'hours_saturday' => '09:00 - 14:00',
+        ];
+
+        $wrote = 0;
+        foreach (array_filter($demoContact) as $key => $value) {
+            $setting = Setting::firstOrCreate(
+                ['name' => $key, 'parent_id' => 1],
+                ['value' => $value],
+            );
+
+            if ($setting->wasRecentlyCreated) {
+                $wrote++;
+            }
+        }
+
+        if ($wrote) {
+            flushSettingsCache(1);
+            $this->info("Seeded {$wrote} demo contact setting(s).");
+        }
 
         $this->info('Demo data ready.');
 

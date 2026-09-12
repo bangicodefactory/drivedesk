@@ -148,6 +148,17 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             'name'              => config('app.client', 'directonderweg'),
+            // Where a prospect on the demo gateway writes to. Shared rather than
+            // hard-coded in the page, because `demo_request_to` carries an env
+            // override (CLIENT_DEMO_REQUEST_TO): a deployment that redirects the
+            // demo inbox would otherwise keep advertising the old address while
+            // the form posted to the new one. Null on a client with no inbox
+            // configured, which the page treats as "show no address".
+            // The published address, falling back to the demo-form inbox so a
+            // client that set only that still advertises a reachable mailbox.
+            'contactEmail'      => config('client.demo_contact_email')
+                ?: config('client.demo_request_to'),
+            'contactPhone'      => config('client.demo_contact_phone'),
             'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
             'supported_locales' => config('client.supported_locales', []),
             // Resolved through feature(), not read raw. feature() checks the

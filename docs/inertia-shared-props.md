@@ -35,6 +35,8 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
 | `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
 | `client.features` | `ClientFeatures` | Feature flags resolved by `ClientServiceProvider` |
+| `client.contactPhone` | `string \| null` | Voice line advertised on the demo gateway — `demo_contact_phone`, env-overridable via `CLIENT_DEMO_CONTACT_PHONE`. Rendered as a `tel:` link with display formatting stripped to `+` and digits. `null` on a client with none set, and `_default.php` leaves it null so no other client advertises DriveDesk's line |
+| `client.contactEmail` | `string \| null` | Where a prospect on the demo gateway writes to — `demo_contact_email` resolved server-side, falling back to `demo_request_to` when unset. Kept separate from the demo form's delivery inbox on purpose: the published address is a public mailbox (`contact@`), delivery goes to the team's (`admin@`), and moving one must not silently move the other. Shared rather than hard-coded in the page because both keys carry env overrides (`CLIENT_DEMO_CONTACT_EMAIL`, `CLIENT_DEMO_REQUEST_TO`), so a literal would advertise a dead address on any deployment that redirected them (BAN-341). `null` on a client with neither configured; the gateway footer then shows no address |
 | `translations` | `Record<string, string>` | Current locale's `resources/lang/<locale>.json` key→value pairs |
 | `flash.success` | `string \| null` | One-time success message (from `redirect()->with('success', …)`) |
 | `flash.error` | `string \| null` | One-time error message (from `redirect()->with('error', …)`) |

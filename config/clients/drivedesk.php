@@ -39,6 +39,24 @@ return [
     'demo_request_to' => env('CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'),
 
     /*
+     * What the demo gateway PUBLISHES for a prospect who wants to reach us
+     * before booking. Deliberately separate from `demo_request_to` above, which
+     * is where the demo *form* delivers: the published address is a public
+     * mailbox, the delivery one is the team's inbox, and moving one should not
+     * silently move the other (DemoGatewayTest pins the delivery address).
+     *
+     * Both env-overridable, so a deployment that routes enquiries elsewhere can
+     * move them without a code change — otherwise the landing page ends up
+     * advertising a mailbox nobody reads (BAN-341).
+     *
+     * `client.contactEmail` falls back to `demo_request_to` when this is unset,
+     * so a client that configures only the delivery inbox still advertises
+     * something reachable rather than nothing.
+     */
+    'demo_contact_email' => env('CLIENT_DEMO_CONTACT_EMAIL', 'contact@bangicode.ma'),
+    'demo_contact_phone' => env('CLIENT_DEMO_CONTACT_PHONE', '+212664548867'),
+
+    /*
      * DriveDesk is the product's own reference/demo client — the base tenant
      * used to showcase the platform (and to host the marketing site that
      * promotes it to other rental agencies). All shippable features are on so

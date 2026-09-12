@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { usePage } from '@inertiajs/react';
 import DemoGateway from '@/Pages/Public/DemoGateway';
 
 // Inertia: stub usePage/Head, and make router.post "succeed" so the booking
@@ -10,7 +11,7 @@ const post = vi.fn((url, data, opts) => {
 });
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: vi.fn(() => ({ props: { flash: {} } })),
+    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'contact@bangicode.ma', contactPhone: '+212664548867' } } })),
     Head: ({ children }) => <>{children}</>,
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
     router: { post: (...args) => post(...args) },
@@ -52,5 +53,93 @@ describe('DemoGateway — login affordances (#BAN-246)', () => {
 
         const goToLogin = screen.getByRole('link', { name: /go to login/i });
         expect(goToLogin).toHaveAttribute('href', '/login');
+    });
+});
+
+describe('DemoGateway — reaching the vendor (BAN-341)', () => {
+    // This page calls usePage() several times per render (useDisplay for the
+    // locale, the modal for flash, the footer for the client props), so a
+    // ...Once override lands on whichever runs first -- useDisplay's, not the
+    // call under test. Override every call, then put the default back.
+    function withClient(client) {
+        vi.mocked(usePage).mockReturnValue({ props: { flash: {}, client } });
+    }
+
+    afterEach(() => {
+        vi.mocked(usePage).mockImplementation(() => ({
+            props: {
+                flash: {},
+                client: { contactEmail: 'contact@bangicode.ma', contactPhone: '+212664548867' },
+            },
+        }));
+    });
+
+    it('offers an email address a prospect can actually write to', () => {
+        render(<DemoGateway />);
+
+        // Before this, the only way off the page was the demo form or the login
+        // link -- neither any use to someone who just wants to ask a question.
+        const email = screen.getByRole('link', { name: /contact@bangicode\.ma/i });
+        expect(email).toHaveAttribute('href', 'mailto:contact@bangicode.ma');
+    });
+
+    it('advertises whatever inbox the deployment actually posts demos to', () => {
+        // `demo_request_to` carries a CLIENT_DEMO_REQUEST_TO override, so the
+        // page has to render the resolved value. A hard-coded literal here
+        // would keep advertising a dead address after a redirect.
+        withClient({ contactEmail: 'sales@bangicode.ma' });
+
+        render(<DemoGateway />);
+
+        expect(screen.getByRole('link', { name: /sales@bangicode\.ma/i }))
+            .toHaveAttribute('href', 'mailto:sales@bangicode.ma');
+    });
+
+    it('offers a phone number a prospect can tap to call', () => {
+        render(<DemoGateway />);
+
+        const phone = screen.getByRole('link', { name: /\+212664548867/ });
+        // tel: needs the bare E.164 form; any display spacing would break the
+        // dialler, so the href is stripped to + and digits.
+        expect(phone).toHaveAttribute('href', 'tel:+212664548867');
+    });
+
+    it('strips display formatting out of the tel: href', () => {
+        withClient({ contactEmail: 'contact@bangicode.ma', contactPhone: '+212 664-548867' });
+
+        render(<DemoGateway />);
+
+        expect(screen.getByRole('link', { name: /\+212 664-548867/ }))
+            .toHaveAttribute('href', 'tel:+212664548867');
+    });
+
+    it('shows no phone when the client has none configured', () => {
+        withClient({ contactEmail: 'contact@bangicode.ma', contactPhone: null });
+
+        render(<DemoGateway />);
+
+        expect(screen.queryByRole('link', { name: /tel:|\+212/ })).toBeNull();
+        // The address is independent of the phone.
+        expect(screen.getByRole('link', { name: /contact@bangicode\.ma/i })).toBeInTheDocument();
+    });
+
+    it('shows no address at all when the client has no inbox configured', () => {
+        withClient({ contactEmail: null, contactPhone: '+212664548867' });
+
+        render(<DemoGateway />);
+
+        expect(screen.queryByText(/questions before booking/i)).toBeNull();
+        // The vendor link is unconditional, so the footer still names us.
+        expect(screen.getByRole('link', { name: 'By Bangicode' })).toBeInTheDocument();
+    });
+
+    it('names the company behind the product, and opens it safely', () => {
+        render(<DemoGateway />);
+
+        // Exact: /bangicode/i also matches the mailto link above.
+        const vendor = screen.getByRole('link', { name: 'By Bangicode' });
+        expect(vendor).toHaveAttribute('href', 'https://bangicode.ma/');
+        // target=_blank without noopener hands the new tab a window.opener handle.
+        expect(vendor).toHaveAttribute('rel', expect.stringContaining('noopener'));
     });
 });

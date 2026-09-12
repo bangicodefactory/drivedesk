@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import {
     LayoutDashboard, Car, CalendarRange, FileSignature, ReceiptText, Languages,
-    Check, ArrowRight, Loader2,
+    Check, ArrowRight, Loader2, Mail, Phone, ExternalLink,
 } from 'lucide-react';
 
 // DriveDesk brand palette (dark marketing theme).
@@ -36,6 +36,16 @@ const C = {
     ink: '#FFFFFF', muted: '#828A96', orange: '#E5601E',
     grad: 'linear-gradient(100deg,#F7A21E 0%,#E5601E 48%,#D2400F 100%)',
 };
+
+// The company behind the product. A URL, not copy, so it is a constant and not
+// a translation key -- and it is the same link AdminLayout and the login page
+// already carry.
+//
+// The contact address is deliberately NOT a constant: it comes from the
+// `client.contactEmail` shared prop, which resolves `demo_request_to` server
+// side. That value has an env override, so a hard-coded literal here would
+// advertise a dead inbox on any deployment that redirected it.
+const VENDOR_URL = 'https://bangicode.ma/';
 // Latin brand display face (Saira Condensed italic). Used by the wordmark, which
 // stays Latin in every locale, and by the headings when the locale is Latin.
 const latinDisplay = { fontFamily: "'Saira Condensed', system-ui, sans-serif", fontStyle: 'italic', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.005em' };
@@ -160,6 +170,9 @@ function DemoModal({ open, onOpenChange }) {
 export default function DemoGateway() {
     const t = useTranslation();
     const { rtl, display, bodyFont, ls } = useDisplay();
+    // Server-resolved, because `demo_request_to` has an env override — see
+    // VENDOR_URL above for why the site link is a constant and this is not.
+    const { contactEmail, contactPhone } = usePage().props.client ?? {};
     const [open, setOpen] = useState(false);
     const book = () => setOpen(true);
     const pillBtn = { background: C.grad, color: '#fff', border: 0, borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 16px 36px -12px rgba(229,96,30,.6)', whiteSpace: 'nowrap' };
@@ -260,10 +273,59 @@ export default function DemoGateway() {
                 <div style={{ marginTop: 34 }}><button onClick={book} style={{ ...pillBtn, fontSize: 18, padding: '18px 38px' }}>{t('dg_book', 'Book a demo')} →</button></div>
             </section>
 
-            {/* Footer */}
+            {/* Footer.
+                Until BAN-341 this page offered a visitor exactly one way to reach
+                anyone -- the demo form -- and never named the company behind the
+                product. A prospect who wanted to ask a question before booking a
+                20-minute call had nowhere to go, and the only `bangicode.ma` links
+                in the app sat behind the login, where prospects are not.
+
+                Both values here are the repository's own: the address is the
+                inbox demo requests already land in (config/clients/drivedesk.php
+                `demo_request_to`), and the site is the one AdminLayout and the
+                login page already link. Nothing invented -- there is deliberately
+                no phone or WhatsApp, because no number exists anywhere in this
+                repo and a plausible-looking one would be somebody's real line. */}
             <footer style={{ borderTop: `1px solid ${C.line}`, padding: '36px 28px', color: C.muted }}>
                 <div style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Gauge size={28} /><Wordmark size={20} /></div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', fontSize: 14 }}>
+                        {contactEmail && (
+                            <>
+                                <span>{t('dg_footer_questions', 'Questions before booking?')}</span>
+                                <a
+                                    href={`mailto:${contactEmail}`}
+                                    style={{ color: C.ink, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                                >
+                                    <Mail size={16} aria-hidden />
+                                    <span dir="ltr">{contactEmail}</span>
+                                </a>
+                            </>
+                        )}
+                        {contactPhone && (
+                            <a
+                                href={`tel:${contactPhone.replace(/[^+\d]/g, '')}`}
+                                style={{ color: C.ink, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                            >
+                                <Phone size={16} aria-hidden />
+                                {/* dir=ltr: a phone number is read left-to-right even
+                                    on the Arabic gateway, where the surrounding block
+                                    is RTL and would otherwise reorder the + and digits. */}
+                                <span dir="ltr">{contactPhone}</span>
+                            </a>
+                        )}
+                        <a
+                            href={VENDOR_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: C.muted, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                        >
+                            <span dir="ltr">{t('dg_footer_by_vendor', 'By Bangicode')}</span>
+                            <ExternalLink size={14} aria-hidden />
+                        </a>
+                    </div>
+
                     <div style={{ fontSize: 14 }} dir="ltr">© 2026 DriveDesk · {t('dg_footer_tagline', 'Car-rental management, simplified.')}</div>
                 </div>
             </footer>
