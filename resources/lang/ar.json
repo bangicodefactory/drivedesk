@@ -1508,6 +1508,7 @@
     "payment_cash_desc": "ادفعوا نقدًا في المكتب",
     "payment_online": "الدفع عبر الإنترنت",
     "payment_online_desc": "بطاقة بنكية (CMI)",
+    "payment_cardholder": "حامل البطاقة",
     "payment_choose_gateway": "اختاروا وسيلة الدفع عبر الإنترنت",
     "payment_online_note": "سنتواصل معكم لإتمام الدفع عبر الإنترنت بعد طلبكم.",
     "confirmation_body_online": "سنتواصل معكم قريبًا لإتمام الدفع عبر الإنترنت وتأكيد حجزكم.",
