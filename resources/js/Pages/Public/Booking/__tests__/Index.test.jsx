@@ -314,6 +314,36 @@ describe('Public/Booking/Index', () => {
             expect(cmi.querySelector('svg.lucide-check')).not.toBeNull();
         });
 
+        it('marks the payment group invalid when validation clears the choice', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const group = screen.getByRole('radiogroup', { name: 'Comment souhaitez-vous payer ?' });
+            expect(group).not.toHaveAttribute('aria-invalid');
+
+            // Choosing "online" leaves payment_preference unset on purpose and
+            // revalidates, so the error fires with no gateway picked yet.
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+
+            await waitFor(() => expect(group).toHaveAttribute('aria-invalid', 'true'));
+            expect(group).toHaveAttribute('aria-describedby', 'payment_preference-error');
+            // The id has to actually exist, or the pointer dangles.
+            expect(document.getElementById('payment_preference-error')).not.toBeNull();
+        });
+
+        it('does not print the tile CTA on the card face as well', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+
+            // The card used to reuse `payment_online`, so the CTA string appeared
+            // twice once the panel opened -- which makes getByText throw for
+            // reasons unrelated to whatever a later test is checking.
+            expect(screen.getAllByText('Paiement en Ligne')).toHaveLength(1);
+            expect(screen.getByText('Paiement en ligne')).toBeInTheDocument();
+        });
+
         it('submits the chosen payment_preference to booking.store_request', async () => {
             withOnlinePayment();
             await reachPaymentStep();

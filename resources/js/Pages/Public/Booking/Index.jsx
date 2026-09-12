@@ -535,7 +535,16 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
 
                             <div>
                                 <Label id="payment-method-label" className="mb-2 block">{t('payment_method_label', 'Comment souhaitez-vous payer ?')}</Label>
-                                <div role="radiogroup" aria-labelledby="payment-method-label" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* The house rule from lib/fieldA11y.js: whatever renders a
+                                    FieldError also carries aria-invalid + aria-describedby, or a
+                                    screen reader returning to the group reports it valid while
+                                    Continue stays dead. */}
+                                <div
+                                    role="radiogroup"
+                                    aria-labelledby="payment-method-label"
+                                    {...fieldA11y(errors, 'payment_preference')}
+                                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                                >
                                     <div
                                         id="payment-mode-cash"
                                         onClick={() => choosePaymentMode('cash')}
@@ -592,7 +601,7 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                 className={`relative w-full max-w-xs overflow-hidden rounded-2xl p-5 cursor-pointer bg-primary text-primary-foreground transition-all ${
                                                     paymentPreference === 'cmi'
                                                         ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg'
-                                                        : 'opacity-90 shadow-md hover:opacity-100'
+                                                        : 'shadow-md hover:shadow-lg'
                                                 }`}
                                             >
                                                 {/* Order matters: the circles come first so the ramp below darkens
@@ -635,12 +644,21 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                     wraps this row onto two lines in `fr` (children 280px of 280px
                                                     available, row 32px against a 16px line-height). The arbitrary
                                                     value is doing work. Contrast comes from the ramp above, not from
-                                                    the size, so shrinking it costs nothing. */}
-                                                <div className="relative mt-4 flex items-center justify-between text-[11px] uppercase tracking-wide text-primary-foreground">
+                                                    the size, so shrinking it costs nothing.
+
+                                                    `card-chrome` rather than `uppercase tracking-wide`: letter-spacing
+                                                    breaks Arabic's joined letters, and storefront.css already owns that
+                                                    override for translated copy. This was the only raw
+                                                    `uppercase tracking-*` on a translated string in Pages/Public. */}
+                                                <div className="card-chrome relative mt-4 flex items-center justify-between text-[11px] text-primary-foreground">
                                                     <span>{t('payment_cardholder', 'Titulaire de la carte')}</span>
                                                     <span className="flex items-center gap-1">
                                                         <CreditCard className="h-4 w-4" strokeWidth={1.5} />
-                                                        {t('payment_online', 'Paiement en Ligne')}
+                                                        {/* Its own key, not the tile's CTA (`payment_online`). Sharing it
+                                                            printed "PAY ONLINE" — an imperative — on the card face in
+                                                            `en`, coupled the card to the button's wording, and put the
+                                                            same visible string on screen twice. */}
+                                                        {t('payment_card_brand_line', 'Paiement en ligne')}
                                                     </span>
                                                 </div>
                                             </div>
