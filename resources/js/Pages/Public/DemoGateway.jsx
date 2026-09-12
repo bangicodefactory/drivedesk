@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import {
     LayoutDashboard, Car, CalendarRange, FileSignature, ReceiptText, Languages,
-    Check, ArrowRight, Loader2,
+    Check, ArrowRight, Loader2, Mail, ExternalLink,
 } from 'lucide-react';
 
 // DriveDesk brand palette (dark marketing theme).
@@ -36,6 +36,14 @@ const C = {
     ink: '#FFFFFF', muted: '#828A96', orange: '#E5601E',
     grad: 'linear-gradient(100deg,#F7A21E 0%,#E5601E 48%,#D2400F 100%)',
 };
+
+// Who to reach, and where. Kept as constants rather than translation strings:
+// an address is not copy, and a locale file is the wrong place to change one.
+// `admin@bangicode.ma` matches `demo_request_to` in config/clients/drivedesk.php
+// -- the same inbox the demo form posts to, so a reply lands where the team is
+// already looking.
+const CONTACT_EMAIL = 'admin@bangicode.ma';
+const VENDOR_URL = 'https://bangicode.ma/';
 // Latin brand display face (Saira Condensed italic). Used by the wordmark, which
 // stays Latin in every locale, and by the headings when the locale is Latin.
 const latinDisplay = { fontFamily: "'Saira Condensed', system-ui, sans-serif", fontStyle: 'italic', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.005em' };
@@ -260,10 +268,43 @@ export default function DemoGateway() {
                 <div style={{ marginTop: 34 }}><button onClick={book} style={{ ...pillBtn, fontSize: 18, padding: '18px 38px' }}>{t('dg_book', 'Book a demo')} →</button></div>
             </section>
 
-            {/* Footer */}
+            {/* Footer.
+                Until BAN-341 this page offered a visitor exactly one way to reach
+                anyone -- the demo form -- and never named the company behind the
+                product. A prospect who wanted to ask a question before booking a
+                20-minute call had nowhere to go, and the only `bangicode.ma` links
+                in the app sat behind the login, where prospects are not.
+
+                Both values here are the repository's own: the address is the
+                inbox demo requests already land in (config/clients/drivedesk.php
+                `demo_request_to`), and the site is the one AdminLayout and the
+                login page already link. Nothing invented -- there is deliberately
+                no phone or WhatsApp, because no number exists anywhere in this
+                repo and a plausible-looking one would be somebody's real line. */}
             <footer style={{ borderTop: `1px solid ${C.line}`, padding: '36px 28px', color: C.muted }}>
                 <div style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Gauge size={28} /><Wordmark size={20} /></div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', fontSize: 14 }}>
+                        <span>{t('dg_footer_questions', 'Questions before booking?')}</span>
+                        <a
+                            href={`mailto:${CONTACT_EMAIL}`}
+                            style={{ color: C.ink, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                        >
+                            <Mail size={16} aria-hidden />
+                            <span dir="ltr">{CONTACT_EMAIL}</span>
+                        </a>
+                        <a
+                            href={VENDOR_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: C.muted, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                        >
+                            <span dir="ltr">{t('dg_footer_by_vendor', 'By Bangicode')}</span>
+                            <ExternalLink size={14} aria-hidden />
+                        </a>
+                    </div>
+
                     <div style={{ fontSize: 14 }} dir="ltr">© 2026 DriveDesk · {t('dg_footer_tagline', 'Car-rental management, simplified.')}</div>
                 </div>
             </footer>

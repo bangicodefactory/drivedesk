@@ -154,6 +154,17 @@ function Header({ contact }) {
 }
 
 function Footer({ contact }) {
+    // Exactly the fields the block below can render -- kept in step with them so
+    // adding a row here cannot leave the heading hiding when there is content.
+    const hasContactDetails = Boolean(
+        contact?.address
+        || contact?.phone
+        || contact?.email
+        || contact?.hoursWeekday
+        || contact?.hoursSaturday
+        || contact?.hoursSunday,
+    );
+
     const t = useTranslations();
     const { branding } = usePage().props;
     const navItems = useNavItems(t);
@@ -197,6 +208,12 @@ function Footer({ contact }) {
                     </ul>
                 </div>
 
+                {/* The heading used to render unconditionally while every row below
+                    it was conditional, so a tenant with empty company settings --
+                    which includes drivedesk's own demo -- published a labelled
+                    empty column. Gate the whole block on there being something to
+                    put in it. */}
+                {hasContactDetails && (
                 <div className="space-y-4">
                     <h3 className="eyebrow text-xs font-semibold text-background/50">{t('footer_contact_title', 'Contact Us')}</h3>
                     <ul className="space-y-2.5 text-sm text-background/70">
@@ -221,6 +238,7 @@ function Footer({ contact }) {
                         )}
                     </ul>
                 </div>
+                )}
 
                 <div className="space-y-4">
                     <h3 className="eyebrow text-xs font-semibold text-background/50">{t('footer_languages_title', 'Languages')}</h3>

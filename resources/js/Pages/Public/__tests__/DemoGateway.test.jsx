@@ -54,3 +54,24 @@ describe('DemoGateway — login affordances (#BAN-246)', () => {
         expect(goToLogin).toHaveAttribute('href', '/login');
     });
 });
+
+describe('DemoGateway — reaching the vendor (BAN-341)', () => {
+    it('offers an email address a prospect can actually write to', () => {
+        render(<DemoGateway />);
+
+        // Before this, the only way off the page was the demo form or the login
+        // link -- neither any use to someone who just wants to ask a question.
+        const email = screen.getByRole('link', { name: /admin@bangicode\.ma/i });
+        expect(email).toHaveAttribute('href', 'mailto:admin@bangicode.ma');
+    });
+
+    it('names the company behind the product, and opens it safely', () => {
+        render(<DemoGateway />);
+
+        // Exact: /bangicode/i also matches the mailto link above.
+        const vendor = screen.getByRole('link', { name: 'By Bangicode' });
+        expect(vendor).toHaveAttribute('href', 'https://bangicode.ma/');
+        // target=_blank without noopener hands the new tab a window.opener handle.
+        expect(vendor).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    });
+});

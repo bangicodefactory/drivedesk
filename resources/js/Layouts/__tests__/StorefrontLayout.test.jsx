@@ -82,3 +82,61 @@ describe('StorefrontLayout', () => {
         loginLinks.forEach((link) => expect(link).toHaveAttribute('href', '/login'));
     });
 });
+
+describe('StorefrontLayout footer — the contact column (BAN-341)', () => {
+    /**
+     * Shaped like HandleInertiaRequests::buildContact(), which always returns
+     * every key and nulls the ones the tenant has not set. Omitting the keys
+     * would pass for the wrong reason, since `undefined` is falsy too.
+     */
+    function withContact(contact) {
+        vi.mocked(usePage).mockReturnValueOnce({
+            props: {
+                ...mockProps,
+                contact: {
+                    phone: null,
+                    whatsapp: null,
+                    email: null,
+                    address: null,
+                    hoursWeekday: null,
+                    hoursSaturday: null,
+                    hoursSunday: null,
+                    facebookUrl: null,
+                    instagramUrl: null,
+                    ...contact,
+                },
+            },
+            url: '/',
+        });
+    }
+
+    it('hides the "Contact Us" heading when the tenant has set no contact details', () => {
+        // drivedesk's own demo was exactly this case: every row conditional, the
+        // heading not, so the live storefront published a labelled empty column.
+        withContact({});
+
+        render(<StorefrontLayout><p>Page content</p></StorefrontLayout>);
+
+        expect(screen.queryByText('Contact Us')).toBeNull();
+    });
+
+    it('shows the column as soon as there is one detail to put in it', () => {
+        withContact({ email: 'contact@example.com' });
+
+        render(<StorefrontLayout><p>Page content</p></StorefrontLayout>);
+
+        expect(screen.getByText('Contact Us')).toBeInTheDocument();
+        expect(screen.getByText('contact@example.com')).toBeInTheDocument();
+    });
+
+    it('shows the column for opening hours alone, with no address, phone or email', () => {
+        // The predicate has to cover every field the block can render, not just
+        // the obvious three.
+        withContact({ hoursWeekday: '09:00 - 19:00' });
+
+        render(<StorefrontLayout><p>Page content</p></StorefrontLayout>);
+
+        expect(screen.getByText('Contact Us')).toBeInTheDocument();
+        expect(screen.getByText(/09:00 - 19:00/)).toBeInTheDocument();
+    });
+});

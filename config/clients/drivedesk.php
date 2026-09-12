@@ -145,6 +145,24 @@ return [
         'theme_color'    => 'color1',          // brand orange (#E5601E)
         'company_logo'   => 'logo.png',
         'meta_seo_title' => 'DriveDesk — Car Rental Management, simplified',
+
+        // Storefront footer contact (BAN-341). HandleInertiaRequests::buildContact()
+        // reads these `company_*` / `hours_*` keys, and StorefrontLayout's footer
+        // renders a row per value it finds. With none set, the demo published a
+        // "Contact Us" heading over nothing.
+        //
+        // `client:install` firstOrCreate()s, so this seeds a missing key and never
+        // overwrites a value an owner has set for themselves.
+        //
+        // Deliberately no `company_phone`, `company_whatsapp` or `company_address`:
+        // no phone number or address for this business exists anywhere in the
+        // repository, and a plausible-looking Moroccan number published on a live
+        // domain would be a real person's line. Add them here once somebody
+        // supplies the real ones.
+        'company_email'   => 'admin@bangicode.ma',
+        'hours_weekday'   => '09:00 – 19:00',
+        'hours_saturday'  => '09:00 – 14:00',
+        'hours_sunday'    => 'Closed',
     ],
 
     'terms' => [
