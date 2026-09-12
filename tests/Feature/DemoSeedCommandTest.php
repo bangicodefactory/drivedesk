@@ -162,7 +162,7 @@ class DemoSeedCommandTest extends TestCase
         $this->assertDatabaseHas('settings', [
             'name'      => 'company_email',
             'parent_id' => 1,
-            'value'     => config('client.demo_request_to'),
+            'value'     => config('client.demo_contact_email'),
         ]);
         $this->assertDatabaseHas('settings', ['name' => 'hours_weekday', 'parent_id' => 1]);
     }

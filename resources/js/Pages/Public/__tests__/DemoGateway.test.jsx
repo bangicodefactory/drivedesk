@@ -11,7 +11,7 @@ const post = vi.fn((url, data, opts) => {
 });
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma', contactPhone: '+212664548867' } } })),
+    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'contact@bangicode.ma', contactPhone: '+212664548867' } } })),
     Head: ({ children }) => <>{children}</>,
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
     router: { post: (...args) => post(...args) },
@@ -69,7 +69,7 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
         vi.mocked(usePage).mockImplementation(() => ({
             props: {
                 flash: {},
-                client: { contactEmail: 'admin@bangicode.ma', contactPhone: '+212664548867' },
+                client: { contactEmail: 'contact@bangicode.ma', contactPhone: '+212664548867' },
             },
         }));
     });
@@ -79,8 +79,8 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
 
         // Before this, the only way off the page was the demo form or the login
         // link -- neither any use to someone who just wants to ask a question.
-        const email = screen.getByRole('link', { name: /admin@bangicode\.ma/i });
-        expect(email).toHaveAttribute('href', 'mailto:admin@bangicode.ma');
+        const email = screen.getByRole('link', { name: /contact@bangicode\.ma/i });
+        expect(email).toHaveAttribute('href', 'mailto:contact@bangicode.ma');
     });
 
     it('advertises whatever inbox the deployment actually posts demos to', () => {
@@ -105,7 +105,7 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
     });
 
     it('strips display formatting out of the tel: href', () => {
-        withClient({ contactEmail: 'admin@bangicode.ma', contactPhone: '+212 664-548867' });
+        withClient({ contactEmail: 'contact@bangicode.ma', contactPhone: '+212 664-548867' });
 
         render(<DemoGateway />);
 
@@ -114,13 +114,13 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
     });
 
     it('shows no phone when the client has none configured', () => {
-        withClient({ contactEmail: 'admin@bangicode.ma', contactPhone: null });
+        withClient({ contactEmail: 'contact@bangicode.ma', contactPhone: null });
 
         render(<DemoGateway />);
 
         expect(screen.queryByRole('link', { name: /tel:|\+212/ })).toBeNull();
         // The address is independent of the phone.
-        expect(screen.getByRole('link', { name: /admin@bangicode\.ma/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /contact@bangicode\.ma/i })).toBeInTheDocument();
     });
 
     it('shows no address at all when the client has no inbox configured', () => {

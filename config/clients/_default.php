@@ -88,6 +88,8 @@ return [
 
     'demo_request_to' => trim((string) env('CLIENT_DEMO_REQUEST_TO', '')) ?: null,
 
+    'demo_contact_email' => trim((string) env('CLIENT_DEMO_CONTACT_EMAIL', '')) ?: null,
+
     'demo_contact_phone' => trim((string) env('CLIENT_DEMO_CONTACT_PHONE', '')) ?: null,
 
     /*

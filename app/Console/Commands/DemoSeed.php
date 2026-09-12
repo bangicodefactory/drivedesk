@@ -131,9 +131,12 @@ class DemoSeed extends Command
         //    it for unauthenticated requests (helper.php:140), which is what the
         //    storefront footer, /contact and the booking confirmation render from.
         $demoContact = [
-            // One source for the address, so an env override moves the demo inbox
-            // and the storefront together instead of leaving them disagreeing.
-            'company_email'  => config('client.demo_request_to'),
+            // The public-facing address, not the demo-form delivery inbox: this
+            // one is printed on the demo's invoices and is where its /contact
+            // form delivers, so it should be the mailbox we publish. Falls back
+            // the same way the gateway prop does.
+            'company_email'  => config('client.demo_contact_email')
+                ?: config('client.demo_request_to'),
             // Numeric ranges only. A word like "Closed" would be stored as data
             // and render untranslated on the French and Arabic storefronts, and
             // there is no settings form for these keys to correct it from.
