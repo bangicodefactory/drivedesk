@@ -49,3 +49,21 @@ html[dir='rtl'] .storefront .eyebrow {
     text-transform: none;
     letter-spacing: normal;
 }
+
+/* Printed chrome on the CMI payment card (cardholder line, brand line).
+ * Uppercase with a little tracking reads as the printing on a real card in
+ * Latin. Letter-spacing disconnects Arabic's joined letters, so RTL drops it —
+ * the same reasoning as .eyebrow above, and the reason raw `uppercase
+ * tracking-wide` does not belong on translated copy.
+ *
+ * Deliberately NOT .eyebrow: that one's 0.14em adds ~32px to a 21-character
+ * French label, which overflows this card's 280px row and wraps it. */
+.storefront .card-chrome {
+    text-transform: uppercase;
+    letter-spacing: 0.025em; /* = Tailwind's tracking-wide */
+}
+
+html[dir='rtl'] .storefront .card-chrome {
+    text-transform: none;
+    letter-spacing: normal;
+}
