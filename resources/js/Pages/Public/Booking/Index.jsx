@@ -539,8 +539,8 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                                     paymentPreference === 'cmi' ? 'ring-2 ring-primary' : 'opacity-90 hover:opacity-100'
                                                 }`}
                                             >
-                                                <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-                                                <div aria-hidden className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-white/10" />
+                                                <div aria-hidden className="pointer-events-none absolute -end-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+                                                <div aria-hidden className="pointer-events-none absolute -bottom-10 -start-6 h-28 w-28 rounded-full bg-white/10" />
 
                                                 <div className="relative flex items-center justify-between">
                                                     <Wifi className="h-5 w-5 rotate-90 text-primary-foreground/80" strokeWidth={1.5} />
