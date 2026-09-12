@@ -35,6 +35,7 @@ JSDoc type definitions live in `resources/js/types/inertia.js`.
 | `client.default_locale` | `string` | Default locale code (e.g. `'en'`) |
 | `client.supported_locales` | `string[]` | All locale codes with `resources/lang/<code>/` directories |
 | `client.features` | `ClientFeatures` | Feature flags resolved by `ClientServiceProvider` |
+| `client.contactPhone` | `string \| null` | Voice line advertised on the demo gateway — `demo_contact_phone`, env-overridable via `CLIENT_DEMO_CONTACT_PHONE`. Rendered as a `tel:` link with display formatting stripped to `+` and digits. `null` on a client with none set, and `_default.php` leaves it null so no other client advertises DriveDesk's line |
 | `client.contactEmail` | `string \| null` | Where a prospect on the demo gateway writes to — `demo_request_to` resolved server-side, the same inbox the demo form posts to. Shared rather than hard-coded in the page because that config carries a `CLIENT_DEMO_REQUEST_TO` env override, so a literal would advertise a dead address on any deployment that redirected it (BAN-341). `null` on a client with no inbox configured; the gateway footer then shows no address |
 | `translations` | `Record<string, string>` | Current locale's `resources/lang/<locale>.json` key→value pairs |
 | `flash.success` | `string \| null` | One-time success message (from `redirect()->with('success', …)`) |

@@ -11,7 +11,7 @@ const post = vi.fn((url, data, opts) => {
 });
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma' } } })),
+    usePage: vi.fn(() => ({ props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma', contactPhone: '+212664548867' } } })),
     Head: ({ children }) => <>{children}</>,
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
     router: { post: (...args) => post(...args) },
@@ -67,7 +67,10 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
 
     afterEach(() => {
         vi.mocked(usePage).mockImplementation(() => ({
-            props: { flash: {}, client: { contactEmail: 'admin@bangicode.ma' } },
+            props: {
+                flash: {},
+                client: { contactEmail: 'admin@bangicode.ma', contactPhone: '+212664548867' },
+            },
         }));
     });
 
@@ -92,8 +95,36 @@ describe('DemoGateway — reaching the vendor (BAN-341)', () => {
             .toHaveAttribute('href', 'mailto:sales@bangicode.ma');
     });
 
+    it('offers a phone number a prospect can tap to call', () => {
+        render(<DemoGateway />);
+
+        const phone = screen.getByRole('link', { name: /\+212664548867/ });
+        // tel: needs the bare E.164 form; any display spacing would break the
+        // dialler, so the href is stripped to + and digits.
+        expect(phone).toHaveAttribute('href', 'tel:+212664548867');
+    });
+
+    it('strips display formatting out of the tel: href', () => {
+        withClient({ contactEmail: 'admin@bangicode.ma', contactPhone: '+212 664-548867' });
+
+        render(<DemoGateway />);
+
+        expect(screen.getByRole('link', { name: /\+212 664-548867/ }))
+            .toHaveAttribute('href', 'tel:+212664548867');
+    });
+
+    it('shows no phone when the client has none configured', () => {
+        withClient({ contactEmail: 'admin@bangicode.ma', contactPhone: null });
+
+        render(<DemoGateway />);
+
+        expect(screen.queryByRole('link', { name: /tel:|\+212/ })).toBeNull();
+        // The address is independent of the phone.
+        expect(screen.getByRole('link', { name: /admin@bangicode\.ma/i })).toBeInTheDocument();
+    });
+
     it('shows no address at all when the client has no inbox configured', () => {
-        withClient({ contactEmail: null });
+        withClient({ contactEmail: null, contactPhone: '+212664548867' });
 
         render(<DemoGateway />);
 

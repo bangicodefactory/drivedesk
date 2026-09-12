@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import {
     LayoutDashboard, Car, CalendarRange, FileSignature, ReceiptText, Languages,
-    Check, ArrowRight, Loader2, Mail, ExternalLink,
+    Check, ArrowRight, Loader2, Mail, Phone, ExternalLink,
 } from 'lucide-react';
 
 // DriveDesk brand palette (dark marketing theme).
@@ -172,7 +172,7 @@ export default function DemoGateway() {
     const { rtl, display, bodyFont, ls } = useDisplay();
     // Server-resolved, because `demo_request_to` has an env override — see
     // VENDOR_URL above for why the site link is a constant and this is not.
-    const contactEmail = usePage().props.client?.contactEmail;
+    const { contactEmail, contactPhone } = usePage().props.client ?? {};
     const [open, setOpen] = useState(false);
     const book = () => setOpen(true);
     const pillBtn = { background: C.grad, color: '#fff', border: 0, borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 16px 36px -12px rgba(229,96,30,.6)', whiteSpace: 'nowrap' };
@@ -302,6 +302,18 @@ export default function DemoGateway() {
                                     <span dir="ltr">{contactEmail}</span>
                                 </a>
                             </>
+                        )}
+                        {contactPhone && (
+                            <a
+                                href={`tel:${contactPhone.replace(/[^+\d]/g, '')}`}
+                                style={{ color: C.ink, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                            >
+                                <Phone size={16} aria-hidden />
+                                {/* dir=ltr: a phone number is read left-to-right even
+                                    on the Arabic gateway, where the surrounding block
+                                    is RTL and would otherwise reorder the + and digits. */}
+                                <span dir="ltr">{contactPhone}</span>
+                            </a>
                         )}
                         <a
                             href={VENDOR_URL}

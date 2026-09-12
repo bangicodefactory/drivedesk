@@ -155,6 +155,7 @@ class HandleInertiaRequests extends Middleware
             // the form posted to the new one. Null on a client with no inbox
             // configured, which the page treats as "show no address".
             'contactEmail'      => config('client.demo_request_to'),
+            'contactPhone'      => config('client.demo_contact_phone'),
             'default_locale'    => config('client.default_locale', config('app.locale', 'en')),
             'supported_locales' => config('client.supported_locales', []),
             // Resolved through feature(), not read raw. feature() checks the

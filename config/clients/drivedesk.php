@@ -38,6 +38,13 @@ return [
     // Where the public "Book a demo" form is delivered (DemoRequestController).
     'demo_request_to' => env('CLIENT_DEMO_REQUEST_TO', 'admin@bangicode.ma'),
 
+    // Voice line advertised on the demo gateway, beside `demo_request_to`, for a
+    // prospect who would rather call than write. Env-overridable for the same
+    // reason the address is: a deployment that routes enquiries elsewhere must be
+    // able to move both without a code change, or the landing page ends up
+    // advertising a line nobody answers (BAN-341).
+    'demo_contact_phone' => env('CLIENT_DEMO_CONTACT_PHONE', '+212664548867'),
+
     /*
      * DriveDesk is the product's own reference/demo client — the base tenant
      * used to showcase the platform (and to host the marketing site that

@@ -88,6 +88,8 @@ return [
 
     'demo_request_to' => trim((string) env('CLIENT_DEMO_REQUEST_TO', '')) ?: null,
 
+    'demo_contact_phone' => trim((string) env('CLIENT_DEMO_CONTACT_PHONE', '')) ?: null,
+
     /*
      * How far outside a rental window a violation may still be attributed to
      * that rental, in hours. Covers late returns and same-day turnovers, which
