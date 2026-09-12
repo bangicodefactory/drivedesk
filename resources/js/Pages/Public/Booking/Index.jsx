@@ -22,7 +22,7 @@ import { dayAfter } from '@/lib/dates';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import {
     Calendar, Clock, MapPin, User, Phone, Mail, MessageCircle, Users, Flag, UserCheck, AlertCircle,
-    Banknote, CreditCard,
+    Banknote, CreditCard, Wifi,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -533,13 +533,33 @@ function Booking({ vehicles = [], places = [], preselectedVehicle = null, prefil
                                             <div
                                                 onClick={() => setValue('payment_preference', 'cmi', { shouldValidate: true })}
                                                 role="button" tabIndex={0}
+                                                aria-pressed={paymentPreference === 'cmi'}
                                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setValue('payment_preference', 'cmi', { shouldValidate: true }); }}
-                                                className={`flex items-center gap-2 p-3 rounded-xl border bg-card cursor-pointer transition-colors ${
-                                                    paymentPreference === 'cmi' ? 'ring-2 ring-primary border-primary' : 'border-border/60 hover:border-foreground/20'
+                                                className={`relative w-full max-w-xs overflow-hidden rounded-2xl p-5 cursor-pointer bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground shadow-md transition-all ${
+                                                    paymentPreference === 'cmi' ? 'ring-2 ring-primary' : 'opacity-90 hover:opacity-100'
                                                 }`}
                                             >
-                                                <CreditCard className="h-5 w-5 text-primary shrink-0" strokeWidth={1.5} />
-                                                <span className="font-medium">CMI</span>
+                                                <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+                                                <div aria-hidden className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-white/10" />
+
+                                                <div className="relative flex items-center justify-between">
+                                                    <Wifi className="h-5 w-5 rotate-90 text-primary-foreground/80" strokeWidth={1.5} />
+                                                    <span className="text-sm font-bold tracking-wide">CMI</span>
+                                                </div>
+
+                                                <div aria-hidden className="relative mt-6 h-6 w-9 rounded-md bg-white/25" />
+
+                                                <div aria-hidden className="relative mt-4 flex gap-3 font-mono text-lg tracking-[0.2em]">
+                                                    <span>••••</span><span>••••</span><span>••••</span><span>••••</span>
+                                                </div>
+
+                                                <div className="relative mt-4 flex items-center justify-between text-[11px] uppercase tracking-wide text-primary-foreground/80">
+                                                    <span>{t('payment_cardholder', 'Titulaire de la carte')}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <CreditCard className="h-4 w-4" strokeWidth={1.5} />
+                                                        {t('payment_online', 'Paiement en Ligne')}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
