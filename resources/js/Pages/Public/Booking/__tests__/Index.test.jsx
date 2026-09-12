@@ -203,6 +203,147 @@ describe('Public/Booking/Index', () => {
             expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
         });
 
+        it('exposes the payment methods as a radio group, not as toggle buttons', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const group = screen.getByRole('radiogroup', { name: 'Comment souhaitez-vous payer ?' });
+            const [cash, online] = screen.getAllByRole('radio');
+
+            expect(group).toContainElement(cash);
+            expect(cash).toHaveAttribute('aria-checked', 'false');
+            expect(online).toHaveAttribute('aria-checked', 'false');
+
+            fireEvent.click(cash);
+            expect(cash).toHaveAttribute('aria-checked', 'true');
+            expect(online).toHaveAttribute('aria-checked', 'false');
+        });
+
+        it('keeps one payment method in the tab order at a time (roving tabindex)', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const [cash, online] = screen.getAllByRole('radio');
+            // Nothing chosen yet: the first option is the way in.
+            expect(cash).toHaveAttribute('tabindex', '0');
+            expect(online).toHaveAttribute('tabindex', '-1');
+
+            fireEvent.click(online);
+            expect(online).toHaveAttribute('tabindex', '0');
+            expect(cash).toHaveAttribute('tabindex', '-1');
+        });
+
+        it('moves focus between payment methods with the arrow keys', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const [cash] = screen.getAllByRole('radio');
+            cash.focus();
+
+            fireEvent.keyDown(cash, { key: 'ArrowRight' });
+
+            const online = screen.getAllByRole('radio')[1];
+            expect(online).toHaveFocus();
+            // Manual selection: arrows move, Space/Enter commits.
+            expect(online).toHaveAttribute('aria-checked', 'false');
+
+            fireEvent.keyDown(online, { key: ' ' });
+            expect(online).toHaveAttribute('aria-checked', 'true');
+        });
+
+        it('does not discard a finished choice when the arrows pass over it', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const [cash] = screen.getAllByRole('radio');
+            fireEvent.click(cash);
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+
+            // Selection used to follow focus, and choosePaymentMode('online')
+            // clears payment_preference with shouldValidate -- so one
+            // exploratory keypress wiped a valid answer and raised a validation
+            // error against a visitor who had done nothing wrong.
+            fireEvent.keyDown(cash, { key: 'ArrowRight' });
+
+            expect(cash).toHaveAttribute('aria-checked', 'true');
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+            expect(screen.queryByText('Veuillez choisir un mode de paiement.')).toBeNull();
+        });
+
+        it('keeps a picked CMI when the arrows pass back over the group', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+            const cmi = screen.getByRole('radio', { name: 'CMI' });
+            fireEvent.click(cmi);
+            expect(cmi).toHaveAttribute('aria-checked', 'true');
+
+            const [, online] = screen.getAllByRole('radio');
+            fireEvent.keyDown(online, { key: 'ArrowLeft' });
+            fireEvent.keyDown(screen.getAllByRole('radio')[0], { key: 'ArrowRight' });
+
+            expect(screen.getByRole('radio', { name: 'CMI' })).toHaveAttribute('aria-checked', 'true');
+            expect(screen.getByRole('button', { name: 'Compléter la Réservation' })).toBeEnabled();
+        });
+
+        it('selects on Space without also scrolling the page', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const [cash] = screen.getAllByRole('radio');
+            // fireEvent returns false when the handler called preventDefault --
+            // which is what stops Space doing double duty as page-scroll.
+            expect(fireEvent.keyDown(cash, { key: ' ' })).toBe(false);
+            expect(cash).toHaveAttribute('aria-checked', 'true');
+        });
+
+        it('announces the CMI card as a checked radio once it is picked', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+
+            const cmi = screen.getByRole('radio', { name: 'CMI' });
+            expect(cmi).toHaveAttribute('aria-checked', 'false');
+
+            fireEvent.click(cmi);
+            expect(cmi).toHaveAttribute('aria-checked', 'true');
+            // A shape, not only the ring colour: ring-primary on bg-primary was
+            // invisible, and this card is what enables the submit button.
+            expect(cmi.querySelector('svg.lucide-check')).not.toBeNull();
+        });
+
+        it('marks the payment group invalid when validation clears the choice', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            const group = screen.getByRole('radiogroup', { name: 'Comment souhaitez-vous payer ?' });
+            expect(group).not.toHaveAttribute('aria-invalid');
+
+            // Choosing "online" leaves payment_preference unset on purpose and
+            // revalidates, so the error fires with no gateway picked yet.
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+
+            await waitFor(() => expect(group).toHaveAttribute('aria-invalid', 'true'));
+            expect(group).toHaveAttribute('aria-describedby', 'payment_preference-error');
+            // The id has to actually exist, or the pointer dangles.
+            expect(document.getElementById('payment_preference-error')).not.toBeNull();
+        });
+
+        it('does not print the tile CTA on the card face as well', async () => {
+            withOnlinePayment();
+            await reachPaymentStep();
+
+            fireEvent.click(screen.getByText('Paiement en Ligne'));
+
+            // The card used to reuse `payment_online`, so the CTA string appeared
+            // twice once the panel opened -- which makes getByText throw for
+            // reasons unrelated to whatever a later test is checking.
+            expect(screen.getAllByText('Paiement en Ligne')).toHaveLength(1);
+            expect(screen.getByText('Paiement en ligne')).toBeInTheDocument();
+        });
+
         it('submits the chosen payment_preference to booking.store_request', async () => {
             withOnlinePayment();
             await reachPaymentStep();
